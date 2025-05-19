@@ -74,6 +74,12 @@ document.getElementById("submit").addEventListener("click", () => {
   })
   .then(data => {
     console.log("サーバーの応答:", data);
+
+    if(data.used){
+      console.log("使用済み単語です")
+      return;
+    }
+  
     const ally_type1_img = document.getElementById("ally-type1-img");
     const ally_type2_img = document.getElementById("ally-type2-img");
 
@@ -90,9 +96,25 @@ document.getElementById("submit").addEventListener("click", () => {
         ally_type1_img.src = `img/${data.image1}.gif`;
         ally_type1_img.style.display = "block";
       }
+      console.log(text)
+      document.getElementsByClassName("ally-word")[0].textContent = text;
+      shrinkIfTooWideAlly();
     }
   })
   .catch(error => {
     console.error("エラー:", error);
   });
 });
+
+// 文字列圧縮
+function shrinkIfTooWideAlly() {
+  const element = document.querySelector(".ally-word");
+  const maxWidth = 180;
+
+  if (element.scrollWidth > maxWidth) {
+    const scale = maxWidth / element.scrollWidth;
+    element.style.transform = `translateX(-50%) scaleX(${scale})`;
+  } else {
+    element.style.transform = `translateX(-50%) scaleX(1)`;
+  }
+}
