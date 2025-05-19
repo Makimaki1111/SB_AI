@@ -9,7 +9,7 @@ html, body {
 
 .phone-box {
   width: 92vw;
-  max-width: 420px;
+  max-width: 450px;
   aspect-ratio: 10 / 16;
   background-color: #fce5cd;
   border-radius: 16px;
@@ -38,17 +38,76 @@ html, body {
 }
 
 /* 白い楕円 */
-.ellipse {
+.ellipse-left {
   position: absolute;
-  bottom: 10px;
-  left: 50%;
+  bottom: -40px;
+  left: 22%;
   transform: translateX(-50%);
-  width: 60%;
+  width: 70%;
+  height: 80px;
+  background: white;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+/* 白い楕円 */
+.ellipse-right {
+  position: absolute;
+  bottom: 100px;
+  right: 8%;
+  width: 180px;
   height: 40px;
   background: white;
   border-radius: 50%;
   z-index: 1;
 }
+
+#text {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+#input {
+    width: 80%;
+    height: 30px;
+    border-radius: 20px;
+    font-size: 1.4em;
+    /* border: 2px solid #646464; */
+    border: none;
+    padding-top: 6px;
+    padding-bottom: 4px;
+    left: 5px;
+    top: 0px;
+    background-color: #E6ECF0;
+    padding-left: 15px;
+    font-family: mplus-1p-regular;
+}
+
+
+element.style {
+    opacity: 1;
+    cursor: pointer;
+}
+#submit {
+  font-size: 1.4em;
+  border: none;
+  width: 42px;
+  height: 42px;
+  left: 5px;
+  background-color: white;
+  color: red;
+  font-weight: bold;
+  border-radius: 19px 19px 19px 19px;
+  cursor: pointer;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 
 /* ふきだし共通 */
 .balloon {
@@ -56,8 +115,9 @@ html, body {
   background: white;
   border-radius: 10px;
   padding: 6px 10px;
-  font-size: 14px;
-  width: 100px;
+  font-size: 16px;
+  width: 180px;
+  height: 55px;
   box-shadow: 0 0 4px rgba(0,0,0,0.2);
   z-index: 2;
 }
@@ -80,11 +140,11 @@ html, body {
 /* 左上に表示 */
 .balloon.left {
   top: 10px;
-  left: 10px;
+  left: -8px;
 }
 
 /* 右下に表示 */
 .balloon.right {
   bottom: 10px;
-  right: 10px;
+  right: -8px;
 }
