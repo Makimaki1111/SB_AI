@@ -38,7 +38,7 @@ def include_check(_input:TextInput):
         ret["used"] = True
         ret["type1"] = used[_input.text][0]
         ret["type2"] = used[_input.text][1]
-        ret["image"] = SB.image_name(_input.text)
+        ret["image1"] = SB.image_name(_input.text)
         ret["image2"] = SB.image_name(_input.text)
     else:
         ret["include"] = SB.include_in_all_words(_input.text)
@@ -64,11 +64,15 @@ def type_check(_input:TextInput):
         ret["used"] = True
         ret["type1"] = used[_input.text][0]
         ret["type2"] = used[_input.text][1]
+        ret["image1"] = SB.image_name(ret["type1"])
+        ret["image2"] = SB.image_name(ret["type2"])
         return ret
 
     types = AI.get_type(_input.text)
     ret["type1"] = types[0]
     ret["type2"] = types[1] if len(types) == 2 else ""
+    ret["image1"] = SB.image_name(ret["type1"])
+    ret["image2"] = SB.image_name(ret["type2"])
     used[_input.text] = (ret["type1"],ret["type2"])
     return ret
 

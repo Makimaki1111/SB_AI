@@ -10,8 +10,9 @@ input.addEventListener("keydown", (e) => {
 document.addEventListener("DOMContentLoaded", () => {
   const inputField = document.getElementById("input");
 
-  inputField.addEventListener("input", () => {
+    inputField.addEventListener("input", () => {
     const text = inputField.value;
+    const includeImg = document.getElementById("include-img");
 
     if (!text.trim()) {
       includeImg.style.display = "none";  // 空文字なら非表示
@@ -33,9 +34,11 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("include_check 応答:", data);
       
       // "image"キーが存在する場合に画像を表示
-      const includeImg = document.getElementById("include-img");
       if (data.image) {
         includeImg.src = `img/${data.image}.gif`;
+        includeImg.style.display = "block";
+      }else if(data.image1){
+        includeImg.src = `img/${data.image1}.gif`;
         includeImg.style.display = "block";
       } else {
         includeImg.style.display = "none";  // imageがなければ非表示
@@ -71,6 +74,23 @@ document.getElementById("submit").addEventListener("click", () => {
   })
   .then(data => {
     console.log("サーバーの応答:", data);
+    const ally_type1_img = document.getElementById("ally-type1-img");
+    const ally_type2_img = document.getElementById("ally-type2-img");
+
+    if(!data.include){
+      // 登録されていませんでした
+      console.log("辞書にない単語です")
+    }else{
+      if(data.image2 !== ""){
+        ally_type1_img.src = `img/${data.image1}.gif`;
+        ally_type1_img.style.display = "block";
+        ally_type2_img.src = `img/${data.image2}.gif`;
+        ally_type2_img.style.display = "block";
+      } else {
+        ally_type1_img.src = `img/${data.image1}.gif`;
+        ally_type1_img.style.display = "block";
+      }
+    }
   })
   .catch(error => {
     console.error("エラー:", error);

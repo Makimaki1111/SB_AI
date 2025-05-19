@@ -149,6 +149,26 @@ element.style {
   right: -8px;
 }
 
+#ally-type1-img {
+  position: absolute;
+  top: 100px;
+  left: 10px;
+  width: 100px;
+  height: 100px;
+  z-index: 11;
+  display: none;
+}
+
+#ally-type2-img {
+  position: absolute;
+  top: 100px;
+  left: 120px;
+  width: 100px;
+  height: 100px;
+  z-index: 11;
+  display: none;
+}
+
 #include-img {
   position: absolute;
   top: 24%;          /* 必要に応じて調整 */
