@@ -1,7 +1,11 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from SB_tools import SB_info
-from GOOGLE_API import GOOGLE_AI
+try:
+    from SB_info import SB_info
+    from GOOGLE_API import GOOGLE_AI
+except ImportError:
+    from backend.SB_info import SB_info
+    from backend.GOOGLE_API import GOOGLE_AI
 from collections import defaultdict
 
 app = FastAPI()
