@@ -26,5 +26,6 @@ class GOOGLE_AI:
             返り値:
                 [タイプ1,(存在すれば)タイプ2]:list
         """
+        return ("テスト","です今")
         response = self.chat.send_message(text)
         return response.text.split()

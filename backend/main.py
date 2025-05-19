@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 try:
     from SB_info import SB_info
@@ -9,6 +10,16 @@ except ImportError:
 from collections import defaultdict
 
 app = FastAPI()
+
+# ポート番号を合わせるおまじない?
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # ここは必要に応じて ["http://localhost"] などに制限できます
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 class TextInput(BaseModel):
     text:str
