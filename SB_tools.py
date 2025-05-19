@@ -33,5 +33,3 @@ class SB_info:
             入力した単語がタイプ付き単語として登録されているか判定します
         """
         return word in self.typed_dict
-
-SB_info()
