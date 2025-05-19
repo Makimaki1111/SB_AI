@@ -9,6 +9,25 @@ app = FastAPI()
 class TextInput(BaseModel):
     text:str
 
+@app.post("/include_check")
+def include_check(_input:TextInput):
+    ret = {
+        "include" : False, 
+        "used" : False,
+        "type1" : "",
+        "type2" : ""
+    }
+
+    if(_input.text in used):
+        ret["include"] = True
+        ret["used"] = True
+        ret["type1"] = used[_input.text][0]
+        ret["type2"] = used[_input.text][1]
+    else:
+        ret["include"] = SB.include_in_all_words(_input.text)
+
+    return ret
+
 @app.post("/typecheck")
 def type_check(_input:TextInput):
     ret = {
