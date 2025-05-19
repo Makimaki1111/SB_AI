@@ -25,11 +25,14 @@ def type_check(_input:TextInput):
     # 使用済み
     if(_input.text in used):
         ret["used"] = True
+        ret["type1"] = used[_input.text][0]
+        ret["type2"] = used[_input.text][1]
         return ret
 
     types = AI.get_type(_input.text)
     ret["type1"] = types[0]
     ret["type2"] = types[1] if len(types) == 2 else ""
+    used[_input.text] = (ret["type1"],ret["type2"])
     return ret
 
 SB = SB_info()
