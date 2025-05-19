@@ -22,6 +22,9 @@ class GOOGLE_AI:
     def get_type(self,text:str):
         """
             AIにタイプ登録をさせる
+
+            返り値:
+                [タイプ1,(存在すれば)タイプ2]:list
         """
         response = self.chat.send_message(text)
         return response.text.split()
