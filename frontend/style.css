@@ -148,3 +148,13 @@ element.style {
   bottom: 10px;
   right: -8px;
 }
+
+#include-img {
+  position: absolute;
+  top: 24%;          /* 必要に応じて調整 */
+  right: 17%;        /* 右側に配置（必要に応じて調整） */
+  width: 100px;
+  opacity: 0.5;
+  z-index: 10;
+  display: none;
+}

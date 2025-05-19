@@ -30,7 +30,7 @@ def include_check(_input:TextInput):
         "include" : False, 
         "used" : False,
         "type1" : "",
-        "type2" : ""
+        "type2" : "",
     }
 
     if(_input.text in used):
@@ -38,8 +38,11 @@ def include_check(_input:TextInput):
         ret["used"] = True
         ret["type1"] = used[_input.text][0]
         ret["type2"] = used[_input.text][1]
+        ret["image"] = SB.image_name(_input.text)
+        ret["image2"] = SB.image_name(_input.text)
     else:
         ret["include"] = SB.include_in_all_words(_input.text)
+        ret["image"] = "unaware" if SB.include_in_all_words(_input.text) else ""
 
     return ret
 
