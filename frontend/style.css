@@ -8,7 +8,7 @@ html, body {
 }
 
 .phone-box {
-  width: 92vw;
+  width: 450px;
   max-width: 450px;
   aspect-ratio: 10 / 16;
   background-color: #fce5cd;
@@ -147,6 +147,16 @@ element.style {
 .balloon.right {
   bottom: 10px;
   right: -8px;
+}
+
+#ally-only-type-img {
+  position: absolute;
+  top: 100px;
+  left: 65px;
+  width: 100px;
+  height: 100px;
+  z-index: 11;
+  display: none;
 }
 
 #ally-type1-img {

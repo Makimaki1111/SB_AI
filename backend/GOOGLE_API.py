@@ -26,6 +26,7 @@ class GOOGLE_AI:
             返り値:
                 [タイプ1,(存在すれば)タイプ2]:list
         """
-        return ("暴力","食べ物")
+        from random import randint
+        return [("暴力","食べ物"),["ノーマル"]][randint(0,1)]
         response = self.chat.send_message(text)
         return response.text.split()

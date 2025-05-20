@@ -82,6 +82,7 @@ document.getElementById("submit").addEventListener("click", () => {
   
     const ally_type1_img = document.getElementById("ally-type1-img");
     const ally_type2_img = document.getElementById("ally-type2-img");
+    const ally_only_type_img = document.getElementById("ally-only-type-img");
 
     if(!data.include){
       // 登録されていませんでした
@@ -92,9 +93,13 @@ document.getElementById("submit").addEventListener("click", () => {
         ally_type1_img.style.display = "block";
         ally_type2_img.src = `img/${data.image2}.gif`;
         ally_type2_img.style.display = "block";
+        ally_only_type_img.style.display = "none";
       } else {
-        ally_type1_img.src = `img/${data.image1}.gif`;
-        ally_type1_img.style.display = "block";
+        console.log(data.image1)
+        ally_only_type_img.src = `img/${data.image1}.gif`;
+        ally_only_type_img.style.display = "block";
+        ally_type1_img.style.display = "none";
+        ally_type2_img.style.display = "none";
       }
       console.log(text)
       document.getElementsByClassName("ally-word")[0].textContent = text;

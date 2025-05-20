@@ -63,4 +63,4 @@ class SB_info:
              "スポーツ" : "sports",
              "ノーマル" : "normal",
         }
-        return d[type_name] if type_name in d else "god"
+        return d[type_name] if type_name in d else ""
