@@ -74,7 +74,6 @@ def type_check(_input:TextInput):
     ret["image1"] = SB.image_name(ret["type1"])
     ret["image2"] = SB.image_name(ret["type2"])
     used[_input.text] = (ret["type1"],ret["type2"])
-    print(ret)
     return ret
 
 SB = SB_info()

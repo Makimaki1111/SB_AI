@@ -89,17 +89,17 @@ document.getElementById("submit").addEventListener("click", () => {
       console.log("辞書にない単語です")
     }else{
       if(data.image2 !== ""){
+        ally_only_type_img.style.display = "none";
         ally_type1_img.src = `img/${data.image1}.gif`;
         ally_type1_img.style.display = "block";
         ally_type2_img.src = `img/${data.image2}.gif`;
         ally_type2_img.style.display = "block";
-        ally_only_type_img.style.display = "none";
       } else {
         console.log(data.image1)
-        ally_only_type_img.src = `img/${data.image1}.gif`;
-        ally_only_type_img.style.display = "block";
         ally_type1_img.style.display = "none";
         ally_type2_img.style.display = "none";
+        ally_only_type_img.src = `img/${data.image1}.gif`;
+        ally_only_type_img.style.display = "block";
       }
       console.log(text)
       document.getElementsByClassName("ally-word")[0].textContent = text;
