@@ -1,5 +1,29 @@
+let room_id = null;
+
+document.addEventListener("DOMContentLoaded", () => {
+  fetch("http://localhost:8000/make_new_battle", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      player1_id: "your_player1_id",
+      player2_id: "your_player2_id"
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    console.log("make_new_battle 応答:", data);
+    room_id = data.room_id; // ルームIDを保存
+  })
+  .catch(error => {
+    console.error("make_new_battle エラー:", error);
+  });
+});
+
 // エンターでボタンクリック
 const submitButton = document.getElementById("submit");
+const input = document.getElementById("input");
 input.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     submitButton.click(); // ボタンクリックと同じ動作
@@ -10,7 +34,7 @@ input.addEventListener("keydown", (e) => {
 document.addEventListener("DOMContentLoaded", () => {
   const inputField = document.getElementById("input");
 
-    inputField.addEventListener("input", () => {
+  inputField.addEventListener("input", () => {
     const text = inputField.value;
     const includeImg = document.getElementById("include-img");
 
@@ -19,12 +43,18 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // room_idがnullの場合はリクエストしない
+    if (!room_id) {
+      includeImg.style.display = "none";
+      return;
+    }
+
     fetch("http://localhost:8000/include_check", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ text: text })
+      body: JSON.stringify({ room_id: room_id, word: text})
     })
     .then(response => {
       if (!response.ok) throw new Error("送信に失敗しました");
@@ -51,12 +81,11 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-
 // タイプチェック
 document.getElementById("submit").addEventListener("click", () => {
 
-　const text = document.getElementById("input").value;
-　if(!text.trim()) return;
+  const text = document.getElementById("input").value;
+  if(!text.trim()) return;
   document.getElementById("input").value = ""; // 入力欄を初期化
   const includeImg = document.getElementById("include-img");
   includeImg.style.display = "none"; 
@@ -66,7 +95,7 @@ document.getElementById("submit").addEventListener("click", () => {
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ text: text })  // keyは"text"に
+    body: JSON.stringify({ room_id: room_id, player_id: "your_player1_id", word: text})  // keyは"text"に
   })
   .then(response => {
     if (!response.ok) throw new Error("送信に失敗しました");

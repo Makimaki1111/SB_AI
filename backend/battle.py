@@ -23,7 +23,7 @@ class Battle_info:
     """
 
     def __init__(self, player1_id, player2_id):
-        self.room_id = uuid.uuid4()
+        self.room_id = str(uuid.uuid4())
         self.used = defaultdict(list)
         self.player1_id = player1_id
         self.player2_id = player2_id
@@ -43,7 +43,7 @@ class Battle_info:
                 "Turn" : player1_id
             },
         }
-        battle_rooms[self.room_id] = room_info
+        battle_rooms[self.room_id] = self
 
     def try_attack(self,player_id,word):
         room_info = battle_rooms[self.room_id]
@@ -104,25 +104,25 @@ class Battle_info:
             
             return room_info
 
-    def include_check(self,_input:TextInput):
+    def include_check(self,_input:str):
         ret = {
-            "name" : _input.text,
+            "name" : _input,
             "include" : False, 
             "used" : False,
             "type1" : "",
             "type2" : "",
         }
 
-        if(_input.text in self.used):
+        if(_input in self.used):
             ret["include"] = True
             ret["used"] = True
-            ret["type1"] = self.used[_input.text][0]
-            ret["type2"] = self.used[_input.text][1]
-            ret["image1"] = SB.image_name(_input.text)
-            ret["image2"] = SB.image_name(_input.text)
+            ret["type1"] = self.used[_input][0]
+            ret["type2"] = self.used[_input][1]
+            ret["image1"] = SB.image_name(_input)
+            ret["image2"] = SB.image_name(_input)
         else:
-            ret["include"] = SB.include_in_all_words(_input.text)
-            ret["image"] = "unaware" if SB.include_in_all_words(_input.text) else ""
+            ret["include"] = SB.include_in_all_words(_input)
+            ret["image"] = "unaware" if SB.include_in_all_words(_input) else ""
 
         return ret
 
