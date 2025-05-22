@@ -90,7 +90,7 @@ document.getElementById("submit").addEventListener("click", () => {
   const includeImg = document.getElementById("include-img");
   includeImg.style.display = "none"; 
 
-  fetch("http://localhost:8000/typecheck", {
+  fetch("http://localhost:8000/submit_word", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -113,9 +113,10 @@ document.getElementById("submit").addEventListener("click", () => {
     const ally_type2_img = document.getElementById("ally-type2-img");
     const ally_only_type_img = document.getElementById("ally-only-type-img");
 
-    if(!data.include){
+    if(!data.turn_info.include){
       // 登録されていませんでした
       console.log("辞書にない単語です")
+      console.log(data)
     }else{
       if(data.image2 !== ""){
         ally_type1_img.src = `img/${data.image1}.gif`;

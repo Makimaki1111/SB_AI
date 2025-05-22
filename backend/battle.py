@@ -27,7 +27,7 @@ class Battle_info:
         self.used = defaultdict(list)
         self.player1_id = player1_id
         self.player2_id = player2_id
-        room_info = {
+        self.room_info = {
             "turn_info" : {
                 "include" : False,
                 "used" : False,
@@ -46,63 +46,62 @@ class Battle_info:
         battle_rooms[self.room_id] = self
 
     def try_attack(self,player_id,word):
-        room_info = battle_rooms[self.room_id]
-        room_info["turn_info"] = {
-                "include" : False,
+        self.room_info["turn_info"] = {
+                "include" : True,
                 "used" : False,
                 "correct_player" : True
             }
 
-        if(room_info["Turn"] != player_id):
-            room_info["turn_info"]["correct_player"] = False
-            return room_info
+        if(self.room_info["state"]["Turn"] != player_id):
+            self.room_info["turn_info"]["correct_player"] = False
+            return self.room_info
 
         if(player_id == self.player1_id):
             state_dict = self._type_check(word)
             if(not state_dict["include"]):
-                room_info["turn_info"]["include"] = False
-                return room_info
+                self.room_info["turn_info"]["include"] = False
+                return self.room_info
             elif(state_dict["used"]):
-                room_info["turn_info"]["used"] = True
-                return room_info
+                self.room_info["turn_info"]["used"] = True
+                return self.room_info
 
             at1 = state_dict["type1"]
             at2 = state_dict["type2"]
-            dt1 = room_info["type1"][self.player2_id]
-            dt2 = room_info["type2"][self.player2_id]
+            dt1 = self.room_info["state"]["type1"][self.player2_id]
+            dt2 = self.room_info["state"]["type2"][self.player2_id]
             damage = int(10 * SB.type_effect(at1,at2,dt1,dt2) * random.uniform(0.85,0.99))
-            next_HP = max(0,room_info["state"]["HP"][self.player2_id] - damage)
-            room_info["state"]["HP"][self.player2_id] = next_HP
+            next_HP = max(0,self.room_info["state"]["HP"][self.player2_id] - damage)
+            self.room_info["state"]["HP"][self.player2_id] = next_HP
             
-            room_info["state"]["word"][self.player1_id] = word
-            room_info["state"]["type1"][self.player1_id] = at1
-            room_info["state"]["type2"][self.player1_id] = at2
-            room_info["Turn"] = self.player2_id
+            self.room_info["state"]["word"][self.player1_id] = word
+            self.room_info["state"]["type1"][self.player1_id] = at1
+            self.room_info["state"]["type2"][self.player1_id] = at2
+            self.room_info["state"]["Turn"] = self.player2_id
 
-            return room_info
+            return self.room_info
         else:
             state_dict = self._type_check(word)
             if(not state_dict["include"]):
-                room_info["turn_info"]["include"] = False
-                return room_info
+                self.room_info["turn_info"]["include"] = False
+                return self.room_info
             elif(state_dict["used"]):
-                room_info["turn_info"]["used"] = True
-                return room_info
+                self.room_info["turn_info"]["used"] = True
+                return self.room_info
 
             at1 = state_dict["type1"]
             at2 = state_dict["type2"]
-            dt1 = room_info["type1"][self.player1_id]
-            dt2 = room_info["type2"][self.player1_id]
+            dt1 = self.room_info["state"]["type1"][self.player1_id]
+            dt2 = self.room_info["state"]["type2"][self.player1_id]
             damage = int(10 * SB.type_effect(at1,at2,dt1,dt2) * random.uniform(0.85,0.99))
 
-            room_info["state"]["HP"][self.player1_id] = next_HP
+            self.room_info["state"]["HP"][self.player1_id] = next_HP
             
-            room_info["state"]["word"][self.player2_id] = word
-            room_info["state"]["type1"][self.player2_id] = at1
-            room_info["state"]["type2"][self.player2_id] = at2
-            room_info["Turn"] = self.player1_id
+            self.room_info["state"]["word"][self.player2_id] = word
+            self.room_info["state"]["type1"][self.player2_id] = at1
+            self.room_info["state"]["type2"][self.player2_id] = at2
+            self.room_info["state"]["Turn"] = self.player1_id
             
-            return room_info
+            return self.room_info
 
     def include_check(self,_input:str):
         ret = {

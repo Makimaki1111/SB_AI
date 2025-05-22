@@ -48,4 +48,5 @@ def turn_process(info:turn_info):
     room_id = info.room_id
     player_id = info.player_id
     word = info.word
+    if(room_id not in battle_rooms):return None
     return battle_rooms[room_id].try_attack(player_id,word)
