@@ -1,13 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-try:
-    from SB_info import SB_info
-    from GOOGLE_API import GOOGLE_AI
-except ImportError:
-    from backend.SB_info import SB_info
-    from backend.GOOGLE_API import GOOGLE_AI
-from collections import defaultdict
+from battle import Battle_info,battle_rooms
 
 app = FastAPI()
 
@@ -20,64 +13,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class turn_info:
+    room_id : str
+    player_id : str
+    word : str
 
-class TextInput(BaseModel):
-    text:str
+@app.post("/make_new_battle")
+def make_new_battle(player1_id,player2_id):
+    Battle_info(player1_id,player2_id)
 
-#@app.post("/include_check")
-def include_check(_input:TextInput):
-    ret = {
-        "name" : _input.text,
-        "include" : False, 
-        "used" : False,
-        "type1" : "",
-        "type2" : "",
-    }
-
-    if(_input.text in used):
-        ret["include"] = True
-        ret["used"] = True
-        ret["type1"] = used[_input.text][0]
-        ret["type2"] = used[_input.text][1]
-        ret["image1"] = SB.image_name(_input.text)
-        ret["image2"] = SB.image_name(_input.text)
-    else:
-        ret["include"] = SB.include_in_all_words(_input.text)
-        ret["image"] = "unaware" if SB.include_in_all_words(_input.text) else ""
-
-    return ret
-
-#@app.post("/typecheck")
-def type_check(_input:TextInput):
-    ret = {
-        "name" : _input.text,
-        "include" : False, 
-        "used" : False,
-        "type1" : "",
-        "type2" : ""
-    }
-
-    # 辞書に登録されていない
-    if(not SB.include_in_all_words(_input.text)):return ret
-    ret["include"] = True
-
-    # 使用済み
-    if(_input.text in used):
-        ret["used"] = True
-        ret["type1"] = used[_input.text][0]
-        ret["type2"] = used[_input.text][1]
-        ret["image1"] = SB.image_name(ret["type1"])
-        ret["image2"] = SB.image_name(ret["type2"])
-        return ret
-
-    types = AI.get_type(_input.text)
-    ret["type1"] = types[0]
-    ret["type2"] = types[1] if len(types) == 2 else ""
-    ret["image1"] = SB.image_name(ret["type1"])
-    ret["image2"] = SB.image_name(ret["type2"])
-    used[_input.text] = (ret["type1"],ret["type2"])
-    return ret
-
-SB = SB_info()
-AI = GOOGLE_AI()
-used = defaultdict(list)
+@app.post("/submit_word")
+def receive_word(info:turn_info):
+    room_id = info.room_id
+    player_id = info.player_id
+    word = info.word
+    return battle_rooms[room_id].try_attack(player_id,word)

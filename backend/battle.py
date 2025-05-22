@@ -1,10 +1,19 @@
-from GOOGLE_API import GOOGLE_AI
-from SB_info import SB_info
+try:
+    from SB_info import SB_info
+    from GOOGLE_API import GOOGLE_AI
+except ImportError:
+    from backend.SB_info import SB_info
+    from backend.GOOGLE_API import GOOGLE_AI
+
 from collections import defaultdict
+from pydantic import BaseModel
 import random
 import uuid
 battle_rooms = {}
 MAX_HP = 60
+
+class TextInput(BaseModel):
+    text:str
 
 AI = GOOGLE_AI()
 SB = SB_info()
@@ -49,7 +58,7 @@ class Battle_info:
             return room_info
 
         if(player_id == self.player1_id):
-            state_dict = self.type_check(word)
+            state_dict = self._type_check(word)
             if(not state_dict["include"]):
                 room_info["turn_info"]["include"] = False
                 return room_info
@@ -72,7 +81,7 @@ class Battle_info:
 
             return room_info
         else:
-            state_dict = self.type_check(word)
+            state_dict = self._type_check(word)
             if(not state_dict["include"]):
                 room_info["turn_info"]["include"] = False
                 return room_info
@@ -95,7 +104,29 @@ class Battle_info:
             
             return room_info
 
-    def type_check(self,_input:str):
+    def include_check(self,_input:TextInput):
+        ret = {
+            "name" : _input.text,
+            "include" : False, 
+            "used" : False,
+            "type1" : "",
+            "type2" : "",
+        }
+
+        if(_input.text in self.used):
+            ret["include"] = True
+            ret["used"] = True
+            ret["type1"] = self.used[_input.text][0]
+            ret["type2"] = self.used[_input.text][1]
+            ret["image1"] = SB.image_name(_input.text)
+            ret["image2"] = SB.image_name(_input.text)
+        else:
+            ret["include"] = SB.include_in_all_words(_input.text)
+            ret["image"] = "unaware" if SB.include_in_all_words(_input.text) else ""
+
+        return ret
+
+    def _type_check(self,_input:str):
         ret = {
             "word" : _input,
             "include" : False, 
