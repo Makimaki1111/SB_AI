@@ -24,7 +24,7 @@ app.add_middleware(
 class TextInput(BaseModel):
     text:str
 
-@app.post("/include_check")
+#@app.post("/include_check")
 def include_check(_input:TextInput):
     ret = {
         "name" : _input.text,
@@ -47,7 +47,7 @@ def include_check(_input:TextInput):
 
     return ret
 
-@app.post("/typecheck")
+#@app.post("/typecheck")
 def type_check(_input:TextInput):
     ret = {
         "name" : _input.text,
