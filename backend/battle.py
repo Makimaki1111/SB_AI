@@ -19,7 +19,11 @@ class Battle_info:
         self.player1_id = player1_id
         self.player2_id = player2_id
         room_info = {
-            "players" : [player1_id,player2_id],
+            "turn_info" : {
+                "include" : False,
+                "used" : False,
+                "correct_player" : True
+            },
             "state" : {
                 "HP" : {player1_id : MAX_HP, player2_id : MAX_HP},
                 "word" : {player1_id : "", player2_id : ""},
@@ -32,14 +36,29 @@ class Battle_info:
         }
         battle_rooms[self.room_id] = room_info
 
-    def attack(self,player_id,word):
+    def try_attack(self,player_id,word):
         room_info = battle_rooms[self.room_id]
-        if(room_info["Turn"] != player_id):return None
+        room_info["turn_info"] = {
+                "include" : False,
+                "used" : False,
+                "correct_player" : True
+            }
+
+        if(room_info["Turn"] != player_id):
+            room_info["turn_info"]["correct_player"] = False
+            return room_info
 
         if(player_id == self.player1_id):
-            type_dict = AI.get_type(word)
-            at1 = type_dict["type1"]
-            at2 = type_dict["type2"]
+            state_dict = self.type_check(word)
+            if(not state_dict["include"]):
+                room_info["turn_info"]["include"] = False
+                return room_info
+            elif(state_dict["used"]):
+                room_info["turn_info"]["used"] = True
+                return room_info
+
+            at1 = state_dict["type1"]
+            at2 = state_dict["type2"]
             dt1 = room_info["type1"][self.player2_id]
             dt2 = room_info["type2"][self.player2_id]
             damage = int(10 * SB.type_effect(at1,at2,dt1,dt2) * random.uniform(0.85,0.99))
@@ -53,9 +72,16 @@ class Battle_info:
 
             return room_info
         else:
-            type_dict = AI.get_type(word)
-            at1 = type_dict["type1"]
-            at2 = type_dict["type2"]
+            state_dict = self.type_check(word)
+            if(not state_dict["include"]):
+                room_info["turn_info"]["include"] = False
+                return room_info
+            elif(state_dict["used"]):
+                room_info["turn_info"]["used"] = True
+                return room_info
+
+            at1 = state_dict["type1"]
+            at2 = state_dict["type2"]
             dt1 = room_info["type1"][self.player1_id]
             dt2 = room_info["type2"][self.player1_id]
             damage = int(10 * SB.type_effect(at1,at2,dt1,dt2) * random.uniform(0.85,0.99))
