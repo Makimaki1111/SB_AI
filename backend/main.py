@@ -27,6 +27,7 @@ class TextInput(BaseModel):
 @app.post("/include_check")
 def include_check(_input:TextInput):
     ret = {
+        "name" : _input.text,
         "include" : False, 
         "used" : False,
         "type1" : "",
@@ -49,6 +50,7 @@ def include_check(_input:TextInput):
 @app.post("/typecheck")
 def type_check(_input:TextInput):
     ret = {
+        "name" : _input.text,
         "include" : False, 
         "used" : False,
         "type1" : "",
