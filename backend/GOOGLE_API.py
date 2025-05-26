@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 import google.generativeai as genai
+from random import randint
 
 load_dotenv()
 
@@ -17,11 +18,9 @@ class GOOGLE_AI:
                 d["type1"] = ""
                 d["type2"] = "" :dict
         """
-        ret = dict()
-        from random import randint
-        type1 = "暴力" if randint(0,1) == 0 else "服飾"
-        type2 = "動物" if randint(0,1) == 0 else ""
-        return (type1,type2)
+        # type1 = ["暴力","服飾"][randint(0,1)]
+        # type2 = ["動物",""][randint(0,1)]
+        # return (type1,type2)
         
         first_prompt = """
             入力された単語に対してその意味に即したタイプを割り当ててください。詳しい条件は以下の通りです。
@@ -32,8 +31,6 @@ class GOOGLE_AI:
             ・「ノーマル」はタイプを2つ割り当てる際に使用してはいけません。つまり、「ノーマル」は単タイプ限定で使用されなければいけません。
             ・タイプ以外の出力は一切してはいけません。
             """
-        self.chat = self.model.start_chat(history=[{"role": "", "parts": [first_prompt]}])
-        response = self.chat.send_message(text).text.split()
-        ret["type1"] = response[0]
-        ret["type2"] = response[1] if len(response) == 2 else ""
-        return ret
+        chat = self.model.start_chat(history=[{"role": "user", "parts": [first_prompt]}])
+        response = chat.send_message(text).text.split()
+        return response if len(response) == 2 else (response[0],"")

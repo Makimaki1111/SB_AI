@@ -1,3 +1,4 @@
+import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -50,3 +51,6 @@ def turn_process(info:turn_info):
     word = info.word
     if(room_id not in battle_rooms):return None
     return battle_rooms[room_id].try_attack(player_id,word)
+
+if __name__ == "__main__":
+    uvicorn.run(app)

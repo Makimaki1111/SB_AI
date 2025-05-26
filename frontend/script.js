@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     body: JSON.stringify({
       player1_id: "your_player1_id",
-      player2_id: "your_player2_id"
+      player2_id: "your_player1_id"
     })
   })
   .then(response => response.json())
@@ -104,7 +104,7 @@ document.getElementById("submit").addEventListener("click", () => {
   .then(data => {
     console.log("サーバーの応答:", data);
 
-    if(data.used){
+    if(data.turn_info.used){
       console.log("使用済み単語です")
       return;
     }
@@ -118,20 +118,19 @@ document.getElementById("submit").addEventListener("click", () => {
       console.log("辞書にない単語です")
       console.log(data)
     }else{
-      if(data.image2 !== ""){
-        ally_type1_img.src = `img/${data.image1}.gif`;
-        ally_type2_img.src = `img/${data.image2}.gif`;
+      if(data.state.image2 !== ""){
+        ally_type1_img.src = `img/${data.state.image1}.gif`;
+        ally_type2_img.src = `img/${data.state.image2}.gif`;
         ally_only_type_img.style.display = "none";
         ally_type1_img.style.display = "block";
         ally_type2_img.style.display = "block";
       } else {
-        console.log(data.image1)
-        ally_only_type_img.src = `img/${data.image1}.gif`;
+        console.log(data.state.image1)
+        ally_only_type_img.src = `img/${data.state.image1}.gif`;
         ally_type1_img.style.display = "none";
         ally_type2_img.style.display = "none";
         ally_only_type_img.style.display = "block";
       }
-      console.log(text)
       document.getElementsByClassName("ally-word")[0].textContent = text;
       shrinkIfTooWideAlly();
     }

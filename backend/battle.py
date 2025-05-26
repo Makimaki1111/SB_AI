@@ -76,6 +76,8 @@ class Battle_info:
             self.room_info["state"]["word"][self.player1_id] = word
             self.room_info["state"]["type1"][self.player1_id] = at1
             self.room_info["state"]["type2"][self.player1_id] = at2
+            self.room_info["state"]["image1"] = state_dict["image1"]
+            self.room_info["state"]["image2"] = state_dict["image2"]
             self.room_info["state"]["Turn"] = self.player2_id
 
             return self.room_info
@@ -99,6 +101,8 @@ class Battle_info:
             self.room_info["state"]["word"][self.player2_id] = word
             self.room_info["state"]["type1"][self.player2_id] = at1
             self.room_info["state"]["type2"][self.player2_id] = at2
+            self.room_info["state"]["image1"] = state_dict["image1"]
+            self.room_info["state"]["image2"] = state_dict["image2"]
             self.room_info["state"]["Turn"] = self.player1_id
             
             return self.room_info
