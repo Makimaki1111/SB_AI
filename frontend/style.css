@@ -202,3 +202,12 @@ element.style {
   z-index: 10;
   display: none;
 }
+
+#wait-message {
+    background-color: #fce5cd;
+    width: fit-content;
+    border-radius: 5px;
+    font-style: italic;
+    position: absolute;
+    top: 290px;
+}

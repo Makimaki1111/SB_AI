@@ -7,46 +7,63 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="phone-box">
-    <div class="top-image">
-      <img src="img/ground.jpg" alt="背景画像" />
-
-      <!-- 白い楕円（左下） -->
-      <div class="ellipse ellipse-left"></div>
-
-      <!-- 白い楕円（右上） -->
-      <div class="ellipse ellipse-right"></div>
-
-      <!-- 左上ふきだし -->
-      <div class="balloon left">
-        <div class="name">あいて</div>
-        <div class="bar"><div class="hp-bar"></div></div>
-        <div class="hp">40/40</div>
-      </div>
-
-      <!-- 右下ふきだし -->
-      <div class="balloon right">
-        <div class="name">じぶん</div>
-        <div class="bar"><div class="hp-bar"></div></div>
-        <div class="hp">40/40</div>
-      </div>
-
-      <img id="ally-type1-img" src=""/>
-      <img id="ally-type2-img" src=""/>
-      <img id="ally-only-type-img" src=""/>
-      <div class="ally-word"></div>
-    </div>
-
-    <div class="content">
-      <!-- 下半分のスペース -->
-      <img id="include-img" src="" alt="動的画像" />
-      
-      <div id="text" style="display: flex;">
-        <input type="text" id="input" autocomplete="off" placeholder="「*」からはじまることば" style>
-        <button type="submit" id="submit">▶</button>
+  <!-- タイトル画面 -->
+  <div id="title-screen" style="display: block;">
+    <div class="phone-box">
+      <div class="content" style="text-align:center;">
+        <h1>しりとりバトル</h1>
+        <button id="vs-human-btn">対人戦</button>
+        <button id="vs-cpu-btn">コンピュータ戦</button>
       </div>
     </div>
   </div>
-<script src="script.js"></script>
+
+  <!-- バトル画面 -->
+  <div id="battle-screen" style="display: none;">
+    <div class="phone-box">
+      <div class="top-image">
+        <img src="img/ground.jpg" alt="背景画像" />
+
+        <!-- 白い楕円（左下） -->
+        <div class="ellipse ellipse-left"></div>
+
+        <!-- 白い楕円（右上） -->
+        <div class="ellipse ellipse-right"></div>
+
+        <!-- 左上ふきだし -->
+        <div class="balloon left">
+          <div class="name">あいて</div>
+          <div class="bar"><div class="hp-bar"></div></div>
+          <div class="hp">40/40</div>
+        </div>
+
+        <!-- 右下ふきだし -->
+        <div class="balloon right">
+          <div class="name">じぶん</div>
+          <div class="bar"><div class="hp-bar"></div></div>
+          <div class="hp">40/40</div>
+        </div>
+
+        <img id="ally-type1-img" src=""/>
+        <img id="ally-type2-img" src=""/>
+        <img id="ally-only-type-img" src=""/>
+        <div class="ally-word"></div>
+      </div>
+
+      <div class="content">
+        <!-- 下半分のスペース -->
+        <img id="include-img" src="" alt="動的画像" />
+        
+        <div id="text" style="display: flex;">
+          <input type="text" id="input" autocomplete="off" placeholder="「*」からはじまることば" />
+          <button type="submit" id="submit">▶</button>
+        </div>
+
+        <div id="wait-message">テストです</div>
+      </div>
+    </div>
+  </div>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

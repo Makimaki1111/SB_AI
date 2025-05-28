@@ -25,8 +25,11 @@ class make_new_battle_info(BaseModel):
 @app.post("/make_new_battle")
 def make_new_battle(info: make_new_battle_info):
     bi = Battle_info(info.player1_id, info.player2_id)
-    return {"message": "バトルルーム作成",
-            "room_id": bi.room_id}
+    return {
+        "message": "バトルルーム作成",
+        "room_id": bi.room_id,
+        "is_cpu": bi.is_cpu
+    }
 
 class include_check_info(BaseModel):
     room_id : str
@@ -53,4 +56,4 @@ def turn_process(info:turn_info):
     return battle_rooms[room_id].try_attack(player_id,word)
 
 if __name__ == "__main__":
-    uvicorn.run(app)
+    uvicorn.run("main:app", port=8000, reload=True)

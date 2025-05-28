@@ -27,6 +27,7 @@ class Battle_info:
         self.used = defaultdict(list)
         self.player1_id = player1_id
         self.player2_id = player2_id
+        self.is_cpu = (player2_id == "cpu")
         self.room_info = {
             "turn_info" : {
                 "include" : False,
@@ -156,5 +157,7 @@ class Battle_info:
         ret["type2"] = types[1] if len(types) == 2 else ""
         ret["image1"] = SB.image_name(ret["type1"])
         ret["image2"] = SB.image_name(ret["type2"])
+
         self.used[_input] = (ret["type1"],ret["type2"])
+
         return ret

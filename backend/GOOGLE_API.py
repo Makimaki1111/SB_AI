@@ -18,9 +18,9 @@ class GOOGLE_AI:
                 d["type1"] = ""
                 d["type2"] = "" :dict
         """
-        # type1 = ["暴力","服飾"][randint(0,1)]
-        # type2 = ["動物",""][randint(0,1)]
-        # return (type1,type2)
+        type1 = ["暴力","服飾"][randint(0,1)]
+        type2 = ["動物",""][randint(0,1)]
+        return (type1,type2)
         
         first_prompt = """
             入力された単語に対してその意味に即したタイプを割り当ててください。詳しい条件は以下の通りです。
