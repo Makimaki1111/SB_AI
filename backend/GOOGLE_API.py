@@ -1,3 +1,5 @@
+# TODO : タイプが含まれていなかった場合の反復処理
+
 import os
 from dotenv import load_dotenv
 import google.generativeai as genai
@@ -10,7 +12,7 @@ class GOOGLE_AI:
         genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
         self.model = genai.GenerativeModel()
 
-    def get_type(self,text:str):
+    def get_type(self,text:str) -> list:
         """
             AIにタイプ登録をさせる
 
@@ -33,4 +35,4 @@ class GOOGLE_AI:
             """
         chat = self.model.start_chat(history=[{"role": "user", "parts": [first_prompt]}])
         response = chat.send_message(text).text.split()
-        return response if len(response) == 2 else (response[0],"")
+        return response

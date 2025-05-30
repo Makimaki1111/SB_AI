@@ -6,6 +6,8 @@ let is_vs_cpu = false;
 
 let ui = new UI();
 
+// test
+
 document.addEventListener("DOMContentLoaded", () => {
 
   // ボタンイベント

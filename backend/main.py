@@ -3,9 +3,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 try:
-    from battle import Battle_info,battle_rooms,SB
+    from battle import Battle_info,battle_rooms
 except ImportError:
-    from backend.battle import Battle_info,battle_rooms,SB
+    from backend.battle import Battle_info,battle_rooms
 
 app = FastAPI()
 
@@ -26,6 +26,7 @@ class make_new_battle_info(BaseModel):
 def make_new_battle(info: make_new_battle_info):
     bi = Battle_info(info.player1_id, info.player2_id)
     return {
+        "type" : "made_room",
         "message": "バトルルーム作成",
         "room_id": bi.room_id,
         "is_cpu": bi.is_cpu
@@ -52,7 +53,11 @@ def turn_process(info:turn_info):
     room_id = info.room_id
     player_id = info.player_id
     word = info.word
-    if(room_id not in battle_rooms):return None
+    if(room_id not in battle_rooms):
+        return {
+            "type" : "error",
+            "message" : "戦闘は終了しました"
+        }
     return battle_rooms[room_id].try_attack(player_id,word)
 
 if __name__ == "__main__":
