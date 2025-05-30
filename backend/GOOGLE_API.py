@@ -1,3 +1,5 @@
+# TODO : タイプが含まれていなかった場合の反復処理
+
 import os
 from dotenv import load_dotenv
 import google.generativeai as genai
@@ -10,7 +12,7 @@ class GOOGLE_AI:
         genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
         self.model = genai.GenerativeModel()
 
-    def get_type(self,text:str):
+    def get_type(self,text:str) -> list:
         """
             AIにタイプ登録をさせる
 
@@ -18,9 +20,9 @@ class GOOGLE_AI:
                 d["type1"] = ""
                 d["type2"] = "" :dict
         """
-        type1 = ["暴力","服飾"][randint(0,1)]
-        type2 = ["動物",""][randint(0,1)]
-        return (type1,type2)
+        #type1 = ["暴力","服飾"][randint(0,1)]
+        #type2 = ["動物",""][randint(0,1)]
+        #return (type1,type2)
         
         first_prompt = """
             入力された単語に対してその意味に即したタイプを割り当ててください。詳しい条件は以下の通りです。
@@ -33,4 +35,4 @@ class GOOGLE_AI:
             """
         chat = self.model.start_chat(history=[{"role": "user", "parts": [first_prompt]}])
         response = chat.send_message(text).text.split()
-        return response if len(response) == 2 else (response[0],"")
+        return response

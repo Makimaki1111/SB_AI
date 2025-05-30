@@ -36,6 +36,18 @@ class UI{
         this.includeImg = new UIObject($('#include-img'));
     }
 
+    shrinkTooWideWord(element) {
+      const maxWidth = 180;
+      const domElement = element.get ? element.get(0) : element;
+
+      if (domElement && domElement.scrollWidth > maxWidth) {
+        const scale = maxWidth / domElement.scrollWidth;
+        domElement.style.transform = `translateX(-50%) scaleX(${scale})`;
+      } else if (domElement) {
+        domElement.style.transform = `translateX(-50%) scaleX(1)`;
+      }
+    }
+
     showTitleScreen() {
         this.titleScreen.show();
         this.battleScreen.hide();
@@ -75,6 +87,7 @@ class UI{
     }
 
     showUsedWord(data){
+        // 要修正
         this.includeImg.selector.attr('src', "img/god.gif");
         this.includeImg.selector.css('display', 'block');
     }
@@ -86,11 +99,11 @@ class UI{
     disableSubmitBtn(){
         this.submitButton.selector.prop('disabled', true);
     }    
-
+    
     showAllyWord(word){
         this.allyWord.selector.text(word);
         this.allyWord.selector.show();
-        shrinkTooWideWord(this.allyWord.selector);
+        this.shrinkTooWideWord(this.allyWord.selector);
     }
 
     showAllyImage(data){
@@ -134,16 +147,32 @@ class UI{
     }
 }
 
-function shrinkTooWideWord(element) {
-  const maxWidth = 180;
-  const domElement = element.get ? element.get(0) : element;
-
-  if (domElement && domElement.scrollWidth > maxWidth) {
-    const scale = maxWidth / domElement.scrollWidth;
-    domElement.style.transform = `translateX(-50%) scaleX(${scale})`;
-  } else if (domElement) {
-    domElement.style.transform = `translateX(-50%) scaleX(1)`;
-  }
+const type2image = {
+    "ノーマル": "normal",
+    "感情": "heart",
+    "食べ物": "food",
+    "植物": "plant",
+    "社会": "social",
+    "時間": "time",
+    "工作": "craft",
+    "芸術": "art",
+    "機械": "machine",
+    "遊び": "play",
+    "暴力": "violence",
+    "服飾": "cloth",
+    "動物": "animal",
+    "地名": "place",
+    "人物": "person",
+    "人体": "body",
+    "理科": "science",
+    "暴言": "abuse",
+    "虫": "insect",
+    "数学": "math",
+    "医療": "medical",
+    "宗教": "religion",
+    "スポーツ": "sports",
+    "物語": "story",
+    "天気": "weather"
 }
 
 let room_id = null;
