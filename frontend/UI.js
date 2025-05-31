@@ -17,7 +17,7 @@ class UI{
         this.foeType2Img = new UIObject($('#foe-type2-img'));
         this.foeOnlyTypeImg = new UIObject($('#foe-only-type-img'));
         
-        //this.player2Name = new UIObject($('#player2-name'));
+        this.message = new UIObject($('#message'));
         this.waitMessage = new UIObject($('#wait-message'));
         this.includeImg = new UIObject($('#include-img'));
     }
@@ -189,6 +189,15 @@ class UI{
         this.updateHPBar(ally_HP, ally_max_HP, $('#ally-hp-bar'));
         this.setFoeHP(foe_HP, foe_max_HP);
         this.updateHPBar(foe_HP, foe_max_HP, $('#foe-hp-bar'));
+    }
+
+    showMessage(text) {
+        this.message.selector.removeAttr('style');
+        this.message.selector.text(text);
+    }
+
+    hideMessage() {
+        this.message.selector.css('display', 'none');
     }
 
     setInputText(text){

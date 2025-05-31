@@ -44,7 +44,7 @@ const onPreCheck = (data) => {
 const processEvent = (events) => {
   for (idx in events) {
     e = events[idx];
-    ui.setWaitMessage(e["message"],4000);
+    ui.showMessage(e["message"]);
     
     ally_HP = Math.max(0, ally_HP - e["ally_damage"]);
     foe_HP = Math.max(0, foe_HP - e["foe_damage"]);
@@ -59,11 +59,13 @@ const onAllyTurnStart = (data) => {
   ui.setWaitMessage("あなたのターンです。");
   ui.setInputText(`「${data["state"]["character"]}」からはじまることば`)
   ui.enableInput();
+  ui.hideMessage();
 }
 
 const onFoeTurnStart = (data) => {
   ui.setWaitMessage("相手のターンです。");
   ui.disableInput();
+  ui.showMessage();
 }
 
 const onAccepted = (data) => {
@@ -78,10 +80,10 @@ const onAccepted = (data) => {
   processEvent(data["state"]["events"]);
 
   if(data["state"]["ally_win"] === true){
-    ui.setWaitMessage("あなたの勝ちです！");
+    ui.showMessage("あなたの勝ちです！");
     ui.disableInput();
   } else if(data["state"]["ally_win"] === false){
-    ui.setWaitMessage("あなたの負けです！");
+    ui.showMessage("あなたの負けです！");
     ui.disableInput();
   } else {
     if(data["state"]["is_my_turn"]){
