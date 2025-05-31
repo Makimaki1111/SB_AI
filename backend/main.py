@@ -96,11 +96,26 @@ async def websocket_endpoint(websocket: WebSocket):
                 res = include_check(model)
                 await websocket.send_text(json.dumps(res))
 
+
             elif req.get("type") == "submit_word":
                 info = req.get("info", {})
                 model = turn_info(**info)
                 res = turn_process(model)
                 await websocket.send_text(json.dumps(res))
+
+                # --- CPU自動攻撃処理 ---
+                # バトルルーム取得
+                room_id = getattr(model, 'room_id', None)
+                if room_id and room_id in battle_rooms:
+                    battle = battle_rooms[room_id]
+                    # is_cpu戦で、今がCPUのターンなら
+                    if getattr(battle, 'is_cpu', False) and not getattr(battle, 'player1_turn', True):
+                        # CPUの単語を決める（ここでは仮で「りんご」固定）
+                        cpu_word = "あしたてんきになあれ"
+                        # 既に使われていたら別の単語にするなどの工夫も可
+                        # CPUの攻撃
+                        cpu_res = battle.try_attack(battle.player2_id, cpu_word)
+                        await websocket.send_text(json.dumps(cpu_res))
 
             else:
                 await websocket.send_text(json.dumps({"type": "error", "message": "Unknown type"}))

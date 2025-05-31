@@ -103,7 +103,6 @@ class Battle_info:
             if(self.player2_HP == 0):self.player1_win = True
 
         else:
-            
             # タイプ特定
             self.types = AI.get_type(word)
             self.player2_type = self.types[:]
@@ -126,9 +125,10 @@ class Battle_info:
             if(self.player1_HP == 0):self.player1_win = False
             
         # ターン交代
+        ret = self._make_response()
         self.player1_turn = not self.player1_turn
         self.turn += 1
-        return self._make_response()
+        return ret
 
     def include_check(self,_input:str):
         ret = {
@@ -203,7 +203,7 @@ class Battle_info:
                 "foe_type" : self.player2_type,
                 "room_id" : self.room_id,
                 "is_cpu" : self.is_cpu,
-                "is_my_turn" : True, # 要修正
+                "is_my_turn" : self.player1_turn,
                 "turn" : self.turn,
                 "word" : self.word
             }
@@ -212,3 +212,6 @@ class Battle_info:
         self.events = []
         self.damage = 0
         return ret
+
+    def get_cpu_word(self,):
+        pass

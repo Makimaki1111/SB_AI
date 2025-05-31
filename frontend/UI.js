@@ -7,11 +7,15 @@ class UI{
         this.input = new UIObject($('#input'));
         this.submitButton = new UIObject($('#submit'));
         
-        //this.player1Name = new UIObject($('#player1-name'));
         this.allyWord = new UIObject($('.ally-word'));
         this.allyType1Img = new UIObject($('#ally-type1-img'));
         this.allyType2Img = new UIObject($('#ally-type2-img'));
         this.allyOnlyTypeImg = new UIObject($('#ally-only-type-img'));
+
+        this.foeWord = new UIObject($('.foe-word'));
+        this.foeType1Img = new UIObject($('#foe-type1-img'));
+        this.foeType2Img = new UIObject($('#foe-type2-img'));
+        this.foeOnlyTypeImg = new UIObject($('#foe-only-type-img'));
         
         //this.player2Name = new UIObject($('#player2-name'));
         this.waitMessage = new UIObject($('#wait-message'));
@@ -101,6 +105,26 @@ class UI{
         console.log("Foe word:", word);
     }
 
+    showFoeImage(data){
+        if(data.state){
+            if(data.state.foe_type.length == 2){ // 複合タイプの場合
+                this.foeType1Img.selector.attr('src', `img/${type_to_image[data.state.foe_type[0]]}.gif`);
+                this.foeType2Img.selector.attr('src', `img/${type_to_image[data.state.foe_type[1]]}.gif`);
+                this.foeOnlyTypeImg.selector.attr('src', ``);
+                this.foeOnlyTypeImg.selector.hide();
+                this.foeType1Img.selector.show();
+                this.foeType2Img.selector.show();
+            } else { // 単タイプの場合
+                this.foeOnlyTypeImg.selector.attr('src', `img/${type_to_image[data.state.foe_type[0]]}.gif`);
+                this.foeType1Img.selector.attr('src', ``);
+                this.foeType2Img.selector.attr('src', ``);
+                this.foeType1Img.selector.hide();
+                this.foeType2Img.selector.hide();
+                this.foeOnlyTypeImg.selector.show();
+            }
+        }
+    }
+
     setWaitMessage(message, time) {
         this.waitMessage.selector.text(message);
         this.waitMessage.selector.show();
@@ -147,7 +171,6 @@ class UI{
     }
 
     updateHPBar(hp, max_hp, dom) {
-        console.log(`Updating HP bar: ${hp}/${max_hp}`);
         const new_bar_vw = hp / max_hp * 100;
         dom.animate({
             width: `${new_bar_vw}%`

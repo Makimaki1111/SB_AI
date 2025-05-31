@@ -42,8 +42,13 @@ const onPreCheck = (data) => {
 }
 
 const onAccepted = (data) => {
-  ui.showAllyImage(data);
-  ui.showAllyWord(data["state"]["word"]);
+  if(data["state"]["is_my_turn"]){
+    ui.showAllyImage(data);
+    ui.showAllyWord(data["state"]["word"]);
+  } else {
+    ui.showFoeImage(data);
+    ui.showFoeWord(data["state"]["word"]);
+  }
 
   for (idx in data["state"]["events"]) {
     e = data["state"]["events"][idx];
