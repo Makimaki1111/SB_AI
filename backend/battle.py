@@ -59,7 +59,7 @@ class Battle_info:
             _type_: _description_
         """
         
-        if not (self.player1_turn ^ (player_id == self.player1_id)):
+        if(self.player1_turn ^ (player_id == self.player1_id)):
             return {
                 "type" : "error",
                 "message" : "自分のターンではありません"

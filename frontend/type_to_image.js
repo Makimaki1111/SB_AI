@@ -1,4 +1,4 @@
-const type2image = {
+const type_to_image = {
     "ノーマル": "normal",
     "感情": "heart",
     "食べ物": "food",

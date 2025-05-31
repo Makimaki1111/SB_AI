@@ -76,23 +76,23 @@ class UI{
     }
 
     showAllyImage(data){
-
-      if(data.state && data.state.image2 !== ""){ // 複合タイプの場合
-        this.allyType1Img.selector.attr('src', `img/${data.state.image1}.gif`);
-        this.allyType2Img.selector.attr('src', `img/${data.state.image2}.gif`);
-        this.allyOnlyTypeImg.selector.attr('src', ``);
-        this.allyOnlyTypeImg.selector.hide();
-        this.allyType1Img.selector.show();
-        this.allyType2Img.selector.show();
-      } else { // 単タイプの場合
-        this.allyOnlyTypeImg.selector.attr('src', `img/${data.state.image1}.gif`);
-        this.allyType1Img.selector.attr('src', ``);
-        this.allyType2Img.selector.attr('src', ``);
-        this.allyType1Img.selector.hide();
-        this.allyType2Img.selector.hide();
-        this.allyOnlyTypeImg.selector.show();
-      }
-
+        if(data.state){
+            if(data.state.ally_type.length == 2){ // 複合タイプの場合
+                this.allyType1Img.selector.attr('src', `img/${type_to_image[data.state.ally_type[0]]}.gif`);
+                this.allyType2Img.selector.attr('src', `img/${type_to_image[data.state.ally_type[1]]}.gif`);
+                this.allyOnlyTypeImg.selector.attr('src', ``);
+                this.allyOnlyTypeImg.selector.hide();
+                this.allyType1Img.selector.show();
+                this.allyType2Img.selector.show();
+            } else { // 単タイプの場合
+                this.allyOnlyTypeImg.selector.attr('src', `img/${type_to_image[data.state.ally_type[0]]}.gif`);
+                this.allyType1Img.selector.attr('src', ``);
+                this.allyType2Img.selector.attr('src', ``);
+                this.allyType1Img.selector.hide();
+                this.allyType2Img.selector.hide();
+                this.allyOnlyTypeImg.selector.show();
+            }
+        }
     }
 
     showFoeWord(word){

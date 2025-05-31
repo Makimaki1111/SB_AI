@@ -40,7 +40,11 @@ class include_check_info(BaseModel):
 def include_check(info:include_check_info):
     room_id = info.room_id
     word = info.word
-    if(room_id not in battle_rooms):return None
+    if(room_id not in battle_rooms):
+        return {
+            "type" : "error",
+            "message" : "戦闘は終了しました"
+        }
     return battle_rooms[room_id].include_check(word)
 
 class turn_info(BaseModel):
