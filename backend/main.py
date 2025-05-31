@@ -110,9 +110,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     battle = battle_rooms[room_id]
                     # is_cpu戦で、今がCPUのターンなら
                     if getattr(battle, 'is_cpu', False) and not getattr(battle, 'player1_turn', True):
-                        # CPUの単語を決める（ここでは仮で「りんご」固定）
                         cpu_word = battle.get_cpu_word()
-                        # 既に使われていたら別の単語にするなどの工夫も可
                         # CPUの攻撃
                         cpu_res = battle.try_attack(battle.player2_id, cpu_word)
                         await websocket.send_text(json.dumps(cpu_res))

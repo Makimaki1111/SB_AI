@@ -125,7 +125,7 @@ class UI{
         }
     }
 
-    setWaitMessage(message, time) {
+    setWaitMessage(message, time=Infinity) {
         this.waitMessage.selector.text(message);
         this.waitMessage.selector.show();
         if(time > 0){

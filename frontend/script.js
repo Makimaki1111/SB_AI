@@ -41,6 +41,28 @@ const onPreCheck = (data) => {
   }
 }
 
+const processEvent = (events) => {
+  for (idx in events) {
+    e = events[idx];
+    ui.setWaitMessage(e["message"],4000);
+    
+    ally_HP = Math.max(0, ally_HP - e["ally_damage"]);
+    foe_HP = Math.max(0, foe_HP - e["foe_damage"]);
+    if(e["type"] === "damage"){
+      ui.updateHPs(ally_HP, ally_max_HP, foe_HP, foe_max_HP);
+      setTimeout(() => {}, 2000);
+    }
+  }
+}
+
+const onAllyTurnStart = (data) => {
+  ui.setWaitMessage("あなたのターンです。");
+}
+
+const onFoeTurnStart = (data) => {
+  ui.setWaitMessage("相手のターンです。");
+}
+
 const onAccepted = (data) => {
   if(data["state"]["is_my_turn"]){
     ui.showAllyImage(data);
@@ -49,17 +71,20 @@ const onAccepted = (data) => {
     ui.showFoeImage(data);
     ui.showFoeWord(data["state"]["word"]);
   }
+  
+  processEvent(data["state"]["events"]);
 
-  for (idx in data["state"]["events"]) {
-    e = data["state"]["events"][idx];
-    ui.setWaitMessage(e["message"],4000);
-    
-    ally_HP = Math.max(0, ally_HP - e["ally_damage"]);
-    foe_HP = Math.max(0, foe_HP - e["foe_damage"]);
-    if(e["type"] === "damage"){
-      ui.updateHPs(ally_HP, ally_max_HP, foe_HP, foe_max_HP);
-      // 1秒待つ
-      setTimeout(() => {}, 2000);
+  if(data["state"]["ally_win"] === true){
+    ui.setWaitMessage("あなたの勝ちです！");
+    ui.disableInput();
+  } else if(data["state"]["ally_win"] === false){
+    ui.setWaitMessage("あなたの負けです！");
+    ui.disableInput();
+  } else {
+    if(data["state"]["is_my_turn"]){
+      onAllyTurnStart(data);
+    } else {
+      onFoeTurnStart(data);
     }
   }
 }
