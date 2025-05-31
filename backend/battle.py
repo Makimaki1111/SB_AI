@@ -82,7 +82,7 @@ class Battle_info:
         if(player_id == self.player1_id):
 
             # タイプ特定
-            self.types = AI.get_type(word)
+            self.types = self._type_check(word)
             self.player1_type = self.types[:]
             at1 = self.types[0] if len(self.types) >= 1 else ""
             at2 = self.types[1] if len(self.types) >= 2 else ""
@@ -90,7 +90,7 @@ class Battle_info:
             dt2 = self.player2_type[1] if len(self.player2_type) >= 2 else ""
             
             # ダメージ計算
-            effect,self.damage = self._calc_damage(at1,at2,dt1,dt2)
+            effect, self.damage = self._calc_damage(at1,at2,dt1,dt2)
             event = {
                 "type" : "damage",
                 "message" : "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…",
@@ -104,7 +104,7 @@ class Battle_info:
 
         else:
             # タイプ特定
-            self.types = AI.get_type(word)
+            self.types = self._type_check(word)
             self.player2_type = self.types[:]
             at1 = self.types[0] if len(self.types) >= 1 else ""
             at2 = self.types[1] if len(self.types) >= 2 else ""
@@ -112,7 +112,7 @@ class Battle_info:
             dt2 = self.player1_type[1] if len(self.player1_type) >= 2 else ""
 
             # ダメージ計算
-            effect,self.damage = self._calc_damage(at1,at2,dt1,dt2)
+            effect, self.damage = self._calc_damage(at1,at2,dt1,dt2)
             event = {
                 "type" : "damage",
                 "message" : "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…",
@@ -124,8 +124,10 @@ class Battle_info:
             self.player1_HP = max(0,self.player1_HP - self.damage)
             if(self.player1_HP == 0):self.player1_win = False
             
-        # ターン交代
+        self.character = SB.get_next_initial(word)
         ret = self._make_response()
+
+        # ターン交代
         self.player1_turn = not self.player1_turn
         self.turn += 1
         return ret
@@ -144,7 +146,7 @@ class Battle_info:
             ret["include"] = True
             ret["used"] = True
             ret["type1"] = self.used[_input][0]
-            ret["type2"] = self.used[_input][1]
+            ret["type2"] = self.used[_input][1] if len(self.used[_input]) == 2 else ""
         else:
             ret["include"] = SB.include_in_all_words(_input)
 
@@ -213,5 +215,7 @@ class Battle_info:
         self.damage = 0
         return ret
 
-    def get_cpu_word(self,):
-        pass
+    def get_cpu_word(self):
+        for i in SB.typed_dict:
+            if(i[0] == self.character and i not in self.used):
+                return i

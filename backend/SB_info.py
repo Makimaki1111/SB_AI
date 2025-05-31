@@ -1,7 +1,6 @@
 import csv
 from collections import defaultdict
 
-
 class SB_info:
     def __init__(self):
         self.all_dict = defaultdict(set) # self.all_dict[頭文字] = set(単語一覧)の辞書
@@ -35,35 +34,29 @@ class SB_info:
         """
         return word in self.typed_dict
     
-    def image_name(self,type_name):
-        d = {
-             "暴力" : "violence",
-             "食べ物" : "food",
-             "地名" : "place",
-             "社会" : "society",
-             "動物" : "animal",
-             "感情" : "emote",
-             "植物" : "plant",
-             "理科" : "science",
-             "遊び" : "play",
-             "人物" : "person",
-             "服飾" : "cloth",
-             "工作" : "work",
-             "芸術" : "art",
-             "人体" : "body",
-             "時間" : "time",
-             "機械" : "mech",
-             "医療" : "health",
-             "物語" : "tale",
-             "暴言" : "insult",
-             "数学" : "math",
-             "天気" : "weather",
-             "虫" : "bug",
-             "宗教" : "religion",
-             "スポーツ" : "sports",
-             "ノーマル" : "normal",
-        }
-        return d[type_name] if type_name in d else ""
+    def get_next_initial(self, word:str) -> str:
+        """
+            しりとりの次の頭文字を返します
+        Args:
+            word (str): 最後に使用した文字
+
+        Returns:
+            str: 次の頭文字
+        """
+        if(word[-1] == "ゃ"):return 'や'
+        if(word[-1] == "ゅ"):return 'ゆ'
+        if(word[-1] == "ょ"):return 'よ'
+        if(word[-1] == "ぁ"):return 'あ'
+        if(word[-1] == "ぃ"):return 'い'
+        if(word[-1] == "ぅ"):return 'う'
+        if(word[-1] == "ぇ"):return 'え'
+        if(word[-1] == "ぉ"):return 'お'
+        if(word[-1] == "っ"):return 'つ'
+        if(word[-1] == "ぢ"):return 'じ'
+        if(word[-1] == "づ"):return 'ず'
+        if(word[-1] == "を"):return 'お'
+        if(word[-1] == "ー"):return self.get_next_initial(word[0:len(word) - 1])
+        return word[-1]
 
     def type_effect(self,at1,at2,dt1,dt2):
         """

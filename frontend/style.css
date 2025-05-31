@@ -202,8 +202,8 @@ element.style {
 
 #foe-only-type-img {
   position: absolute;
-  top: 10px;
-  right: 65px;
+  top: 5px;
+  right: 80px;
   width: 100px;
   height: 100px;
   z-index: 11;
@@ -212,7 +212,7 @@ element.style {
 
 #foe-type1-img {
   position: absolute;
-  top: 10px;
+  top: 5px;
   right: 130px;
   width: 100px;
   height: 100px;
@@ -222,7 +222,7 @@ element.style {
 
 #foe-type2-img {
   position: absolute;
-  top: 10px;
+  top: 5px;
   right: 40px;
   width: 100px;
   height: 100px;

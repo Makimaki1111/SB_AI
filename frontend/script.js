@@ -54,12 +54,12 @@ const onAccepted = (data) => {
     e = data["state"]["events"][idx];
     ui.setWaitMessage(e["message"],4000);
     
-    ally_HP -= e["ally_damage"]
-    foe_HP -= e["foe_damage"];
+    ally_HP = Math.max(0, ally_HP - e["ally_damage"]);
+    foe_HP = Math.max(0, foe_HP - e["foe_damage"]);
     if(e["type"] === "damage"){
       ui.updateHPs(ally_HP, ally_max_HP, foe_HP, foe_max_HP);
       // 1秒待つ
-      setTimeout(() => {}, 1000);
+      setTimeout(() => {}, 2000);
     }
   }
 }
