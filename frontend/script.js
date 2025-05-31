@@ -17,17 +17,17 @@ const onMadeRoom = (data) => {
   room_id = data.room_id;
   ui.enableInput();
   ui.clearInput();
-}
 
-const onMatchInfo = (data) => {
   ally_HP = data["ally"]["max_hp"];
   ally_max_HP = data["ally"]["max_hp"];  
-  foe_HP = data["foe"]["hp"];
+  foe_HP = data["foe"]["max_hp"];
   foe_max_HP = data["foe"]["max_hp"];
 
   ui.setAllyHP(ally_HP, ally_max_HP);
+  ui.setFoeHP(foe_HP, foe_max_HP);
+  ui.setAllyName(data["ally"]["name"]);
+  ui.setFoeName(data["foe"]["name"]);
 }
-
 
 const onPreCheck = (data) => {
   if (data["include"] === true) {
@@ -49,8 +49,12 @@ const onAccepted = (data) => {
     e = data["state"]["events"][idx];
     ui.setWaitMessage(e["message"],4000);
     
+    ally_HP -= e["ally_damage"]
+    foe_HP -= e["foe_damage"];
     if(e["type"] === "damage"){
       ui.updateHPs(ally_HP, ally_max_HP, foe_HP, foe_max_HP);
+      // 1秒待つ
+      setTimeout(() => {}, 1000);
     }
   }
 }
@@ -74,8 +78,6 @@ function connectWebSocket() {
     switch (data.type){
       case "made_room":
         onMadeRoom(data);
-        break;
-      case "match_info":
         break;
       case "pre_check":
         onPreCheck(data);

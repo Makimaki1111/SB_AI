@@ -29,7 +29,15 @@ def make_new_battle(info: make_new_battle_info):
         "type": "made_room",
         "message": "バトルルーム作成",
         "room_id": bi.room_id,
-        "is_cpu": bi.is_cpu
+        "is_cpu": bi.is_cpu,
+        "ally" : {
+            "max_hp" : bi.MAX_HP,
+            "name" : bi.player1_name
+        },
+        "foe" : {
+            "max_hp" : bi.MAX_HP,
+            "name" : bi.player2_name
+        }
     }
 
 class include_check_info(BaseModel):

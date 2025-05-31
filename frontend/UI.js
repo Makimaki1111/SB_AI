@@ -115,12 +115,25 @@ class UI{
         this.waitMessage.selector.hide();
     }
 
-    setAllyHP(){
-        $('#ally-hp-bar').css({
-            width: '100%',
-            backgroundColor: this.getHPBarColor(1)
-        });
-        $('#ally-hp-text').text(hp + "/" + max_hp);
+
+    setAllyName(name) {
+        $('.ally-name').text(name).show();
+    }
+
+    setFoeName(name) {
+        $('.foe-name').text(name).show();
+    }
+
+    setAllyHP(hp, max_hp) {
+        this.updateHPBar(hp, max_hp, $('.ally-hp-bar'));
+        // 右下ふきだし内のHPテキスト
+        $('.balloon.right .hp').text(hp + '/' + max_hp);
+    }
+
+    setFoeHP(hp, max_hp) {
+        this.updateHPBar(hp, max_hp, $('.foe-hp-bar'));
+        // 左上ふきだし内のHPテキスト
+        $('.balloon.left .hp').text(hp + '/' + max_hp);
     }
 
     getHPBarColor(ratio) {
@@ -134,6 +147,7 @@ class UI{
     }
 
     updateHPBar(hp, max_hp, dom) {
+        console.log(`Updating HP bar: ${hp}/${max_hp}`);
         const new_bar_vw = hp / max_hp * 100;
         dom.animate({
             width: `${new_bar_vw}%`
@@ -142,13 +156,15 @@ class UI{
             complete: () => {
                 dom.css({
                     backgroundColor: this.getHPBarColor(hp / max_hp)
-                })
+                });
             }
-        })
+        });
     }
 
     updateHPs(ally_HP, ally_max_HP, foe_HP, foe_max_HP) {
+        this.setAllyHP(ally_HP, ally_max_HP);
         this.updateHPBar(ally_HP, ally_max_HP, $('#ally-hp-bar'));
+        this.setFoeHP(foe_HP, foe_max_HP);
         this.updateHPBar(foe_HP, foe_max_HP, $('#foe-hp-bar'));
     }
 }

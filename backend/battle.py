@@ -27,6 +27,8 @@ class Battle_info:
         self.used = defaultdict(list)
         self.player1_id = player1_id
         self.player2_id = player2_id
+        self.player1_name = "プレイヤー1"
+        self.player2_name = "プレイヤー2"
         self.MAX_HP = 60
         self.is_cpu = (player2_id == "cpu")
 
