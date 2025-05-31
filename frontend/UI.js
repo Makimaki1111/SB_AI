@@ -100,9 +100,9 @@ class UI{
     }
 
     showFoeWord(word){
-        // ここでは敵の単語表示の処理を追加することができます
-        // 現在は実装されていないため、必要に応じて実装してください
-        console.log("Foe word:", word);
+        this.foeWord.selector.text(word);
+        this.foeWord.selector.show();
+        shrinkTooWideWord(this.foeWord.selector);
     }
 
     showFoeImage(data){
@@ -198,8 +198,16 @@ function shrinkTooWideWord(element) {
 
   if (domElement && domElement.scrollWidth > maxWidth) {
     const scale = maxWidth / domElement.scrollWidth;
-    domElement.style.transform = `translateX(-50%) scaleX(${scale})`;
+    if (domElement.classList.contains('foe-word')) {
+      domElement.style.transform = `translateX(50%) scaleX(${scale})`;
+    } else {
+      domElement.style.transform = `translateX(-50%) scaleX(${scale})`;
+    }
   } else if (domElement) {
-    domElement.style.transform = `translateX(-50%) scaleX(1)`;
+    if (domElement.classList.contains('foe-word')) {
+      domElement.style.transform = `translateX(50%) scaleX(1)`;
+    } else {
+      domElement.style.transform = `translateX(-50%) scaleX(1)`;
+    }
   }
 }
