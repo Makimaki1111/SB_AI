@@ -114,6 +114,43 @@ class UI{
     hideWaitMessage() {
         this.waitMessage.selector.hide();
     }
+
+    setAllyHP(){
+        $('#ally-hp-bar').css({
+            width: '100%',
+            backgroundColor: this.getHPBarColor(1)
+        });
+        $('#ally-hp-text').text(hp + "/" + max_hp);
+    }
+
+    getHPBarColor(ratio) {
+        if (ratio > 0.5) {
+            return "#00FF00"; // 緑色
+        } else if (ratio > 0.2) {
+            return "#FFFF00"; // 黄色
+        } else {
+            return "#FF0000"; // 赤色
+        }
+    }
+
+    updateHPBar(hp, max_hp, dom) {
+        const new_bar_vw = hp / max_hp * 100;
+        dom.animate({
+            width: `${new_bar_vw}%`
+        }, {
+            duration: "slow",
+            complete: () => {
+                dom.css({
+                    backgroundColor: this.getHPBarColor(hp / max_hp)
+                })
+            }
+        })
+    }
+
+    updateHPs(ally_HP, ally_max_HP, foe_HP, foe_max_HP) {
+        this.updateHPBar(ally_HP, ally_max_HP, $('#ally-hp-bar'));
+        this.updateHPBar(foe_HP, foe_max_HP, $('#foe-hp-bar'));
+    }
 }
 
 function shrinkTooWideWord(element) {

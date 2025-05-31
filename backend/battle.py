@@ -130,6 +130,7 @@ class Battle_info:
 
     def include_check(self,_input:str):
         ret = {
+            "type" : "pre_check",
             "name" : _input,
             "include" : False, 
             "used" : False,
@@ -183,7 +184,7 @@ class Battle_info:
             dict: 返す情報
         """
         ret = {
-            "type": "accept",
+            "type": "accepted",
             "state" : {
                 "ally_HP" : self.player1_HP,
                 "ally_A" : self.player1_A,
