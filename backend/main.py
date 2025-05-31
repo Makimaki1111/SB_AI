@@ -103,6 +103,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 res = turn_process(model)
                 await websocket.send_text(json.dumps(res))
 
+                
                 # --- CPU自動攻撃処理 ---
                 # バトルルーム取得
                 room_id = getattr(model, 'room_id', None)

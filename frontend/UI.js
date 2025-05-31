@@ -190,6 +190,10 @@ class UI{
         this.setFoeHP(foe_HP, foe_max_HP);
         this.updateHPBar(foe_HP, foe_max_HP, $('#foe-hp-bar'));
     }
+
+    setInputText(text){
+        this.input.selector.attr('placeholder', text);
+    }
 }
 
 function shrinkTooWideWord(element) {

@@ -57,10 +57,13 @@ const processEvent = (events) => {
 
 const onAllyTurnStart = (data) => {
   ui.setWaitMessage("あなたのターンです。");
+  ui.setInputText(`「${data["state"]["character"]}」からはじまることば`)
+  ui.enableInput();
 }
 
 const onFoeTurnStart = (data) => {
   ui.setWaitMessage("相手のターンです。");
+  ui.disableInput();
 }
 
 const onAccepted = (data) => {
@@ -82,9 +85,9 @@ const onAccepted = (data) => {
     ui.disableInput();
   } else {
     if(data["state"]["is_my_turn"]){
-      onAllyTurnStart(data);
-    } else {
       onFoeTurnStart(data);
+    } else {
+      onAllyTurnStart(data);
     }
   }
 }

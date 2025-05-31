@@ -38,7 +38,7 @@ class Battle_info:
         self.player1_type = []
         self.player1_win = None
         self.player1_turn = True
-        self.character = ""
+        self.character = "あ"
         self.damage = 0
         self.events = []
         self.player2_HP = self.MAX_HP
@@ -61,13 +61,17 @@ class Battle_info:
             _type_: _description_
         """
         
-        if(self.player1_turn ^ (player_id == self.player1_id)):
+        if(self.player1_win != None):
+            return {
+                "type" : "error",
+                "message" : "試合は終了しました"
+            }
+        elif(self.player1_turn ^ (player_id == self.player1_id)):
             return {
                 "type" : "error",
                 "message" : "自分のターンではありません"
             }
-
-        if(not SB.include_in_all_words(word)):
+        elif(not SB.include_in_all_words(word)):
             return {
                 "type" : "error",
                 "message" : "辞書にない単語です"
@@ -76,6 +80,11 @@ class Battle_info:
             return {
                 "type" : "error",
                 "message" : "使用済みの単語です"
+            }
+        elif(word[0] != self.character):
+            return {
+                "type" : "error",
+                "message" : "開始文字がマッチしていません"
             }
 
         self.word = word
