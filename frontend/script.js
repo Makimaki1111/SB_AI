@@ -1,7 +1,7 @@
 let room_id = null;
-let player1_id = "your_player1_id";
-let player2_id = "your_player2_id";
-let cpu_id = "cpu";
+const player1_id = "your_player1_id";
+const player2_id = "your_player2_id";
+const cpu_id = "cpu";
 let is_vs_cpu = false;
 let character = "";
 
@@ -13,6 +13,24 @@ let ui = new UI();
 
 const websock_server = "ws://localhost:8000/ws";
 let sock = null;
+
+const initializeBattleScreen = () => {
+  ui.showMessage();
+  ui.hidePreImg();
+  ui.hideAllyImage();
+  ui.hideFoeImage();
+  ui.showAllyWord("");
+  ui.showFoeWord("");
+  ui.setAllyName("");
+  ui.setFoeName("");
+
+  ui.setAllyHP(1, 1);
+  ui.setFoeHP(1, 1);
+
+  room_id = null;
+  is_vs_cpu = false;
+  character = "";
+}
 
 const onMadeRoom = (data) => {
   room_id = data.room_id;
@@ -97,6 +115,18 @@ const onFoeTurnStart = (data) => {
   ui.showMessage();
 }
 
+const onAllyWin = () => {
+  ui.showMessage("あいてとの勝負に勝った！");
+  ui.disableInput();
+  ui.showBackToTitleBtn();
+}
+
+const onAllyLose = () => {
+  ui.showMessage("あいてとの勝負に負けた…");
+  ui.disableInput();
+  ui.showBackToTitleBtn();
+}
+
 const onAccepted = (data) => {
   let delay = (data["state"]["is_cpu"] === true && 
     ((data["state"]["is_my_turn"] == false) || (data["state"]["ally_win"] === false))) ? 2000 : 0
@@ -114,11 +144,9 @@ const onAccepted = (data) => {
     processEvent(data["state"]["events"], data["state"]["is_my_turn"]);
 
     if(data["state"]["ally_win"] === true){
-      ui.showMessage("あいてとの勝負に勝った！");
-      ui.disableInput();
+      onAllyWin();
     } else if(data["state"]["ally_win"] === false){
-      ui.showMessage("あいてとの勝負に負けた…");
-      ui.disableInput();
+      onAllyLose();
     } else {
       if(data["state"]["is_my_turn"]){
         onFoeTurnStart(data);
@@ -200,17 +228,25 @@ function sendSubmitWord(room_id, player_id, word) {
   }
 }
 
+ui.backToTitleBtn.onClick(() => {
+  ui.showTitleScreen();
+  ui.hideBackToTitleBtn();
+  initializeBattleScreen();
+});
+
 //document.addEventListener("DOMContentLoaded", () => {
   connectWebSocket();
 
   // ボタンイベント
   ui.vsPlayerBtn.onClick(() => {
+    initializeBattleScreen();
     is_vs_cpu = false;
     ui.showBattleScreen();
     sendMakeNewBattle(player1_id, player2_id);
   });
 
   ui.vsCpuBtn.onClick(() => {
+    initializeBattleScreen();
     is_vs_cpu = true;
     ui.showBattleScreen();
     sendMakeNewBattle(player1_id, cpu_id);

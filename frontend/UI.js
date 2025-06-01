@@ -20,6 +20,8 @@ class UI{
         this.message = new UIObject($('#message'));
         this.waitMessage = new UIObject($('#wait-message'));
         this.includeImg = new UIObject($('#include-img'));
+
+        this.backToTitleBtn = new UIObject($('#back-to-title-btn'));
     }
 
     showTitleScreen() {
@@ -99,6 +101,12 @@ class UI{
         }
     }
 
+    hideAllyImage() {
+        this.allyType1Img.selector.hide();
+        this.allyType2Img.selector.hide();
+        this.allyOnlyTypeImg.selector.hide();
+    }
+
     showFoeWord(word){
         this.foeWord.selector.text(word);
         this.foeWord.selector.show();
@@ -123,6 +131,12 @@ class UI{
                 this.foeOnlyTypeImg.selector.show();
             }
         }
+    }
+
+    hideFoeImage() {
+        this.foeType1Img.selector.hide();
+        this.foeType2Img.selector.hide();
+        this.foeOnlyTypeImg.selector.hide();
     }
 
     setWaitMessage(message, time=Infinity) {
@@ -150,13 +164,11 @@ class UI{
 
     setAllyHP(hp, max_hp) {
         this.updateHPBar(hp, max_hp, $('.ally-hp-bar'));
-        // 右下ふきだし内のHPテキスト
         $('.balloon.right .hp').text(hp + '/' + max_hp);
     }
 
     setFoeHP(hp, max_hp) {
         this.updateHPBar(hp, max_hp, $('.foe-hp-bar'));
-        // 左上ふきだし内のHPテキスト
         $('.balloon.left .hp').text(hp + '/' + max_hp);
     }
 
@@ -216,6 +228,14 @@ class UI{
 
     alertNN() {
         
+    }
+
+    showBackToTitleBtn() {
+        this.backToTitleBtn.selector.show();
+    }
+
+    hideBackToTitleBtn() {
+        this.backToTitleBtn.selector.hide();
     }
 }
 
