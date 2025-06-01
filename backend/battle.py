@@ -38,7 +38,7 @@ class Battle_info:
         self.player1_type = []
         self.player1_win = None
         self.player1_turn = True
-        self.character = "あ"
+        self.character = "こ"
         self.damage = 0
         self.events = []
         self.player2_HP = self.MAX_HP
@@ -71,7 +71,7 @@ class Battle_info:
                 "type" : "error",
                 "message" : "自分のターンではありません"
             }
-        elif(not SB.include_in_all_words(word)):
+        elif(not SB.include_in_all_words(word) and not SB.inclue_in_typed_words(word)):
             return {
                 "type" : "error",
                 "message" : "辞書にない単語です"
@@ -98,18 +98,39 @@ class Battle_info:
             dt1 = self.player2_type[0] if len(self.player2_type) >= 1 else ""
             dt2 = self.player2_type[1] if len(self.player2_type) >= 2 else ""
             
-            # ダメージ計算
-            effect, self.damage = self._calc_damage(at1,at2,dt1,dt2)
-            event = {
-                "type" : "damage",
-                "message" : "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…",
-                "ally_damage" : 0,
-                "foe_damage" : self.damage
-            }
-            self.events.append(event)
+            if("食べ物" in self.types):
+                event = {
+                    "type" : "cure",
+                    "message" : "体力が回復した",
+                    "ally_cure" : 20,
+                    "foe_cure" : 0
+                }
+                self.events.append(event)
 
-            self.player2_HP = max(0,self.player2_HP - self.damage)
-            if(self.player2_HP == 0):self.player1_win = True
+                self.player1_HP = min(self.MAX_HP, self.player1_HP + 20)
+            elif("医療" in self.types):
+                event = {
+                    "type" : "cure",
+                    "message" : "体力が回復した",
+                    "ally_cure" : 40,
+                    "foe_cure" : 0
+                }
+                self.events.append(event)
+
+                self.player1_HP = min(self.MAX_HP, self.player1_HP + 40)
+            else:
+                # ダメージ計算
+                effect, self.damage = self._calc_damage(at1,at2,dt1,dt2)
+                event = {
+                    "type" : "damage",
+                    "message" : "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…",
+                    "ally_damage" : 0,
+                    "foe_damage" : self.damage
+                }
+                self.events.append(event)
+
+                self.player2_HP = max(0,self.player2_HP - self.damage)
+                if(self.player2_HP == 0):self.player1_win = True
 
         else:
             # タイプ特定
@@ -120,18 +141,39 @@ class Battle_info:
             dt1 = self.player1_type[0] if len(self.player1_type) >= 1 else ""
             dt2 = self.player1_type[1] if len(self.player1_type) >= 2 else ""
 
-            # ダメージ計算
-            effect, self.damage = self._calc_damage(at1,at2,dt1,dt2)
-            event = {
-                "type" : "damage",
-                "message" : "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…",
-                "ally_damage" : self.damage,
-                "foe_damage" : 0
-            }
-            self.events.append(event)
+            if("食べ物" in self.types):
+                event = {
+                    "type" : "cure",
+                    "message" : "体力が回復した",
+                    "ally_cure" : 0,
+                    "foe_cure" : 20
+                }
+                self.events.append(event)
 
-            self.player1_HP = max(0,self.player1_HP - self.damage)
-            if(self.player1_HP == 0):self.player1_win = False
+                self.player2_HP = min(self.MAX_HP, self.player2_HP + 20)
+            elif("医療" in self.types):
+                event = {
+                    "type" : "cure",
+                    "message" : "体力が回復した",
+                    "ally_cure" : 0,
+                    "foe_cure" : 40
+                }
+                self.events.append(event)
+
+                self.player2_HP = min(self.MAX_HP, self.player2_HP + 40)
+            else:
+                # ダメージ計算
+                effect, self.damage = self._calc_damage(at1,at2,dt1,dt2)
+                event = {
+                    "type" : "damage",
+                    "message" : "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…",
+                    "ally_damage" : self.damage,
+                    "foe_damage" : 0
+                }
+                self.events.append(event)
+
+                self.player1_HP = max(0,self.player1_HP - self.damage)
+                if(self.player1_HP == 0):self.player1_win = False
             
         self.character = SB.get_next_initial(word)
         ret = self._make_response()

@@ -191,7 +191,13 @@ class UI{
         this.updateHPBar(foe_HP, foe_max_HP, $('#foe-hp-bar'));
     }
 
+    initializeMessage(){
+        this.message.selector.removeAttr('style');
+        this.message.selector.text("");
+    }
+
     showMessage(text) {
+        this.initializeMessage();
         this.message.selector.removeAttr('style');
         this.message.selector.text(text);
     }
@@ -202,6 +208,14 @@ class UI{
 
     setInputText(text){
         this.input.selector.attr('placeholder', text);
+    }
+
+    alertWrongChar(){
+        
+    }
+
+    alertNN() {
+        
     }
 }
 

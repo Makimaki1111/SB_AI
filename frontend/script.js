@@ -3,6 +3,7 @@ let player1_id = "your_player1_id";
 let player2_id = "your_player2_id";
 let cpu_id = "cpu";
 let is_vs_cpu = false;
+let character = "";
 
 let ally_HP, ally_max_HP;
 let ally_type1, ally_type2;
@@ -27,6 +28,12 @@ const onMadeRoom = (data) => {
   ui.setFoeHP(foe_HP, foe_max_HP);
   ui.setAllyName(data["ally"]["name"]);
   ui.setFoeName(data["foe"]["name"]);
+
+  if(data["state"]["is_my_turn"] === true){
+    onAllyTurnStart(data);
+  } else {
+    onFoeTurnStart(data);
+  }
 }
 
 const onPreCheck = (data) => {
@@ -41,57 +48,85 @@ const onPreCheck = (data) => {
   }
 }
 
-const processEvent = (events) => {
+const processEvent = (events,is_my_turn) => {
   for (idx in events) {
     e = events[idx];
-    ui.showMessage(e["message"]);
-    
-    ally_HP = Math.max(0, ally_HP - e["ally_damage"]);
-    foe_HP = Math.max(0, foe_HP - e["foe_damage"]);
-    if(e["type"] === "damage"){
-      ui.updateHPs(ally_HP, ally_max_HP, foe_HP, foe_max_HP);
-      setTimeout(() => {}, 2000);
-    }
+    setTimeout(() => {
+      switch (e["type"]){
+        case "damage":
+          ui.showMessage(e["message"]);
+          
+          ally_HP = Math.max(0, ally_HP - e["ally_damage"]);
+          foe_HP = Math.max(0, foe_HP - e["foe_damage"]);
+          ui.updateHPs(ally_HP, ally_max_HP, foe_HP, foe_max_HP);
+
+          setTimeout(() => {
+            ui.initializeMessage();
+            if(is_my_turn === false){ui.hideMessage();}
+          },1500);
+          break;
+        
+        case "cure":
+          ui.showMessage(e["message"]);
+          
+          ally_HP = Math.min(ally_max_HP, ally_HP + e["ally_cure"]);
+          foe_HP = Math.min(foe_max_HP, foe_HP + e["foe_cure"]);
+          ui.updateHPs(ally_HP, ally_max_HP, foe_HP, foe_max_HP);
+          setTimeout(() => {
+            ui.initializeMessage();
+            if(is_my_turn === false){ui.hideMessage();}
+          },1500);
+          break;
+      }
+    }, 1000);
   }
 }
 
 const onAllyTurnStart = (data) => {
-  ui.setWaitMessage("あなたのターンです。");
-  ui.setInputText(`「${data["state"]["character"]}」からはじまることば`)
-  ui.enableInput();
-  ui.hideMessage();
+  setTimeout(() => {
+    ui.setWaitMessage("あなたのターンです。");
+    ui.setInputText(`「${data["state"]["character"]}」からはじまることば`)
+    character = data["state"]["character"];
+    ui.enableInput();
+    ui.hideMessage();
+  }, 2000);
 }
 
 const onFoeTurnStart = (data) => {
   ui.setWaitMessage("相手のターンです。");
-  ui.disableInput();
   ui.showMessage();
 }
 
 const onAccepted = (data) => {
-  if(data["state"]["is_my_turn"]){
-    ui.showAllyImage(data);
-    ui.showAllyWord(data["state"]["word"]);
-  } else {
-    ui.showFoeImage(data);
-    ui.showFoeWord(data["state"]["word"]);
-  }
-  
-  processEvent(data["state"]["events"]);
+  let delay = (data["state"]["is_cpu"] === true && 
+    ((data["state"]["is_my_turn"] == false) || (data["state"]["ally_win"] === false))) ? 2000 : 0
 
-  if(data["state"]["ally_win"] === true){
-    ui.showMessage("あなたの勝ちです！");
-    ui.disableInput();
-  } else if(data["state"]["ally_win"] === false){
-    ui.showMessage("あなたの負けです！");
-    ui.disableInput();
-  } else {
+  // ここで遅延いれないとやばい打ち合いになる
+  setTimeout(() => {
     if(data["state"]["is_my_turn"]){
-      onFoeTurnStart(data);
+      ui.showAllyImage(data);
+      ui.showAllyWord(data["state"]["word"]);
     } else {
-      onAllyTurnStart(data);
+      ui.showFoeImage(data);
+      ui.showFoeWord(data["state"]["word"]);
     }
-  }
+    
+    processEvent(data["state"]["events"], data["state"]["is_my_turn"]);
+
+    if(data["state"]["ally_win"] === true){
+      ui.showMessage("あいてとの勝負に勝った！");
+      ui.disableInput();
+    } else if(data["state"]["ally_win"] === false){
+      ui.showMessage("あいてとの勝負に負けた…");
+      ui.disableInput();
+    } else {
+      if(data["state"]["is_my_turn"]){
+        onFoeTurnStart(data);
+      } else {
+        onAllyTurnStart(data);
+      }
+    }
+  }, delay);
 }
 
 const onError = (data) => {
@@ -165,7 +200,7 @@ function sendSubmitWord(room_id, player_id, word) {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+//document.addEventListener("DOMContentLoaded", () => {
   connectWebSocket();
 
   // ボタンイベント
@@ -191,12 +226,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 入力欄の変化で単語チェック
   ui.input.selector.on("input", () => {
-    const text = ui.input.selector.val();
-    if (!text.trim() || !room_id) {
+    if(!room_id){
       ui.hidePreImg();
       return;
     }
-    sendIncludeCheck(room_id, text);
+
+    const text = ui.input.selector.val();
+    if(text) {
+      if(text.charAt(0) !== character){
+        ui.alertWrongChar();
+      } else if(text.charAt(text.length - 1) === "ん") {
+        ui.alertNN();
+      } else {
+        sendIncludeCheck(room_id, text);
+      }
+    } else {
+      ui.hidePreImg();
+    }
   });
 
   // 送信ボタン
@@ -207,4 +253,4 @@ document.addEventListener("DOMContentLoaded", () => {
     ui.hidePreImg();
     sendSubmitWord(room_id, player1_id, text);
   });
-});
+//});

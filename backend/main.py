@@ -30,6 +30,10 @@ def make_new_battle(info: make_new_battle_info):
         "message": "バトルルーム作成",
         "room_id": bi.room_id,
         "is_cpu": bi.is_cpu,
+        "state" : {
+            "is_my_turn" : bi.player1_turn,
+            "character" : bi.character
+        },
         "ally" : {
             "max_hp" : bi.MAX_HP,
             "name" : bi.player1_name
