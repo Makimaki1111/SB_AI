@@ -11,7 +11,6 @@ let foe_HP, foe_max_HP;
 
 let ui = new UI();
 
-// helper
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 const websock_server = "ws://localhost:8000/ws";
 let sock = null;
@@ -97,16 +96,14 @@ const processEvent = async (events, is_my_turn) => {
 }
 
 const onAllyTurnStart = (data) => {
-  //setTimeout(() => {
-    ui.setWaitMessage("あなたのターンです。");
-    ui.setInputText(`「${data["state"]["character"]}」からはじまることば`)
-    character = data["state"]["character"];
-    ui.enableInput();
-    ui.enableSubmitBtn();
-    ui.showInput();
-    ui.showSubmitBtn();
-    ui.hideMessage();
-  //}, 2000);
+  ui.setWaitMessage("あなたのターンです。");
+  ui.setInputText(`「${data["state"]["character"]}」からはじまることば`)
+  character = data["state"]["character"];
+  ui.enableInput();
+  ui.enableSubmitBtn();
+  ui.showInput();
+  ui.showSubmitBtn();
+  ui.hideMessage();
 }
 
 const onFoeTurnStart = (data) => {
@@ -217,21 +214,21 @@ function connectWebSocket() {
 
   sock.addEventListener("close", function () {
     console.log("WebSocket接続が閉じられました");
-    alert("接続が切断されました。タイトル画面に戻ります。");
     ui.showTitleScreen();
     ui.hideBackToTitleBtn();
     initializeBattleScreen();
     isDisconnected = true;
+    alert("接続が切断されました。タイトル画面に戻ります。");
     startReconnectAttempt();
   });
 
   sock.addEventListener("error", function (e) {
     console.error("WebSocketエラー:", e);
-    alert("エラーが発生しました。タイトル画面に戻ります。");
     ui.showTitleScreen();
     ui.hideBackToTitleBtn();
     initializeBattleScreen();
     isDisconnected = true;
+    alert("エラーが発生しました。タイトル画面に戻ります。");
     startReconnectAttempt();
   });
 }
@@ -308,7 +305,7 @@ function startReconnectAttempt() {
   }, 1000); // 1秒ごとに試行
 }
 
-//document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
   connectWebSocket();
 
   // ボタンイベント
@@ -363,4 +360,4 @@ function startReconnectAttempt() {
     ui.hidePreImg();
     sendSubmitWord(room_id, player1_id, text);
   });
-//});
+});

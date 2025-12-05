@@ -276,3 +276,78 @@ element.style {
     padding: 10px;
     font-size: 1.2em;
 }
+
+/* タイトル画面用: ボタンを中央に大きく配置 */
+#title-screen .phone-box .content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  height: 100%;
+  /* タイトル分の余白を上部に確保 */
+  padding-top: 88px;
+}
+
+/* タイトルを上部に固定表示 */
+#title-screen .phone-box .content p {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+#title-screen .phone-box .content p {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: 1.0rem;
+}
+
+#title-screen .phone-box .content h1 {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: 2.0rem;
+  font-weight: 800;
+  color: #222;
+  white-space: nowrap;
+}
+
+/* 対人戦 / コンピュータ戦 ボタン共通 */
+#vs-human-btn, #vs-player-btn, #vs-cpu-btn {
+  display: inline-block;
+  width: 72%;
+  max-width: 340px;
+  padding: 14px 22px;
+  font-size: 1.4rem;
+  font-weight: 700;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(180deg, #ffd77a, #ffb84d);
+  color: #222;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+  cursor: pointer;
+  text-align: center;
+}
+
+#vs-human-btn:hover, #vs-player-btn:hover, #vs-cpu-btn:hover {
+  transform: translateY(-2px);
+  transition: transform 120ms ease-in-out;
+}
+
+/* スマホ向けにさらに大きく見せる */
+@media (max-width: 420px) {
+  #vs-human-btn, #vs-player-btn, #vs-cpu-btn {
+    width: 86%;
+    font-size: 1.6rem;
+    padding: 16px 20px;
+  }
+}
