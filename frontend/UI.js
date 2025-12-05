@@ -83,7 +83,14 @@ class UI{
 
     showAllyImage(data){
         if(data.state){
-            if(data.state.ally_type.length == 2){ // 複合タイプの場合
+            if(data.state.ally_type.length == 1 && data.state.ally_type[0] === ""){
+                this.allyType1Img.selector.attr('src', ``);
+                this.allyType2Img.selector.attr('src', ``);
+                this.allyType1Img.selector.hide();
+                this.allyType2Img.selector.hide();
+                this.allyOnlyTypeImg.selector.attr('src', ``);
+                this.allyOnlyTypeImg.selector.hide();
+            } else if(data.state.ally_type.length == 2){ // 複合タイプの場合
                 this.allyType1Img.selector.attr('src', `img/${type_to_image[data.state.ally_type[0]]}.gif`);
                 this.allyType2Img.selector.attr('src', `img/${type_to_image[data.state.ally_type[1]]}.gif`);
                 this.allyOnlyTypeImg.selector.attr('src', ``);

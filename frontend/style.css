@@ -374,11 +374,10 @@ element.style {
   transform: translateY(0);
 }
 
-/* Ensure the button sits above other UI elements and place it at right-bottom of the phone box */
 #back-to-title-btn {
   position: absolute;
-  right: 18px; /* x方向は今のまま */
-  bottom: 450px; /* 少し上に移動（y方向は前の調整に合わせつつ上方向へ） */
+  right: 18px;
+  bottom: 450px;
   z-index: 120;
   display: inline-block;
 }

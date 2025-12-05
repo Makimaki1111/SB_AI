@@ -241,7 +241,9 @@ class Battle_info:
             tuple: (相性, ダメージ)
         """
         e = SB.type_effect(at1,at2,dt1,dt2)
-        if(dt1 == dt2 == ""):
+        if(at1 == at2 == ""):
+            return e, 7
+        elif(dt1 == dt2 == ""):
             return e, int(10 * e)
         else:
             return e, int(10 * e * random.uniform(0.85,0.99))

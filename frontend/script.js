@@ -12,6 +12,10 @@ let foe_HP, foe_max_HP;
 let ui = new UI();
 
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+function playEffectSound(path){
+  
+}
+
 const websock_server = "ws://localhost:8000/ws";
 let sock = null;
 let reconnectInterval = null;
@@ -125,15 +129,12 @@ const onAllyLose = () => {
 const onAccepted = async (data) => {
   // 既に処理中ならデータを待機キューに入れて戻る
   if (isProcessingAccepted) {
-    console.log("onAccepted は既に実行中です。このデータは待機キューに格納されます");
     pendingAcceptedQueue.push(data);
     return;
   }
 
   isProcessingAccepted = true;
 
-  ui.disableInput();
-  ui.disableSubmitBtn();
   ui.hideInput();
   ui.hideSubmitBtn();
   // まず画像・単語表示はすぐ行う
@@ -146,7 +147,6 @@ const onAccepted = async (data) => {
   }
 
   await sleep(1000);
-
   await processEvent(data["state"]["events"], data["state"]["is_my_turn"]);
 
   if (data["state"]["ally_win"] === true) {
