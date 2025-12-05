@@ -64,7 +64,7 @@ class Battle_info:
         if(self.player1_win != None):
             return {
                 "type" : "error",
-                "message" : "試合は終了しました"
+                "message" : ""
             }
         elif(self.player1_turn ^ (player_id == self.player1_id)):
             return {

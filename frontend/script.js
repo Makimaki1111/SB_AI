@@ -18,6 +18,11 @@ let sock = null;
 let reconnectInterval = null;
 let isDisconnected = false;
 
+// onAccepted が実行中かどうかを示すフラグ
+let isProcessingAccepted = false;
+// 待機中の onAccepted データキュー
+let pendingAcceptedQueue = [];
+
 const initializeBattleScreen = () => {
   ui.showMessage();
   ui.hidePreImg();
@@ -121,6 +126,15 @@ const onAllyLose = () => {
 }
 
 const onAccepted = async (data) => {
+  // 既に処理中ならデータを待機キューに入れて戻る
+  if (isProcessingAccepted) {
+    console.log("onAccepted は既に実行中です。このデータは待機キューに格納されます");
+    pendingAcceptedQueue.push(data);
+    return;
+  }
+
+  isProcessingAccepted = true;
+
   ui.disableInput();
   ui.disableSubmitBtn();
   ui.hideInput();
@@ -148,6 +162,16 @@ const onAccepted = async (data) => {
     } else {
       onAllyTurnStart(data);
     }
+  }
+
+  // 処理完了フラグをリセット
+  isProcessingAccepted = false;
+
+  // 待機キューにデータがあれば順に処理する
+  if (pendingAcceptedQueue.length > 0) {
+    await sleep(500);
+    const next = pendingAcceptedQueue.shift();
+    onAccepted(next);
   }
 }
 
