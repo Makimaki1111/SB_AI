@@ -86,6 +86,16 @@ class Battle_info:
                 "type" : "error",
                 "message" : "開始文字がマッチしていません"
             }
+        elif(SB.get_next_initial(word) == "ん"):
+            return{
+                "type" : "error",
+                "message" : "「ん」で終わっています"
+            }
+        elif(SB.get_next_initial(word) not in SB.typed_dict):
+            return {
+                "type" : "error",
+                "message" : "辞書にない単語です"
+            }
 
         self.word = word
         if(player_id == self.player1_id):

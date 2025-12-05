@@ -121,10 +121,11 @@ async def websocket_endpoint(websocket: WebSocket):
                         await websocket.send_text(json.dumps(cpu_res))
 
             else:
+                
                 await websocket.send_text(json.dumps({"type": "error", "message": "Unknown type"}))
     
     except WebSocketDisconnect:
         print("WebSocket切断")
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

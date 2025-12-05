@@ -13,6 +13,8 @@ let ui = new UI();
 
 const websock_server = "ws://localhost:8000/ws";
 let sock = null;
+let reconnectInterval = null;
+let isDisconnected = false;
 
 const initializeBattleScreen = () => {
   ui.showMessage();
@@ -163,6 +165,11 @@ const onError = (data) => {
 
 // WebSocket接続とイベントリスナー登録
 function connectWebSocket() {
+  // 既に接続があれば切断
+  if (sock && sock.readyState === WebSocket.OPEN) {
+    sock.close();
+  }
+  
   sock = new WebSocket(websock_server);
 
   sock.addEventListener("open", function () {
@@ -194,10 +201,22 @@ function connectWebSocket() {
 
   sock.addEventListener("close", function () {
     console.log("WebSocket接続が閉じられました");
+    alert("接続が切断されました。タイトル画面に戻ります。");
+    ui.showTitleScreen();
+    ui.hideBackToTitleBtn();
+    initializeBattleScreen();
+    isDisconnected = true;
+    startReconnectAttempt();
   });
 
   sock.addEventListener("error", function (e) {
     console.error("WebSocketエラー:", e);
+    alert("エラーが発生しました。タイトル画面に戻ります。");
+    ui.showTitleScreen();
+    ui.hideBackToTitleBtn();
+    initializeBattleScreen();
+    isDisconnected = true;
+    startReconnectAttempt();
   });
 }
 
@@ -233,6 +252,41 @@ ui.backToTitleBtn.onClick(() => {
   ui.hideBackToTitleBtn();
   initializeBattleScreen();
 });
+
+// 再接続を試みる関数
+function startReconnectAttempt() {
+  if (reconnectInterval) return; // 既に試行中なら不要
+  
+  reconnectInterval = setInterval(() => {
+    console.log("再接続を試みています...");
+    try {
+      const testSock = new WebSocket(websock_server);
+      
+      testSock.addEventListener("open", () => {
+        console.log("サーバーが復帰しました。再接続します。");
+        testSock.close();
+        clearInterval(reconnectInterval);
+        reconnectInterval = null;
+        isDisconnected = false;
+        connectWebSocket();
+      });
+      
+      testSock.addEventListener("error", () => {
+        //console.log("まだサーバーが利用できません...");
+        testSock.close();
+      });
+      
+      // 3秒でタイムアウト
+      setTimeout(() => {
+        if (testSock.readyState === WebSocket.CONNECTING) {
+          testSock.close();
+        }
+      }, 3000);
+    } catch (e) {
+      console.error("再接続試行エラー:", e);
+    }
+  }, 1000); // 5秒ごとに試行
+}
 
 //document.addEventListener("DOMContentLoaded", () => {
   connectWebSocket();

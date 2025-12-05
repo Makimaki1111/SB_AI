@@ -59,6 +59,7 @@ class SB_info:
         return word[-1]
 
     def type_effect(self,at1,at2,dt1,dt2):
+
         """
             タイプ相性を計算し倍率を返します。
         Args:
