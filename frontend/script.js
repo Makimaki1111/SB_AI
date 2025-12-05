@@ -11,6 +11,8 @@ let foe_HP, foe_max_HP;
 
 let ui = new UI();
 
+// helper
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 const websock_server = "ws://localhost:8000/ws";
 let sock = null;
 let reconnectInterval = null;
@@ -68,53 +70,42 @@ const onPreCheck = (data) => {
   }
 }
 
-const processEvent = (events,is_my_turn) => {
-  for (idx in events) {
-    e = events[idx];
-    setTimeout(() => {
-      switch (e["type"]){
-        case "damage":
-          ui.showMessage(e["message"]);
-          
-          ally_HP = Math.max(0, ally_HP - e["ally_damage"]);
-          foe_HP = Math.max(0, foe_HP - e["foe_damage"]);
-          ui.updateHPs(ally_HP, ally_max_HP, foe_HP, foe_max_HP);
+const processEvent = async (events, is_my_turn) => {
+  if (!events || events.length === 0) return;
+  for (let i = 0; i < events.length; i++) {
+    const e = events[i];
 
-          setTimeout(() => {
-            ui.initializeMessage();
-            if(is_my_turn === false){ui.hideMessage();}
-          },1500);
-          break;
-        
-        case "cure":
-          ui.showMessage(e["message"]);
-          
-          ally_HP = Math.min(ally_max_HP, ally_HP + e["ally_cure"]);
-          foe_HP = Math.min(foe_max_HP, foe_HP + e["foe_cure"]);
-          ui.updateHPs(ally_HP, ally_max_HP, foe_HP, foe_max_HP);
-          setTimeout(() => {
-            ui.initializeMessage();
-            if(is_my_turn === false){ui.hideMessage();}
-          },1500);
-          break;
-      }
-    }, 1000);
+    // show message and apply immediate state change
+    ui.showMessage(e["message"] || "");
+    if (e["type"] === "damage") {
+      ally_HP = Math.max(0, ally_HP - (e["ally_damage"] || 0));
+      foe_HP = Math.max(0, foe_HP - (e["foe_damage"] || 0));
+      ui.updateHPs(ally_HP, ally_max_HP, foe_HP, foe_max_HP);
+    } else if (e["type"] === "cure") {
+      ally_HP = Math.min(ally_max_HP, ally_HP + (e["ally_cure"] || 0));
+      foe_HP = Math.min(foe_max_HP, foe_HP + (e["foe_cure"] || 0));
+      ui.updateHPs(ally_HP, ally_max_HP, foe_HP, foe_max_HP);
+    }
+
+    await sleep(1000);
   }
 }
 
 const onAllyTurnStart = (data) => {
-  setTimeout(() => {
+  //setTimeout(() => {
     ui.setWaitMessage("あなたのターンです。");
     ui.setInputText(`「${data["state"]["character"]}」からはじまることば`)
     character = data["state"]["character"];
     ui.enableInput();
+    ui.enableSubmitBtn();
+    ui.showInput();
+    ui.showSubmitBtn();
     ui.hideMessage();
-  }, 2000);
+  //}, 2000);
 }
 
 const onFoeTurnStart = (data) => {
-  ui.setWaitMessage("相手のターンです。");
-  ui.showMessage();
+    ui.setWaitMessage("相手のターンです。");
 }
 
 const onAllyWin = () => {
@@ -129,34 +120,35 @@ const onAllyLose = () => {
   ui.showBackToTitleBtn();
 }
 
-const onAccepted = (data) => {
-  let delay = (data["state"]["is_cpu"] === true && 
-    ((data["state"]["is_my_turn"] == false) || (data["state"]["ally_win"] === false))) ? 2000 : 0
+const onAccepted = async (data) => {
+  ui.disableInput();
+  ui.disableSubmitBtn();
+  ui.hideInput();
+  ui.hideSubmitBtn();
+  // まず画像・単語表示はすぐ行う
+  if (data["state"]["is_my_turn"]) {
+    ui.showAllyImage(data);
+    ui.showAllyWord(data["state"]["word"]);
+  } else {
+    ui.showFoeImage(data);
+    ui.showFoeWord(data["state"]["word"]);
+  }
 
-  // ここで遅延いれないとやばい打ち合いになる
-  setTimeout(() => {
-    if(data["state"]["is_my_turn"]){
-      ui.showAllyImage(data);
-      ui.showAllyWord(data["state"]["word"]);
-    } else {
-      ui.showFoeImage(data);
-      ui.showFoeWord(data["state"]["word"]);
-    }
-    
-    processEvent(data["state"]["events"], data["state"]["is_my_turn"]);
+  await sleep(1000);
 
-    if(data["state"]["ally_win"] === true){
-      onAllyWin();
-    } else if(data["state"]["ally_win"] === false){
-      onAllyLose();
+  await processEvent(data["state"]["events"], data["state"]["is_my_turn"]);
+
+  if (data["state"]["ally_win"] === true) {
+    onAllyWin();
+  } else if (data["state"]["ally_win"] === false) {
+    onAllyLose();
+  } else {
+    if (data["state"]["is_my_turn"]) {
+      onFoeTurnStart(data);
     } else {
-      if(data["state"]["is_my_turn"]){
-        onFoeTurnStart(data);
-      } else {
-        onAllyTurnStart(data);
-      }
+      onAllyTurnStart(data);
     }
-  }, delay);
+  }
 }
 
 const onError = (data) => {
@@ -253,17 +245,19 @@ ui.backToTitleBtn.onClick(() => {
   initializeBattleScreen();
 });
 
-// 再接続を試みる関数
 function startReconnectAttempt() {
-  if (reconnectInterval) return; // 既に試行中なら不要
+  // 再接続を試みる関数
+  if (reconnectInterval) return;
   
   reconnectInterval = setInterval(() => {
     console.log("再接続を試みています...");
     try {
       const testSock = new WebSocket(websock_server);
+      let isConnected = false;
       
       testSock.addEventListener("open", () => {
         console.log("サーバーが復帰しました。再接続します。");
+        isConnected = true;
         testSock.close();
         clearInterval(reconnectInterval);
         reconnectInterval = null;
@@ -272,20 +266,22 @@ function startReconnectAttempt() {
       });
       
       testSock.addEventListener("error", () => {
-        //console.log("まだサーバーが利用できません...");
-        testSock.close();
-      });
-      
-      // 3秒でタイムアウト
-      setTimeout(() => {
-        if (testSock.readyState === WebSocket.CONNECTING) {
+        console.log("まだサーバーが利用できません...");
+        if (!isConnected) {
           testSock.close();
         }
-      }, 3000);
+      });
+      
+      // 0.8秒でタイムアウト
+      setTimeout(() => {
+        if (!isConnected && testSock.readyState !== WebSocket.CLOSED) {
+          testSock.close();
+        }
+      }, 800);
     } catch (e) {
       console.error("再接続試行エラー:", e);
     }
-  }, 1000); // 5秒ごとに試行
+  }, 1000); // 1秒ごとに試行
 }
 
 //document.addEventListener("DOMContentLoaded", () => {

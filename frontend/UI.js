@@ -237,6 +237,31 @@ class UI{
     hideBackToTitleBtn() {
         this.backToTitleBtn.selector.hide();
     }
+
+    // 要素を削除せずに非表示にする / 再表示するメソッド
+    hideInput() {
+        if (this.input && this.input.selector) {
+            this.input.selector.hide();
+        }
+    }
+
+    showInput() {
+        if (this.input && this.input.selector) {
+            this.input.selector.show();
+        }
+    }
+
+    hideSubmitBtn() {
+        if (this.submitButton && this.submitButton.selector) {
+            this.submitButton.selector.hide();
+        }
+    }
+
+    showSubmitBtn() {
+        if (this.submitButton && this.submitButton.selector) {
+            this.submitButton.selector.show();
+        }
+    }
 }
 
 function shrinkTooWideWord(element) {

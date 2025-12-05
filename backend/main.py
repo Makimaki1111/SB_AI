@@ -116,12 +116,13 @@ async def websocket_endpoint(websocket: WebSocket):
                     # is_cpu戦で、今がCPUのターンなら
                     if getattr(battle, 'is_cpu', False) and not getattr(battle, 'player1_turn', True):
                         cpu_word = battle.get_cpu_word()
+                        import time
+                        time.sleep(5)
                         # CPUの攻撃
                         cpu_res = battle.try_attack(battle.player2_id, cpu_word)
                         await websocket.send_text(json.dumps(cpu_res))
 
             else:
-                
                 await websocket.send_text(json.dumps({"type": "error", "message": "Unknown type"}))
     
     except WebSocketDisconnect:
