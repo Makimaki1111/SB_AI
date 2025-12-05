@@ -7,6 +7,8 @@ from random import randint
 
 load_dotenv()
 
+import SB_info
+DICT = SB_info.SB_info().typed_dict
 class GOOGLE_AI:
     def __init__(self):
         genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
@@ -20,10 +22,12 @@ class GOOGLE_AI:
                 d["type1"] = ""
                 d["type2"] = "" :dict
         """
-        type1 = ["暴力","服飾"][randint(0,1)]
-        type2 = "食べ物" if randint(0,10) == 0 else ""
-        return [type1,type2] if type2 != "" else [type1]
-        
+        #type1 = ["暴力","服飾"][randint(0,1)]
+        #type2 = "食べ物" if randint(0,10) == 0 else ""
+        #return [type1,type2] if type2 != "" else [type1]
+        ret = DICT[text]
+        return ret if ret[1] != "" else [ret[0]]
+
         first_prompt = """
             入力された単語に対してその意味に即したタイプを割り当ててください。詳しい条件は以下の通りです。
             # 条件

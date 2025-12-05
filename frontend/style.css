@@ -351,3 +351,34 @@ element.style {
     padding: 16px 20px;
   }
 }
+
+/* Back to title button: fade+slide in and larger size */
+#back-to-title-btn {
+  display: none; /* JS will toggle display */
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 320ms ease, transform 320ms ease;
+  padding: 12px 20px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(180deg, #ffd77a, #ffb84d);
+  color: #222;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.14);
+  cursor: pointer;
+}
+
+#back-to-title-btn.bt-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Ensure the button sits above other UI elements and place it at right-bottom of the phone box */
+#back-to-title-btn {
+  position: absolute;
+  right: 18px; /* x方向は今のまま */
+  bottom: 450px; /* 少し上に移動（y方向は前の調整に合わせつつ上方向へ） */
+  z-index: 120;
+  display: inline-block;
+}

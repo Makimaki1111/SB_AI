@@ -231,11 +231,25 @@ class UI{
     }
 
     showBackToTitleBtn() {
-        this.backToTitleBtn.selector.show();
+        const el = this.backToTitleBtn.selector;
+        // display のみ切り替え、見た目は CSS の初期スタイルに任せる
+        el.removeClass('bt-visible');
+        el.show();
+        // 少し遅延してクラスを付与（トランジション発火）
+        setTimeout(() => {
+            el.addClass('bt-visible');
+        }, 20);
     }
 
     hideBackToTitleBtn() {
-        this.backToTitleBtn.selector.hide();
+        const el = this.backToTitleBtn.selector;
+        el.removeClass('bt-visible');
+        // トランジション終了後に display:none にする
+        setTimeout(() => {
+            // ensure any inline styles cleared
+            el.hide();
+            el.css({ opacity: '', transform: '' });
+        }, 360);
     }
 
     // 要素を削除せずに非表示にする / 再表示するメソッド

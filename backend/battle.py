@@ -41,6 +41,7 @@ class Battle_info:
         self.character = "こ"
         self.damage = 0
         self.events = []
+
         self.player2_HP = self.MAX_HP
         self.player2_A = 1
         self.player2_B = 1
@@ -91,10 +92,10 @@ class Battle_info:
                 "type" : "error",
                 "message" : "「ん」で終わっています"
             }
-        elif(SB.get_next_initial(word) not in SB.typed_dict):
+        elif(not SB.include_in_typed_heads( SB.get_next_initial(word) )):
             return {
                 "type" : "error",
-                "message" : "辞書にない単語です"
+                "message" : "禁止された単語です"
             }
 
         self.word = word
@@ -240,7 +241,10 @@ class Battle_info:
             tuple: (相性, ダメージ)
         """
         e = SB.type_effect(at1,at2,dt1,dt2)
-        return e,int(10 * e * random.uniform(0.85,0.99))
+        if(dt1 == dt2 == ""):
+            return e, int(10 * e)
+        else:
+            return e, int(10 * e * random.uniform(0.85,0.99))
 
     def _make_response(self) -> dict:
         """
@@ -280,3 +284,5 @@ class Battle_info:
         for i in SB.typed_dict:
             if(i[0] == self.character and i not in self.used):
                 return i
+        
+        return ""
