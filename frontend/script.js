@@ -12,8 +12,32 @@ let foe_HP, foe_max_HP;
 let ui = new UI();
 
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
-function playEffectSound(path){
-  
+function playEventSound(type, message){
+  let path;
+  if(type === "damage"){
+    if(message === "効果はばつぐんだ！"){
+
+    }else if(message === "ふつうのダメージだ"){
+
+    }else if(message === "効果はいまひとつのようだ…"){
+
+    }else{
+      console.warn("未知のメッセージです:" + message);
+    }
+  }
+
+  try {
+    if (!path) return false;
+    const audio = new Audio(path);
+    const p = audio.play();
+    if (p && typeof p.then === 'function') {
+      p.catch(e => console.warn('playEffectSound play failed', e));
+    }
+    return true;
+  } catch (e) {
+    console.warn('playEffectSound error', e);
+    return false;
+  }
 }
 
 const websock_server = "ws://localhost:8000/ws";
@@ -85,6 +109,7 @@ const processEvent = async (events, is_my_turn) => {
 
     // show message and apply immediate state change
     ui.showMessage(e["message"] || "");
+    playEffectSound(e["type"], e["message"]);
     if (e["type"] === "damage") {
       ally_HP = Math.max(0, ally_HP - (e["ally_damage"] || 0));
       foe_HP = Math.max(0, foe_HP - (e["foe_damage"] || 0));
@@ -134,7 +159,6 @@ const onAccepted = async (data) => {
   }
 
   isProcessingAccepted = true;
-
   ui.hideInput();
   ui.hideSubmitBtn();
   // まず画像・単語表示はすぐ行う
