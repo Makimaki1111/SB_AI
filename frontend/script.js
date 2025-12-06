@@ -42,6 +42,10 @@ function playEventSound(type, message){
     }
   }else if(type === "cure"){
     path = "resource/heal.mp3";
+  }else if(type === "start"){
+    path = "resource/start.mp3";
+  }else if(type === "end"){
+    path = "resource/end.mp3";
   }
 
   playSound(path);
@@ -79,6 +83,38 @@ function playIconSound(type){
 
   let path = map[type];
   if(path !== undefined) playSound(path);
+}
+
+// --- BGM 制御 ---
+let bgmAudio = null;
+
+function startBGM(bgmPath){
+  try{
+    if(!bgmAudio) {
+      bgmAudio = new Audio(bgmPath);
+      bgmAudio.loop = true;
+      bgmAudio.volume = 0.45;
+    }
+    const p = bgmAudio.play();
+    if (p && typeof p.then === 'function') p.catch(e => console.warn('BGM play failed', e));
+    return true;
+  } catch(e){
+    console.warn('startBGM error', e);
+    return false;
+  }
+}
+
+function stopBGM(){
+  try{
+    if(bgmAudio){
+      bgmAudio.pause();
+      try { bgmAudio.currentTime = 0; } catch(e){}
+    }
+    return true;
+  } catch(e){
+    console.warn('stopBGM error', e);
+    return false;
+  }
 }
 
 const websock_server = "ws://localhost:8000/ws";
@@ -123,6 +159,9 @@ const onMadeRoom = (data) => {
   ui.setFoeHP(foe_HP, foe_max_HP);
   ui.setAllyName(data["ally"]["name"]);
   ui.setFoeName(data["foe"]["name"]);
+  
+  playEventSound("start", "");
+  startBGM("resource/overflow.mp3");
 
   if(data["state"]["is_my_turn"] === true){
     onAllyTurnStart(data);
@@ -181,12 +220,16 @@ const onFoeTurnStart = (data) => {
 }
 
 const onAllyWin = () => {
+  stopBGM();
+  playEventSound("end", "")
   ui.showMessage("あいてとの勝負に勝った！");
   ui.disableInput();
   ui.showBackToTitleBtn();
 }
 
 const onAllyLose = () => {
+  stopBGM();
+  playEventSound("end", "")
   ui.showMessage("あいてとの勝負に負けた…");
   ui.disableInput();
   ui.showBackToTitleBtn();
@@ -374,6 +417,26 @@ function startReconnectAttempt() {
 
 document.addEventListener("DOMContentLoaded", () => {
   connectWebSocket();
+
+  // BGM ボタン初期化: 同じ id が複数ある場合もあるので querySelectorAll で全てにバインド
+  try {
+    updateBGMButtons();
+    const bgmNodes = document.querySelectorAll('#bgm-toggle-btn');
+    bgmNodes.forEach(n => {
+      n.addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleBGM();
+      });
+    });
+
+    // 設定が有効なら再生を試みる（ブラウザが自動再生をブロックする場合がある）
+    if (bgmEnabled) {
+      // ユーザー操作がないと再生がブロックされることがあるため、ここで試してみる
+      startBGM();
+    }
+  } catch (e) {
+    console.warn('BGM init failed', e);
+  }
 
   // ボタンイベント
   ui.vsPlayerBtn.onClick(() => {
