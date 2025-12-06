@@ -12,20 +12,8 @@ let foe_HP, foe_max_HP;
 let ui = new UI();
 
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
-function playEventSound(type, message){
-  let path;
-  if(type === "damage"){
-    if(message === "効果はばつぐんだ！"){
 
-    }else if(message === "ふつうのダメージだ"){
-
-    }else if(message === "効果はいまひとつのようだ…"){
-
-    }else{
-      console.warn("未知のメッセージです:" + message);
-    }
-  }
-
+function playSound(path){
   try {
     if (!path) return false;
     const audio = new Audio(path);
@@ -38,6 +26,59 @@ function playEventSound(type, message){
     console.warn('playEffectSound error', e);
     return false;
   }
+}
+
+function playEventSound(type, message){
+  let path;
+  if(type === "damage"){
+    if(message === "効果はばつぐんだ！"){
+      path = "resource/effective.mp3";
+    }else if(message === "ふつうのダメージだ"){
+      path = "resource/middmg.mp3";
+    }else if(message === "効果はいまひとつのようだ…"){
+      path = "resource/noneffective.mp3";
+    }else{
+      console.warn("未知のメッセージです:" + message);
+    }
+  }else if(type === "cure"){
+    path = "resource/heal.mp3";
+  }
+
+  playSound(path);
+}
+
+function playIconSound(type){
+  console.log(type);
+  let map = {
+    "ノーマル": "resource/normal.mp3",
+    "動物":  "resource/animal.mp3",
+    "植物": "resource/plant.mp3",
+    "地名": "resource/place.mp3",
+    "感情": "resource/emote.mp3",
+    "芸術": "resource/art.mp3",
+    "食べ物": "resource/food.mp3",
+    "暴力": "resource/violence.mp3",
+    "医療": "resource/health.mp3",
+    "人体": "resource/body.mp3",
+    "機械": "resource/mech.mp3",
+    "理科": "resource/science.mp3",
+    "時間": "resource/time.mp3",
+    "人物": "resource/person.mp3",
+    "工作": "resource/work.mp3",
+    "服飾": "resource/cloth.mp3",
+    "社会": "resource/society.mp3",
+    "遊び": "resource/play.mp3",
+    "虫": "resource/bug.mp3",
+    "数学": "resource/math.mp3",
+    "暴言": "resource/insult.mp3",
+    "宗教": "resource/religion.mp3",
+    "スポーツ": "resource/sports.mp3",
+    "天気": "resource/weather.mp3",
+    "物語": "resource/tale.mp3"
+  };
+
+  let path = map[type];
+  if(path !== undefined) playSound(path);
 }
 
 const websock_server = "ws://localhost:8000/ws";
@@ -109,7 +150,7 @@ const processEvent = async (events, is_my_turn) => {
 
     // show message and apply immediate state change
     ui.showMessage(e["message"] || "");
-    playEffectSound(e["type"], e["message"]);
+    playEventSound(e["type"], e["message"]);
     if (e["type"] === "damage") {
       ally_HP = Math.max(0, ally_HP - (e["ally_damage"] || 0));
       foe_HP = Math.max(0, foe_HP - (e["foe_damage"] || 0));
@@ -165,9 +206,11 @@ const onAccepted = async (data) => {
   if (data["state"]["is_my_turn"]) {
     ui.showAllyImage(data);
     ui.showAllyWord(data["state"]["word"]);
+    playIconSound(data.state.ally_type[0]);
   } else {
     ui.showFoeImage(data);
     ui.showFoeWord(data["state"]["word"]);
+    playIconSound(data.state.foe_type[0]);
   }
 
   await sleep(1000);
