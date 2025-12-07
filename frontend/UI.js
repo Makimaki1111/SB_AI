@@ -24,6 +24,50 @@ class UI{
         this.backToTitleBtn = new UIObject($('#back-to-title-btn'));
     }
 
+    // ---------- ヘルパー: 必ず一度即座に消してからプリロード → フェードイン ----------
+    // - src が falsy の場合は即座に消す（フェードなし）
+    // - src が指定された場合は（同じ src でも）まず即座に消してからプリロード → フェードイン
+    // selector: jQuery object, src: string or falsy, duration: ms
+    _setImageWithReplaceAndFade(selector, src, duration = 100) {
+        if (!selector || selector.length === 0) return;
+
+        selector.stop(true, true);
+
+        // 消す（src falsy）は一瞬で消す（フェードなし）
+        if (!src) {
+            selector.hide();
+            selector.attr('src', '');
+            selector.css('opacity', '');
+            return;
+        }
+
+        // --- 表示する場合（同じ src でも必ず一度消してから表示） ---
+        // 即座に消す（display:none）して src をクリア
+        selector.hide();
+        selector.attr('src', '');
+        selector.css('opacity', '');
+
+        // プリロード
+        const img = new Image();
+        img.onload = () => {
+            // 読み込み成功 → src をセットしてフェードイン
+            selector.css({ opacity: 0, display: 'block' });
+            selector.attr('src', src);
+            selector.animate({ opacity: 1 }, duration, () => {
+                // アニメ後にインライン opacity をクリア（CSS に任せる）
+                selector.css('opacity', '');
+            });
+        };
+        img.onerror = () => {
+            // 読み込み失敗なら隠したまま src をクリア
+            selector.hide();
+            selector.attr('src', '');
+            selector.css('opacity', '');
+        };
+        img.src = src;
+    }
+
+    // ---------- 画面切り替え等 ----------
     showTitleScreen() {
         this.titleScreen.show();
         this.battleScreen.hide();
@@ -81,37 +125,49 @@ class UI{
         shrinkTooWideWord(this.allyWord.selector);
     }
 
+    // ---------- 置換: showAllyImage ----------
     showAllyImage(data){
-        if(data.state){
-            if(data.state.ally_type.length == 1 && data.state.ally_type[0] === ""){
-                this.allyType1Img.selector.attr('src', ``);
-                this.allyType2Img.selector.attr('src', ``);
-                this.allyType1Img.selector.hide();
-                this.allyType2Img.selector.hide();
-                this.allyOnlyTypeImg.selector.attr('src', ``);
-                this.allyOnlyTypeImg.selector.hide();
-            } else if(data.state.ally_type.length == 2){ // 複合タイプの場合
-                this.allyType1Img.selector.attr('src', `img/${type_to_image[data.state.ally_type[0]]}.gif`);
-                this.allyType2Img.selector.attr('src', `img/${type_to_image[data.state.ally_type[1]]}.gif`);
-                this.allyOnlyTypeImg.selector.attr('src', ``);
-                this.allyOnlyTypeImg.selector.hide();
-                this.allyType1Img.selector.show();
-                this.allyType2Img.selector.show();
-            } else { // 単タイプの場合
-                this.allyOnlyTypeImg.selector.attr('src', `img/${type_to_image[data.state.ally_type[0]]}.gif`);
-                this.allyType1Img.selector.attr('src', ``);
-                this.allyType2Img.selector.attr('src', ``);
-                this.allyType1Img.selector.hide();
-                this.allyType2Img.selector.hide();
-                this.allyOnlyTypeImg.selector.show();
-            }
+        if (!data || !data.state) return;
+        const d = data.state;
+
+        // 未設定（[""]）
+        if (d.ally_type.length === 1 && d.ally_type[0] === "") {
+            this._setImageWithReplaceAndFade(this.allyType1Img.selector, '');
+            this._setImageWithReplaceAndFade(this.allyType2Img.selector, '');
+            this._setImageWithReplaceAndFade(this.allyOnlyTypeImg.selector, '');
+            return;
+        }
+
+        // 複合タイプ
+        if (d.ally_type.length === 2) {
+            const src1 = `img/${type_to_image[d.ally_type[0]]}.gif`;
+            const src2 = `img/${type_to_image[d.ally_type[1]]}.gif`;
+            // 単タイプを即座に消す
+            this._setImageWithReplaceAndFade(this.allyOnlyTypeImg.selector, '');
+            // 1枚目を即座に消してからプリロード→フェードイン
+            this._setImageWithReplaceAndFade(this.allyType1Img.selector, src1);
+            // 少し遅らせて 2 枚目を入れる（演出）
+            setTimeout(() => {
+                this._setImageWithReplaceAndFade(this.allyType2Img.selector, src2);
+            }, 80);
+            return;
+        }
+
+        // 単タイプ
+        {
+            const src = `img/${type_to_image[d.ally_type[0]]}.gif`;
+            // 複合の画像を即座に消してから単タイプを表示
+            this._setImageWithReplaceAndFade(this.allyType1Img.selector, '');
+            this._setImageWithReplaceAndFade(this.allyType2Img.selector, '');
+            this._setImageWithReplaceAndFade(this.allyOnlyTypeImg.selector, src);
         }
     }
 
     hideAllyImage() {
-        this.allyType1Img.selector.hide();
-        this.allyType2Img.selector.hide();
-        this.allyOnlyTypeImg.selector.hide();
+        // 消すときは一瞬で消す（フェードなし）
+        this._setImageWithReplaceAndFade(this.allyType1Img.selector, '');
+        this._setImageWithReplaceAndFade(this.allyType2Img.selector, '');
+        this._setImageWithReplaceAndFade(this.allyOnlyTypeImg.selector, '');
     }
 
     showFoeWord(word){
@@ -120,30 +176,38 @@ class UI{
         shrinkTooWideWord(this.foeWord.selector);
     }
 
+    // ---------- 置換: showFoeImage ----------
     showFoeImage(data){
-        if(data.state){
-            if(data.state.foe_type.length == 2){ // 複合タイプの場合
-                this.foeType1Img.selector.attr('src', `img/${type_to_image[data.state.foe_type[0]]}.gif`);
-                this.foeType2Img.selector.attr('src', `img/${type_to_image[data.state.foe_type[1]]}.gif`);
-                this.foeOnlyTypeImg.selector.attr('src', ``);
-                this.foeOnlyTypeImg.selector.hide();
-                this.foeType1Img.selector.show();
-                this.foeType2Img.selector.show();
-            } else { // 単タイプの場合
-                this.foeOnlyTypeImg.selector.attr('src', `img/${type_to_image[data.state.foe_type[0]]}.gif`);
-                this.foeType1Img.selector.attr('src', ``);
-                this.foeType2Img.selector.attr('src', ``);
-                this.foeType1Img.selector.hide();
-                this.foeType2Img.selector.hide();
-                this.foeOnlyTypeImg.selector.show();
-            }
+        if (!data || !data.state) return;
+        const d = data.state;
+
+        if (d.foe_type.length === 2) {
+            const src1 = `img/${type_to_image[d.foe_type[0]]}.gif`;
+            const src2 = `img/${type_to_image[d.foe_type[1]]}.gif`;
+            // 単タイプを即座に消す
+            this._setImageWithReplaceAndFade(this.foeOnlyTypeImg.selector, '');
+            // 1枚目を差し替え（必ず一度消して入れる）
+            this._setImageWithReplaceAndFade(this.foeType1Img.selector, src1);
+            // 2枚目は少し遅らせて入れる
+            setTimeout(() => {
+                this._setImageWithReplaceAndFade(this.foeType2Img.selector, src2);
+            }, 80);
+            return;
+        }
+
+        // 単タイプ
+        {
+            const src = `img/${type_to_image[d.foe_type[0]]}.gif`;
+            this._setImageWithReplaceAndFade(this.foeType1Img.selector, '');
+            this._setImageWithReplaceAndFade(this.foeType2Img.selector, '');
+            this._setImageWithReplaceAndFade(this.foeOnlyTypeImg.selector, src);
         }
     }
 
     hideFoeImage() {
-        this.foeType1Img.selector.hide();
-        this.foeType2Img.selector.hide();
-        this.foeOnlyTypeImg.selector.hide();
+        this._setImageWithReplaceAndFade(this.foeType1Img.selector, '');
+        this._setImageWithReplaceAndFade(this.foeType2Img.selector, '');
+        this._setImageWithReplaceAndFade(this.foeOnlyTypeImg.selector, '');
     }
 
     setWaitMessage(message, time=Infinity) {
@@ -151,7 +215,7 @@ class UI{
         this.waitMessage.selector.show();
         if(time > 0){
           setTimeout(() => {
-            this.waitMessage.hide()
+            this.hideWaitMessage();
           }, 2000);
         }
     }
@@ -259,7 +323,6 @@ class UI{
         }, 360);
     }
 
-    // 要素を削除せずに非表示にする / 再表示するメソッド
     hideInput() {
         if (this.input && this.input.selector) {
             this.input.selector.hide();
@@ -285,6 +348,7 @@ class UI{
     }
 }
 
+// shrinkTooWideWord はそのまま利用
 function shrinkTooWideWord(element) {
   const maxWidth = 180;
   const domElement = element.get ? element.get(0) : element;
