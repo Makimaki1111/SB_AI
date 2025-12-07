@@ -7,7 +7,10 @@ let character = "";
 
 let ally_HP, ally_max_HP;
 let ally_type1, ally_type2;
+let ally_atk, ally_def;
+
 let foe_HP, foe_max_HP;
+let foe_atk, foe_def;
 
 let ui = new UI();
 
@@ -46,6 +49,8 @@ function playEventSound(type, message){
     path = "resource/start.mp3";
   }else if(type === "end"){
     path = "resource/end.mp3";
+  }else if(type === "atk_down"){
+    path = "resource/down.mp3";
   }
 
   playSound(path);
@@ -189,7 +194,6 @@ const processEvent = async (events, is_my_turn) => {
   for (let i = 0; i < events.length; i++) {
     const e = events[i];
 
-    // show message and apply immediate state change
     ui.showMessage(e["message"] || "");
     playEventSound(e["type"], e["message"]);
     if (e["type"] === "damage") {
@@ -200,6 +204,14 @@ const processEvent = async (events, is_my_turn) => {
       ally_HP = Math.min(ally_max_HP, ally_HP + (e["ally_cure"] || 0));
       foe_HP = Math.min(foe_max_HP, foe_HP + (e["foe_cure"] || 0));
       ui.updateHPs(ally_HP, ally_max_HP, foe_HP, foe_max_HP);
+    } else if (e["type"] === "atk_down") {
+      if(e["player"] === "ally") {
+        ally_atk = e["new_atk"];
+      }else if(e["player"] === "foe"){
+        foe_atk = e["new_atk"];
+      }else {
+        alert("なにかがおかしいよ" + e["player"]);
+      }
     }
 
     await sleep(1000);

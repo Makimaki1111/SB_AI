@@ -51,7 +51,7 @@ class Battle_info:
         self.word = ""
         battle_rooms[self.room_id] = self
 
-    def try_attack(self,player_id,word):
+    def try_attack(self, player_id, word: str):
         """player1に返す用のメッセージ
 
         Args:
@@ -140,6 +140,18 @@ class Battle_info:
                 }
                 self.events.append(event)
 
+                # 暴力で攻撃ダウン
+                # TODO: 対戦モードの場合設計変更いるかも
+                # TODO: 攻撃ダウンがマジックナンバー
+                if("暴力" in self.types):
+                    event = {
+                        "type" : "atk_down",
+                        "message" : f"攻撃ががくっと下がった！(現在{0}倍)",
+                        "player" : "ally",
+                        "new_atk" : self.player1_A - 2
+                    }
+                    self.events.append(event)
+
                 self.player2_HP = max(0,self.player2_HP - self.damage)
                 if(self.player2_HP == 0):self.player1_win = True
 
@@ -182,6 +194,18 @@ class Battle_info:
                     "foe_damage" : 0
                 }
                 self.events.append(event)
+
+                # 暴力で攻撃ダウン
+                # TODO: 対戦モードの場合設計変更いるかも
+                # TODO: 攻撃ダウンがマジックナンバー
+                if("暴力" in self.types):
+                    event = {
+                        "type" : "atk_down",
+                        "message" : f"攻撃ががくっと下がった！(現在{0}倍)",
+                        "player" : "foe",
+                        "new_atk" : self.player1_A - 2 if self.player1_turn else self.player2_A - 2
+                    }
+                    self.events.append(event)
 
                 self.player1_HP = max(0,self.player1_HP - self.damage)
                 if(self.player1_HP == 0):self.player1_win = False
