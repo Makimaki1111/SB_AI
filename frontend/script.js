@@ -145,7 +145,7 @@ const initializeBattleScreen = () => {
   character = "";
 }
 
-const onMadeRoom = (data) => {
+const onMadeRoom = async (data) => {
   room_id = data.room_id;
   ui.enableInput();
   ui.clearInput();
@@ -163,6 +163,8 @@ const onMadeRoom = (data) => {
   playEventSound("start", "");
   startBGM("resource/overflow.mp3");
 
+  ui.showMessage("マッチングした！")
+  await sleep(1500);
   if(data["state"]["is_my_turn"] === true){
     onAllyTurnStart(data);
   } else {
@@ -331,7 +333,8 @@ function connectWebSocket() {
     alert("接続が切断されました。タイトル画面に戻ります。");
     startReconnectAttempt();
   });
-
+  
+  /*
   sock.addEventListener("error", function (e) {
     console.error("WebSocketエラー:", e);
     ui.showTitleScreen();
@@ -341,6 +344,7 @@ function connectWebSocket() {
     alert("エラーが発生しました。タイトル画面に戻ります。");
     startReconnectAttempt();
   });
+  */
 }
 
 function sendMakeNewBattle(p1, p2) {
