@@ -367,6 +367,11 @@ element.style {
   color: #222;
   box-shadow: 0 8px 18px rgba(0,0,0,0.14);
   cursor: pointer;
+  position: absolute;
+  right: 18px;
+  bottom: 450px;
+  z-index: 120;
+  display: inline-block;
 }
 
 #back-to-title-btn.bt-visible {
@@ -374,10 +379,28 @@ element.style {
   transform: translateY(0);
 }
 
-#back-to-title-btn {
+
+/* コンピュータ戦用の中断ボタン */
+#cancel-battle-btn {
   position: absolute;
-  right: 18px;
-  bottom: 450px;
-  z-index: 120;
-  display: inline-block;
+  bottom: 20px;          /* 下からの距離 */
+  left: 50%;             /* 左右中央 */
+  transform: translateX(-50%);
+  
+  z-index: 100;
+  
+  /* ボタンのデザイン（既存ボタンと合わせるなら以下のように） */
+  padding: 10px 18px;
+  font-size: 1.0rem;
+  font-weight: 700;
+  border-radius: 20px;
+  border: none;
+  background: #f0f0f0;   /* 少し控えめな色（白系グレー） */
+  color: #333;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  cursor: pointer;
+}
+
+#cancel-battle-btn:hover {
+  background: #e0e0e0;
 }

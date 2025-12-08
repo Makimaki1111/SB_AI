@@ -22,12 +22,9 @@ class UI{
         this.includeImg = new UIObject($('#include-img'));
 
         this.backToTitleBtn = new UIObject($('#back-to-title-btn'));
+        this.cancelBtn = new UIObject($('#cancel-battle-btn'));
     }
 
-    // ---------- ヘルパー: 必ず一度即座に消してからプリロード → フェードイン ----------
-    // - src が falsy の場合は即座に消す（フェードなし）
-    // - src が指定された場合は（同じ src でも）まず即座に消してからプリロード → フェードイン
-    // selector: jQuery object, src: string or falsy, duration: ms
     _setImageWithReplaceAndFade(selector, src, duration = 100) {
         if (!selector || selector.length === 0) return;
 
@@ -345,6 +342,15 @@ class UI{
         if (this.submitButton && this.submitButton.selector) {
             this.submitButton.selector.show();
         }
+    }
+
+    showCancelBtn() {
+        this.cancelBtn.show();
+    }
+
+    // ★追加: 中断ボタンの非表示
+    hideCancelBtn() {
+        this.cancelBtn.hide();
     }
 }
 

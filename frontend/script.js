@@ -342,6 +342,7 @@ function connectWebSocket() {
     ui.hideBackToTitleBtn();
     initializeBattleScreen();
     isDisconnected = true;
+    stopBGM();
     alert("接続が切断されました。タイトル画面に戻ります。");
     startReconnectAttempt();
   });

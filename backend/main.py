@@ -100,7 +100,6 @@ async def websocket_endpoint(websocket: WebSocket):
                 res = include_check(model)
                 await websocket.send_text(json.dumps(res))
 
-
             elif req.get("type") == "submit_word":
                 info = req.get("info", {})
                 model = turn_info(**info)
