@@ -210,7 +210,7 @@ const processEvent = async (events, is_my_turn) => {
       }else if(e["player"] === "foe"){
         foe_atk = e["new_atk"];
       }else {
-        alert("なにかがおかしいよ" + e["player"]);
+        alert("なにかがおかしいよ:" + e["player"]);
       }
     }
 
@@ -424,11 +424,11 @@ function startReconnectAttempt() {
         if (!isConnected && testSock.readyState !== WebSocket.CLOSED) {
           testSock.close();
         }
-      }, 800);
+      }, 300);
     } catch (e) {
       console.error("再接続試行エラー:", e);
     }
-  }, 1000); // 1秒ごとに試行
+  }, 5000); // 1秒ごとに試行
 }
 
 document.addEventListener("DOMContentLoaded", () => {

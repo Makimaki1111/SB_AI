@@ -134,3 +134,25 @@ class SB_info:
             if(i == 3):ret = 0
 
         return ret
+
+    #能力ランク
+    ability_rank_from_power = {
+        0.25:-6 ,   0.28:-5 ,   0.33:-4 ,   0.4:-3 ,   0.5:-2   ,   0.66:-1 ,   1:0 ,
+        1.5:1   ,   2:2     ,   2.5:3   ,   3:4    ,   3.5:5    ,   4:6
+    }
+
+    power_from_ability_rank = {
+        -6:0.25 ,   -5:0.28 ,   -4:0.33 ,   -3:0.4 ,   -2:0.5   ,   -1:0.66 ,   0:1.0 ,
+        1:1.5   ,   2:2     ,   3:2.5   ,   4:3    ,   5:3.5    ,   6:4   
+    }
+
+    #攻撃・防御倍率を受け取り能力ランクを返す
+    def power_to_rank(self, ability_value):
+        assert ability_value in self.ability_rank_from_power
+
+        return self.ability_rank_from_power[ability_value]
+
+    def rank_to_power(self, ability_value):
+        assert ability_value in self.power_from_ability_rank
+
+        return self.power_from_ability_rank[ability_value]

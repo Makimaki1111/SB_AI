@@ -33,8 +33,8 @@ class Battle_info:
         self.is_cpu = (player2_id == "cpu")
 
         self.player1_HP = self.MAX_HP
-        self.player1_A = 1
-        self.player1_B = 1
+        self.player1_A = 0
+        self.player1_B = 0
         self.player1_type = []
         self.player1_win = None
         self.player1_turn = True
@@ -43,8 +43,8 @@ class Battle_info:
         self.events = []
 
         self.player2_HP = self.MAX_HP
-        self.player2_A = 1
-        self.player2_B = 1
+        self.player2_A = 0
+        self.player2_B = 0
         self.player2_type = []
         self.types = []
         self.turn = 0
@@ -134,7 +134,7 @@ class Battle_info:
                 effect, self.damage = self._calc_damage(at1,at2,dt1,dt2)
                 event = {
                     "type" : "damage",
-                    "message" : "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…",
+                    "message" : "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…" if effect > 0 else "効果はないようだ…",
                     "ally_damage" : 0,
                     "foe_damage" : self.damage
                 }
@@ -144,11 +144,12 @@ class Battle_info:
                 # TODO: 対戦モードの場合設計変更いるかも
                 # TODO: 攻撃ダウンがマジックナンバー
                 if("暴力" in self.types):
+                    self.player1_A = max(-6, self.player1_A - 2)
                     event = {
                         "type" : "atk_down",
-                        "message" : f"攻撃ががくっと下がった！(現在{0}倍)",
+                        "message" : f"攻撃ががくっと下がった！(現在{SB.rank_to_power(self.player1_A)}倍)",
                         "player" : "ally",
-                        "new_atk" : self.player1_A - 2
+                        "new_atk" : self.player1_A
                     }
                     self.events.append(event)
 
@@ -189,7 +190,7 @@ class Battle_info:
                 effect, self.damage = self._calc_damage(at1,at2,dt1,dt2)
                 event = {
                     "type" : "damage",
-                    "message" : "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…",
+                    "message" : "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…" if effect > 0 else "効果はないようだ…",
                     "ally_damage" : self.damage,
                     "foe_damage" : 0
                 }
@@ -199,11 +200,12 @@ class Battle_info:
                 # TODO: 対戦モードの場合設計変更いるかも
                 # TODO: 攻撃ダウンがマジックナンバー
                 if("暴力" in self.types):
+                    self.player2_A = max(-6, self.player2_A - 2)
                     event = {
                         "type" : "atk_down",
-                        "message" : f"攻撃ががくっと下がった！(現在{0}倍)",
+                        "message" : f"攻撃ががくっと下がった！(現在{SB.rank_to_power(self.player2_A)}倍)",
                         "player" : "foe",
-                        "new_atk" : self.player1_A - 2 if self.player1_turn else self.player2_A - 2
+                        "new_atk" : self.player2_A
                     }
                     self.events.append(event)
 
@@ -266,11 +268,36 @@ class Battle_info:
         """
         e = SB.type_effect(at1,at2,dt1,dt2)
         if(at1 == at2 == ""):
-            return e, 7
+            # 攻撃がノータイプ
+            damage = 7.0
+            if(self.player1_turn):
+                damage *= SB.rank_to_power(self.player1_A)
+                damage /= SB.rank_to_power(self.player2_B)
+            else:
+                damage *= SB.rank_to_power(self.player2_A)
+                damage /= SB.rank_to_power(self.player1_B)
+            return e, int(damage)
         elif(dt1 == dt2 == ""):
-            return e, int(10 * e)
+            # 防御がノータイプ
+            damage = 10.0 * e
+            if(self.player1_turn):
+                damage *= SB.rank_to_power(self.player1_A)
+                damage /= SB.rank_to_power(self.player2_B)
+            else:
+                damage *= SB.rank_to_power(self.player2_A)
+                damage /= SB.rank_to_power(self.player1_B)
+            return e, int(damage)
         else:
-            return e, int(10 * e * random.uniform(0.85,0.99))
+            # 攻守タイプあり
+            damage = 10.0 * e
+            if(self.player1_turn):
+                damage *= SB.rank_to_power(self.player1_A)
+                damage /= SB.rank_to_power(self.player2_B)
+            else:
+                damage *= SB.rank_to_power(self.player2_A)
+                damage /= SB.rank_to_power(self.player1_B)
+            damage *= random.uniform(0.85,0.99)
+            return e, int(damage)
 
     def _make_response(self) -> dict:
         """
