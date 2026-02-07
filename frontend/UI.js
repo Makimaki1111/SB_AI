@@ -28,7 +28,13 @@ class UI{
     _setImageWithReplaceAndFade(selector, src, duration = 100) {
         if (!selector || selector.length === 0) return;
 
-        selector.stop(true, true);
+        // 同じ画像が表示されている場合は更新しない（点滅防止）
+        if (src && selector.attr('src') === src && selector.css('display') !== 'none') {
+            return;
+        }
+
+        // アニメーション停止（ジャンプさせないことでフラッシュを防止）
+        selector.stop(true, false);
 
         // 消す（src falsy）は一瞬で消す（フェードなし）
         if (!src) {
@@ -136,6 +142,8 @@ class UI{
             setTimeout(() => {
                 this._setImageWithReplaceAndFade(this.allyType2Img.selector, src2);
             }, 80);
+            // 2枚目も表示
+            this._setImageWithReplaceAndFade(this.allyType2Img.selector, src2);
             return;
         }
 
@@ -178,6 +186,8 @@ class UI{
             setTimeout(() => {
                 this._setImageWithReplaceAndFade(this.foeType2Img.selector, src2);
             }, 80);
+            // 2枚目も表示
+            this._setImageWithReplaceAndFade(this.foeType2Img.selector, src2);
             return;
         }
 
