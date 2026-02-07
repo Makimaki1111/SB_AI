@@ -67,6 +67,10 @@ def include_check(info: include_check_info):
         }
     return battle_rooms[room_id].include_check(word)
 
+class run_away_info(BaseModel):
+    room_id: str
+    player_id: str
+
 class turn_info(BaseModel):
     room_id: str
     player_id: str
@@ -124,6 +128,13 @@ async def websocket_endpoint(websocket: WebSocket):
                     if battle.is_cpu and not battle.player1_turn and battle.player1_win is None:
                         cpu_res = battle.execute_cpu_turn()
                         if cpu_res: await websocket.send_text(json.dumps(cpu_res))
+
+            elif req.get("type") == "run_away":
+                info = req.get("info", {})
+                model = run_away_info(**info)
+                if model.room_id in battle_rooms:
+                    del battle_rooms[model.room_id]
+                    print(f"Battle room {model.room_id} was removed because a player ran away.")
 
             else:
                 await websocket.send_text(json.dumps({"type": "error", "message": "Unknown type"}))

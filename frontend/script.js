@@ -161,9 +161,9 @@ const onMadeRoom = async (data) => {
   ui.setFoeName(data["foe"]["name"]);
   
   playEventSound("start", "");
-  startBGM("resource/overflow.mp3");
 
   ui.showMessage("マッチングした！")
+  startBGM("resource/overflow.mp3");
   await sleep(1500);
   if(data["state"]["is_my_turn"] === true){
     onAllyTurnStart(data);
@@ -234,6 +234,7 @@ const onAllyWin = () => {
   ui.showMessage("あいてとの勝負に勝った！");
   ui.disableInput();
   ui.showBackToTitleBtn();
+  ui.hideCancelBtn();
 }
 
 const onAllyLose = () => {
@@ -242,6 +243,7 @@ const onAllyLose = () => {
   ui.showMessage("あいてとの勝負に負けた…");
   ui.disableInput();
   ui.showBackToTitleBtn();
+  ui.hideCancelBtn();
 }
 
 const onAccepted = async (data) => {
@@ -383,6 +385,15 @@ function sendIncludeCheck(room_id, word) {
   }
 }
 
+function sendRunAway(room_id, player_id) {
+  if (sock && sock.readyState === WebSocket.OPEN) {
+    sock.send(JSON.stringify({
+      type: "run_away",
+      info: { room_id: room_id, player_id: player_id }
+    }));
+  }
+}
+
 function sendSubmitWord(room_id, player_id, word) {
   if (sock && sock.readyState === WebSocket.OPEN) {
     sock.send(JSON.stringify({
@@ -431,6 +442,24 @@ function startReconnectAttempt() {
   }, 5000); // 1秒ごとに試行
 }
 
+function preloadImages() {
+  const images = [
+    "img/ground.jpg",
+    "img/unaware.gif",
+    "img/god.gif"
+  ];
+  // type_to_image.js で定義されているマッピングを利用
+  if (typeof type_to_image !== 'undefined') {
+    Object.values(type_to_image).forEach(filename => {
+      images.push(`img/${filename}.gif`);
+    });
+  }
+  images.forEach(src => {
+    const img = new Image();
+    img.src = src;
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   // URLから対戦モードを取得して battleState を設定
   const urlParams = new URLSearchParams(window.location.search);
@@ -452,6 +481,9 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // WebSocket接続を開始 (この中でバトル開始メッセージが送られる)
   connectWebSocket();
+
+  // 画像のプリロードを開始
+  preloadImages();
 
   // BGM ボタン初期化: 同じ id が複数ある場合もあるので querySelectorAll で全てにバインド
   try {
@@ -503,5 +535,13 @@ document.addEventListener("DOMContentLoaded", () => {
     ui.clearInput();
     ui.hidePreImg();
     sendSubmitWord(battleState.roomId, player1_id, text);
+  });
+
+  // にげるボタン
+  ui.cancelBtn.onClick(() => {
+    if (confirm("本当ににげますか？")) {
+      sendRunAway(battleState.roomId, player1_id);
+      window.location.href = "index.html";
+    }
   });
 });

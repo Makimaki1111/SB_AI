@@ -86,12 +86,6 @@ html, body {
     font-family: mplus-1p-regular;
 }
 
-
-element.style {
-    opacity: 1;
-    cursor: pointer;
-}
-
 #submit {
   font-size: 1.4em;
   border: none;
@@ -247,8 +241,8 @@ element.style {
 
 #include-img {
   position: absolute;
-  top: 24%;          /* 必要に応じて調整 */
-  right: 17%;        /* 右側に配置（必要に応じて調整） */
+  top: 175px;
+  right: 17%;      /* メッセージ欄(top: 230px)の少し上に配置 */
   width: 100px;
   opacity: 0.5;
   z-index: 10;
@@ -336,6 +330,7 @@ element.style {
   box-shadow: 0 6px 12px rgba(0,0,0,0.12);
   cursor: pointer;
   text-align: center;
+  text-decoration: none;
 }
 
 #vs-human-btn:hover, #vs-player-btn:hover, #vs-cpu-btn:hover {
@@ -372,6 +367,7 @@ element.style {
   bottom: 450px;
   z-index: 120;
   display: inline-block;
+  text-decoration: none;
 }
 
 #back-to-title-btn.bt-visible {
@@ -389,18 +385,29 @@ element.style {
   
   z-index: 100;
   
-  /* ボタンのデザイン（既存ボタンと合わせるなら以下のように） */
-  padding: 10px 18px;
-  font-size: 1.0rem;
+  /* モダンなスタイル */
+  padding: 12px 32px;
+  font-size: 1.1rem;
   font-weight: 700;
-  border-radius: 20px;
-  border: none;
-  background: #f0f0f0;   /* 少し控えめな色（白系グレー） */
-  color: #333;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  color: #666;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  letter-spacing: 0.05em;
 }
 
 #cancel-battle-btn:hover {
-  background: #e0e0e0;
+  background: #fff;
+  color: #ff6b6b;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  transform: translateX(-50%) translateY(-3px);
+}
+
+#cancel-battle-btn:active {
+  transform: translateX(-50%) translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
