@@ -4,9 +4,9 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 try:
-    from battle import Battle_info, battle_rooms
+    from battle import Battle_info, battle_rooms, SB_info, GOOGLE_AI
 except ImportError:
-    from backend.battle import Battle_info, battle_rooms
+    from backend.battle import Battle_info, battle_rooms, SB_info, GOOGLE_AI
 
 app = FastAPI()
 
@@ -18,29 +18,38 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- DI: アプリケーション全体で共有するインスタンスを生成 ---
+sb_info_instance = SB_info()
+google_ai_instance = GOOGLE_AI()
+
 # --- 既存のREST API（必要なら残してもOK） ---
 class make_new_battle_info(BaseModel):
     player1_id: str
     player2_id: str
 
 def make_new_battle(info: make_new_battle_info):
-    bi = Battle_info(info.player1_id, info.player2_id)
+    bi = Battle_info(
+        info.player1_id, 
+        info.player2_id,
+        sb_info=sb_info_instance,
+        google_ai=google_ai_instance
+    )
+    battle_rooms[bi.room_id] = bi
     return {
         "type": "made_room",
         "message": "バトルルーム作成",
         "room_id": bi.room_id,
-        "is_cpu": bi.is_cpu,
         "state" : {
             "is_my_turn" : bi.player1_turn,
             "character" : bi.character
         },
         "ally" : {
             "max_hp" : bi.MAX_HP,
-            "name" : bi.player1_name
+            "name" : bi.player1.name
         },
         "foe" : {
             "max_hp" : bi.MAX_HP,
-            "name" : bi.player2_name
+            "name" : bi.player2.name
         }
     }
 
@@ -106,18 +115,15 @@ async def websocket_endpoint(websocket: WebSocket):
                 res = turn_process(model)
                 await websocket.send_text(json.dumps(res))
 
-                
                 # --- CPU自動攻撃処理 ---
                 # バトルルーム取得
                 room_id = getattr(model, 'room_id', None)
                 if room_id and room_id in battle_rooms:
-                    battle = battle_rooms[room_id]
-                    # is_cpu戦で、今がCPUのターンなら
-                    if getattr(battle, 'is_cpu', False) and not getattr(battle, 'player1_turn', True):
-                        cpu_word = battle.get_cpu_word()
-                        # CPUの攻撃
-                        cpu_res = battle.try_attack(battle.player2_id, cpu_word)
-                        await websocket.send_text(json.dumps(cpu_res))
+                    battle = battle_rooms[room_id] # type: Battle_info
+                    # CPU戦で、プレイヤーの攻撃後にCPUのターンになる場合
+                    if battle.is_cpu and not battle.player1_turn and battle.player1_win is None:
+                        cpu_res = battle.execute_cpu_turn()
+                        if cpu_res: await websocket.send_text(json.dumps(cpu_res))
 
             else:
                 await websocket.send_text(json.dumps({"type": "error", "message": "Unknown type"}))

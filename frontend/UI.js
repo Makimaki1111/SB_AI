@@ -64,17 +64,6 @@ class UI{
         img.src = src;
     }
 
-    // ---------- 画面切り替え等 ----------
-    showTitleScreen() {
-        this.titleScreen.show();
-        this.battleScreen.hide();
-    }
-
-    showBattleScreen() {
-        this.titleScreen.hide();
-        this.battleScreen.show();
-    }
-
     ClickSubmitBtn(){
         this.submitButton.selector.click();
     }
@@ -119,7 +108,7 @@ class UI{
     showAllyWord(word){
         this.allyWord.selector.text(word);
         this.allyWord.selector.show();
-        shrinkTooWideWord(this.allyWord.selector);
+        this._adjustWordScale(this.allyWord.selector);
     }
 
     // ---------- 置換: showAllyImage ----------
@@ -170,7 +159,7 @@ class UI{
     showFoeWord(word){
         this.foeWord.selector.text(word);
         this.foeWord.selector.show();
-        shrinkTooWideWord(this.foeWord.selector);
+        this._adjustWordScale(this.foeWord.selector);
     }
 
     // ---------- 置換: showFoeImage ----------
@@ -352,25 +341,24 @@ class UI{
     hideCancelBtn() {
         this.cancelBtn.hide();
     }
-}
 
-// shrinkTooWideWord はそのまま利用
-function shrinkTooWideWord(element) {
-  const maxWidth = 180;
-  const domElement = element.get ? element.get(0) : element;
+    _adjustWordScale(element) {
+        const maxWidth = 180;
+        const domElement = element.get ? element.get(0) : element;
 
-  if (domElement && domElement.scrollWidth > maxWidth) {
-    const scale = maxWidth / domElement.scrollWidth;
-    if (domElement.classList.contains('foe-word')) {
-      domElement.style.transform = `translateX(50%) scaleX(${scale})`;
-    } else {
-      domElement.style.transform = `translateX(-50%) scaleX(${scale})`;
+        if (domElement && domElement.scrollWidth > maxWidth) {
+            const scale = maxWidth / domElement.scrollWidth;
+            if (domElement.classList.contains('foe-word')) {
+                domElement.style.transform = `translateX(50%) scaleX(${scale})`;
+            } else {
+                domElement.style.transform = `translateX(-50%) scaleX(${scale})`;
+            }
+        } else if (domElement) {
+            if (domElement.classList.contains('foe-word')) {
+                domElement.style.transform = `translateX(50%) scaleX(1)`;
+            } else {
+                domElement.style.transform = `translateX(-50%) scaleX(1)`;
+            }
+        }
     }
-  } else if (domElement) {
-    if (domElement.classList.contains('foe-word')) {
-      domElement.style.transform = `translateX(50%) scaleX(1)`;
-    } else {
-      domElement.style.transform = `translateX(-50%) scaleX(1)`;
-    }
-  }
 }

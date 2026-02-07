@@ -15,41 +15,48 @@ MAX_HP = 60
 class TextInput(BaseModel):
     text:str
 
-AI = GOOGLE_AI()
-SB = SB_info()
+class Player:
+    """プレイヤーの状態を管理するクラス"""
+    def __init__(self, player_id: str, name: str):
+        self.id = player_id
+        self.name = name
+        self.hp = MAX_HP
+        self.attack_rank = 0
+        self.defense_rank = 0
+        self.types = [""]
+
+    def take_damage(self, damage: int):
+        self.hp = max(0, self.hp - damage)
+
+    def heal(self, amount: int):
+        self.hp = min(MAX_HP, self.hp + amount)
+
+    @property
+    def is_defeated(self) -> bool:
+        return self.hp <= 0
 class Battle_info:
     """
     ブラウザ対戦時のマッチ情報を保持するクラス
     """
 
-    def __init__(self, player1_id, player2_id):
+    def __init__(self, player1_id, player2_id, sb_info: SB_info, google_ai: GOOGLE_AI):
         self.room_id = str(uuid.uuid4())
         self.used = defaultdict(list)
-        self.player1_id = player1_id
-        self.player2_id = player2_id
-        self.player1_name = "じぶん"
-        self.player2_name = "あいて"
         self.MAX_HP = 60
         self.is_cpu = (player2_id == "cpu")
 
-        self.player1_HP = self.MAX_HP
-        self.player1_A = 0
-        self.player1_B = 0
-        self.player1_type = []
+        self.sb_info = sb_info
+        self.google_ai = google_ai
+
+        self.player1 = Player(player1_id, "じぶん")
+        self.player2 = Player(player2_id, "あいて")
+
         self.player1_win = None
         self.player1_turn = True
         self.character = "こ"
-        self.damage = 0
-        self.events = []
-
-        self.player2_HP = self.MAX_HP
-        self.player2_A = 0
-        self.player2_B = 0
-        self.player2_type = []
-        self.types = []
+        self.events = [] # type: list
         self.turn = 0
         self.word = ""
-        battle_rooms[self.room_id] = self
 
     def try_attack(self, player_id, word: str):
         """player1に返す用のメッセージ
@@ -61,158 +68,107 @@ class Battle_info:
         Returns:
             _type_: _description_
         """
-        
         if(self.player1_win != None):
-            return {
-                "type" : "error",
-                "message" : ""
-            }
-        elif(self.player1_turn ^ (player_id == self.player1_id)):
-            return {
-                "type" : "error",
-                "message" : "自分のターンではありません"
-            }
-        elif(not SB.include_in_all_words(word) and not SB.inclue_in_typed_words(word)):
-            return {
-                "type" : "error",
-                "message" : "辞書にない単語です"
-            }
+            return {"type" : "error", "message" : "戦闘はすでに終了しています"}
+        elif(self.player1_turn ^ (player_id == self.player1.id)):
+            return {"type" : "error", "message" : "自分のターンではありません"}
+        elif(not self.sb_info.include_in_all_words(word) and not self.sb_info.inclue_in_typed_words(word)):
+            return {"type" : "error", "message" : "辞書にない単語です"}
         elif(word in self.used):
-            return {
-                "type" : "error",
-                "message" : "使用済みの単語です"
-            }
+            return {"type" : "error", "message" : "使用済みの単語です"}
         elif(word[0] != self.character):
-            return {
-                "type" : "error",
-                "message" : "開始文字がマッチしていません"
-            }
-        elif(SB.get_next_initial(word) == "ん"):
-            return{
-                "type" : "error",
-                "message" : "「ん」で終わっています"
-            }
-        elif(not SB.include_in_typed_heads( SB.get_next_initial(word) )):
-            return {
-                "type" : "error",
-                "message" : "禁止された単語です"
-            }
+            return {"type" : "error", "message" : "開始文字がマッチしていません"}
+        elif(self.sb_info.get_next_initial(word) == "ん"):
+            return {"type" : "error", "message" : "「ん」で終わっています"}
+        elif(not self.sb_info.include_in_typed_heads( self.sb_info.get_next_initial(word) )):
+            return {"type" : "error", "message" : "禁止された単語です"}
 
         self.word = word
-        if(player_id == self.player1_id):
-
+        if(player_id == self.player1.id):
             # タイプ特定
-            self.types = self._type_check(word)
-            self.player1_type = self.types[:]
-            at1 = self.types[0] if len(self.types) >= 1 else ""
-            at2 = self.types[1] if len(self.types) >= 2 else ""
-            dt1 = self.player2_type[0] if len(self.player2_type) >= 1 else ""
-            dt2 = self.player2_type[1] if len(self.player2_type) >= 2 else ""
+            types = self._type_check(word)
+            self.player1.types = types[:]
+            at1 = types[0] if len(types) >= 1 else ""
+            at2 = types[1] if len(types) >= 2 else ""
+            dt1 = self.player2.types[0] if len(self.player2.types) >= 1 else ""
+            dt2 = self.player2.types[1] if len(self.player2.types) >= 2 else ""
             
-            if("食べ物" in self.types):
-                event = {
-                    "type" : "cure",
-                    "message" : "体力が回復した",
-                    "ally_cure" : 20,
-                    "foe_cure" : 0
-                }
+            if("食べ物" in types):
+                event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : 20, "foe_cure" : 0}
                 self.events.append(event)
-
-                self.player1_HP = min(self.MAX_HP, self.player1_HP + 20)
-            elif("医療" in self.types):
-                event = {
-                    "type" : "cure",
-                    "message" : "体力が回復した",
-                    "ally_cure" : 40,
-                    "foe_cure" : 0
-                }
+                self.player1.heal(20)
+            elif("医療" in types):
+                event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : 40, "foe_cure" : 0}
                 self.events.append(event)
-
-                self.player1_HP = min(self.MAX_HP, self.player1_HP + 40)
+                self.player1.heal(40)
             else:
                 # ダメージ計算
-                effect, self.damage = self._calc_damage(at1,at2,dt1,dt2)
+                effect, damage = self._calc_damage(at1,at2,dt1,dt2)
                 event = {
                     "type" : "damage",
                     "message" : "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…" if effect > 0 else "効果はないようだ…",
                     "ally_damage" : 0,
-                    "foe_damage" : self.damage
+                    "foe_damage" : damage
                 }
                 self.events.append(event)
 
                 # 暴力で攻撃ダウン
-                # TODO: 対戦モードの場合設計変更いるかも
-                # TODO: 攻撃ダウンがマジックナンバー
-                if("暴力" in self.types):
-                    self.player1_A = max(-6, self.player1_A - 2)
+                if("暴力" in types):
+                    self.player1.attack_rank = max(-6, self.player1.attack_rank - 2)
                     event = {
                         "type" : "atk_down",
-                        "message" : f"攻撃ががくっと下がった！(現在{SB.rank_to_power(self.player1_A)}倍)",
+                        "message" : f"攻撃ががくっと下がった！(現在{self.sb_info.rank_to_power(self.player1.attack_rank)}倍)",
                         "player" : "ally",
-                        "new_atk" : self.player1_A
+                        "new_atk" : self.player1.attack_rank
                     }
                     self.events.append(event)
 
-                self.player2_HP = max(0,self.player2_HP - self.damage)
-                if(self.player2_HP == 0):self.player1_win = True
+                self.player2.take_damage(damage)
+                if(self.player2.is_defeated): self.player1_win = True
 
         else:
             # タイプ特定
-            self.types = self._type_check(word)
-            self.player2_type = self.types[:]
-            at1 = self.types[0] if len(self.types) >= 1 else ""
-            at2 = self.types[1] if len(self.types) >= 2 else ""
-            dt1 = self.player1_type[0] if len(self.player1_type) >= 1 else ""
-            dt2 = self.player1_type[1] if len(self.player1_type) >= 2 else ""
+            types = self._type_check(word)
+            self.player2.types = types[:]
+            at1 = types[0] if len(types) >= 1 else ""
+            at2 = types[1] if len(types) >= 2 else ""
+            dt1 = self.player1.types[0] if len(self.player1.types) >= 1 else ""
+            dt2 = self.player1.types[1] if len(self.player1.types) >= 2 else ""
 
-            if("食べ物" in self.types):
-                event = {
-                    "type" : "cure",
-                    "message" : "体力が回復した",
-                    "ally_cure" : 0,
-                    "foe_cure" : 20
-                }
+            if("食べ物" in types):
+                event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : 0, "foe_cure" : 20}
                 self.events.append(event)
+                self.player2.heal(20)
 
-                self.player2_HP = min(self.MAX_HP, self.player2_HP + 20)
-            elif("医療" in self.types):
-                event = {
-                    "type" : "cure",
-                    "message" : "体力が回復した",
-                    "ally_cure" : 0,
-                    "foe_cure" : 40
-                }
+            elif("医療" in types):
+                event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : 0, "foe_cure" : 40}
                 self.events.append(event)
-
-                self.player2_HP = min(self.MAX_HP, self.player2_HP + 40)
+                self.player2.heal(40)
             else:
                 # ダメージ計算
-                effect, self.damage = self._calc_damage(at1,at2,dt1,dt2)
+                effect, damage = self._calc_damage(at1,at2,dt1,dt2)
                 event = {
                     "type" : "damage",
                     "message" : "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…" if effect > 0 else "効果はないようだ…",
-                    "ally_damage" : self.damage,
+                    "ally_damage" : damage,
                     "foe_damage" : 0
                 }
                 self.events.append(event)
 
                 # 暴力で攻撃ダウン
-                # TODO: 対戦モードの場合設計変更いるかも
-                # TODO: 攻撃ダウンがマジックナンバー
-                if("暴力" in self.types):
-                    self.player2_A = max(-6, self.player2_A - 2)
+                if("暴力" in types):
+                    self.player2.attack_rank = max(-6, self.player2.attack_rank - 2)
                     event = {
                         "type" : "atk_down",
-                        "message" : f"攻撃ががくっと下がった！(現在{SB.rank_to_power(self.player2_A)}倍)",
+                        "message" : f"攻撃ががくっと下がった！(現在{self.sb_info.rank_to_power(self.player2.attack_rank)}倍)",
                         "player" : "foe",
-                        "new_atk" : self.player2_A
+                        "new_atk" : self.player2.attack_rank
                     }
                     self.events.append(event)
 
-                self.player1_HP = max(0,self.player1_HP - self.damage)
-                if(self.player1_HP == 0):self.player1_win = False
-            
-        self.character = SB.get_next_initial(word)
+                self.player1.take_damage(damage)
+                if(self.player1.is_defeated): self.player1_win = False
+        self.character = self.sb_info.get_next_initial(word)
         ret = self._make_response()
 
         # ターン交代
@@ -236,7 +192,7 @@ class Battle_info:
             ret["type1"] = self.used[_input][0]
             ret["type2"] = self.used[_input][1] if len(self.used[_input]) == 2 else ""
         else:
-            ret["include"] = SB.include_in_all_words(_input)
+            ret["include"] = self.sb_info.include_in_all_words(_input)
 
         return ret
 
@@ -249,7 +205,7 @@ class Battle_info:
         Returns:
             タイプ (list)
         """
-        types = AI.get_type(_input)
+        types = self.google_ai.get_type(_input)
         self.used[_input] = types
 
         return types
@@ -266,36 +222,36 @@ class Battle_info:
         Returns:
             tuple: (相性, ダメージ)
         """
-        e = SB.type_effect(at1,at2,dt1,dt2)
+        e = self.sb_info.type_effect(at1,at2,dt1,dt2)
         if(at1 == at2 == ""):
             # 攻撃がノータイプ
             damage = 7.0
             if(self.player1_turn):
-                damage *= SB.rank_to_power(self.player1_A)
-                damage /= SB.rank_to_power(self.player2_B)
+                damage *= self.sb_info.rank_to_power(self.player1.attack_rank)
+                damage /= self.sb_info.rank_to_power(self.player2.defense_rank)
             else:
-                damage *= SB.rank_to_power(self.player2_A)
-                damage /= SB.rank_to_power(self.player1_B)
+                damage *= self.sb_info.rank_to_power(self.player2.attack_rank)
+                damage /= self.sb_info.rank_to_power(self.player1.defense_rank)
             return e, int(damage)
         elif(dt1 == dt2 == ""):
             # 防御がノータイプ
             damage = 10.0 * e
             if(self.player1_turn):
-                damage *= SB.rank_to_power(self.player1_A)
-                damage /= SB.rank_to_power(self.player2_B)
+                damage *= self.sb_info.rank_to_power(self.player1.attack_rank)
+                damage /= self.sb_info.rank_to_power(self.player2.defense_rank)
             else:
-                damage *= SB.rank_to_power(self.player2_A)
-                damage /= SB.rank_to_power(self.player1_B)
+                damage *= self.sb_info.rank_to_power(self.player2.attack_rank)
+                damage /= self.sb_info.rank_to_power(self.player1.defense_rank)
             return e, int(damage)
         else:
             # 攻守タイプあり
             damage = 10.0 * e
             if(self.player1_turn):
-                damage *= SB.rank_to_power(self.player1_A)
-                damage /= SB.rank_to_power(self.player2_B)
+                damage *= self.sb_info.rank_to_power(self.player1.attack_rank)
+                damage /= self.sb_info.rank_to_power(self.player2.defense_rank)
             else:
-                damage *= SB.rank_to_power(self.player2_A)
-                damage /= SB.rank_to_power(self.player1_B)
+                damage *= self.sb_info.rank_to_power(self.player2.attack_rank)
+                damage /= self.sb_info.rank_to_power(self.player1.defense_rank)
             damage *= random.uniform(0.85,0.99)
             return e, int(damage)
 
@@ -308,19 +264,18 @@ class Battle_info:
         ret = {
             "type": "accepted",
             "state" : {
-                "ally_HP" : self.player1_HP,
-                "ally_A" : self.player1_A,
-                "ally_B" : self.player1_B,
-                "ally_type" : self.player1_type, 
+                "ally_HP" : self.player1.hp,
+                "ally_A" : self.player1.attack_rank,
+                "ally_B" : self.player1.defense_rank,
+                "ally_type" : self.player1.types, 
                 "ally_win" : self.player1_win,
                 "ally_is_attacker" : None,
                 "character" : self.character,
-                "damage" : self.damage,
                 "events" : self.events[:],
-                "foe_HP" : self.player2_HP,
-                "foe_A" : self.player2_A,
-                "foe_B" : self.player2_B,
-                "foe_type" : self.player2_type,
+                "foe_HP" : self.player2.hp,
+                "foe_A" : self.player2.attack_rank,
+                "foe_B" : self.player2.defense_rank,
+                "foe_type" : self.player2.types,
                 "room_id" : self.room_id,
                 "is_cpu" : self.is_cpu,
                 "is_my_turn" : self.player1_turn,
@@ -330,12 +285,24 @@ class Battle_info:
         }
 
         self.events = []
-        self.damage = 0
         return ret
 
     def get_cpu_word(self):
-        for i in SB.typed_dict:
+        for i in self.sb_info.typed_dict:
             if(i[0] == self.character and i not in self.used):
                 return i
         
         return ""
+
+    def execute_cpu_turn(self):
+        """
+        CPUのターンを実行し、行動結果を返します。
+        """
+        cpu_word = self.get_cpu_word()
+        if cpu_word:
+            # CPUが選んだ単語で攻撃
+            return self.try_attack(self.player2.id, cpu_word)
+        else:
+            # CPUが単語を見つけられなかった場合（降参）
+            self.player1_win = True
+            return self._make_response()

@@ -1,16 +1,55 @@
-let room_id = null;
+const TYPE_SOUND_MAP = {
+  "ノーマル": "resource/normal.mp3",
+  "動物":  "resource/animal.mp3",
+  "植物": "resource/plant.mp3",
+  "地名": "resource/place.mp3",
+  "感情": "resource/emote.mp3",
+  "芸術": "resource/art.mp3",
+  "食べ物": "resource/food.mp3",
+  "暴力": "resource/violence.mp3",
+  "医療": "resource/health.mp3",
+  "人体": "resource/body.mp3",
+  "機械": "resource/mech.mp3",
+  "理科": "resource/science.mp3",
+  "時間": "resource/time.mp3",
+  "人物": "resource/person.mp3",
+  "工作": "resource/work.mp3",
+  "服飾": "resource/cloth.mp3",
+  "社会": "resource/society.mp3",
+  "遊び": "resource/play.mp3",
+  "虫": "resource/bug.mp3",
+  "数学": "resource/math.mp3",
+  "暴言": "resource/insult.mp3",
+  "宗教": "resource/religion.mp3",
+  "スポーツ": "resource/sports.mp3",
+  "天気": "resource/weather.mp3",
+  "物語": "resource/tale.mp3"
+};
+
+const EVENT_SOUND_MAP = {
+  "cure": "resource/heal.mp3",
+  "start": "resource/start.mp3",
+  "end": "resource/end.mp3",
+  "atk_down": "resource/down.mp3"
+};
+
+const DAMAGE_MSG_MAP = {
+  "効果はばつぐんだ！": "resource/effective.mp3",
+  "ふつうのダメージだ": "resource/middmg.mp3",
+  "効果はいまひとつのようだ…": "resource/noneffective.mp3"
+};
+
 const player1_id = "your_player1_id";
 const player2_id = "your_player2_id";
 const cpu_id = "cpu";
-let is_vs_cpu = false;
-let character = "";
 
-let ally_HP, ally_max_HP;
-let ally_type1, ally_type2;
-let ally_atk, ally_def;
-
-let foe_HP, foe_max_HP;
-let foe_atk, foe_def;
+const battleState = {
+  roomId: null,
+  isVsCpu: false,
+  character: "",
+  ally: { hp: 0, maxHp: 0, atk: 0, def: 0 },
+  foe: { hp: 0, maxHp: 0, atk: 0, def: 0 }
+};
 
 let ui = new UI();
 
@@ -32,61 +71,17 @@ function playSound(path){
 }
 
 function playEventSound(type, message){
-  let path;
-  if(type === "damage"){
-    if(message === "効果はばつぐんだ！"){
-      path = "resource/effective.mp3";
-    }else if(message === "ふつうのダメージだ"){
-      path = "resource/middmg.mp3";
-    }else if(message === "効果はいまひとつのようだ…"){
-      path = "resource/noneffective.mp3";
-    }else{
-      console.warn("未知のメッセージです:" + message);
-    }
-  }else if(type === "cure"){
-    path = "resource/heal.mp3";
-  }else if(type === "start"){
-    path = "resource/start.mp3";
-  }else if(type === "end"){
-    path = "resource/end.mp3";
-  }else if(type === "atk_down"){
-    path = "resource/down.mp3";
+  let path = EVENT_SOUND_MAP[type];
+  if (type === "damage") {
+    path = DAMAGE_MSG_MAP[message];
+    if (!path) console.warn("未知のメッセージです:" + message);
   }
-
-  playSound(path);
+  if (path) playSound(path);
 }
 
 function playIconSound(type){
   console.log(type);
-  let map = {
-    "ノーマル": "resource/normal.mp3",
-    "動物":  "resource/animal.mp3",
-    "植物": "resource/plant.mp3",
-    "地名": "resource/place.mp3",
-    "感情": "resource/emote.mp3",
-    "芸術": "resource/art.mp3",
-    "食べ物": "resource/food.mp3",
-    "暴力": "resource/violence.mp3",
-    "医療": "resource/health.mp3",
-    "人体": "resource/body.mp3",
-    "機械": "resource/mech.mp3",
-    "理科": "resource/science.mp3",
-    "時間": "resource/time.mp3",
-    "人物": "resource/person.mp3",
-    "工作": "resource/work.mp3",
-    "服飾": "resource/cloth.mp3",
-    "社会": "resource/society.mp3",
-    "遊び": "resource/play.mp3",
-    "虫": "resource/bug.mp3",
-    "数学": "resource/math.mp3",
-    "暴言": "resource/insult.mp3",
-    "宗教": "resource/religion.mp3",
-    "スポーツ": "resource/sports.mp3",
-    "天気": "resource/weather.mp3",
-    "物語": "resource/tale.mp3"
-  };
-
-  let path = map[type];
+  let path = TYPE_SOUND_MAP[type];
   if(path !== undefined) playSound(path);
 }
 
@@ -145,23 +140,23 @@ const initializeBattleScreen = () => {
   ui.setAllyHP(1, 1);
   ui.setFoeHP(1, 1);
 
-  room_id = null;
-  is_vs_cpu = false;
-  character = "";
+  battleState.roomId = null;
+  battleState.isVsCpu = false;
+  battleState.character = "";
 }
 
 const onMadeRoom = async (data) => {
-  room_id = data.room_id;
+  battleState.roomId = data.room_id;
   ui.enableInput();
   ui.clearInput();
 
-  ally_HP = data["ally"]["max_hp"];
-  ally_max_HP = data["ally"]["max_hp"];  
-  foe_HP = data["foe"]["max_hp"];
-  foe_max_HP = data["foe"]["max_hp"];
+  battleState.ally.hp = data["ally"]["max_hp"];
+  battleState.ally.maxHp = data["ally"]["max_hp"];  
+  battleState.foe.hp = data["foe"]["max_hp"];
+  battleState.foe.maxHp = data["foe"]["max_hp"];
 
-  ui.setAllyHP(ally_HP, ally_max_HP);
-  ui.setFoeHP(foe_HP, foe_max_HP);
+  ui.setAllyHP(battleState.ally.hp, battleState.ally.maxHp);
+  ui.setFoeHP(battleState.foe.hp, battleState.foe.maxHp);
   ui.setAllyName(data["ally"]["name"]);
   ui.setFoeName(data["foe"]["name"]);
   
@@ -197,18 +192,18 @@ const processEvent = async (events, is_my_turn) => {
     ui.showMessage(e["message"] || "");
     playEventSound(e["type"], e["message"]);
     if (e["type"] === "damage") {
-      ally_HP = Math.max(0, ally_HP - (e["ally_damage"] || 0));
-      foe_HP = Math.max(0, foe_HP - (e["foe_damage"] || 0));
-      ui.updateHPs(ally_HP, ally_max_HP, foe_HP, foe_max_HP);
+      battleState.ally.hp = Math.max(0, battleState.ally.hp - (e["ally_damage"] || 0));
+      battleState.foe.hp = Math.max(0, battleState.foe.hp - (e["foe_damage"] || 0));
+      ui.updateHPs(battleState.ally.hp, battleState.ally.maxHp, battleState.foe.hp, battleState.foe.maxHp);
     } else if (e["type"] === "cure") {
-      ally_HP = Math.min(ally_max_HP, ally_HP + (e["ally_cure"] || 0));
-      foe_HP = Math.min(foe_max_HP, foe_HP + (e["foe_cure"] || 0));
-      ui.updateHPs(ally_HP, ally_max_HP, foe_HP, foe_max_HP);
+      battleState.ally.hp = Math.min(battleState.ally.maxHp, battleState.ally.hp + (e["ally_cure"] || 0));
+      battleState.foe.hp = Math.min(battleState.foe.maxHp, battleState.foe.hp + (e["foe_cure"] || 0));
+      ui.updateHPs(battleState.ally.hp, battleState.ally.maxHp, battleState.foe.hp, battleState.foe.maxHp);
     } else if (e["type"] === "atk_down") {
       if(e["player"] === "ally") {
-        ally_atk = e["new_atk"];
+        battleState.ally.atk = e["new_atk"];
       }else if(e["player"] === "foe"){
-        foe_atk = e["new_atk"];
+        battleState.foe.atk = e["new_atk"];
       }else {
         alert("なにかがおかしいよ:" + e["player"]);
       }
@@ -221,7 +216,7 @@ const processEvent = async (events, is_my_turn) => {
 const onAllyTurnStart = (data) => {
   ui.setWaitMessage("あなたのターンです。");
   ui.setInputText(`「${data["state"]["character"]}」からはじまることば`)
-  character = data["state"]["character"];
+  battleState.character = data["state"]["character"];
   ui.enableInput();
   ui.enableSubmitBtn();
   ui.showInput();
@@ -311,6 +306,16 @@ function connectWebSocket() {
 
   sock.addEventListener("open", function () {
     console.log("WebSocket接続が開かれました");
+
+    // 接続が確立したらバトル開始メッセージを送信
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode');
+
+    if (mode === 'player') {
+      sendMakeNewBattle(player1_id, player2_id);
+    } else if (mode === 'cpu') {
+      sendMakeNewBattle(player1_id, cpu_id);
+    }
   });
 
   sock.addEventListener("message", function (event) {
@@ -338,13 +343,13 @@ function connectWebSocket() {
 
   sock.addEventListener("close", function () {
     console.log("WebSocket接続が閉じられました");
-    ui.showTitleScreen();
-    ui.hideBackToTitleBtn();
-    initializeBattleScreen();
     isDisconnected = true;
     stopBGM();
-    alert("接続が切断されました。タイトル画面に戻ります。");
-    startReconnectAttempt();
+    // ゲームが終了しておらず、意図しない切断だった場合にメッセージを表示してリダイレクト
+    if (battleState.ally.hp > 0 && battleState.foe.hp > 0) {
+        alert("サーバーとの接続が切れました。タイトル画面に戻ります。");
+        window.location.href = "index.html";
+    }
   });
   
   /*
@@ -387,12 +392,6 @@ function sendSubmitWord(room_id, player_id, word) {
   }
 }
 
-ui.backToTitleBtn.onClick(() => {
-  ui.showTitleScreen();
-  ui.hideBackToTitleBtn();
-  initializeBattleScreen();
-});
-
 function startReconnectAttempt() {
   // 再接続を試みる関数
   if (reconnectInterval) return;
@@ -433,6 +432,25 @@ function startReconnectAttempt() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  // URLから対戦モードを取得して battleState を設定
+  const urlParams = new URLSearchParams(window.location.search);
+  const mode = urlParams.get('mode');
+
+  if (mode === 'player') {
+    battleState.isVsCpu = false;
+  } else if (mode === 'cpu') {
+    battleState.isVsCpu = true;
+  } else {
+    alert("対戦モードが指定されていません。タイトルに戻ります。");
+    // index.htmlのパスは環境に合わせて調整してください
+    window.location.href = "index.html";
+    return;
+  }
+
+  // 画面を初期化
+  initializeBattleScreen();
+  
+  // WebSocket接続を開始 (この中でバトル開始メッセージが送られる)
   connectWebSocket();
 
   // BGM ボタン初期化: 同じ id が複数ある場合もあるので querySelectorAll で全てにバインド
@@ -440,35 +458,14 @@ document.addEventListener("DOMContentLoaded", () => {
     updateBGMButtons();
     const bgmNodes = document.querySelectorAll('#bgm-toggle-btn');
     bgmNodes.forEach(n => {
-      n.addEventListener('click', (e) => {
-        e.preventDefault();
-        toggleBGM();
-      });
+        n.addEventListener('click', (e) => {
+            e.preventDefault();
+            toggleBGM();
+        });
     });
-
-    // 設定が有効なら再生を試みる（ブラウザが自動再生をブロックする場合がある）
-    if (bgmEnabled) {
-      // ユーザー操作がないと再生がブロックされることがあるため、ここで試してみる
-      startBGM();
-    }
   } catch (e) {
     console.warn('BGM init failed', e);
   }
-
-  // ボタンイベント
-  ui.vsPlayerBtn.onClick(() => {
-    initializeBattleScreen();
-    is_vs_cpu = false;
-    ui.showBattleScreen();
-    sendMakeNewBattle(player1_id, player2_id);
-  });
-
-  ui.vsCpuBtn.onClick(() => {
-    initializeBattleScreen();
-    is_vs_cpu = true;
-    ui.showBattleScreen();
-    sendMakeNewBattle(player1_id, cpu_id);
-  });
 
   // エンターで送信
   ui.input.selector.on("keydown", (e) => {
@@ -480,19 +477,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 入力欄の変化で単語チェック
   ui.input.selector.on("input", () => {
-    if(!room_id){
+    if(!battleState.roomId){
       ui.hidePreImg();
       return;
     }
 
     const text = ui.input.selector.val();
     if(text) {
-      if(text.charAt(0) !== character){
+      if(text.charAt(0) !== battleState.character){
         ui.alertWrongChar();
       } else if(text.charAt(text.length - 1) === "ん") {
         ui.alertNN();
       } else {
-        sendIncludeCheck(room_id, text);
+        sendIncludeCheck(battleState.roomId, text);
       }
     } else {
       ui.hidePreImg();
@@ -502,9 +499,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // 送信ボタン
   ui.submitButton.onClick(() => {
     const text = ui.input.selector.val();
-    if (!text.trim() || !room_id) return;
+    if (!text.trim() || !battleState.roomId) return;
     ui.clearInput();
     ui.hidePreImg();
-    sendSubmitWord(room_id, player1_id, text);
+    sendSubmitWord(battleState.roomId, player1_id, text);
   });
 });
