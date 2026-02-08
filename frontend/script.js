@@ -147,12 +147,6 @@ const initializeBattleScreen = () => {
 
   battleState.roomId = null;
   battleState.character = "";
-
-  if (battleState.isVsCpu) {
-    $('#battle-screen').addClass('mode-cpu');
-  } else {
-    $('#battle-screen').removeClass('mode-cpu');
-  }
 }
 
 const onMadeRoom = async (data) => {

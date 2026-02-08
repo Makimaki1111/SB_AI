@@ -54,7 +54,7 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 0rem; /* 要素間の間隔をgapで一括管理 */
-  min-height: 5rem;
+  min-height: 5.3em;
 }
 
 /* フッターエリア（ボタン） */
@@ -80,11 +80,6 @@ html, body {
   height: 100%;
   background-color: #00FF00;
   transition: width 0.1s linear, background-color 0.3s ease;
-}
-
-/* CPUモードのときはタイマーを非表示にする */
-.mode-cpu #timer-container {
-  display: none;
 }
 
 /* 白い楕円 */
@@ -334,7 +329,7 @@ html, body {
     border-radius: 0;
     z-index: 20;
     display: flex;
-    line-height: 3;
+    line-height: 3.5;
 }
 
 /* タイトル画面用: ボタンを中央に大きく配置 */
