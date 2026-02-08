@@ -1,5 +1,7 @@
 import uvicorn
 import json
+from typing import List, Dict
+from collections import defaultdict
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -17,6 +19,34 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# --- Connection Manager: WebSocket接続を管理するクラス ---
+class ConnectionManager:
+    def __init__(self):
+        # アクティブな全接続リスト
+        self.active_connections: List[WebSocket] = []
+        # room_id ごとの接続リスト
+        self.room_connections: Dict[str, List[WebSocket]] = defaultdict(list)
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+        # 各部屋からも削除
+        for room_id in list(self.room_connections.keys()):
+            if websocket in self.room_connections[room_id]:
+                self.room_connections[room_id].remove(websocket)
+
+    def join_room(self, websocket: WebSocket, room_id: str):
+        if websocket not in self.room_connections[room_id]:
+            self.room_connections[room_id].append(websocket)
+
+    async def broadcast(self, message: str, room_id: str):
+        for connection in self.room_connections[room_id]:
+            await connection.send_text(message)
 
 # --- DI: アプリケーション全体で共有するインスタンスを生成 ---
 sb_info_instance = SB_info()
@@ -87,17 +117,19 @@ def turn_process(info: turn_info):
         }
     return battle_rooms[room_id].try_attack(player_id, word)
 
+manager = ConnectionManager()
+
 # --- WebSocket対応部分 ---
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
+    await manager.connect(websocket)
     try:
         while True:
             data = await websocket.receive_text()
             try:
                 req = json.loads(data)
             except Exception:
-                await websocket.send_text(json.dumps({"type": "error", "message": "Invalid JSON"}))
+                await manager.broadcast(json.dumps({"type": "error", "message": "Invalid JSON"}), "") # エラーは送信元だけに返すべきだが簡略化
                 continue
             
             # typeで分岐し、既存の関数を利用
@@ -105,19 +137,22 @@ async def websocket_endpoint(websocket: WebSocket):
                 info = req.get("info", {})
                 model = make_new_battle_info(**info)
                 res = make_new_battle(model)
-                await websocket.send_text(json.dumps(res))
+                # 部屋作成時は送信元を部屋に登録
+                manager.join_room(websocket, res["room_id"])
+                await websocket.send_text(json.dumps(res)) # 作成者には直接応答
 
             elif req.get("type") == "include_check":
                 info = req.get("info", {})
                 model = include_check_info(**info)
                 res = include_check(model)
-                await websocket.send_text(json.dumps(res))
+                await websocket.send_text(json.dumps(res)) # チェック結果は本人だけでOK
 
             elif req.get("type") == "submit_word":
                 info = req.get("info", {})
                 model = turn_info(**info)
                 res = turn_process(model)
-                await websocket.send_text(json.dumps(res))
+                # 結果を部屋全員に送信
+                await manager.broadcast(json.dumps(res), model.room_id)
 
                 # --- CPU自動攻撃処理 ---
                 # バトルルーム取得
@@ -127,7 +162,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     # CPU戦で、プレイヤーの攻撃後にCPUのターンになる場合
                     if battle.is_cpu and not battle.player1_turn and battle.player1_win is None:
                         cpu_res = battle.execute_cpu_turn()
-                        if cpu_res: await websocket.send_text(json.dumps(cpu_res))
+                        if cpu_res: await manager.broadcast(json.dumps(cpu_res), room_id)
 
             elif req.get("type") == "run_away":
                 info = req.get("info", {})
@@ -140,7 +175,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 await websocket.send_text(json.dumps({"type": "error", "message": "Unknown type"}))
     
     except WebSocketDisconnect:
-        print("WebSocket切断")
+        manager.disconnect(websocket)
+        print("WebSocket切断・登録解除")
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
