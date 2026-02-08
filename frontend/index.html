@@ -14,11 +14,26 @@
         <p>AIでタイプをつけた</p>
         <h1>しりとりバトル (α版)</h1>
         <!-- ボタンをbattle.htmlへのリンクに変更 -->
-        <a href="battle.html?mode=player" class="button" id="vs-player-btn">対人戦</a>
+        <a href="battle.html?mode=player" class="button" id="vs-player-btn">ランダムマッチ</a>
         <a href="battle.html?mode=cpu" class="button" id="vs-cpu-btn">コンピュータ戦</a>
+        <hr style="width: 80%; border-top: 1px solid #ccc; margin: 1rem 0;">
+        <a href="battle.html?mode=room" class="button" id="create-room-btn">ルームを作成して待つ</a>
+        <div style="display: flex; gap: 8px; align-items: center; width: 72%; max-width: 340px; margin-top: 8px;">
+          <input type="text" id="room-id-input" placeholder="ルームID" style="flex-grow: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem;">
+          <button id="join-room-btn" style="padding: 10px 16px; border-radius: 8px; border: none; background-color: #4CAF50; color: white; font-size: 1rem; cursor: pointer;">参加する</button>
+        </div>
       </div>
     </div>
   </div>
-
+  <script>
+    document.getElementById('join-room-btn').addEventListener('click', () => {
+        const roomId = document.getElementById('room-id-input').value;
+        if (roomId && roomId.trim() !== '') {
+            window.location.href = `battle.html?mode=room&roomId=${roomId.trim()}`;
+        } else {
+            alert('ルームIDを入力してください。');
+        }
+    });
+  </script>
 </body>
 </html>

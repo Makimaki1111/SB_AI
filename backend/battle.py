@@ -38,9 +38,8 @@ class Battle_info:
     """
     ブラウザ対戦時のマッチ情報を保持するクラス
     """
-
-    def __init__(self, player1_id, player2_id, sb_info: SB_info, google_ai: GOOGLE_AI):
-        self.room_id = str(uuid.uuid4())
+    def __init__(self, player1_id, player2_id, sb_info: SB_info, google_ai: GOOGLE_AI, room_id: str | None = None):
+        self.room_id = room_id or str(uuid.uuid4())
         self.used = defaultdict(list)
         self.MAX_HP = 60
         self.is_cpu = (player2_id == "cpu")

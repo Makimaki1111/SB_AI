@@ -281,19 +281,22 @@ class UI{
         $('.balloon.left .hp').text('');
     }
 
-    initializeMessage(){
-        this.message.selector.removeAttr('style');
-        this.message.selector.text("");
-    }
-
     showMessage(text) {
-        this.initializeMessage();
-        this.message.selector.removeAttr('style');
-        this.message.selector.text(text);
+        if (text) {
+            this.message.selector.text(text).show();
+        } else {
+            if  (!this.isMessageVisible()) {
+                this.message.selector.text("").show();
+            }
+        }
     }
 
     hideMessage() {
-        this.message.selector.css('display', 'none');
+        this.message.selector.hide();
+    }
+
+    isMessageVisible() {
+        return this.message.selector.is(':visible');
     }
 
     setInputText(text){

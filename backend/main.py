@@ -1,5 +1,6 @@
 import uvicorn
 import json
+import secrets
 import asyncio
 from typing import List, Dict
 from collections import defaultdict
@@ -149,6 +150,7 @@ def turn_process(info: turn_info):
 manager = ConnectionManager()
 
 waiting_player = None # {"socket": WebSocket, "player_id": str}
+private_rooms: Dict[str, Dict] = {} # {room_id: {"socket": WebSocket, "player_id": str}}
 
 # --- タイマー管理 ---
 TIME_LIMIT = 20 # 秒
@@ -239,6 +241,40 @@ async def websocket_endpoint(websocket: WebSocket):
                     waiting_player = {"socket": websocket, "player_id": player_id}
                     await websocket.send_text(json.dumps({"type": "waiting", "message": "対戦相手を探しています..."}))
 
+            elif req.get("type") == "join_private_room":
+                info = req.get("info", {})
+                player_id = info.get("player_id")
+                room_id = info.get("room_id")
+                manager.register_player(websocket, player_id)
+
+                if room_id: # Join existing room
+                    if room_id in private_rooms:
+                        p1_data = private_rooms[room_id]
+                        if p1_data["player_id"] == player_id:
+                            continue
+
+                        p2_data = {"socket": websocket, "player_id": player_id}
+                        
+                        bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=sb_info_instance, google_ai=google_ai_instance, room_id=room_id)
+                        battle_rooms[bi.room_id] = bi
+
+                        manager.join_room(p1_data["socket"], bi.room_id)
+                        manager.join_room(p2_data["socket"], bi.room_id)
+
+                        await p1_data["socket"].send_text(json.dumps(bi.make_init_response(p1_data["player_id"])))
+                        await p2_data["socket"].send_text(json.dumps(bi.make_init_response(p2_data["player_id"])))
+                        
+                        await start_turn_timer(bi.room_id)
+                        del private_rooms[room_id]
+                    else:
+                        await websocket.send_text(json.dumps({"type": "error", "message": "ルームが見つかりません"}))
+                else: # Create new room
+                    while True:
+                        new_room_id = f"{secrets.randbelow(1000000):06d}"
+                        if new_room_id not in private_rooms: break
+                    private_rooms[new_room_id] = {"socket": websocket, "player_id": player_id}
+                    await websocket.send_text(json.dumps({"type": "private_room_created", "room_id": new_room_id}))
+
             # typeで分岐し、既存の関数を利用
             elif req.get("type") == "make_new_battle":
                 info = req.get("info", {})
@@ -304,6 +340,17 @@ async def websocket_endpoint(websocket: WebSocket):
         if waiting_player and waiting_player["socket"] == websocket:
             waiting_player = None
         
+        # プライベートルームにいたら削除
+        player_id_to_remove = manager.socket_to_player_id.get(websocket)
+        room_to_remove = None
+        for room_id, data in private_rooms.items():
+            if data.get("player_id") == player_id_to_remove:
+                room_to_remove = room_id
+                break
+        if room_to_remove:
+            del private_rooms[room_to_remove]
+            print(f"Private room {room_to_remove} was removed due to disconnection.")
+
         disconnected_player_id = manager.socket_to_player_id.get(websocket)
         left_rooms = manager.disconnect(websocket) # disconnect()内でsocket_to_player_idから削除される
 

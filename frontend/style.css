@@ -287,11 +287,10 @@ html, body {
 
 #include-img {
   position: absolute;
-  top: 0;
-  right: 4rem;
-  transform: translateY(-75%); /* タイマーバーの上に配置 */
-  /* 他の要素と被らないようサイズを調整 */
-  height: 100px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px;
   opacity: 0.5;
   z-index: 10;
   display: none;
@@ -378,7 +377,7 @@ html, body {
 }
 
 /* 対人戦 / コンピュータ戦 ボタン共通 */
-#vs-human-btn, #vs-player-btn, #vs-cpu-btn {
+#vs-human-btn, #vs-player-btn, #vs-cpu-btn, #create-room-btn {
   display: inline-block;
   width: 72%;
   max-width: 340px;

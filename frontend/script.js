@@ -336,11 +336,14 @@ function connectWebSocket() {
     // 接続が確立したらバトル開始メッセージを送信
     const urlParams = new URLSearchParams(window.location.search);
     const mode = urlParams.get('mode');
+    const roomId = urlParams.get('roomId');
 
     if (mode === 'player') {
       sendFindMatch(player1_id);
     } else if (mode === 'cpu') {
       sendMakeNewBattle(player1_id, cpu_id);
+    } else if (mode === 'room') {
+      sendJoinPrivateRoom(player1_id, roomId);
     }
   });
 
@@ -348,12 +351,23 @@ function connectWebSocket() {
     const data = JSON.parse(event.data);
     console.log("WebSocket受信:", data);
 
+    // ルーム作成・参加前のエラー表示
+    if (data.type === "error" && !battleState.roomId) {
+      alert(data.message);
+      window.location.href = "index.html";
+      return;
+    }
+
     switch (data.type){
       case "made_room":
         onMadeRoom(data);
         break;
       case "waiting":
         ui.setWaitMessage(data.message);
+        break;
+      case "private_room_created":
+        ui.showMessage(`ルームID: ${data.room_id}\n\n対戦相手を待っています...`);
+        battleState.roomId = data.room_id;
         break;
       case "pre_check":
         onPreCheck(data);
@@ -411,6 +425,15 @@ function sendMakeNewBattle(p1, p2) {
     sock.send(JSON.stringify({
       type: "make_new_battle",
       info: { player1_id: p1, player2_id: p2 }
+    }));
+  }
+}
+
+function sendJoinPrivateRoom(player_id, room_id) {
+  if (sock && sock.readyState === WebSocket.OPEN) {
+    sock.send(JSON.stringify({
+      type: "join_private_room",
+      info: { player_id: player_id, room_id: room_id }
     }));
   }
 }
@@ -504,7 +527,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const urlParams = new URLSearchParams(window.location.search);
   const mode = urlParams.get('mode');
 
-  if (mode === 'player') {
+  if (mode === 'player' || mode === 'room') {
     battleState.isVsCpu = false;
   } else if (mode === 'cpu') {
     battleState.isVsCpu = true;
