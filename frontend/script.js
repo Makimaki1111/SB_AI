@@ -252,7 +252,8 @@ const onAllyLose = () => {
 const onOpponentDisconnected = (data) => {
   stopBGM();
   playEventSound("end", "");
-  ui.showMessage(data.message);
+  ui.hideMessage();
+  ui.setWaitMessage("あいてが切断しました", 0);
   ui.disableInput();
   ui.showBackToTitleBtn();
   ui.hideCancelBtn();

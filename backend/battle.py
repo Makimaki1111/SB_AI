@@ -287,6 +287,73 @@ class Battle_info:
         self.events = []
         return ret
 
+    def make_init_response(self, player_id: str) -> dict:
+        """
+        ゲーム開始時のレスポンスを作成する（視点対応）
+        """
+        is_p1 = (player_id == self.player1.id)
+        
+        ally = self.player1 if is_p1 else self.player2
+        foe = self.player2 if is_p1 else self.player1
+
+        return {
+            "type": "made_room",
+            "message": "バトルルーム作成",
+            "room_id": self.room_id,
+            "state" : {
+                "is_my_turn" : self.player1_turn if is_p1 else not self.player1_turn,
+                "character" : self.character
+            },
+            "ally" : {
+                "max_hp" : self.MAX_HP,
+                "name" : ally.name
+            },
+            "foe" : {
+                "max_hp" : self.MAX_HP,
+                "name" : foe.name
+            }
+        }
+
+    @staticmethod
+    def flip_turn_response(response: dict) -> dict:
+        """
+        Player1視点のレスポンスをPlayer2視点に変換する
+        """
+        if response.get("type") != "accepted":
+            return response
+        
+        s = response["state"]
+        new_state = s.copy()
+
+        # ステータスの入れ替え
+        new_state["ally_HP"] = s["foe_HP"]
+        new_state["ally_A"] = s["foe_A"]
+        new_state["ally_B"] = s["foe_B"]
+        new_state["ally_type"] = s["foe_type"]
+        
+        new_state["foe_HP"] = s["ally_HP"]
+        new_state["foe_A"] = s["ally_A"]
+        new_state["foe_B"] = s["ally_B"]
+        new_state["foe_type"] = s["ally_type"]
+
+        # ターンと勝敗の反転
+        new_state["is_my_turn"] = not s["is_my_turn"]
+        new_state["ally_win"] = not s["ally_win"] if s["ally_win"] is not None else None
+
+        # イベントの視点反転
+        new_events = []
+        for e in s["events"]:
+            ne = e.copy()
+            if "ally_damage" in e: ne["ally_damage"] = e["foe_damage"]
+            if "foe_damage" in e: ne["foe_damage"] = e["ally_damage"]
+            if "ally_cure" in e: ne["ally_cure"] = e["foe_cure"]
+            if "foe_cure" in e: ne["foe_cure"] = e["ally_cure"]
+            if "player" in e: ne["player"] = "foe" if e["player"] == "ally" else "ally"
+            new_events.append(ne)
+        new_state["events"] = new_events
+
+        return {"type": "accepted", "state": new_state}
+
     def get_cpu_word(self):
         for i in self.sb_info.typed_dict:
             if(i[0] == self.character and i not in self.used):
