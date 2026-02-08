@@ -428,7 +428,9 @@ html, body {
   color: #222;
   box-shadow: 0 8px 18px rgba(0,0,0,0.14);
   cursor: pointer;
-  /* position: absolute を解除し、footer-area内で配置 */
+  position: absolute;
+  right: 1.8rem;
+  bottom: 28rem;
   z-index: 120;
   display: inline-block;
   text-decoration: none;
