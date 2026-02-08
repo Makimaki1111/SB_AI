@@ -10,11 +10,10 @@ except ImportError:
     from backend.SB_info import SB_info
 
 load_dotenv()
-
 class GOOGLE_AI:
     def __init__(self, sb_info: SB_info):
         genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-        self.model = genai.GenerativeModel()
+        self.model = genai.GenerativeModel("gemini-2.0-flash")
         self.typed_dict = sb_info.typed_dict
 
     def get_type(self,text:str) -> list:
@@ -42,7 +41,8 @@ class GOOGLE_AI:
             chat = self.model.start_chat(history=[{"role": "user", "parts": [first_prompt]}])
             response = chat.send_message(text).text.split()
             return response
-        except:
+        except Exception as e:
+            print(e)
             # 使えなくなったら元々のタイプ
             ret = self.typed_dict.get(text, ("", ""))
             return [t for t in ret if t]
