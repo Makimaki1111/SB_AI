@@ -270,6 +270,13 @@ class UI{
         this.updateHPBar(foe_HP, foe_max_HP, $('#foe-hp-bar'));
     }
 
+    resetHP() {
+        $('.ally-hp-bar').stop(true, true).css({ width: '100%', backgroundColor: '#00FF00' });
+        $('.foe-hp-bar').stop(true, true).css({ width: '100%', backgroundColor: '#00FF00' });
+        $('.balloon.right .hp').text('');
+        $('.balloon.left .hp').text('');
+    }
+
     initializeMessage(){
         this.message.selector.removeAttr('style');
         this.message.selector.text("");

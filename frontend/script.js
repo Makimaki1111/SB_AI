@@ -137,8 +137,7 @@ const initializeBattleScreen = () => {
   ui.setAllyName("");
   ui.setFoeName("");
 
-  ui.setAllyHP(1, 1);
-  ui.setFoeHP(1, 1);
+  ui.resetHP();
 
   battleState.roomId = null;
   battleState.isVsCpu = false;
