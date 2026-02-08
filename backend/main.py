@@ -82,6 +82,8 @@ class ConnectionManager:
 sb_info_instance = SB_info()
 google_ai_instance = GOOGLE_AI()
 
+print("".join(sorted(sb_info_instance.all_dict.keys())))
+
 # --- 既存のREST API（必要なら残してもOK） ---
 class make_new_battle_info(BaseModel):
     player1_id: str

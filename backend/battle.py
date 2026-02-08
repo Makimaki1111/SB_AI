@@ -52,7 +52,8 @@ class Battle_info:
 
         self.player1_win = None
         self.player1_turn = True
-        self.character = "こ"
+        self.START_CHARACTER = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわ"
+        self.character = random.choice(self.START_CHARACTER)
         self.events = [] # type: list
         self.turn = 0
         self.word = ""
