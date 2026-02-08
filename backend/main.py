@@ -28,6 +28,8 @@ class ConnectionManager:
         self.active_connections: List[WebSocket] = []
         # room_id ごとの接続リスト
         self.room_connections: Dict[str, List[WebSocket]] = defaultdict(list)
+        # WebSocket -> player_id のマッピング
+        self.socket_to_player_id: Dict[WebSocket, str] = {}
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
@@ -42,7 +44,12 @@ class ConnectionManager:
             if websocket in self.room_connections[room_id]:
                 self.room_connections[room_id].remove(websocket)
                 left_rooms.append(room_id)
+        if websocket in self.socket_to_player_id:
+            del self.socket_to_player_id[websocket]
         return left_rooms
+
+    def register_player(self, websocket: WebSocket, player_id: str):
+        self.socket_to_player_id[websocket] = player_id
 
     def join_room(self, websocket: WebSocket, room_id: str):
         if websocket not in self.room_connections[room_id]:
@@ -51,6 +58,24 @@ class ConnectionManager:
     async def broadcast(self, message: str, room_id: str):
         for connection in self.room_connections[room_id]:
             await connection.send_text(message)
+
+    async def broadcast_battle_state(self, room_id: str, p1_response: dict):
+        """
+        ルーム内の全員に戦況を送信する。
+        Player2には視点を反転させたデータを送る。
+        """
+        if room_id not in battle_rooms:
+            return
+
+        battle = battle_rooms[room_id]
+        p2_response = battle.flip_turn_response(p1_response)
+
+        for connection in self.room_connections[room_id]:
+            pid = self.socket_to_player_id.get(connection)
+            if pid == battle.player2.id:
+                await connection.send_text(json.dumps(p2_response))
+            else:
+                await connection.send_text(json.dumps(p1_response))
 
 # --- DI: アプリケーション全体で共有するインスタンスを生成 ---
 sb_info_instance = SB_info()
@@ -102,7 +127,7 @@ def include_check(info: include_check_info):
     return battle_rooms[room_id].include_check(word)
 
 class run_away_info(BaseModel):
-    room_id: str
+    room_id: str | None
     player_id: str
 
 class turn_info(BaseModel):
@@ -123,6 +148,8 @@ def turn_process(info: turn_info):
 
 manager = ConnectionManager()
 
+waiting_player = None # {"socket": WebSocket, "player_id": str}
+
 # --- タイマー管理 ---
 TIME_LIMIT = 20 # 秒
 timer_tasks: Dict[str, asyncio.Task] = {}
@@ -136,7 +163,7 @@ async def timeout_handler(room_id: str):
             battle = battle_rooms[room_id]
             # タイムアウト処理実行
             res = battle.timeout()
-            await manager.broadcast(json.dumps(res), room_id)
+            await manager.broadcast_battle_state(room_id, res)
             
             # ゲーム終了判定
             if battle.player1_win is not None:
@@ -147,7 +174,7 @@ async def timeout_handler(room_id: str):
                     await asyncio.sleep(1)
                     cpu_res = battle.execute_cpu_turn()
                     if cpu_res:
-                        await manager.broadcast(json.dumps(cpu_res), room_id)
+                        await manager.broadcast_battle_state(room_id, cpu_res)
                 
                 # 次のターンのタイマー開始（ゲームが続いていれば）
                 if battle.player1_win is None:
@@ -173,6 +200,7 @@ def stop_turn_timer(room_id: str):
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
+    global waiting_player
     try:
         while True:
             data = await websocket.receive_text()
@@ -182,10 +210,40 @@ async def websocket_endpoint(websocket: WebSocket):
                 await manager.broadcast(json.dumps({"type": "error", "message": "Invalid JSON"}), "") # エラーは送信元だけに返すべきだが簡略化
                 continue
             
+            # --- マッチメイキング処理 ---
+            if req.get("type") == "find_match":
+                info = req.get("info", {})
+                player_id = info.get("player_id")
+                manager.register_player(websocket, player_id)
+
+                if waiting_player is not None:
+                    if waiting_player["player_id"] == player_id:
+                        continue
+                    
+                    p1_data = waiting_player
+                    p2_data = {"socket": websocket, "player_id": player_id}
+                    
+                    bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=sb_info_instance, google_ai=google_ai_instance)
+                    battle_rooms[bi.room_id] = bi
+
+                    manager.join_room(p1_data["socket"], bi.room_id)
+                    manager.join_room(p2_data["socket"], bi.room_id)
+
+                    await p1_data["socket"].send_text(json.dumps(bi.make_init_response(p1_data["player_id"])))
+                    await p2_data["socket"].send_text(json.dumps(bi.make_init_response(p2_data["player_id"])))
+                    
+                    await start_turn_timer(bi.room_id)
+
+                    waiting_player = None
+                else:
+                    waiting_player = {"socket": websocket, "player_id": player_id}
+                    await websocket.send_text(json.dumps({"type": "waiting", "message": "対戦相手を探しています..."}))
+
             # typeで分岐し、既存の関数を利用
-            if req.get("type") == "make_new_battle":
+            elif req.get("type") == "make_new_battle":
                 info = req.get("info", {})
                 model = make_new_battle_info(**info)
+                manager.register_player(websocket, model.player1_id)
                 res = make_new_battle(model)
                 # 部屋作成時は送信元を部屋に登録
                 manager.join_room(websocket, res["room_id"])
@@ -211,7 +269,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     # 正常な手番の場合はタイマー停止
                     stop_turn_timer(model.room_id)
                     # 結果を部屋全員に送信
-                    await manager.broadcast(json.dumps(res), model.room_id)
+                    await manager.broadcast_battle_state(model.room_id, res)
 
                     # --- CPU自動攻撃処理 ---
                     # バトルルーム取得
@@ -224,7 +282,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             # CPU戦で、プレイヤーの攻撃後にCPUのターンになる場合
                             if battle.is_cpu and not battle.player1_turn:
                                 cpu_res = battle.execute_cpu_turn()
-                                if cpu_res: await manager.broadcast(json.dumps(cpu_res), room_id)
+                                if cpu_res: await manager.broadcast_battle_state(room_id, cpu_res)
                             
                             # まだ勝敗が決まっていなければ次のターンのタイマー開始
                             if battle.player1_win is None:
@@ -242,6 +300,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 await websocket.send_text(json.dumps({"type": "error", "message": "Unknown type"}))
     
     except WebSocketDisconnect:
+        # 待機中のプレイヤーが切断した場合
+        if waiting_player and waiting_player["socket"] == websocket:
+            waiting_player = None
         left_rooms = manager.disconnect(websocket)
         for room_id in left_rooms:
             stop_turn_timer(room_id)
