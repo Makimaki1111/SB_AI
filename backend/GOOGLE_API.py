@@ -4,14 +4,18 @@ import os
 from dotenv import load_dotenv
 import google.generativeai as genai
 
+try:
+    from SB_info import SB_info
+except ImportError:
+    from backend.SB_info import SB_info
+
 load_dotenv()
 
-import SB_info
-DICT = SB_info.SB_info().typed_dict
 class GOOGLE_AI:
-    def __init__(self):
+    def __init__(self, sb_info: SB_info):
         genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
         self.model = genai.GenerativeModel()
+        self.typed_dict = sb_info.typed_dict
 
     def get_type(self,text:str) -> list:
         """
@@ -40,5 +44,5 @@ class GOOGLE_AI:
             return response
         except:
             # 使えなくなったら元々のタイプ
-            ret = DICT[text]
-            return ret if ret[1] != "" else [ret[0]]
+            ret = self.typed_dict.get(text, ("", ""))
+            return [t for t in ret if t]

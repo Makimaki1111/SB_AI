@@ -80,9 +80,7 @@ class ConnectionManager:
 
 # --- DI: アプリケーション全体で共有するインスタンスを生成 ---
 sb_info_instance = SB_info()
-google_ai_instance = GOOGLE_AI()
-
-print("".join(sorted(sb_info_instance.all_dict.keys())))
+google_ai_instance = GOOGLE_AI(sb_info_instance)
 
 # --- 既存のREST API（必要なら残してもOK） ---
 class make_new_battle_info(BaseModel):

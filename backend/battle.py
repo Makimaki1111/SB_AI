@@ -34,6 +34,7 @@ class Player:
     @property
     def is_defeated(self) -> bool:
         return self.hp <= 0
+
 class Battle_info:
     """
     ブラウザ対戦時のマッチ情報を保持するクラス
