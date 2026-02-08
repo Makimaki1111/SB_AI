@@ -39,8 +39,12 @@ const DAMAGE_MSG_MAP = {
   "効果はいまひとつのようだ…": "resource/noneffective.mp3"
 };
 
-const player1_id = "your_player1_id";
-const player2_id = "your_player2_id";
+// プレイヤーIDをランダム生成して保存（対人戦で識別するため）
+let player1_id = localStorage.getItem("sb_player_id");
+if (!player1_id) {
+    player1_id = "player_" + Math.random().toString(36).substring(2, 9);
+    localStorage.setItem("sb_player_id", player1_id);
+}
 const cpu_id = "cpu";
 
 const battleState = {
@@ -245,6 +249,15 @@ const onAllyLose = () => {
   ui.hideCancelBtn();
 }
 
+const onOpponentDisconnected = (data) => {
+  stopBGM();
+  playEventSound("end", "");
+  ui.showMessage(data.message);
+  ui.disableInput();
+  ui.showBackToTitleBtn();
+  ui.hideCancelBtn();
+}
+
 const onAccepted = async (data) => {
   // 既に処理中ならデータを待機キューに入れて戻る
   if (isProcessingAccepted) {
@@ -313,7 +326,7 @@ function connectWebSocket() {
     const mode = urlParams.get('mode');
 
     if (mode === 'player') {
-      sendMakeNewBattle(player1_id, player2_id);
+      sendFindMatch(player1_id);
     } else if (mode === 'cpu') {
       sendMakeNewBattle(player1_id, cpu_id);
     }
@@ -327,6 +340,9 @@ function connectWebSocket() {
       case "made_room":
         onMadeRoom(data);
         break;
+      case "waiting":
+        ui.setWaitMessage(data.message);
+        break;
       case "pre_check":
         onPreCheck(data);
         break;
@@ -336,6 +352,9 @@ function connectWebSocket() {
       case "error":
         onError(data);
         return;
+      case "opponent_disconnected":
+        onOpponentDisconnected(data);
+        break;
       default:
         console.warn("未対応のメッセージタイプ:", data.type);
         return;
@@ -364,6 +383,15 @@ function connectWebSocket() {
     startReconnectAttempt();
   });
   */
+}
+
+function sendFindMatch(player_id) {
+  if (sock && sock.readyState === WebSocket.OPEN) {
+    sock.send(JSON.stringify({
+      type: "find_match",
+      info: { player_id: player_id }
+    }));
+  }
 }
 
 function sendMakeNewBattle(p1, p2) {
