@@ -467,10 +467,10 @@ html, body {
   background: #fff;
   color: #ff6b6b;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-  transform: translateX(-50%) translateY(-3px);
+  transform: translateY(-3px);
 }
 
 #cancel-battle-btn:active {
-  transform: translateX(-50%) translateY(-1px);
+  transform: translateY(-1px);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
