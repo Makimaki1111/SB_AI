@@ -34,7 +34,57 @@ html, body {
 
 .content {
   flex: 2;
-  padding: 10px;
+  padding: 0 0 0 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* 上下のエリアを離す */
+  gap: 1rem;
+}
+
+/* 操作エリア（タイマー、メッセージ、入力） */
+.action-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative; /* 画像などの絶対配置の基準 */
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0rem; /* 要素間の間隔をgapで一括管理 */
+  min-height: 5rem;
+}
+
+/* フッターエリア（ボタン） */
+.footer-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 6rem;
+}
+
+#timer-container {
+  width: 100%;
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  margin-bottom: 0; /* gapで管理するため削除 */
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+#timer-bar {
+  width: 100%;
+  height: 100%;
+  background-color: #00FF00;
+  transition: width 0.1s linear, background-color 0.3s ease;
+}
+
+/* CPUモードのときはタイマーを非表示にする */
+.mode-cpu #timer-container {
+  display: none;
 }
 
 /* 白い楕円 */
@@ -67,7 +117,8 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 10 0 0 0;
+  margin-top: 0.5rem;
 }
 
 #input {
@@ -241,34 +292,49 @@ html, body {
 
 #include-img {
   position: absolute;
-  top: 175px;
-  right: 17%;      /* メッセージ欄(top: 230px)の少し上に配置 */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   width: 100px;
   opacity: 0.5;
   z-index: 10;
   display: none;
+  pointer-events: none;
 }
 
 #wait-message {
     background-color: #fce5cd;
     width: fit-content;
-    border-radius: 5px;
+    border-radius: 5px 5px 0 0;
     font-style: italic;
     position: absolute;
-    top: 290px;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    margin: 0;
+    z-index: 30;
+    padding: 2px 6px;
+}
+
+#wait-message:empty {
+    display: none;
 }
 
 #message {
     position: absolute;
+    top: 0;
     left: 0;
     width: 100%;
-    height: 50px;
+    height: 100%;
     background-color: #333333;
     color: white;
-    text-align: left;
-    top: 230px;
-    padding: 10px;
+    text-align: center;
+    padding: 0 1rem;
     font-size: 1.2em;
+    border-radius: 0;
+    z-index: 20;
+    display: flex;
+    line-height: 3;
 }
 
 /* タイトル画面用: ボタンを中央に大きく配置 */
@@ -362,9 +428,7 @@ html, body {
   color: #222;
   box-shadow: 0 8px 18px rgba(0,0,0,0.14);
   cursor: pointer;
-  position: absolute;
-  right: 18px;
-  bottom: 450px;
+  /* position: absolute を解除し、footer-area内で配置 */
   z-index: 120;
   display: inline-block;
   text-decoration: none;
@@ -378,10 +442,7 @@ html, body {
 
 /* コンピュータ戦用の中断ボタン */
 #cancel-battle-btn {
-  position: absolute;
-  bottom: 20px;          /* 下からの距離 */
-  left: 50%;             /* 左右中央 */
-  transform: translateX(-50%);
+  /* position: absolute を解除し、footer-area内で配置 */
   
   z-index: 100;
   

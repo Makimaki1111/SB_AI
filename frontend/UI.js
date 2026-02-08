@@ -23,6 +23,10 @@ class UI{
 
         this.backToTitleBtn = new UIObject($('#back-to-title-btn'));
         this.cancelBtn = new UIObject($('#cancel-battle-btn'));
+
+        this.timerBar = $('#timer-bar');
+        this.timerContainer = $('#timer-container');
+        this.timerInterval = null;
     }
 
     _setImageWithReplaceAndFade(selector, src, duration = 100) {
@@ -377,5 +381,44 @@ class UI{
                 domElement.style.transform = `translateX(-50%) scaleX(1)`;
             }
         }
+    }
+
+    startTimer(duration) {
+        this.stopTimer();
+        let remaining = duration;
+        this.timerBar.css('width', '100%');
+        this.timerBar.css('background-color', '#00FF00');
+        
+        // 0.1秒ごとに更新
+        this.timerInterval = setInterval(() => {
+            remaining -= 0.1;
+            const percentage = (remaining / duration) * 100;
+            this.timerBar.css('width', `${percentage}%`);
+            
+            if (percentage < 30) {
+                this.timerBar.css('background-color', '#FF0000'); // 赤
+            } else if (percentage < 60) {
+                this.timerBar.css('background-color', '#FFFF00'); // 黄
+            }
+
+            if (remaining <= 0) {
+                this.stopTimer();
+            }
+        }, 100);
+    }
+
+    stopTimer() {
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
+    }
+
+    showTimerContainer() {
+        this.timerContainer.show();
+    }
+
+    hideTimerContainer() {
+        this.timerContainer.hide();
     }
 }

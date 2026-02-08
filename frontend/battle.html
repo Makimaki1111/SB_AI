@@ -45,15 +45,24 @@
       </div>
 
       <div class="content">
-        <img id="include-img" src="" alt="動的画像" />
-        <div id="text" style="display: flex;">
-          <input type="text" id="input" autocomplete="off" placeholder="「」からはじまることば" />
-          <button type="submit" id="submit">▶</button>
+        <!-- アクションエリア: タイマー、メッセージ、入力 -->
+        <div class="action-area">
+          <div class="input-wrapper">
+            <div id="timer-container"><div id="timer-bar"></div></div>
+            <div id="text">
+              <input type="text" id="input" autocomplete="off" placeholder="「」からはじまることば" />
+              <button type="submit" id="submit">▶</button>
+              <img id="include-img" src="" alt="動的画像" />
+            </div>
+            <div id="message"></div>
+            <div id="wait-message"></div>
+          </div>
         </div>
-        <div id="message"></div>
-        <div id="wait-message"></div>
-        <a href="index.html" id="back-to-title-btn" style="display:none; margin-top:20px;">タイトルに戻る</a>
-        <button id="cancel-battle-btn">にげる</button>
+        <!-- フッターエリア: ボタン類 -->
+        <div class="footer-area">
+          <a href="index.html" id="back-to-title-btn" style="display:none;">タイトルに戻る</a>
+          <button id="cancel-battle-btn">にげる</button>
+        </div>
       </div>
     </div>
   </div>

@@ -46,6 +46,7 @@ if (!player1_id) {
     localStorage.setItem("sb_player_id", player1_id);
 }
 const cpu_id = "cpu";
+const TURN_TIME_LIMIT = 20; // 秒（バックエンドの設定と合わせる）
 
 const battleState = {
   roomId: null,
@@ -142,10 +143,16 @@ const initializeBattleScreen = () => {
   ui.setFoeName("");
 
   ui.resetHP();
+  ui.stopTimer();
 
   battleState.roomId = null;
-  battleState.isVsCpu = false;
   battleState.character = "";
+
+  if (battleState.isVsCpu) {
+    $('#battle-screen').addClass('mode-cpu');
+  } else {
+    $('#battle-screen').removeClass('mode-cpu');
+  }
 }
 
 const onMadeRoom = async (data) => {
@@ -225,10 +232,16 @@ const onAllyTurnStart = (data) => {
   ui.showInput();
   ui.showSubmitBtn();
   ui.hideMessage();
+  if (!battleState.isVsCpu) {
+    ui.startTimer(TURN_TIME_LIMIT);
+  }
 }
 
 const onFoeTurnStart = (data) => {
     ui.setWaitMessage("相手のターンです。");
+    if (!battleState.isVsCpu) {
+      ui.startTimer(TURN_TIME_LIMIT);
+    }
 }
 
 const onAllyWin = () => {
@@ -238,6 +251,7 @@ const onAllyWin = () => {
   ui.disableInput();
   ui.showBackToTitleBtn();
   ui.hideCancelBtn();
+  ui.stopTimer();
 }
 
 const onAllyLose = () => {
@@ -247,6 +261,7 @@ const onAllyLose = () => {
   ui.disableInput();
   ui.showBackToTitleBtn();
   ui.hideCancelBtn();
+  ui.stopTimer();
 }
 
 const onOpponentDisconnected = (data) => {
@@ -257,6 +272,7 @@ const onOpponentDisconnected = (data) => {
   ui.disableInput();
   ui.showBackToTitleBtn();
   ui.hideCancelBtn();
+  ui.stopTimer();
 }
 
 const onAccepted = async (data) => {
@@ -267,6 +283,7 @@ const onAccepted = async (data) => {
   }
 
   isProcessingAccepted = true;
+  ui.stopTimer(); // 結果処理中はタイマーを止める
   ui.hideInput();
   ui.hideSubmitBtn();
   // まず画像・単語表示はすぐ行う
