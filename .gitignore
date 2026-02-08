@@ -2,3 +2,5 @@
 /.env
 /frontend/img
 /frontend/resource
+venv
+**/dic/**

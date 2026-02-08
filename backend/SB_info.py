@@ -1,4 +1,5 @@
 import csv
+import os
 from collections import defaultdict
 
 class SB_info:
@@ -7,14 +8,19 @@ class SB_info:
         self.typed_dict = defaultdict(lambda:("","")) # 単語のタイプを返す辞書
         self.typed_heads = set()
 
-        with open("C:/Users/Excus/AppData/Local/Programs/Python/Python311/Lib/site-packages/SB_tools/dic/notype.csv", 'r', encoding='utf-8-sig') as typed_file:
+        # このファイル(SB_info.py)のあるディレクトリを取得
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        # dicフォルダへのパスを作成 (backend/dic/...)
+        dic_dir = os.path.join(base_dir, "dic")
+
+        with open(os.path.join(dic_dir, "notype.csv"), 'r', encoding='utf-8-sig') as typed_file:
                 reader = csv.reader(typed_file)
                 typed_words_not_processing = list(reader)
         for i in typed_words_not_processing:
             word = i[0]
             self.all_dict[word[0]].add(word) 
        
-        with open("C:/Users/Excus/AppData/Local/Programs/Python/Python311/Lib/site-packages/SB_tools/dic/typed.csv", 'r', encoding='utf-8-sig') as typed_file:
+        with open(os.path.join(dic_dir, "typed.csv"), 'r', encoding='utf-8-sig') as typed_file:
                 reader = csv.reader(typed_file)
                 typed_words_not_processing = list(reader)
         for i in typed_words_not_processing:
