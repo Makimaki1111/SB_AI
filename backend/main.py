@@ -7,9 +7,9 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 try:
-    from battle import Battle_info, battle_rooms, SB_info, GOOGLE_AI
+    from battle import Battle_info, battle_rooms, SB_info, AI_Client
 except ImportError:
-    from backend.battle import Battle_info, battle_rooms, SB_info, GOOGLE_AI
+    from backend.battle import Battle_info, battle_rooms, SB_info, AI_Client
 
 app = FastAPI()
 
@@ -79,7 +79,7 @@ class ConnectionManager:
 
 # --- DI: アプリケーション全体で共有するインスタンスを生成 ---
 sb_info_instance = SB_info()
-google_ai_instance = GOOGLE_AI()
+ai_instance = AI_Client()
 
 # --- 既存のREST API（必要なら残してもOK） ---
 class make_new_battle_info(BaseModel):
@@ -91,7 +91,7 @@ def make_new_battle(info: make_new_battle_info):
         info.player1_id, 
         info.player2_id,
         sb_info=sb_info_instance,
-        google_ai=google_ai_instance
+        ai_client=ai_instance
     )
     battle_rooms[bi.room_id] = bi
     return {
@@ -223,7 +223,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     p1_data = waiting_player
                     p2_data = {"socket": websocket, "player_id": player_id}
                     
-                    bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=sb_info_instance, google_ai=google_ai_instance)
+                    bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=sb_info_instance, ai_client=ai_instance)
                     battle_rooms[bi.room_id] = bi
 
                     manager.join_room(p1_data["socket"], bi.room_id)

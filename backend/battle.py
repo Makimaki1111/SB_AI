@@ -1,9 +1,9 @@
 try:
     from SB_info import SB_info
-    from GOOGLE_API import GOOGLE_AI
+    from GOOGLE_API import AI_Client
 except ImportError:
     from backend.SB_info import SB_info
-    from backend.GOOGLE_API import GOOGLE_AI
+    from backend.GOOGLE_API import AI_Client
 
 from collections import defaultdict
 from pydantic import BaseModel
@@ -39,14 +39,14 @@ class Battle_info:
     ブラウザ対戦時のマッチ情報を保持するクラス
     """
 
-    def __init__(self, player1_id, player2_id, sb_info: SB_info, google_ai: GOOGLE_AI):
+    def __init__(self, player1_id, player2_id, sb_info: SB_info, ai_client: AI_Client):
         self.room_id = str(uuid.uuid4())
         self.used = defaultdict(list)
         self.MAX_HP = 60
         self.is_cpu = (player2_id == "cpu")
 
         self.sb_info = sb_info
-        self.google_ai = google_ai
+        self.ai_client = ai_client
 
         self.player1 = Player(player1_id, "じぶん")
         self.player2 = Player(player2_id, "あいて")
@@ -205,7 +205,7 @@ class Battle_info:
         Returns:
             タイプ (list)
         """
-        types = self.google_ai.get_type(_input)
+        types = self.ai_client.get_type(_input)
         self.used[_input] = types
 
         return types
