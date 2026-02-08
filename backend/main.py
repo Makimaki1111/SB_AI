@@ -303,9 +303,25 @@ async def websocket_endpoint(websocket: WebSocket):
         # 待機中のプレイヤーが切断した場合
         if waiting_player and waiting_player["socket"] == websocket:
             waiting_player = None
-        left_rooms = manager.disconnect(websocket)
+        
+        disconnected_player_id = manager.socket_to_player_id.get(websocket)
+        left_rooms = manager.disconnect(websocket) # disconnect()内でsocket_to_player_idから削除される
+
         for room_id in left_rooms:
             stop_turn_timer(room_id)
+            if room_id in battle_rooms:
+                battle = battle_rooms[room_id]
+
+                # 切断による勝敗決定
+                res = battle.handle_disconnection(disconnected_player_id)
+                if res:
+                    # 残っているプレイヤーに結果を送信
+                    await manager.broadcast_battle_state(room_id, res)
+
+                # バトルルームを削除
+                del battle_rooms[room_id]
+                print(f"Battle room {room_id} was removed due to disconnection.")
+
         print("WebSocket切断・登録解除")
 
 if __name__ == "__main__":

@@ -374,6 +374,41 @@ class Battle_info:
             self.player1_win = True
             return self._make_response()
 
+    def handle_disconnection(self, disconnected_player_id: str):
+        """
+        プレイヤーの切断を処理し、勝敗を決定してレスポンスを返します。
+        """
+        # すでに決着がついている場合は何もしない
+        if self.player1_win is not None:
+            return None
+
+        message = "あいてが通信を切断しました。"
+        
+        if disconnected_player_id == self.player1.id:
+            self.player1_win = False
+            dmg = self.player1.hp
+            self.player1.take_damage(dmg)
+            self.events.append({
+                "type": "damage",
+                "message": message,
+                "ally_damage": dmg,
+                "foe_damage": 0
+            })
+        elif disconnected_player_id == self.player2.id:
+            self.player1_win = True
+            dmg = self.player2.hp
+            self.player2.take_damage(dmg)
+            self.events.append({
+                "type": "damage",
+                "message": message,
+                "ally_damage": 0,
+                "foe_damage": dmg
+            })
+        
+        if self.player1_win is not None:
+            return self._make_response()
+        return None
+
     def timeout(self):
         """
         タイムアウト処理: 現在のターンプレイヤーが即敗北
