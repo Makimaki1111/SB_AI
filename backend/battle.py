@@ -373,3 +373,30 @@ class Battle_info:
             # CPUが単語を見つけられなかった場合（降参）
             self.player1_win = True
             return self._make_response()
+
+    def timeout(self):
+        """
+        タイムアウト処理: 現在のターンプレイヤーが即敗北
+        """
+        if self.player1_turn:
+            dmg = self.player1.hp
+            self.player1.take_damage(dmg)
+            self.player1_win = False
+            self.events.append({
+                "type": "damage",
+                "message": "時間切れ！敗北しました。",
+                "ally_damage": dmg,
+                "foe_damage": 0
+            })
+        else:
+            dmg = self.player2.hp
+            self.player2.take_damage(dmg)
+            self.player1_win = True
+            self.events.append({
+                "type": "damage",
+                "message": "時間切れ！勝利しました。",
+                "ally_damage": 0,
+                "foe_damage": dmg
+            })
+        
+        return self._make_response()
