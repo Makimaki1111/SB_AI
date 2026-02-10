@@ -52,8 +52,9 @@ const battleState = {
   roomId: null,
   isVsCpu: false,
   character: "",
-  ally: { hp: 0, maxHp: 0, atk: 0, def: 0 },
-  foe: { hp: 0, maxHp: 0, atk: 0, def: 0 }
+  ally: { hp: 0, maxHp: 0, atk: 0, def: 0, ability: '', abilityChangeCount: 0 },
+  foe: { hp: 0, maxHp: 0, atk: 0, def: 0, ability: '', abilityChangeCount: 0 },
+  allAbilities: {}
 };
 
 let ui = new UI();
@@ -151,6 +152,7 @@ const initializeBattleScreen = () => {
 
 const onMadeRoom = async (data) => {
   battleState.roomId = data.room_id;
+  battleState.allAbilities = data.all_abilities;
   ui.enableInput();
   ui.clearInput();
 
@@ -159,11 +161,16 @@ const onMadeRoom = async (data) => {
   battleState.foe.hp = data["foe"]["max_hp"];
   battleState.foe.maxHp = data["foe"]["max_hp"];
 
+  battleState.ally.ability = data.ally.ability;
+  battleState.ally.abilityChangeCount = data.ally.ability_change_count;
+
   ui.setAllyHP(battleState.ally.hp, battleState.ally.maxHp);
   ui.setFoeHP(battleState.foe.hp, battleState.foe.maxHp);
   ui.setAllyName(data["ally"]["name"]);
   ui.setFoeName(data["foe"]["name"]);
-  
+  const currentAbilityName = battleState.allAbilities[battleState.ally.ability]?.name || battleState.ally.ability;
+  ui.updateAbilityInfo(currentAbilityName, battleState.ally.abilityChangeCount);
+
   playEventSound("start", "");
 
   ui.showMessage("マッチングした！")
@@ -236,6 +243,7 @@ const onFoeTurnStart = (data) => {
     if (!battleState.isVsCpu) {
       ui.startTimer(TURN_TIME_LIMIT);
     }
+    ui.showMessage();
 }
 
 const onAllyWin = () => {
@@ -280,6 +288,16 @@ const onAccepted = async (data) => {
   ui.stopTimer(); // 結果処理中はタイマーを止める
   ui.hideInput();
   ui.hideSubmitBtn();
+
+  // --- 先に特性情報を更新 ---
+  battleState.ally.ability = data.state.ally_ability;
+  battleState.ally.abilityChangeCount = data.state.ally_ability_change_count;
+  const currentAbilityName = battleState.allAbilities[battleState.ally.ability]?.name || battleState.ally.ability;
+  ui.updateAbilityInfo(currentAbilityName, battleState.ally.abilityChangeCount);
+  if (data.state.events.some(e => e.type === 'ability_changed')) {
+    ui.hideAbilityModal();
+  }
+
   // まず画像・単語表示はすぐ行う
   if (data["state"]["is_my_turn"]) {
     ui.showAllyImage(data);
@@ -465,6 +483,19 @@ function sendSubmitWord(room_id, player_id, word) {
   }
 }
 
+function sendChangeAbility(abilityId) {
+  if (sock && sock.readyState === WebSocket.OPEN) {
+    sock.send(JSON.stringify({
+      type: "change_ability",
+      info: {
+        room_id: battleState.roomId,
+        player_id: player1_id,
+        ability_id: abilityId
+      }
+    }));
+  }
+}
+
 function startReconnectAttempt() {
   // 再接続を試みる関数
   if (reconnectInterval) return;
@@ -605,5 +636,23 @@ document.addEventListener("DOMContentLoaded", () => {
       sendRunAway(battleState.roomId, player1_id);
       window.location.href = "index.html";
     }
+  });
+
+  // --- 特性変更モーダルのイベントリスナー ---
+  ui.openAbilityModalBtn.onClick(() => {
+    ui.populateAbilityModal(
+      battleState.allAbilities,
+      battleState.ally.ability,
+      (selectedAbilityId) => {
+        sendChangeAbility(selectedAbilityId);
+      }
+    );
+    ui.showAbilityModal();
+  });
+
+  ui.closeAbilityModalBtn.onClick(() => ui.hideAbilityModal());
+
+  ui.abilityModal.onClick((e) => {
+    if ($(e.target).is(ui.abilityModal.selector)) ui.hideAbilityModal();
   });
 });

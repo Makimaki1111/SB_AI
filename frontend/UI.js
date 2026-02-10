@@ -27,6 +27,14 @@ class UI{
         this.timerBar = $('#timer-bar');
         this.timerContainer = $('#timer-container');
         this.timerInterval = null;
+
+        // --- 特性関連 ---
+        this.allyAbilityName = new UIObject($('#current-ability-name'));
+        this.allyAbilityChangeCount = new UIObject($('#ability-change-count'));
+        this.openAbilityModalBtn = new UIObject($('#open-ability-modal-btn'));
+        this.abilityModal = new UIObject($('#ability-modal'));
+        this.closeAbilityModalBtn = new UIObject($('#close-modal-btn'));
+        this.abilityList = new UIObject($('#ability-list'));
     }
 
     _setImageWithReplaceAndFade(selector, src, duration = 100) {
@@ -423,5 +431,37 @@ class UI{
 
     hideTimerContainer() {
         this.timerContainer.hide();
+    }
+
+    // --- 特性関連メソッド ---
+    updateAbilityInfo(name, count) {
+        this.allyAbilityName.selector.text(name || '---');
+        this.allyAbilityChangeCount.selector.text(count);
+        this.openAbilityModalBtn.selector.prop('disabled', count <= 0);
+    }
+
+    showAbilityModal() {
+        this.abilityModal.selector.css('display', 'flex');
+    }
+
+    hideAbilityModal() {
+        this.abilityModal.selector.hide();
+    }
+
+    populateAbilityModal(allAbilities, currentAbilityId, onSelectCallback) {
+        const listElement = this.abilityList.selector;
+        listElement.empty(); // 以前のリストをクリア
+
+        for (const [id, abilityInfo] of Object.entries(allAbilities)) {
+            const container = $('<div>').addClass('ability-choice');
+            const button = $('<button>')
+                .text(abilityInfo.name)
+                .prop('disabled', id === currentAbilityId);
+            const description = $('<p>')
+                .addClass('ability-description')
+                .text(abilityInfo.description);
+            button.on('click', () => onSelectCallback(id));
+            container.append(button, description).appendTo(listElement);
+        }
     }
 }
