@@ -321,6 +321,7 @@ const onAccepted = async (data) => {
       ui.allyCurrentAbilityDesc.selector.text(battleState.allAbilities[data.state.ally_ability]?.description || '');
       ui.foeCurrentAbilityName.selector.text(foeAbilityName);
       ui.foeCurrentAbilityDesc.selector.text(battleState.allAbilities[data.state.foe_ability]?.description || '');
+      playSound("resource/concent.mp3");
     }
 
     // モーダル内の選択肢を再描画して、選択状態を更新
@@ -703,5 +704,8 @@ document.addEventListener("DOMContentLoaded", () => {
     playSound("resource/pera.mp3");
   });
 
-  ui.closeAbilityModalBtn.onClick(() => ui.hideAbilityModal());
+  ui.closeAbilityModalBtn.onClick(() => {
+    ui.hideAbilityModal();
+    playSound("resource/pera.mp3");
+  });
 });
