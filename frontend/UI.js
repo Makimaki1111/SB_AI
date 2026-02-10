@@ -29,12 +29,16 @@ class UI{
         this.timerInterval = null;
 
         // --- 特性関連 ---
-        this.allyAbilityName = new UIObject($('#current-ability-name'));
-        this.allyAbilityChangeCount = new UIObject($('#ability-change-count'));
-        this.openAbilityModalBtn = new UIObject($('#open-ability-modal-btn'));
+        this.abilityInfoContainer = new UIObject($('#ability-info-container'));
+        this.allyCurrentAbilityName = new UIObject($('#ally-current-ability-name'));
+        this.allyCurrentAbilityDesc = new UIObject($('#ally-current-ability-desc'));
+        this.foeCurrentAbilityName = new UIObject($('#foe-current-ability-name'));
+        this.foeCurrentAbilityDesc = new UIObject($('#foe-current-ability-desc'));
+        this.abilityChangeCounterDisplay = new UIObject($('#counter'));
+        this.abilityChangeRemainDisplay = new UIObject($('#remain'));
         this.abilityModal = new UIObject($('#ability-modal'));
-        this.closeAbilityModalBtn = new UIObject($('#close-modal-btn'));
-        this.abilityList = new UIObject($('#ability-list'));
+        this.closeAbilityModalBtn = new UIObject($('.close-modal')); // "とじる" ボタン
+        this.skillsList = new UIObject($('#skills')); // 選択可能な特性アイコンのコンテナ
     }
 
     _setImageWithReplaceAndFade(selector, src, duration = 100) {
@@ -435,33 +439,51 @@ class UI{
 
     // --- 特性関連メソッド ---
     updateAbilityInfo(name, count) {
-        this.allyAbilityName.selector.text(name || '---');
-        this.allyAbilityChangeCount.selector.text(count);
-        this.openAbilityModalBtn.selector.prop('disabled', count <= 0);
+        // モーダル内の残り回数表示を更新。「あと0回」も表示する
+        this.abilityChangeCounterDisplay.selector.show();
+        this.abilityChangeRemainDisplay.selector.text(count);
     }
 
     showAbilityModal() {
-        this.abilityModal.selector.css('display', 'flex');
+        this.abilityModal.selector.fadeIn('fast');
     }
 
     hideAbilityModal() {
-        this.abilityModal.selector.hide();
+        this.abilityModal.selector.fadeOut('fast');
     }
 
     populateAbilityModal(allAbilities, currentAbilityId, onSelectCallback) {
-        const listElement = this.abilityList.selector;
+        const listElement = this.skillsList.selector;
         listElement.empty(); // 以前のリストをクリア
 
+        const canChange = battleState.ally.abilityChangeCount > 0;
+
         for (const [id, abilityInfo] of Object.entries(allAbilities)) {
-            const container = $('<div>').addClass('ability-choice');
-            const button = $('<button>')
-                .text(abilityInfo.name)
-                .prop('disabled', id === currentAbilityId);
-            const description = $('<p>')
-                .addClass('ability-description')
-                .text(abilityInfo.description);
-            button.on('click', () => onSelectCallback(id));
-            container.append(button, description).appendTo(listElement);
+            const container = $('<div>').attr('id', id).addClass('skill-item'); // 各特性のコンテナ
+
+            // アイコン画像
+            const iconType = abilityInfo.icon_type || 'ノーマル'; // Default to 'ノーマル'
+            const iconName = type_to_image[iconType] || 'normal'; // Default to 'normal' image
+            const iconSrc = `img/${iconName}.gif`;
+            const iconImg = $('<img>').addClass('skill-icon').attr('src', iconSrc);
+            iconImg.attr('alt', abilityInfo.name); // アクセシビリティのためalt属性を追加
+
+            // 特性名
+            const abilityNameSpan = $('<span>').text(abilityInfo.name);
+
+            container.append(iconImg, $('<br>'), abilityNameSpan); // <br>を追加して改行
+
+            // 現在の特性、または変更回数が0の場合は選択不可
+            if (id === currentAbilityId) {
+                container.addClass('selected');
+            }
+
+            if (id !== currentAbilityId && canChange) {
+                container.on('click', () => onSelectCallback(id));
+            } else {
+                container.addClass('disabled');
+            }
+            listElement.append(container);
         }
     }
 }

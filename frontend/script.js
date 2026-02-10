@@ -57,7 +57,7 @@ const battleState = {
   allAbilities: {}
 };
 
-let ui = new UI();
+let ui;
 
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
@@ -142,6 +142,7 @@ const initializeBattleScreen = () => {
   ui.showFoeWord("");
   ui.setAllyName("");
   ui.setFoeName("");
+  ui.abilityInfoContainer.hide();
 
   ui.resetHP();
   ui.stopTimer();
@@ -168,10 +169,18 @@ const onMadeRoom = async (data) => {
   ui.setFoeHP(battleState.foe.hp, battleState.foe.maxHp);
   ui.setAllyName(data["ally"]["name"]);
   ui.setFoeName(data["foe"]["name"]);
-  const currentAbilityName = battleState.allAbilities[battleState.ally.ability]?.name || battleState.ally.ability;
-  ui.updateAbilityInfo(currentAbilityName, battleState.ally.abilityChangeCount);
+  if (battleState.ally && typeof battleState.ally.abilityChangeCount !== 'undefined') { // Defensive check
+    ui.abilityInfoContainer.selector.css('display', 'flex');
+    const currentAbilityName = battleState.allAbilities[battleState.ally.ability]?.name || battleState.ally.ability;
+    const foeAbilityName = battleState.allAbilities[battleState.foe.ability]?.name || battleState.foe.ability;
+    ui.updateAbilityInfo(currentAbilityName, battleState.ally.abilityChangeCount);
 
-  playEventSound("start", "");
+    // モーダル内の自分と相手の特性情報も更新
+    ui.allyCurrentAbilityName.selector.text(currentAbilityName);
+    ui.allyCurrentAbilityDesc.selector.text(battleState.allAbilities[battleState.ally.ability]?.description || '');
+    ui.foeCurrentAbilityName.selector.text(foeAbilityName);
+    ui.foeCurrentAbilityDesc.selector.text(battleState.allAbilities[battleState.foe.ability]?.description || '');
+  }
 
   ui.showMessage("マッチングした！")
   startBGM("resource/overflow.mp3");
@@ -200,7 +209,10 @@ const processEvent = async (events, is_my_turn) => {
   for (let i = 0; i < events.length; i++) {
     const e = events[i];
 
-    ui.showMessage(e["message"] || "");
+    // 特性変更イベントの場合は#messageに文章を表示しない
+    if (e["type"] !== "ability_changed") {
+      ui.showMessage(e["message"] || "");
+    }
     playEventSound(e["type"], e["message"]);
     if (e["type"] === "damage") {
       battleState.ally.hp = Math.max(0, battleState.ally.hp - (e["ally_damage"] || 0));
@@ -220,7 +232,9 @@ const processEvent = async (events, is_my_turn) => {
       }
     }
 
-    await sleep(1000);
+    // 特性変更イベントの場合は待機時間を短くする
+    const waitTime = e["type"] === "ability_changed" ? 100 : 1000;
+    await sleep(waitTime);
   }
 }
 
@@ -286,17 +300,50 @@ const onAccepted = async (data) => {
 
   isProcessingAccepted = true;
   ui.stopTimer(); // 結果処理中はタイマーを止める
+
+  // --- 特性変更のレスポンスか判定 ---
+  const isAbilityChange = data.state.events.some(e => e.type === 'ability_changed');
+  if (isAbilityChange) {
+    // 特性情報を更新
+    if (battleState.ally && data.state && typeof data.state.ally_ability_change_count !== 'undefined') { // Defensive check
+      battleState.ally.ability = data.state.ally_ability;
+      battleState.ally.abilityChangeCount = data.state.ally_ability_change_count;
+      battleState.foe.ability = data.state.foe_ability;
+      battleState.foe.abilityChangeCount = data.state.foe_ability_change_count;
+
+      const currentAbilityName = battleState.allAbilities[data.state.ally_ability]?.name || data.state.ally_ability;
+      const foeAbilityName = battleState.allAbilities[data.state.foe_ability]?.name || data.state.foe_ability;
+
+      ui.updateAbilityInfo(currentAbilityName, battleState.ally.abilityChangeCount);
+
+      // モーダル内の表示も更新
+      ui.allyCurrentAbilityName.selector.text(currentAbilityName);
+      ui.allyCurrentAbilityDesc.selector.text(battleState.allAbilities[data.state.ally_ability]?.description || '');
+      ui.foeCurrentAbilityName.selector.text(foeAbilityName);
+      ui.foeCurrentAbilityDesc.selector.text(battleState.allAbilities[data.state.foe_ability]?.description || '');
+    }
+
+    // モーダル内の選択肢を再描画して、選択状態を更新
+    ui.populateAbilityModal(
+      battleState.allAbilities,
+      battleState.ally.ability,
+      (selectedAbilityId) => {
+        sendChangeAbility(selectedAbilityId);
+      }
+    );
+    
+    // 特性変更イベントの処理（メッセージ表示はprocessEvent内で制御）
+    await processEvent(data.state.events, data.state.is_my_turn);
+
+    // 処理完了
+    isProcessingAccepted = false;
+    return;
+  }
+
+  // --- 以下は通常の攻撃レスポンスの処理 ---
+  // 通常の攻撃レスポンスの場合のみ、入力欄を隠す
   ui.hideInput();
   ui.hideSubmitBtn();
-
-  // --- 先に特性情報を更新 ---
-  battleState.ally.ability = data.state.ally_ability;
-  battleState.ally.abilityChangeCount = data.state.ally_ability_change_count;
-  const currentAbilityName = battleState.allAbilities[battleState.ally.ability]?.name || battleState.ally.ability;
-  ui.updateAbilityInfo(currentAbilityName, battleState.ally.abilityChangeCount);
-  if (data.state.events.some(e => e.type === 'ability_changed')) {
-    ui.hideAbilityModal();
-  }
 
   // まず画像・単語表示はすぐ行う
   if (data["state"]["is_my_turn"]) {
@@ -554,6 +601,9 @@ function preloadImages() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  // DOMの準備ができた後にUIインスタンスを生成
+  ui = new UI();
+
   // URLから対戦モードを取得して battleState を設定
   const urlParams = new URLSearchParams(window.location.search);
   const mode = urlParams.get('mode');
@@ -639,7 +689,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // --- 特性変更モーダルのイベントリスナー ---
-  ui.openAbilityModalBtn.onClick(() => {
+  ui.abilityInfoContainer.onClick(() => {
+    // モーダルの中身を生成して表示する
     ui.populateAbilityModal(
       battleState.allAbilities,
       battleState.ally.ability,
@@ -647,12 +698,10 @@ document.addEventListener("DOMContentLoaded", () => {
         sendChangeAbility(selectedAbilityId);
       }
     );
+
     ui.showAbilityModal();
+    playSound("resource/pera.mp3");
   });
 
   ui.closeAbilityModalBtn.onClick(() => ui.hideAbilityModal());
-
-  ui.abilityModal.onClick((e) => {
-    if ($(e.target).is(ui.abilityModal.selector)) ui.hideAbilityModal();
-  });
 });

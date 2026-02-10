@@ -59,13 +59,7 @@
           </div>
           <!-- 特性情報表示エリア -->
           <div id="ability-info-container">
-            <p>
-                現在の特性: <strong id="current-ability-name">---</strong>
-            </p>
-            <p>
-                変更回数: <span id="ability-change-count">0</span> 回
-            </p>
-            <button id="open-ability-modal-btn" disabled>特性を変更する</button>
+            <p>とくせい</p>
           </div>
         </div>
         <a href="index.html" id="back-to-title-btn" style="display:none;">タイトルに戻る</a>
@@ -81,20 +75,25 @@
   <script src="UIObject.js"></script>
   <script src="UI.js"></script>
   <script src="script.js"></script>
-  <!-- 特性選択モーダル (通常は非表示) -->
-  <div id="ability-modal" class="modal-overlay" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>特性を選択してください</h2>
-            <button id="close-modal-btn" class="close-button">&times;</button>
-        </div>
-        <div id="ability-list" class="modal-body">
-            <!-- ここにJavaScriptで特性のリストが生成されます -->
-        </div>
-        <div class="modal-footer">
-            <p>※現在の特性は選択できません。変更すると回数を1消費します。</p>
-        </div>
+  <!-- 特性選択モーダル -->
+  <div id="ability-modal" style="display: none;">
+    <div id="ally-tokusei">
+        <span>自分</span>
+        <div class="tokusei-name" id="ally-current-ability-name">---</div>
+        <div class="tokusei-desc" id="ally-current-ability-desc"></div>
     </div>
+    <div id="foe-tokusei">
+        <span>相手</span>
+        <div class="tokusei-name" id="foe-current-ability-name">---</div>
+        <div class="tokusei-desc" id="foe-current-ability-desc"></div>
+    </div>
+    <div id="middle">
+        <span class="tapto">タップしてとくせいを変える<span id="counter">(あと<span id="remain">0</span>回)</span></span>
+    </div>
+    <div id="skills">
+        <!-- ここにJavaScriptで選択可能な特性のリストが生成されます -->
+    </div>
+    <div class="close-modal">とじる</div>
   </div>
 </body>
 </html>

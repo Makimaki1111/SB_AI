@@ -493,131 +493,163 @@ html, body {
 /* 特性情報コンテナ */
 #ability-info-container {
   position: relative; /* z-indexを有効にするために必要 */
-  z-index: 21; /* #message (z-index: 20) よりも手前に表示 */
-  padding: 10px;
+  z-index: 31; /* #wait-message (z-index: 30) よりも手前に表示 */
+
+  /* ユーザー指定のスタイルを適用 */
+  background-color: #416F27;
+  border: 5px solid #54A836;
+  border-radius: 15px;
+  width: 43%;
+  height: 150px;
+  margin-left: auto; /* 右寄せ */
+  margin-right: 10px; /* 右端からの余白 */
+  margin-bottom: 10px; /* 下の余白 */
+  /* margin-top: auto; を削除して、下部固定を解除 */
+  margin-top: 20px; /* 上からの余白を調整 */
+
+  /* テキストの色を白に */
+  color: white;
   text-align: center;
-  border-top: 1px solid #eee;
-  margin-top: auto; /* action-area の下部に配置 */
-  background-color: #fdfaf6;
+
+  /* flexboxで中央揃え */
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
 }
 
 #ability-info-container p {
-  margin: 5px 0;
-  font-size: 0.9em;
-  color: #555;
+  margin: 0;
+  font-size: 1.1em;
+  color: white;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
 
-#open-ability-modal-btn {
-  margin-top: 5px;
-  padding: 6px 16px;
-  border-radius: 20px;
-  border: 1px solid #ccc;
-  background-color: #fff;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-#open-ability-modal-btn:hover:not(:disabled) {
-  background-color: #f0f0f0;
-}
-
-#open-ability-modal-btn:disabled {
-  background-color: #e9ecef;
-  color: #aaa;
-  cursor: not-allowed;
-  border-color: #ddd;
-}
-
-/* モーダルの背景 */
-.modal-overlay {
+/* --- 特性選択モーダル --- */
+#ability-modal {
     position: fixed;
     top: 0;
-    left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    background-color: white;
+    margin-left: 0;
     z-index: 1000;
-}
-
-/* モーダルの本体 */
-.modal-content {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    width: 90%;
-    max-width: 500px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
-    margin-bottom: 15px;
-}
-
-.modal-header h2 { margin: 0; font-size: 1.2em; }
-.close-button { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #888; }
-
-/* 特性リストのスタイル */
-.modal-body {
-    display: flex;
+    border-radius: 0px;
+    display: none;
     flex-direction: column;
-    gap: 15px;
-    max-height: 60vh;
-    overflow-y: auto;
-    padding-right: 10px;
 }
 
-.ability-choice {
-    border: 1px solid #eee;
-    padding: 10px;
-    border-radius: 5px;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
+#ally-tokusei {
+    margin-top: 20px;
+    margin-left: auto;
+    margin-right: 10px;
+    text-align: right;
+    width: 40%;
 }
 
-.ability-choice button {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background-color: #f9f9f9;
-    cursor: pointer;
-    font-size: 1em;
-    font-weight: bold;
+#foe-tokusei {
+    position: absolute;
+    top: 20px;
+    left: 10px;
+    width: 40%;
+}
+
+.tokusei-name {
+    background-color: #DCDADC;
+    font-size: 16px;
+}
+
+.tokusei-desc {
+    background-color: white;
     text-align: left;
-    transition: background-color 0.2s;
+    border: 1px solid #ccc; /* Add border for visibility */
+    padding: 5px;
+    min-height: 1.2em;
 }
 
-.ability-choice button:hover:not(:disabled) {
-    background-color: #e9e9e9;
+#ability-modal .tapto{
+    margin-left: 10px;
+    font-family: mplus-1p-bold;
 }
 
-.ability-choice button:disabled {
-    background-color: #ddd;
-    color: #888;
+#skills {
+    height: 50%;
+    overflow: scroll;
+    padding: 10px;
+}
+
+#middle{
+    width: 100%;
+    text-align: center;
+    position: absolute;
+    top: 30%;
+}
+
+.skill-icon{
+    width: 52px;
+    height: 52px;
+}
+
+#skills > div{
+    text-align: center;
+    line-height: 60%;
+    width: 64px;
+    top: 0px;
+    float: left;
+    padding: 2px;
+    border: 1px solid white;
+    box-sizing: border-box;
+    background-color: #efe8e8;
+    border-radius: 10px;
+    z-index: 2;
+    overflow: hidden;
+    cursor: pointer;
+    margin: 4px;
+}
+
+#skills > div.disabled {
+    opacity: 0.6;
     cursor: not-allowed;
-    border-color: #bbb;
 }
 
-.ability-description {
-    font-size: 0.9em;
-    color: #555;
-    margin: 0;
-    padding: 0 5px;
+#skills > div.selected {
+    background-color: #c8e6c9; /* 少し濃い緑 */
+    border: 2px solid #4CAF50;
+    opacity: 1; /* disabledを上書き */
 }
 
-.modal-footer {
-    margin-top: 15px;
-    font-size: 0.9em;
-    color: #666;
-    border-top: 1px solid #eee;
-    padding-top: 10px;
+#skills > div.selected span {
+    background-color: #e8f5e9;
+    font-weight: bold;
+}
+
+#skills > div:not(.disabled):hover {
+    border-color: #448ec6;
+    background-color: #e0f0ff;
+}
+
+#skills span{
+    font-size: 10px;
+    word-break: keep-all;
+    padding-left: 5px;
+    padding-right: 5px;
+    border-radius: 10px;
+    background-color: white;
+    letter-spacing: -1px;
+    display: inline-block;
+    margin-top: 4px;
+}
+
+.close-modal {
+    position: absolute;
+    width: 100%;
+    height: 60px;
+    bottom: 0;
+    background-color: #448ec6;
+    color: white;
+    text-align: center;
+    line-height: 60px;
+    cursor: pointer;
 }
