@@ -13,7 +13,7 @@ load_dotenv()
 class GOOGLE_AI:
     def __init__(self, sb_info: SB_info):
         genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-        self.model = genai.GenerativeModel("gemini-2.0-flash-lite")
+        self.model = genai.GenerativeModel("models/gemini-2.5-flash")
         self.typed_dict = sb_info.typed_dict
 
     def get_type(self,text:str) -> list:
@@ -26,6 +26,7 @@ class GOOGLE_AI:
         """
 
         try:
+            assert False
             first_prompt = """
                 入力された単語に対してその意味に即したタイプを割り当ててください。詳しい条件は以下の通りです。
                 # 条件

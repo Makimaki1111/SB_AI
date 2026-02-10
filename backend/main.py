@@ -95,23 +95,7 @@ def make_new_battle(info: make_new_battle_info):
         google_ai=google_ai_instance
     )
     battle_rooms[bi.room_id] = bi
-    return {
-        "type": "made_room",
-        "message": "バトルルーム作成",
-        "room_id": bi.room_id,
-        "state" : {
-            "is_my_turn" : bi.player1_turn,
-            "character" : bi.character
-        },
-        "ally" : {
-            "max_hp" : bi.MAX_HP,
-            "name" : bi.player1.name
-        },
-        "foe" : {
-            "max_hp" : bi.MAX_HP,
-            "name" : bi.player2.name
-        }
-    }
+    return bi.make_init_response(info.player1_id)
 
 class include_check_info(BaseModel):
     room_id: str
@@ -331,6 +315,28 @@ async def websocket_endpoint(websocket: WebSocket):
                     stop_turn_timer(model.room_id)
                     del battle_rooms[model.room_id]
                     print(f"Battle room {model.room_id} was removed because a player ran away.")
+
+            elif req.get("type") == "change_ability":
+                info = req.get("info", {})
+                room_id = info.get("room_id")
+                player_id = info.get("player_id")
+                new_ability_id = info.get("ability_id")
+
+                if not new_ability_id:
+                    await websocket.send_text(json.dumps({"type": "error", "message": "変更先の特性が指定されていません"}))
+                    continue
+
+                if room_id in battle_rooms:
+                    battle = battle_rooms[room_id]
+                    res = battle.change_ability(player_id, new_ability_id)
+
+                    if res.get("type") == "error":
+                        await websocket.send_text(json.dumps(res))
+                    else:
+                        # ターンは消費しないのでタイマーは操作しない
+                        await manager.broadcast_battle_state(room_id, res)
+                else:
+                    await websocket.send_text(json.dumps({"type": "error", "message": "ルームが見つかりません"}))
 
             else:
                 await websocket.send_text(json.dumps({"type": "error", "message": "Unknown type"}))

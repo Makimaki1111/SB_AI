@@ -24,6 +24,8 @@ class Player:
         self.attack_rank = 0
         self.defense_rank = 0
         self.types = [""]
+        self.ability = "" # 特性
+        self.ability_change_count = 3 # 特性変更の残り回数
 
     def take_damage(self, damage: int):
         self.hp = max(0, self.hp - damage)
@@ -34,6 +36,80 @@ class Player:
     @property
     def is_defeated(self) -> bool:
         return self.hp <= 0
+
+class Ability:
+    """特性の基底クラス"""
+    def __init__(self, name: str, description: str, icon_type: str):
+        self.name = name
+        self.description = description
+        self.icon_type = icon_type
+        self.replaces_damage = False
+
+    def get_display_data(self) -> dict:
+        """フロントエンドに渡すためのデータを返す"""
+        return {
+            "name": self.name,
+            "description": self.description,
+            "icon_type": self.icon_type,
+        }
+
+    def check_condition(self, types: list, word: str) -> bool:
+        """特性の発動条件をチェックする"""
+        return False
+
+    def apply_effect(self, player: Player, battle: 'Battle_info') -> bool:
+        """攻撃後の効果を適用し、発動したかどうかを返す"""
+        return False
+
+    def apply_damage_replacement_effect(self, player: Player, battle: 'Battle_info'):
+        """ダメージ計算を代替する効果を適用する"""
+        pass
+
+class StatBoostAbility(Ability):
+    """特定の条件で攻撃ランクを上昇させる特性の共通クラス"""
+    def __init__(self, name: str, description: str, icon_type: str, condition_types: list = [], min_word_len: int = 0):
+        super().__init__(name, description, icon_type)
+        self._condition_types = condition_types
+        self._min_word_len = min_word_len
+
+    def check_condition(self, types: list, word: str) -> bool:
+        if self._condition_types and any(t in types for t in self._condition_types):
+            return True
+        if self._min_word_len > 0 and len(word) >= self._min_word_len:
+            return True
+        return False
+
+    def apply_effect(self, player: Player, battle: 'Battle_info') -> bool:
+        player.attack_rank = min(6, player.attack_rank + 2)
+        event = {
+            "type": "atk_up",
+            "message": f"特性「{self.name}」の効果で攻撃がぐーんと上がった！",
+            "player": "ally" if player.id == battle.player1.id else "foe"
+        }
+        battle.events.append(event)
+        return True
+
+class JounetsuAbility(Ability):
+    """特性「じょうねつ」"""
+    def __init__(self):
+        super().__init__(
+            name="じょうねつ",
+            description="「感情」タイプを含む単語を使用したときに、ダメージを与える代わりにこうげきランクを1段階上昇させます。",
+            icon_type="感情"
+        )
+        self.replaces_damage = True
+
+    def check_condition(self, types: list, word: str) -> bool:
+        return "感情" in types
+
+    def apply_damage_replacement_effect(self, player: Player, battle: 'Battle_info'):
+        player.attack_rank = min(6, player.attack_rank + 1)
+        event = {
+            "type": "atk_up",
+            "message": f"攻撃が上がった！(現在{battle.sb_info.rank_to_power(player.attack_rank)}倍)",
+            "player": "ally" if player.id == battle.player1.id else "foe"
+        }
+        battle.events.append(event)
 
 class Battle_info:
     """
@@ -51,6 +127,18 @@ class Battle_info:
         self.player1 = Player(player1_id, "じぶん")
         self.player2 = Player(player2_id, "あいて")
 
+        # 特性関連
+        self.abilities = {
+            "animal_lover": StatBoostAbility("動物好き", "「動物」タイプの単語で攻撃が上がる。", "動物", condition_types=["動物"]),
+            "botanist": StatBoostAbility("植物学者", "「植物」タイプの単語で攻撃が上がる。", "植物", condition_types=["植物"]),
+            "historian": StatBoostAbility("歴史学者", "「地名」か「人物」の単語で攻撃が上がる。", "人物", condition_types=["地名", "人物"]),
+            "deep_thinker": StatBoostAbility("長考", "6文字以上の単語で攻撃が上がる。", "物語", min_word_len=6),
+            "passion": JounetsuAbility()
+        }
+        self.ability_ids = list(self.abilities.keys())
+        self.player1.ability = random.choice(self.ability_ids)
+        self.player2.ability = random.choice(self.ability_ids)
+
         self.player1_win = None
         self.player1_turn = True
         self.START_CHARACTER = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわ"
@@ -58,6 +146,15 @@ class Battle_info:
         self.events = [] # type: list
         self.turn = 0
         self.word = ""
+
+    def _get_serializable_abilities(self):
+        """
+        フロントエンドに渡すための、JSONシリアライズ可能な特性データの辞書を作成する。
+        """
+        serializable_abilities = {}
+        for ability_id, ability_obj in self.abilities.items():
+            serializable_abilities[ability_id] = ability_obj.get_display_data()
+        return serializable_abilities
 
     def try_attack(self, player_id, word: str):
         """player1に返す用のメッセージ
@@ -86,6 +183,26 @@ class Battle_info:
 
         self.word = word
         types = self._type_check(word)
+
+        # --- 特性処理 ---
+        current_player = self.player1 if self.player1_turn else self.player2
+        ability_obj = self.abilities.get(current_player.ability)
+
+        # ダメージ計算を代替する特性の処理
+        if ability_obj and ability_obj.replaces_damage and ability_obj.check_condition(types, word):
+            current_player.types = types[:] # フロントエンド表示用にタイプを更新
+            ability_obj.apply_damage_replacement_effect(current_player, self)
+            self.character = self.sb_info.get_next_initial(word)
+            ret = self._make_response()
+            self.player1_turn = not self.player1_turn
+            self.turn += 1
+            return ret
+
+        original_attack_rank = current_player.attack_rank
+        ability_activated = False
+        if ability_obj and not ability_obj.replaces_damage and ability_obj.check_condition(types, word):
+            ability_activated = ability_obj.apply_effect(current_player, self)
+
         if(player_id == self.player1.id):
             # タイプ特定
             self.player1.types = types[:]
@@ -168,6 +285,11 @@ class Battle_info:
 
                 self.player1.take_damage(damage)
                 if(self.player1.is_defeated): self.player1_win = False
+
+        # --- 特性効果を元に戻す ---
+        if ability_activated:
+            current_player.attack_rank = original_attack_rank
+
         self.character = self.sb_info.get_next_initial(word)
         ret = self._make_response()
 
@@ -267,7 +389,9 @@ class Battle_info:
                 "ally_HP" : self.player1.hp,
                 "ally_A" : self.player1.attack_rank,
                 "ally_B" : self.player1.defense_rank,
-                "ally_type" : self.player1.types, 
+                "ally_type" : self.player1.types,
+                "ally_ability": self.player1.ability,
+                "ally_ability_change_count": self.player1.ability_change_count,
                 "ally_win" : self.player1_win,
                 "ally_is_attacker" : None,
                 "character" : self.character,
@@ -276,6 +400,8 @@ class Battle_info:
                 "foe_A" : self.player2.attack_rank,
                 "foe_B" : self.player2.defense_rank,
                 "foe_type" : self.player2.types,
+                "foe_ability": self.player2.ability,
+                "foe_ability_change_count": self.player2.ability_change_count,
                 "room_id" : self.room_id,
                 "is_cpu" : self.is_cpu,
                 "is_my_turn" : self.player1_turn,
@@ -300,17 +426,22 @@ class Battle_info:
             "type": "made_room",
             "message": "バトルルーム作成",
             "room_id": self.room_id,
+            "all_abilities": self._get_serializable_abilities(),
             "state" : {
                 "is_my_turn" : self.player1_turn if is_p1 else not self.player1_turn,
                 "character" : self.character
             },
             "ally" : {
                 "max_hp" : self.MAX_HP,
-                "name" : ally.name
+                "name" : ally.name,
+                "ability": ally.ability,
+                "ability_change_count": ally.ability_change_count
             },
             "foe" : {
                 "max_hp" : self.MAX_HP,
-                "name" : foe.name
+                "name" : foe.name,
+                "ability": foe.ability,
+                "ability_change_count": foe.ability_change_count
             }
         }
 
@@ -330,11 +461,15 @@ class Battle_info:
         new_state["ally_A"] = s["foe_A"]
         new_state["ally_B"] = s["foe_B"]
         new_state["ally_type"] = s["foe_type"]
+        new_state["ally_ability"] = s["foe_ability"]
+        new_state["ally_ability_change_count"] = s["foe_ability_change_count"]
         
         new_state["foe_HP"] = s["ally_HP"]
         new_state["foe_A"] = s["ally_A"]
         new_state["foe_B"] = s["ally_B"]
         new_state["foe_type"] = s["ally_type"]
+        new_state["foe_ability"] = s["ally_ability"]
+        new_state["foe_ability_change_count"] = s["ally_ability_change_count"]
 
         # ターンと勝敗の反転
         new_state["is_my_turn"] = not s["is_my_turn"]
@@ -353,6 +488,36 @@ class Battle_info:
         new_state["events"] = new_events
 
         return {"type": "accepted", "state": new_state}
+
+    def change_ability(self, player_id: str, new_ability_id: str):
+        """プレイヤーの特性を変更する"""
+        player = self.player1 if player_id == self.player1.id else self.player2
+        
+        if player.ability_change_count <= 0:
+            return {"type": "error", "message": "特性はもう変更できません"}
+
+        if new_ability_id not in self.abilities:
+            return {"type": "error", "message": "存在しない特性です"}
+
+        if new_ability_id == player.ability:
+            return {"type": "error", "message": "現在の特性と同じです"}
+
+        player.ability_change_count -= 1
+        player.ability = new_ability_id
+
+        ability_display_name = self.abilities[new_ability_id].name
+
+        event = {
+            "type": "ability_changed",
+            "message": f"特性が「{ability_display_name}」に変わった！ (残り変更回数: {player.ability_change_count})",
+            "player": "ally" if player.id == self.player1.id else "foe",
+            # フロントエンドでの表示更新のために、変更後の情報をイベントに含める
+            "new_ability": new_ability_id,
+            "new_ability_change_count": player.ability_change_count
+        }
+        self.events.append(event)
+
+        return self._make_response()
 
     def get_cpu_word(self):
         for i in self.sb_info.typed_dict:
