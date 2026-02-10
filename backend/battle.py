@@ -85,9 +85,9 @@ class Battle_info:
             return {"type" : "error", "message" : "禁止された単語です"}
 
         self.word = word
+        types = self._type_check(word)
         if(player_id == self.player1.id):
             # タイプ特定
-            types = self._type_check(word)
             self.player1.types = types[:]
             at1 = types[0] if len(types) >= 1 else ""
             at2 = types[1] if len(types) >= 2 else ""
@@ -129,7 +129,6 @@ class Battle_info:
 
         else:
             # タイプ特定
-            types = self._type_check(word)
             self.player2.types = types[:]
             at1 = types[0] if len(types) >= 1 else ""
             at2 = types[1] if len(types) >= 2 else ""

@@ -333,6 +333,23 @@ html, body {
     line-height: 3.5;
 }
 
+/* ally-imgとfoe-imgのフェードインアニメーション */
+#ally-img, #foe-img {
+    opacity: 0;
+    animation: fadeIn 1.5s forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* タイトル画面用: ボタンを中央に大きく配置 */
 #title-screen .phone-box .content {
   position: relative;
