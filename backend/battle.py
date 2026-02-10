@@ -94,7 +94,7 @@ class JounetsuAbility(Ability):
     def __init__(self):
         super().__init__(
             name="じょうねつ",
-            description="「感情」タイプを含む単語を使用したときに、ダメージを与える代わりにこうげきランクを1段階上昇させます。",
+            description="感情タイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
             icon_type="感情"
         )
         self.replaces_damage = True
@@ -106,7 +106,7 @@ class JounetsuAbility(Ability):
         player.attack_rank = min(6, player.attack_rank + 1)
         event = {
             "type": "atk_up",
-            "message": f"攻撃が上がった！(現在{battle.sb_info.rank_to_power(player.attack_rank)}倍)",
+            "message": f"攻撃が上がった！(現在{battle.sb_info.rank_to_power(player.attack_rank):.1f}倍)",
             "player": "ally" if player.id == battle.player1.id else "foe"
         }
         battle.events.append(event)
