@@ -653,3 +653,18 @@ html, body {
     line-height: 60px;
     cursor: pointer;
 }
+
+#modal-message {
+    background-color: cornflowerblue;
+    color: white;
+    position: absolute;
+    width: 100%;
+    /* z-indexを他の要素より高く設定 */
+    z-index: 1500;
+    text-align: center;
+    padding: 10px;
+    top: 0;
+    left: 0;
+    box-sizing: border-box;
+    display: none; /* 初期状態では非表示 */
+}

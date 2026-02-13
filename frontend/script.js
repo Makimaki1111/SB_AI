@@ -331,6 +331,9 @@ const onAccepted = async (data) => {
       ui.foeCurrentAbilityName.selector.text(foeAbilityName);
       ui.foeCurrentAbilityDesc.selector.text(battleState.allAbilities[data.state.foe_ability]?.description || '');
       playSound("resource/concent.mp3");
+
+      // 特性変更メッセージを表示
+      ui.showModalMessage('とくせいを変更した！', 2000);
     }
 
     // モーダル内の選択肢を再描画して、選択状態を更新

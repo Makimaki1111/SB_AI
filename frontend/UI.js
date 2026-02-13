@@ -19,6 +19,7 @@ class UI{
         
         this.message = new UIObject($('#message'));
         this.waitMessage = new UIObject($('#wait-message'));
+        this.modalMessage = new UIObject($('#modal-message'));
         this.includeImg = new UIObject($('#include-img'));
 
         this.backToTitleBtn = new UIObject($('#back-to-title-btn'));
@@ -225,10 +226,10 @@ class UI{
     setWaitMessage(message, time=Infinity) {
         this.waitMessage.selector.text(message);
         this.waitMessage.selector.show();
-        if(time > 0){
+        if(isFinite(time) && time > 0){
           setTimeout(() => {
             this.hideWaitMessage();
-          }, 2000);
+          }, time);
         }
     }
 
@@ -236,6 +237,19 @@ class UI{
         this.waitMessage.selector.hide();
     }
 
+    showModalMessage(message, time = 2000) {
+        this.modalMessage.selector.text(message);
+        this.modalMessage.selector.show();
+        if (isFinite(time) && time > 0) {
+            setTimeout(() => {
+                this.hideModalMessage();
+            }, time);
+        }
+    }
+
+    hideModalMessage() {
+        this.modalMessage.selector.fadeOut('fast');
+    }
 
     setAllyName(name) {
         $('.ally-name').text(name).show();
