@@ -225,10 +225,10 @@ class UI{
     setWaitMessage(message, time=Infinity) {
         this.waitMessage.selector.text(message);
         this.waitMessage.selector.show();
-        if(time > 0){
+        if(isFinite(time) && time > 0){
           setTimeout(() => {
             this.hideWaitMessage();
-          }, 2000);
+          }, time);
         }
     }
 
