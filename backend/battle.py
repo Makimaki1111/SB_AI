@@ -65,6 +65,10 @@ class Ability:
         """ダメージ計算を代替する効果を適用する"""
         pass
 
+    def get_violence_penalty_reduction(self) -> int:
+        """暴力タイプ使用時の攻撃力ダウン軽減量を返す"""
+        return 0
+
 class StatBoostAbility(Ability):
     """特定の条件で攻撃ランクを上昇させる特性の共通クラス"""
     def __init__(self, name: str, description: str, icon_type: str, condition_types: list = [], min_word_len: int = 0):
@@ -120,6 +124,38 @@ class TypeStatBoostAbility(Ability):
             "player": "ally" if player.id == battle.player1.id else "foe"
         }
         battle.events.append(event)
+
+class TypePowerUpAbility(Ability):
+    """特定タイプの単語で攻撃ランクを一時的に上げる"""
+    def __init__(self, name: str, description: str, icon_type: str, target_type: str, rank_increase: int):
+        super().__init__(name, description, icon_type)
+        self.target_type = target_type
+        self.rank_increase = rank_increase
+
+    def check_condition(self, types: list, word: str) -> bool:
+        return self.target_type in types
+
+    def apply_effect(self, player: Player, battle: 'Battle_info') -> bool:
+        player.attack_rank = min(6, player.attack_rank + self.rank_increase)
+        event = {
+            "type": "ability_trigger",
+            "message": f"特性「{self.name}」で威力が上がった！",
+            "player": "ally" if player.id == battle.player1.id else "foe"
+        }
+        battle.events.append(event)
+        return True
+
+class MukimukiAbility(Ability):
+    """特性「むきむき」"""
+    def __init__(self):
+        super().__init__(
+            name="むきむき",
+            description="暴力タイプの言葉を使っても攻撃力がすこししか下がらなくなる(攻撃2段階ダウンから1段階ダウンに)",
+            icon_type="暴力"
+        )
+
+    def get_violence_penalty_reduction(self) -> int:
+        return 1
 
 class Battle_info:
     """
@@ -197,7 +233,15 @@ class Battle_info:
                 icon_type="工作",
                 target_type="工作",
                 boost_amount=1
-            )
+            ),
+            "kyojin": TypePowerUpAbility(
+                name="きょじん",
+                description="人物タイプの言葉の威力が上がる(与えるダメージが1.5倍になる)",
+                icon_type="人物",
+                target_type="人物",
+                rank_increase=1
+            ),
+            "mukimuki": MukimukiAbility()
         }
         self.ability_ids = list(self.abilities.keys())
         self.player1.ability = random.choice(self.ability_ids)
@@ -296,10 +340,14 @@ class Battle_info:
 
                 # 暴力で攻撃ダウン
                 if("暴力" in types):
-                    self.player1.attack_rank = max(-6, self.player1.attack_rank - 2)
+                    drop = 2
+                    if ability_obj:
+                        drop -= ability_obj.get_violence_penalty_reduction()
+                    self.player1.attack_rank = max(-6, self.player1.attack_rank - drop)
+                    msg_adverb = "がくっと" if drop >= 2 else ""
                     event = {
                         "type" : "atk_down",
-                        "message" : f"攻撃ががくっと下がった！(現在{self.sb_info.rank_to_power(self.player1.attack_rank)}倍)",
+                        "message" : f"攻撃が{msg_adverb}下がった！(現在{self.sb_info.rank_to_power(self.player1.attack_rank)}倍)",
                         "player" : "ally",
                         "new_atk" : self.player1.attack_rank
                     }
@@ -338,10 +386,14 @@ class Battle_info:
 
                 # 暴力で攻撃ダウン
                 if("暴力" in types):
-                    self.player2.attack_rank = max(-6, self.player2.attack_rank - 2)
+                    drop = 2
+                    if ability_obj:
+                        drop -= ability_obj.get_violence_penalty_reduction()
+                    self.player2.attack_rank = max(-6, self.player2.attack_rank - drop)
+                    msg_adverb = "がくっと" if drop >= 2 else ""
                     event = {
                         "type" : "atk_down",
-                        "message" : f"攻撃ががくっと下がった！(現在{self.sb_info.rank_to_power(self.player2.attack_rank)}倍)",
+                        "message" : f"攻撃が{msg_adverb}下がった！(現在{self.sb_info.rank_to_power(self.player2.attack_rank)}倍)",
                         "player" : "foe",
                         "new_atk" : self.player2.attack_rank
                     }
