@@ -257,14 +257,18 @@ const onAllyTurnStart = (data) => {
   ui.showSubmitBtn();
   ui.hideMessage();
   if (!battleState.isVsCpu) {
-    ui.startTimer(TURN_TIME_LIMIT);
+    // 受信時刻からの経過時間を考慮してタイマーを開始
+    const elapsed = (Date.now() - (data._receivedAt || Date.now())) / 1000;
+    ui.startTimer(Math.max(0, TURN_TIME_LIMIT - elapsed), TURN_TIME_LIMIT);
   }
 }
 
 const onFoeTurnStart = (data) => {
     ui.setWaitMessage("相手のターンです。");
     if (!battleState.isVsCpu) {
-      ui.startTimer(TURN_TIME_LIMIT);
+      // 受信時刻からの経過時間を考慮してタイマーを開始
+      const elapsed = (Date.now() - (data._receivedAt || Date.now())) / 1000;
+      ui.startTimer(Math.max(0, TURN_TIME_LIMIT - elapsed), TURN_TIME_LIMIT);
     }
     ui.showMessage();
 }
@@ -308,10 +312,15 @@ const onAccepted = async (data) => {
   }
 
   isProcessingAccepted = true;
-  ui.stopTimer(); // 結果処理中はタイマーを止める
 
   // --- 特性変更のレスポンスか判定 ---
   const isAbilityChange = data.state.events.some(e => e.type === 'ability_changed');
+  
+  // 特性変更以外（通常の攻撃など）の場合は、結果表示のためにタイマーを止める
+  if (!isAbilityChange) {
+    ui.stopTimer();
+  }
+
   if (isAbilityChange) {
     // 特性情報を更新
     if (battleState.ally && data.state && typeof data.state.ally_ability_change_count !== 'undefined') { // Defensive check
@@ -331,6 +340,9 @@ const onAccepted = async (data) => {
       ui.foeCurrentAbilityName.selector.text(foeAbilityName);
       ui.foeCurrentAbilityDesc.selector.text(battleState.allAbilities[data.state.foe_ability]?.description || '');
       playSound("resource/concent.mp3");
+
+      // 特性変更メッセージを表示
+      ui.showModalMessage('とくせいを変更した！', 2000);
     }
 
     // モーダル内の選択肢を再描画して、選択状態を更新
@@ -355,15 +367,20 @@ const onAccepted = async (data) => {
   ui.hideInput();
   ui.hideSubmitBtn();
 
-  // まず画像・単語表示はすぐ行う
-  if (data["state"]["is_my_turn"]) {
-    ui.showAllyImage(data);
-    ui.showAllyWord(data["state"]["word"]);
-    playIconSound(data.state.ally_type[0]);
-  } else {
-    ui.showFoeImage(data);
-    ui.showFoeWord(data["state"]["word"]);
-    playIconSound(data.state.foe_type[0]);
+  // タイムアウト（時間切れ）かどうか判定
+  const isTimeout = data.state.events.some(e => e.message && e.message.includes("時間切れ"));
+
+  // まず画像・単語表示はすぐ行う（タイムアウトでなければ）
+  if (!isTimeout) {
+    if (data["state"]["is_my_turn"]) {
+      ui.showAllyImage(data);
+      ui.showAllyWord(data["state"]["word"]);
+      playIconSound(data.state.ally_type[0]);
+    } else {
+      ui.showFoeImage(data);
+      ui.showFoeWord(data["state"]["word"]);
+      playIconSound(data.state.foe_type[0]);
+    }
   }
 
   await sleep(1000);
@@ -424,6 +441,7 @@ function connectWebSocket() {
 
   sock.addEventListener("message", function (event) {
     const data = JSON.parse(event.data);
+    data._receivedAt = Date.now(); // 受信時刻を記録して遅延補正に利用
     console.log("WebSocket受信:", data);
 
     // ルーム作成・参加前のエラー表示

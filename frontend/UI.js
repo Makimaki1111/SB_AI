@@ -19,6 +19,7 @@ class UI{
         
         this.message = new UIObject($('#message'));
         this.waitMessage = new UIObject($('#wait-message'));
+        this.modalMessage = new UIObject($('#modal-message'));
         this.includeImg = new UIObject($('#include-img'));
 
         this.backToTitleBtn = new UIObject($('#back-to-title-btn'));
@@ -236,6 +237,19 @@ class UI{
         this.waitMessage.selector.hide();
     }
 
+    showModalMessage(message, time = 2000) {
+        this.modalMessage.selector.text(message);
+        this.modalMessage.selector.show();
+        if (isFinite(time) && time > 0) {
+            setTimeout(() => {
+                this.hideModalMessage();
+            }, time);
+        }
+    }
+
+    hideModalMessage() {
+        this.modalMessage.selector.fadeOut('fast');
+    }
 
     setAllyName(name) {
         $('.ally-name').text(name).show();
@@ -398,28 +412,30 @@ class UI{
         }
     }
 
-    startTimer(duration) {
+    startTimer(remaining, total = remaining) {
         this.stopTimer();
-        let remaining = duration;
-        this.timerBar.css('width', '100%');
-        this.timerBar.css('background-color', '#00FF00');
+        const endTime = Date.now() + remaining * 1000;
         
-        // 0.1秒ごとに更新
-        this.timerInterval = setInterval(() => {
-            remaining -= 0.1;
-            const percentage = (remaining / duration) * 100;
-            this.timerBar.css('width', `${percentage}%`);
+        const update = () => {
+            const currentRemaining = (endTime - Date.now()) / 1000;
+            const percentage = (currentRemaining / total) * 100;
+            this.timerBar.css('width', `${Math.max(0, percentage)}%`);
             
             if (percentage < 30) {
                 this.timerBar.css('background-color', '#FF0000'); // 赤
             } else if (percentage < 60) {
                 this.timerBar.css('background-color', '#FFFF00'); // 黄
+            } else {
+                this.timerBar.css('background-color', '#00FF00'); // 緑
             }
 
-            if (remaining <= 0) {
+            if (currentRemaining <= 0) {
                 this.stopTimer();
             }
-        }, 100);
+        };
+
+        update(); // 初回実行
+        this.timerInterval = setInterval(update, 100);
     }
 
     stopTimer() {

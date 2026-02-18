@@ -65,6 +65,10 @@ class Ability:
         """ダメージ計算を代替する効果を適用する"""
         pass
 
+    def get_violence_penalty_reduction(self) -> int:
+        """暴力タイプ使用時の攻撃力ダウン軽減量を返す"""
+        return 0
+
 class StatBoostAbility(Ability):
     """特定の条件で攻撃ランクを上昇させる特性の共通クラス"""
     def __init__(self, name: str, description: str, icon_type: str, condition_types: list = [], min_word_len: int = 0):
@@ -89,27 +93,69 @@ class StatBoostAbility(Ability):
         battle.events.append(event)
         return True
 
-class JounetsuAbility(Ability):
-    """特性「じょうねつ」"""
-    def __init__(self):
-        super().__init__(
-            name="じょうねつ",
-            description="感情タイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
-            icon_type="感情"
-        )
+class TypeStatBoostAbility(Ability):
+    """特定タイプでダメージの代わりにステータスランクを上げる汎用特性"""
+    def __init__(self, name: str, description: str, icon_type: str, target_type: str, boost_amount: int, stat_type: str = "attack"):
+        super().__init__(name, description, icon_type)
         self.replaces_damage = True
+        self.target_type = target_type
+        self.boost_amount = boost_amount
+        self.stat_type = stat_type
 
     def check_condition(self, types: list, word: str) -> bool:
-        return "感情" in types
+        return self.target_type in types
 
     def apply_damage_replacement_effect(self, player: Player, battle: 'Battle_info'):
-        player.attack_rank = min(6, player.attack_rank + 1)
+        if self.stat_type == "defense":
+            player.defense_rank = min(6, player.defense_rank + self.boost_amount)
+            current_rank = player.defense_rank
+            stat_name = "防御"
+        else:
+            player.attack_rank = min(6, player.attack_rank + self.boost_amount)
+            current_rank = player.attack_rank
+            stat_name = "攻撃"
+        
+        # 上昇量に応じてメッセージを微調整
+        msg_adverb = "ぐーんと" if self.boost_amount >= 2 else ""
+        
         event = {
-            "type": "atk_up",
-            "message": f"攻撃が上がった！(現在{battle.sb_info.rank_to_power(player.attack_rank):.1f}倍)",
+            "type": "stat_up",
+            "message": f"{stat_name}が{msg_adverb}上がった！(現在{battle.sb_info.rank_to_power(current_rank):.1f}倍)",
             "player": "ally" if player.id == battle.player1.id else "foe"
         }
         battle.events.append(event)
+
+class TypePowerUpAbility(Ability):
+    """特定タイプの単語で攻撃ランクを一時的に上げる"""
+    def __init__(self, name: str, description: str, icon_type: str, target_type: str, rank_increase: int):
+        super().__init__(name, description, icon_type)
+        self.target_type = target_type
+        self.rank_increase = rank_increase
+
+    def check_condition(self, types: list, word: str) -> bool:
+        return self.target_type in types
+
+    def apply_effect(self, player: Player, battle: 'Battle_info') -> bool:
+        player.attack_rank = min(6, player.attack_rank + self.rank_increase)
+        event = {
+            "type": "ability_trigger",
+            "message": f"特性「{self.name}」で威力が上がった！",
+            "player": "ally" if player.id == battle.player1.id else "foe"
+        }
+        battle.events.append(event)
+        return True
+
+class MukimukiAbility(Ability):
+    """特性「むきむき」"""
+    def __init__(self):
+        super().__init__(
+            name="むきむき",
+            description="暴力タイプの言葉を使っても攻撃力がすこししか下がらなくなる(攻撃2段階ダウンから1段階ダウンに)",
+            icon_type="暴力"
+        )
+
+    def get_violence_penalty_reduction(self) -> int:
+        return 1
 
 class Battle_info:
     """
@@ -129,11 +175,73 @@ class Battle_info:
 
         # 特性関連
         self.abilities = {
-            "animal_lover": StatBoostAbility("動物好き", "「動物」タイプの単語で攻撃が上がる。", "動物", condition_types=["動物"]),
-            "botanist": StatBoostAbility("植物学者", "「植物」タイプの単語で攻撃が上がる。", "植物", condition_types=["植物"]),
-            "historian": StatBoostAbility("歴史学者", "「地名」か「人物」の単語で攻撃が上がる。", "人物", condition_types=["地名", "人物"]),
-            "deep_thinker": StatBoostAbility("長考", "6文字以上の単語で攻撃が上がる。", "物語", min_word_len=6),
-            "passion": JounetsuAbility()
+            "passion": TypeStatBoostAbility(
+                name="じょうねつ",
+                description="感情タイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
+                icon_type="感情",
+                target_type="感情",
+                boost_amount=1
+            ),
+            "rocknroll": TypeStatBoostAbility(
+                name="ロックンロール",
+                description="芸術タイプの言葉を使うとダメージを与える代わりに攻撃力がぐーんと上がる",
+                icon_type="芸術",
+                target_type="芸術",
+                boost_amount=2
+            ),
+            "training": TypeStatBoostAbility(
+                name="トレーニング",
+                description="スポーツタイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
+                icon_type="スポーツ",
+                target_type="スポーツ",
+                boost_amount=1
+            ),
+            "procrastination": TypeStatBoostAbility(
+                name="さきのばし",
+                description="時間タイプの言葉を使うとダメージを与える代わりに防御力が上がる",
+                icon_type="時間",
+                target_type="時間",
+                boost_amount=1,
+                stat_type="defense"
+            ),
+            "kachikochi": TypeStatBoostAbility(
+                name="かちこち",
+                description="機械タイプの言葉を使うとダメージを与える代わりに防御力が上がる",
+                icon_type="機械",
+                target_type="機械",
+                boost_amount=1,
+                stat_type="defense"
+            ),
+            "calculation": TypeStatBoostAbility(
+                name="けいさん",
+                description="数学タイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
+                icon_type="数学",
+                target_type="数学",
+                boost_amount=1
+            ),
+            "layering": TypeStatBoostAbility(
+                name="かさねぎ",
+                description="服飾タイプの言葉を使うとダメージを与える代わりに防御力が上がる",
+                icon_type="服飾",
+                target_type="服飾",
+                boost_amount=1,
+                stat_type="defense"
+            ),
+            "arming": TypeStatBoostAbility(
+                name="ぶそう",
+                description="工作タイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
+                icon_type="工作",
+                target_type="工作",
+                boost_amount=1
+            ),
+            "kyojin": TypePowerUpAbility(
+                name="きょじん",
+                description="人物タイプの言葉の威力が上がる(与えるダメージが1.5倍になる)",
+                icon_type="人物",
+                target_type="人物",
+                rank_increase=1
+            ),
+            "mukimuki": MukimukiAbility()
         }
         self.ability_ids = list(self.abilities.keys())
         self.player1.ability = random.choice(self.ability_ids)
@@ -232,10 +340,14 @@ class Battle_info:
 
                 # 暴力で攻撃ダウン
                 if("暴力" in types):
-                    self.player1.attack_rank = max(-6, self.player1.attack_rank - 2)
+                    drop = 2
+                    if ability_obj:
+                        drop -= ability_obj.get_violence_penalty_reduction()
+                    self.player1.attack_rank = max(-6, self.player1.attack_rank - drop)
+                    msg_adverb = "がくっと" if drop >= 2 else ""
                     event = {
                         "type" : "atk_down",
-                        "message" : f"攻撃ががくっと下がった！(現在{self.sb_info.rank_to_power(self.player1.attack_rank)}倍)",
+                        "message" : f"攻撃が{msg_adverb}下がった！(現在{self.sb_info.rank_to_power(self.player1.attack_rank)}倍)",
                         "player" : "ally",
                         "new_atk" : self.player1.attack_rank
                     }
@@ -274,10 +386,14 @@ class Battle_info:
 
                 # 暴力で攻撃ダウン
                 if("暴力" in types):
-                    self.player2.attack_rank = max(-6, self.player2.attack_rank - 2)
+                    drop = 2
+                    if ability_obj:
+                        drop -= ability_obj.get_violence_penalty_reduction()
+                    self.player2.attack_rank = max(-6, self.player2.attack_rank - drop)
+                    msg_adverb = "がくっと" if drop >= 2 else ""
                     event = {
                         "type" : "atk_down",
-                        "message" : f"攻撃ががくっと下がった！(現在{self.sb_info.rank_to_power(self.player2.attack_rank)}倍)",
+                        "message" : f"攻撃が{msg_adverb}下がった！(現在{self.sb_info.rank_to_power(self.player2.attack_rank)}倍)",
                         "player" : "foe",
                         "new_atk" : self.player2.attack_rank
                     }
