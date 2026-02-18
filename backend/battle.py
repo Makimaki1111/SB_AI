@@ -89,24 +89,34 @@ class StatBoostAbility(Ability):
         battle.events.append(event)
         return True
 
-class JounetsuAbility(Ability):
-    """特性「じょうねつ」"""
-    def __init__(self):
-        super().__init__(
-            name="じょうねつ",
-            description="感情タイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
-            icon_type="感情"
-        )
+class TypeStatBoostAbility(Ability):
+    """特定タイプでダメージの代わりにステータスランクを上げる汎用特性"""
+    def __init__(self, name: str, description: str, icon_type: str, target_type: str, boost_amount: int, stat_type: str = "attack"):
+        super().__init__(name, description, icon_type)
         self.replaces_damage = True
+        self.target_type = target_type
+        self.boost_amount = boost_amount
+        self.stat_type = stat_type
 
     def check_condition(self, types: list, word: str) -> bool:
-        return "感情" in types
+        return self.target_type in types
 
     def apply_damage_replacement_effect(self, player: Player, battle: 'Battle_info'):
-        player.attack_rank = min(6, player.attack_rank + 1)
+        if self.stat_type == "defense":
+            player.defense_rank = min(6, player.defense_rank + self.boost_amount)
+            current_rank = player.defense_rank
+            stat_name = "防御"
+        else:
+            player.attack_rank = min(6, player.attack_rank + self.boost_amount)
+            current_rank = player.attack_rank
+            stat_name = "攻撃"
+        
+        # 上昇量に応じてメッセージを微調整
+        msg_adverb = "ぐーんと" if self.boost_amount >= 2 else ""
+        
         event = {
-            "type": "atk_up",
-            "message": f"攻撃が上がった！(現在{battle.sb_info.rank_to_power(player.attack_rank):.1f}倍)",
+            "type": "stat_up",
+            "message": f"{stat_name}が{msg_adverb}上がった！(現在{battle.sb_info.rank_to_power(current_rank):.1f}倍)",
             "player": "ally" if player.id == battle.player1.id else "foe"
         }
         battle.events.append(event)
@@ -133,7 +143,65 @@ class Battle_info:
             "botanist": StatBoostAbility("植物学者", "「植物」タイプの単語で攻撃が上がる。", "植物", condition_types=["植物"]),
             "historian": StatBoostAbility("歴史学者", "「地名」か「人物」の単語で攻撃が上がる。", "人物", condition_types=["地名", "人物"]),
             "deep_thinker": StatBoostAbility("長考", "6文字以上の単語で攻撃が上がる。", "物語", min_word_len=6),
-            "passion": JounetsuAbility()
+            "passion": TypeStatBoostAbility(
+                name="じょうねつ",
+                description="感情タイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
+                icon_type="感情",
+                target_type="感情",
+                boost_amount=1
+            ),
+            "rocknroll": TypeStatBoostAbility(
+                name="ロックンロール",
+                description="芸術タイプの言葉を使うとダメージを与える代わりに攻撃力がぐーんと上がる",
+                icon_type="芸術",
+                target_type="芸術",
+                boost_amount=2
+            ),
+            "training": TypeStatBoostAbility(
+                name="トレーニング",
+                description="スポーツタイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
+                icon_type="スポーツ",
+                target_type="スポーツ",
+                boost_amount=1
+            ),
+            "procrastination": TypeStatBoostAbility(
+                name="さきのばし",
+                description="時間タイプの言葉を使うとダメージを与える代わりに防御力が上がる",
+                icon_type="時間",
+                target_type="時間",
+                boost_amount=1,
+                stat_type="defense"
+            ),
+            "kachikochi": TypeStatBoostAbility(
+                name="かちこち",
+                description="機械タイプの言葉を使うとダメージを与える代わりに防御力が上がる",
+                icon_type="機械",
+                target_type="機械",
+                boost_amount=1,
+                stat_type="defense"
+            ),
+            "calculation": TypeStatBoostAbility(
+                name="けいさん",
+                description="数学タイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
+                icon_type="数学",
+                target_type="数学",
+                boost_amount=1
+            ),
+            "layering": TypeStatBoostAbility(
+                name="かさねぎ",
+                description="服飾タイプの言葉を使うとダメージを与える代わりに防御力が上がる",
+                icon_type="服飾",
+                target_type="服飾",
+                boost_amount=1,
+                stat_type="defense"
+            ),
+            "arming": TypeStatBoostAbility(
+                name="ぶそう",
+                description="工作タイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
+                icon_type="工作",
+                target_type="工作",
+                boost_amount=1
+            )
         }
         self.ability_ids = list(self.abilities.keys())
         self.player1.ability = random.choice(self.ability_ids)
