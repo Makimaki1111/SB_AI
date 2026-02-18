@@ -490,22 +490,55 @@ html, body {
 
 /* --- 特性関連のスタイル --- */
 
+/* アクションボタンのラッパー */
+#actions-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-top: 20px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 31;
+}
+
+.button {
+    font-size: 18px;
+    position: absolute;
+    color: white;
+    text-align: center;
+    cursor: pointer;
+    font-family: mplus-1p-bold;
+    margin: 10px;
+    border-radius: 10px;
+}
+
+#situation-button {
+    display: none;
+    width: 43%;
+    height: 150px;
+    background-color: #9A5252;
+    border: 5px solid #C44041;
+    line-height: 150px;
+    position: relative; /* .buttonのabsoluteを上書き */
+    margin: 0;
+    border-radius: 15px;
+}
+
+#situation-button p {
+    margin: 0;
+}
+
 /* 特性情報コンテナ */
 #ability-info-container {
-  position: relative; /* z-indexを有効にするために必要 */
-  z-index: 31; /* #wait-message (z-index: 30) よりも手前に表示 */
-
   /* ユーザー指定のスタイルを適用 */
   background-color: #416F27;
   border: 5px solid #54A836;
   border-radius: 15px;
   width: 43%;
   height: 150px;
-  margin-left: auto; /* 右寄せ */
-  margin-right: 10px; /* 右端からの余白 */
-  margin-bottom: 10px; /* 下の余白 */
-  /* margin-top: auto; を削除して、下部固定を解除 */
-  margin-top: 20px; /* 上からの余白を調整 */
+  margin: 0; /* ラッパーで配置するためマージンリセット */
 
   /* テキストの色を白に */
   color: white;
@@ -654,6 +687,10 @@ html, body {
     text-align: center;
     line-height: 60px;
     cursor: pointer;
+    left: 0;
+    font-size: 1.2rem;
+    font-family: mplus-1p-bold;
+    z-index: 10;
 }
 
 #modal-message {
@@ -669,4 +706,68 @@ html, body {
     left: 0;
     box-sizing: border-box;
     display: none; /* 初期状態では非表示 */
+}
+
+/* --- 状況確認モーダル --- */
+#situation-modal {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: white;
+    margin-left: 0;
+    z-index: 1000;
+    border-radius: 0px;
+    display: none;
+    flex-direction: column;
+    padding-top: 40px;
+    padding-bottom: 60px; /* とじるボタンの高さ分を確保 */
+    box-sizing: border-box;
+}
+
+#s-foe-info, #s-ally-info {
+    width: 80%;
+    margin: 10px auto;
+    padding: 15px;
+    border: 2px solid #ccc;
+    border-radius: 15px;
+    background-color: #f9f9f9;
+    text-align: center;
+    font-family: mplus-1p-bold;
+}
+
+#s-foe-info h3, #s-ally-info h3 {
+    margin-top: 0;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+
+#s-foe-info p, #s-ally-info p {
+    display: inline-block;
+    width: 45%;
+    margin: 5px 0;
+    font-size: 1.1em;
+}
+
+#s-foe-info span, #s-ally-info span {
+    font-weight: normal;
+    color: #555;
+}
+
+/* 状況モーダル専用の閉じるボタン設定（優先度を上げるためID指定） */
+#situation-modal .close-modal {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    line-height: 60px;
+    background-color: #448ec6;
+    color: white;
+    text-align: center;
+    font-size: 1.2rem;
+    font-family: mplus-1p-bold;
+    z-index: 2000;
+    cursor: pointer;
 }

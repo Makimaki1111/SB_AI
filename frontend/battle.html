@@ -57,9 +57,14 @@
             <div id="message"></div>
             <div id="wait-message"></div>
           </div>
-          <!-- 特性情報表示エリア -->
-          <div id="ability-info-container">
-            <p>とくせい</p>
+          <!-- アクションボタンエリア -->
+          <div id="actions-wrapper">
+            <div id="situation-button" class="button">
+              <p>じょうきょう</p>
+            </div>
+            <div id="ability-info-container">
+              <p>とくせい</p>
+            </div>
           </div>
         </div>
         <a href="index.html" id="back-to-title-btn" style="display:none;">タイトルに戻る</a>
@@ -95,6 +100,24 @@
             <!-- ここにJavaScriptで選択可能な特性のリストが生成されます -->
         </div>
     </div>
+    <div class="close-modal">とじる</div>
+  </div>
+  <!-- 状況確認モーダル -->
+  <div id="situation-modal" style="display: none;">
+    <div id="s-foe-info">
+        <h3>あいて<span id="foe-rank"></span></h3>
+        <p>こうげき<br><span id="foe-A">1.0倍</span></p>
+        <p>ぼうぎょ<br><span id="foe-B">1.0倍</span></p>
+    </div>
+    <div id="s-ally-info">
+        <h3>じぶん<span id="ally-rank"></span></h3>
+        <p>こうげき<br><span id="ally-A">1.0倍</span></p>
+        <p>ぼうぎょ<br><span id="ally-B">1.0倍</span></p>
+    </div>
+
+    <div id="last-foe-word"></div>
+    <div class="types"></div>
+    <div class="will-damaged"></div>
     <div class="close-modal">とじる</div>
   </div>
 </body>

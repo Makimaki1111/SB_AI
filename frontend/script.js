@@ -144,6 +144,7 @@ const initializeBattleScreen = () => {
   ui.setAllyName("");
   ui.setFoeName("");
   ui.abilityInfoContainer.hide();
+  ui.situationButton.hide();
 
   ui.resetHP();
   ui.stopTimer();
@@ -172,6 +173,7 @@ const onMadeRoom = async (data) => {
   ui.setFoeName(data["foe"]["name"]);
   if (battleState.ally && typeof battleState.ally.abilityChangeCount !== 'undefined') { // Defensive check
     ui.abilityInfoContainer.selector.css('display', 'flex');
+    ui.situationButton.show();
     const currentAbilityName = battleState.allAbilities[battleState.ally.ability]?.name || battleState.ally.ability;
     const foeAbilityName = battleState.allAbilities[battleState.foe.ability]?.name || battleState.foe.ability;
     ui.updateAbilityInfo(currentAbilityName, battleState.ally.abilityChangeCount);
@@ -312,6 +314,12 @@ const onAccepted = async (data) => {
   }
 
   isProcessingAccepted = true;
+
+  // サーバーからの最新ステータスでローカルの状態を更新
+  battleState.ally.atk = data.state.ally_A;
+  battleState.ally.def = data.state.ally_B;
+  battleState.foe.atk = data.state.foe_A;
+  battleState.foe.def = data.state.foe_B;
 
   // --- 特性変更のレスポンスか判定 ---
   const isAbilityChange = data.state.events.some(e => e.type === 'ability_changed');
@@ -733,6 +741,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
   ui.closeAbilityModalBtn.onClick(() => {
     ui.hideAbilityModal();
+    playSound("resource/pera.mp3");
+  });
+
+  // --- 状況確認モーダルのイベントリスナー ---
+  ui.situationButton.onClick(() => {
+    ui.updateSituationInfo(
+        battleState.ally.atk, 
+        battleState.ally.def, 
+        battleState.foe.atk, 
+        battleState.foe.def
+    );
+    ui.showSituationModal();
+    playSound("resource/pera.mp3");
+  });
+
+  ui.closeSituationModalBtn.onClick(() => {
+    ui.hideSituationModal();
     playSound("resource/pera.mp3");
   });
 });

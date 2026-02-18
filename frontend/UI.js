@@ -31,6 +31,7 @@ class UI{
 
         // --- 特性関連 ---
         this.abilityInfoContainer = new UIObject($('#ability-info-container'));
+        this.situationButton = new UIObject($('#situation-button'));
         this.allyCurrentAbilityName = new UIObject($('#ally-current-ability-name'));
         this.allyCurrentAbilityDesc = new UIObject($('#ally-current-ability-desc'));
         this.foeCurrentAbilityName = new UIObject($('#foe-current-ability-name'));
@@ -40,6 +41,14 @@ class UI{
         this.abilityModal = new UIObject($('#ability-modal'));
         this.closeAbilityModalBtn = new UIObject($('.close-modal')); // "とじる" ボタン
         this.skillsList = new UIObject($('#skills')); // 選択可能な特性アイコンのコンテナ
+
+        // --- 状況モーダル関連 ---
+        this.situationModal = new UIObject($('#situation-modal'));
+        this.situationFoeA = new UIObject($('#foe-A'));
+        this.situationFoeB = new UIObject($('#foe-B'));
+        this.situationAllyA = new UIObject($('#ally-A'));
+        this.situationAllyB = new UIObject($('#ally-B'));
+        this.closeSituationModalBtn = new UIObject($('#situation-modal .close-modal'));
     }
 
     _setImageWithReplaceAndFade(selector, src, duration = 100) {
@@ -501,5 +510,30 @@ class UI{
             }
             listElement.append(container);
         }
+    }
+
+    // --- 状況モーダル関連メソッド ---
+    showSituationModal() {
+        this.situationModal.selector.fadeIn('fast');
+    }
+
+    hideSituationModal() {
+        this.situationModal.selector.fadeOut('fast');
+    }
+
+    updateSituationInfo(allyAtk, allyDef, foeAtk, foeDef) {
+        // ランクから倍率への変換マップ (backend/SB_info.py と同期)
+        const rankToPower = (rank) => {
+             const mapping = {
+                "-6": 0.25, "-5": 0.28, "-4": 0.33, "-3": 0.4, "-2": 0.5, "-1": 0.66, "0": 1.0,
+                "1": 1.5, "2": 2.0, "3": 2.5, "4": 3.0, "5": 3.5, "6": 4.0
+            };
+            return mapping[rank] || 1.0;
+        };
+
+        this.situationAllyA.selector.text(rankToPower(allyAtk).toFixed(2) + "倍");
+        this.situationAllyB.selector.text(rankToPower(allyDef).toFixed(2) + "倍");
+        this.situationFoeA.selector.text(rankToPower(foeAtk).toFixed(2) + "倍");
+        this.situationFoeB.selector.text(rankToPower(foeDef).toFixed(2) + "倍");
     }
 }
