@@ -31,13 +31,15 @@ const EVENT_SOUND_MAP = {
   "start": "resource/start.mp3",
   "end": "resource/end.mp3",
   "atk_down": "resource/down.mp3",
-  "atk_up": "resource/up.mp3"
+  "atk_up": "resource/up.mp3",
+  "drain": "resource/seed_damage.mp3"
 };
 
 const DAMAGE_MSG_MAP = {
   "効果はばつぐんだ！": "resource/effective.mp3",
   "ふつうのダメージだ": "resource/middmg.mp3",
-  "効果はいまひとつのようだ…": "resource/noneffective.mp3"
+  "効果はいまひとつのようだ…": "resource/noneffective.mp3",
+  "相手に種を植え付けた！": "resource/seeded.mp3"
 };
 
 // プレイヤーIDをランダム生成して保存（対人戦で識別するため）
@@ -79,9 +81,10 @@ function playSound(path){
 
 function playEventSound(type, message){
   let path = EVENT_SOUND_MAP[type];
-  if (type === "damage") {
+  if (DAMAGE_MSG_MAP[message]) {
     path = DAMAGE_MSG_MAP[message];
-    if (!path) console.warn("未知のメッセージです:" + message);
+  } else if (type === "damage") {
+    console.warn("未知のメッセージです:" + message);
   }
   if (path) playSound(path);
 }
@@ -241,6 +244,14 @@ const processEvent = async (events, is_my_turn) => {
       }else {
         alert("なにかがおかしいよ:" + e["player"]);
       }
+    } else if (e["type"] === "drain") {
+      // ダメージ適用
+      battleState.ally.hp = Math.max(0, battleState.ally.hp - (e["ally_damage"] || 0));
+      battleState.foe.hp = Math.max(0, battleState.foe.hp - (e["foe_damage"] || 0));
+      // 回復適用
+      battleState.ally.hp = Math.min(battleState.ally.maxHp, battleState.ally.hp + (e["ally_cure"] || 0));
+      battleState.foe.hp = Math.min(battleState.foe.maxHp, battleState.foe.hp + (e["foe_cure"] || 0));
+      ui.updateHPs(battleState.ally.hp, battleState.ally.maxHp, battleState.foe.hp, battleState.foe.maxHp);
     }
 
     // 特性変更イベントの場合は待機時間を短くする

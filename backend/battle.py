@@ -26,6 +26,7 @@ class Player:
         self.types = [""]
         self.ability = "" # 特性
         self.ability_change_count = 3 # 特性変更の残り回数
+        self.leech_turns = 0 # やどりぎの残りターン数
 
     def take_damage(self, damage: int):
         self.hp = max(0, self.hp - damage)
@@ -53,7 +54,7 @@ class Ability:
             "icon_type": self.icon_type,
         }
 
-    def check_condition(self, types: list, word: str) -> bool:
+    def check_condition(self, player: Player, types: list, word: str) -> bool:
         """特性の発動条件をチェックする"""
         return False
 
@@ -76,7 +77,7 @@ class StatBoostAbility(Ability):
         self._condition_types = condition_types
         self._min_word_len = min_word_len
 
-    def check_condition(self, types: list, word: str) -> bool:
+    def check_condition(self, player: Player, types: list, word: str) -> bool:
         if self._condition_types and any(t in types for t in self._condition_types):
             return True
         if self._min_word_len > 0 and len(word) >= self._min_word_len:
@@ -102,7 +103,7 @@ class TypeStatBoostAbility(Ability):
         self.boost_amount = boost_amount
         self.stat_type = stat_type
 
-    def check_condition(self, types: list, word: str) -> bool:
+    def check_condition(self, player: Player, types: list, word: str) -> bool:
         return self.target_type in types
 
     def apply_damage_replacement_effect(self, player: Player, battle: 'Battle_info'):
@@ -132,7 +133,7 @@ class TypePowerUpAbility(Ability):
         self.target_type = target_type
         self.rank_increase = rank_increase
 
-    def check_condition(self, types: list, word: str) -> bool:
+    def check_condition(self, player: Player, types: list, word: str) -> bool:
         return self.target_type in types
 
     def apply_effect(self, player: Player, battle: 'Battle_info') -> bool:
@@ -156,6 +157,24 @@ class MukimukiAbility(Ability):
 
     def get_violence_penalty_reduction(self) -> int:
         return 1
+
+class LeechSeedAbility(Ability):
+    """特性「やどりぎ」"""
+    def __init__(self):
+        super().__init__(
+            name="やどりぎ",
+            description="植物タイプの言葉を使うとダメージを与える代わりに相手にやどりぎを植え付ける(4ターンの間、自分が攻撃した後に相手のHPを5減らし、自分の体力を5回復する)",
+            icon_type="植物"
+        )
+        self.replaces_damage = True
+
+    def check_condition(self, player: Player, types: list, word: str) -> bool:
+        # 既にやどりぎ中の場合は発動しない（通常攻撃になる）
+        return "植物" in types and player.leech_turns == 0
+
+    def apply_damage_replacement_effect(self, player: Player, battle: 'Battle_info'):
+        player.leech_turns = 4
+        battle.events.append({"type": "ability_trigger", "message": f"相手に種を植え付けた！", "player": "ally" if player.id == battle.player1.id else "foe"})
 
 class Battle_info:
     """
@@ -241,7 +260,8 @@ class Battle_info:
                 target_type="人物",
                 rank_increase=1
             ),
-            "mukimuki": MukimukiAbility()
+            "mukimuki": MukimukiAbility(),
+            "yadorigi": LeechSeedAbility()
         }
         self.ability_ids = list(self.abilities.keys())
         self.player1.ability = random.choice(self.ability_ids)
@@ -297,9 +317,13 @@ class Battle_info:
         ability_obj = self.abilities.get(current_player.ability)
 
         # ダメージ計算を代替する特性の処理
-        if ability_obj and ability_obj.replaces_damage and ability_obj.check_condition(types, word):
+        if ability_obj and ability_obj.replaces_damage and ability_obj.check_condition(current_player, types, word):
             current_player.types = types[:] # フロントエンド表示用にタイプを更新
             ability_obj.apply_damage_replacement_effect(current_player, self)
+            
+            # やどりぎ等のターン終了時効果処理
+            self._process_end_of_turn_effects(current_player, self.player2 if self.player1_turn else self.player1)
+
             self.character = self.sb_info.get_next_initial(word)
             ret = self._make_response()
             self.word = "" # レスポンス生成後に単語をリセット
@@ -309,7 +333,7 @@ class Battle_info:
 
         original_attack_rank = current_player.attack_rank
         ability_activated = False
-        if ability_obj and not ability_obj.replaces_damage and ability_obj.check_condition(types, word):
+        if ability_obj and not ability_obj.replaces_damage and ability_obj.check_condition(current_player, types, word):
             ability_activated = ability_obj.apply_effect(current_player, self)
 
         if(player_id == self.player1.id):
@@ -407,6 +431,9 @@ class Battle_info:
         if ability_activated:
             current_player.attack_rank = original_attack_rank
 
+        # やどりぎ等のターン終了時効果処理
+        self._process_end_of_turn_effects(current_player, self.player2 if self.player1_turn else self.player1)
+
         self.character = self.sb_info.get_next_initial(word)
         ret = self._make_response()
         self.word = "" # レスポンス生成後に単語をリセット
@@ -415,6 +442,34 @@ class Battle_info:
         self.player1_turn = not self.player1_turn
         self.turn += 1
         return ret
+
+    def _process_end_of_turn_effects(self, attacker: Player, defender: Player):
+        """ターン終了時の継続効果（やどりぎなど）を処理する"""
+        # 勝敗が決まっている場合は処理しない
+        if self.player1_win is not None:
+            return
+
+        # やどりぎ処理
+        if attacker.leech_turns > 0:
+            drain_amount = 5
+            actual_drain = min(defender.hp, drain_amount)
+            
+            defender.take_damage(actual_drain)
+            attacker.heal(actual_drain)
+            attacker.leech_turns -= 1
+
+            # 吸収イベント（ダメージと回復を同時に行う）
+            self.events.append({
+                "type": "drain",
+                "message": "やどりぎで体力を奪った！",
+                "ally_damage": 0 if attacker.id == self.player1.id else actual_drain,
+                "foe_damage": actual_drain if attacker.id == self.player1.id else 0,
+                "ally_cure": actual_drain if attacker.id == self.player1.id else 0,
+                "foe_cure": 0 if attacker.id == self.player1.id else actual_drain
+            })
+
+            if defender.is_defeated:
+                self.player1_win = (attacker.id == self.player1.id)
 
     def include_check(self,_input:str):
         ret = {
