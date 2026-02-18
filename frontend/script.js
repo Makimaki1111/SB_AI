@@ -378,8 +378,8 @@ const onAccepted = async (data) => {
   // タイムアウト（時間切れ）かどうか判定
   const isTimeout = data.state.events.some(e => e.message && e.message.includes("時間切れ"));
 
-  // まず画像・単語表示はすぐ行う（タイムアウトでなければ）
-  if (!isTimeout) {
+  // まず画像・単語表示はすぐ行う（タイムアウトでなく、かつ単語が存在する場合）
+  if (!isTimeout && data.state.word) {
     if (data["state"]["is_my_turn"]) {
       ui.showAllyImage(data);
       ui.showAllyWord(data["state"]["word"]);

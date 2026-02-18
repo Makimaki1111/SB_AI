@@ -302,6 +302,7 @@ class Battle_info:
             ability_obj.apply_damage_replacement_effect(current_player, self)
             self.character = self.sb_info.get_next_initial(word)
             ret = self._make_response()
+            self.word = "" # レスポンス生成後に単語をリセット
             self.player1_turn = not self.player1_turn
             self.turn += 1
             return ret
@@ -408,6 +409,7 @@ class Battle_info:
 
         self.character = self.sb_info.get_next_initial(word)
         ret = self._make_response()
+        self.word = "" # レスポンス生成後に単語をリセット
 
         # ターン交代
         self.player1_turn = not self.player1_turn
@@ -655,15 +657,13 @@ class Battle_info:
             self.player1_win = True
             return self._make_response()
 
-    def handle_disconnection(self, disconnected_player_id: str):
+    def handle_disconnection(self, disconnected_player_id: str, message: str = "あいてが通信を切断しました。"):
         """
         プレイヤーの切断を処理し、勝敗を決定してレスポンスを返します。
         """
         # すでに決着がついている場合は何もしない
         if self.player1_win is not None:
             return None
-
-        message = "あいてが通信を切断しました。"
         
         if disconnected_player_id == self.player1.id:
             self.player1_win = False

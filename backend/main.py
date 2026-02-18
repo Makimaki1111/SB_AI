@@ -72,11 +72,14 @@ class ConnectionManager:
         p2_response = battle.flip_turn_response(p1_response)
 
         for connection in self.room_connections[room_id]:
-            pid = self.socket_to_player_id.get(connection)
-            if pid == battle.player2.id:
-                await connection.send_text(json.dumps(p2_response))
-            else:
-                await connection.send_text(json.dumps(p1_response))
+            try:
+                pid = self.socket_to_player_id.get(connection)
+                if pid == battle.player2.id:
+                    await connection.send_text(json.dumps(p2_response))
+                else:
+                    await connection.send_text(json.dumps(p1_response))
+            except Exception as e:
+                print(f"Error broadcasting to {pid}: {e}")
 
 # --- DI: アプリケーション全体で共有するインスタンスを生成 ---
 sb_info_instance = SB_info()
@@ -313,6 +316,13 @@ async def websocket_endpoint(websocket: WebSocket):
                 model = run_away_info(**info)
                 if model.room_id in battle_rooms:
                     stop_turn_timer(model.room_id)
+                    
+                    battle = battle_rooms[model.room_id]
+                    # 逃亡を降参として処理し、相手に通知を送る
+                    res = battle.handle_disconnection(model.player_id, message="あいてが逃げ出しました。")
+                    if res:
+                        await manager.broadcast_battle_state(model.room_id, res)
+
                     del battle_rooms[model.room_id]
                     print(f"Battle room {model.room_id} was removed because a player ran away.")
 
