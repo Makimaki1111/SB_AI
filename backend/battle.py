@@ -70,6 +70,10 @@ class Ability:
         """暴力タイプ使用時の攻撃力ダウン軽減量を返す"""
         return 0
 
+    def get_damage_multiplier(self, word: str) -> float:
+        """ダメージ計算時の倍率補正を返す"""
+        return 1.0
+
 class StatBoostAbility(Ability):
     """特定の条件で攻撃ランクを上昇させる特性の共通クラス"""
     def __init__(self, name: str, description: str, icon_type: str, condition_types: list = [], min_word_len: int = 0):
@@ -176,6 +180,23 @@ class LeechSeedAbility(Ability):
         player.leech_turns = 4
         battle.events.append({"type": "ability_trigger", "message": f"相手に種を植え付けた！", "player": "ally" if player.id == battle.player1.id else "foe"})
 
+class LongWordBonusAbility(Ability):
+    """特性「おれのことばのもじすうがおおいほどいりょくがおおきくなるけんについて」"""
+    def __init__(self):
+        super().__init__(
+            name="おれのことばのもじすうがおおいほどいりょくがおおきくなるけんについて",
+            description="言葉の文字数が多いほど威力が大きくなる(6文字で最終ダメージ*1.5, 7文字以上で最終ダメージ*2.0)",
+            icon_type="物語"
+        )
+
+    def get_damage_multiplier(self, word: str) -> float:
+        length = len(word)
+        if length >= 7:
+            return 2.0
+        elif length == 6:
+            return 1.5
+        return 1.0
+
 class Battle_info:
     """
     ブラウザ対戦時のマッチ情報を保持するクラス
@@ -261,7 +282,8 @@ class Battle_info:
                 rank_increase=1
             ),
             "mukimuki": MukimukiAbility(),
-            "yadorigi": LeechSeedAbility()
+            "yadorigi": LeechSeedAbility(),
+            "long_word": LongWordBonusAbility()
         }
         self.ability_ids = list(self.abilities.keys())
         self.player1.ability = random.choice(self.ability_ids)
@@ -355,6 +377,11 @@ class Battle_info:
             else:
                 # ダメージ計算
                 effect, damage = self._calc_damage(at1,at2,dt1,dt2)
+
+                # 特性によるダメージ補正
+                if ability_obj:
+                    damage = int(damage * ability_obj.get_damage_multiplier(word))
+
                 event = {
                     "type" : "damage",
                     "message" : "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…" if effect > 0 else "効果はないようだ…",
@@ -401,6 +428,11 @@ class Battle_info:
             else:
                 # ダメージ計算
                 effect, damage = self._calc_damage(at1,at2,dt1,dt2)
+
+                # 特性によるダメージ補正
+                if ability_obj:
+                    damage = int(damage * ability_obj.get_damage_multiplier(word))
+
                 event = {
                     "type" : "damage",
                     "message" : "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…" if effect > 0 else "効果はないようだ…",
