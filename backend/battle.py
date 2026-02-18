@@ -74,7 +74,7 @@ class Ability:
         """暴力タイプ使用時の攻撃力ダウン軽減量を返す"""
         return 0
 
-    def get_damage_multiplier(self, word: str) -> float:
+    def get_damage_multiplier(self, types: list, word: str) -> float:
         """ダメージ計算時の倍率補正を返す"""
         return 1.0
 
@@ -135,24 +135,22 @@ class TypeStatBoostAbility(Ability):
         battle.events.append(event)
 
 class TypePowerUpAbility(Ability):
-    """特定タイプの単語で攻撃ランクを一時的に上げる"""
-    def __init__(self, name: str, description: str, icon_type: str, target_type: str, rank_increase: int):
+    """特定タイプの単語でダメージ倍率を上げる"""
+    def __init__(self, name: str, description: str, icon_type: str, target_type: str, damage_multiplier: float = 1.5):
         super().__init__(name, description, icon_type)
         self.target_type = target_type
-        self.rank_increase = rank_increase
+        self.damage_multiplier = damage_multiplier
 
     def check_condition(self, player: Player, types: list, word: str) -> bool:
         return self.target_type in types
 
     def apply_effect(self, player: Player, battle: 'Battle_info') -> bool:
-        player.attack_rank = min(6, player.attack_rank + self.rank_increase)
-        event = {
-            "type": "ability_trigger",
-            "message": f"特性「{self.name}」で威力が上がった！",
-            "player": "ally" if player.id == battle.player1.id else "foe"
-        }
-        battle.events.append(event)
-        return True
+        return False
+
+    def get_damage_multiplier(self, types: list, word: str) -> float:
+        if self.target_type in types:
+            return self.damage_multiplier
+        return 1.0
 
 class MukimukiAbility(Ability):
     """特性「むきむき」"""
@@ -193,7 +191,7 @@ class LongWordBonusAbility(Ability):
             icon_type="物語"
         )
 
-    def get_damage_multiplier(self, word: str) -> float:
+    def get_damage_multiplier(self, types: list, word: str) -> float:
         length = len(word)
         if length >= 7:
             return 2.0
@@ -309,10 +307,31 @@ class Battle_info:
             ),
             "kyojin": TypePowerUpAbility(
                 name="きょじん",
-                description="人物タイプの言葉の威力が上がる(与えるダメージが1.5倍になる)",
+                description="人物タイプの言葉の威力が上がる",
                 icon_type="人物",
                 target_type="人物",
-                rank_increase=1
+                damage_multiplier=1.5
+            ),
+            "jikken": TypePowerUpAbility(
+                name="じっけん",
+                description="理科タイプの言葉の威力が上がる",
+                icon_type="理科",
+                target_type="理科",
+                damage_multiplier=1.5
+            ),
+            "global": TypePowerUpAbility(
+                name="グローバル",
+                description="地名タイプの言葉の威力が上がる",
+                icon_type="地名",
+                target_type="地名",
+                damage_multiplier=1.5
+            ),
+            "shinkoushin": TypePowerUpAbility(
+                name="しんこうしん",
+                description="宗教タイプの言葉の威力が上がる",
+                icon_type="宗教",
+                target_type="宗教",
+                damage_multiplier=1.5
             ),
             "mukimuki": MukimukiAbility(),
             "yadorigi": LeechSeedAbility(),
@@ -414,7 +433,7 @@ class Battle_info:
 
                 # 特性によるダメージ補正
                 if ability_obj:
-                    damage = int(damage * ability_obj.get_damage_multiplier(word))
+                    damage = int(damage * ability_obj.get_damage_multiplier(types, word))
 
                 event = {
                     "type" : "damage",
@@ -465,7 +484,7 @@ class Battle_info:
 
                 # 特性によるダメージ補正
                 if ability_obj:
-                    damage = int(damage * ability_obj.get_damage_multiplier(word))
+                    damage = int(damage * ability_obj.get_damage_multiplier(types, word))
 
                 event = {
                     "type" : "damage",
