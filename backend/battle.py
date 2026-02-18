@@ -62,6 +62,10 @@ class Ability:
         """攻撃後の効果を適用し、発動したかどうかを返す"""
         return False
 
+    def apply_after_effect(self, player: Player, battle: 'Battle_info'):
+        """ダメージ計算・表示後に適用する効果"""
+        pass
+
     def apply_damage_replacement_effect(self, player: Player, battle: 'Battle_info'):
         """ダメージ計算を代替する効果を適用する"""
         pass
@@ -185,7 +189,7 @@ class LongWordBonusAbility(Ability):
     def __init__(self):
         super().__init__(
             name="おれのことばのもじすうがおおいほどいりょくがおおきくなるけんについて",
-            description="言葉の文字数が多いほど威力が大きくなる(6文字で最終ダメージ*1.5, 7文字以上で最終ダメージ*2.0)",
+            description="言葉の文字数が多いほど威力が大きくなる",
             icon_type="物語"
         )
 
@@ -196,6 +200,35 @@ class LongWordBonusAbility(Ability):
         elif length == 6:
             return 1.5
         return 1.0
+
+class RevolutionAbility(Ability):
+    """特性「かくめい」"""
+    def __init__(self):
+        super().__init__(
+            name="かくめい",
+            description="遊びタイプの言葉を使うたびに自分と相手の能力変化をひっくり返す",
+            icon_type="遊び"
+        )
+
+    def check_condition(self, player: Player, types: list, word: str) -> bool:
+        return "遊び" in types
+
+    def apply_after_effect(self, player: Player, battle: 'Battle_info'):
+        # 自分と相手を取得
+        opponent = battle.player2 if player.id == battle.player1.id else battle.player1
+
+        # ランク反転
+        player.attack_rank *= -1
+        player.defense_rank *= -1
+        opponent.attack_rank *= -1
+        opponent.defense_rank *= -1
+
+        event = {
+            "type": "ability_trigger",
+            "message": f"全ての能力変化がひっくり返った！",
+            "player": "ally" if player.id == battle.player1.id else "foe"
+        }
+        battle.events.append(event)
 
 class Battle_info:
     """
@@ -283,7 +316,8 @@ class Battle_info:
             ),
             "mukimuki": MukimukiAbility(),
             "yadorigi": LeechSeedAbility(),
-            "long_word": LongWordBonusAbility()
+            "long_word": LongWordBonusAbility(),
+            "revolution": RevolutionAbility()
         }
         self.ability_ids = list(self.abilities.keys())
         self.player1.ability = random.choice(self.ability_ids)
@@ -462,6 +496,10 @@ class Battle_info:
         # --- 特性効果を元に戻す ---
         if ability_activated:
             current_player.attack_rank = original_attack_rank
+
+        # ダメージ計算後の特性効果適用
+        if ability_obj and not ability_obj.replaces_damage and ability_obj.check_condition(current_player, types, word):
+            ability_obj.apply_after_effect(current_player, self)
 
         # やどりぎ等のターン終了時効果処理
         self._process_end_of_turn_effects(current_player, self.player2 if self.player1_turn else self.player1)
