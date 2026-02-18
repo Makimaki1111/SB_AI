@@ -578,6 +578,9 @@ html, body {
     height: 50%;
     overflow: scroll;
     padding: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
 }
 
 #middle{
@@ -597,7 +600,6 @@ html, body {
     line-height: 60%;
     width: 64px;
     top: 0px;
-    float: left;
     padding: 2px;
     border: 1px solid white;
     box-sizing: border-box;

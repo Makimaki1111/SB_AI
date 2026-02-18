@@ -139,10 +139,6 @@ class Battle_info:
 
         # 特性関連
         self.abilities = {
-            "animal_lover": StatBoostAbility("動物好き", "「動物」タイプの単語で攻撃が上がる。", "動物", condition_types=["動物"]),
-            "botanist": StatBoostAbility("植物学者", "「植物」タイプの単語で攻撃が上がる。", "植物", condition_types=["植物"]),
-            "historian": StatBoostAbility("歴史学者", "「地名」か「人物」の単語で攻撃が上がる。", "人物", condition_types=["地名", "人物"]),
-            "deep_thinker": StatBoostAbility("長考", "6文字以上の単語で攻撃が上がる。", "物語", min_word_len=6),
             "passion": TypeStatBoostAbility(
                 name="じょうねつ",
                 description="感情タイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
