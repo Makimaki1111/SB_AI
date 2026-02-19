@@ -316,6 +316,7 @@ const onAllyTurnStart = (data) => {
   ui.showInput();
   ui.showSubmitBtn();
   ui.hideMessage();
+  ui.focusInput();
   if (!battleState.isVsCpu) {
     // 受信時刻からの経過時間を考慮してタイマーを開始
     const elapsed = (Date.now() - (data._receivedAt || Date.now())) / 1000;

@@ -412,6 +412,12 @@ class UI{
         }
     }
 
+    focusInput() {
+        if (this.input && this.input.selector) {
+            this.input.selector.focus();
+        }
+    }
+
     hideSubmitBtn() {
         if (this.submitButton && this.submitButton.selector) {
             this.submitButton.selector.hide();
