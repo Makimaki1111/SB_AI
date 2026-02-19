@@ -512,6 +512,8 @@ class UI{
         const canChange = battleState.ally.abilityChangeCount > 0;
 
         for (const [id, abilityInfo] of Object.entries(allAbilities)) {
+            if (id === 'secret') continue;
+
             const container = $('<div>').attr('id', id).addClass('skill-item'); // 各特性のコンテナ
 
             // アイコン画像

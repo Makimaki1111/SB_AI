@@ -269,6 +269,13 @@ const processEvent = async (events, is_my_turn) => {
         if (e["poison_target"] === "foe") battleState.foe.is_poison = true;
         ui.updatePoisonStatus(battleState.ally.is_poison, battleState.foe.is_poison);
       }
+    } else if (e["type"] === "cure_poison") {
+      if (e["player"] === "ally") {
+        battleState.ally.is_poison = false;
+      } else {
+        battleState.foe.is_poison = false;
+      }
+      ui.updatePoisonStatus(battleState.ally.is_poison, battleState.foe.is_poison);
     }
 
     // 特性変更イベントの場合は待機時間を短くする
@@ -362,10 +369,19 @@ const onAccepted = async (data) => {
     if (poisonEvent.poison_target === "ally") showAllyPoison = false;
     if (poisonEvent.poison_target === "foe") showFoePoison = false;
   }
+
+  // 毒が治った場合、初期表示では毒を表示しておく（イベントで消す）
+  const curePoisonEventAlly = data.state.events.find(e => e.type === "cure_poison" && e.player === "ally");
+  if (curePoisonEventAlly) showAllyPoison = true;
+
+  const curePoisonEventFoe = data.state.events.find(e => e.type === "cure_poison" && e.player === "foe");
+  if (curePoisonEventFoe) showFoePoison = true;
+
   ui.updatePoisonStatus(showAllyPoison, showFoePoison);
 
   // --- 特性変更のレスポンスか判定 ---
-  const isAbilityChange = data.state.events.some(e => e.type === 'ability_changed');
+  const abilityChangeEvent = data.state.events.find(e => e.type === 'ability_changed');
+  const isAbilityChange = !!abilityChangeEvent;
   
   // 特性変更以外（通常の攻撃など）の場合は、結果表示のためにタイマーを止める
   if (!isAbilityChange) {
@@ -390,10 +406,12 @@ const onAccepted = async (data) => {
       ui.allyCurrentAbilityDesc.selector.text(battleState.allAbilities[data.state.ally_ability]?.description || '');
       ui.foeCurrentAbilityName.selector.text(foeAbilityName);
       ui.foeCurrentAbilityDesc.selector.text(battleState.allAbilities[data.state.foe_ability]?.description || '');
-      playSound("resource/concent.mp3");
-
-      // 特性変更メッセージを表示
-      ui.showModalMessage('とくせいを変更した！', 2000);
+      
+      // 特性変更メッセージを表示 (自分のみ)
+      if (abilityChangeEvent.player === 'ally') {
+        playSound("resource/concent.mp3");
+        ui.showModalMessage('とくせいを変更した！', 2000);
+      }
     }
 
     // モーダル内の選択肢を再描画して、選択状態を更新

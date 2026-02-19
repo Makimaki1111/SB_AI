@@ -404,9 +404,9 @@ class DokubariAbility(Ability):
             opponent.poison_turns = 1
             battle.events.append({
                 "type": "ability_trigger",
-                "message": f"相手は毒を受けた！",
+                "message": f"毒を受けた！",
                 "player": "ally" if player.id == battle.player1.id else "foe",
-                "poison_target": "foe" # 能力発動者から見て「相手」が毒になった
+                "poison_target": "ally" if opponent.id == battle.player1.id else "foe"
             })
 
 class IkakuAbility(Ability):
@@ -428,7 +428,7 @@ class IkakuAbility(Ability):
         
         event = {
             "type": "atk_down",
-            "message": f"{self.name}で相手の攻撃が下がった！(現在{battle.sb_info.rank_to_power(opponent.attack_rank):.1f}倍)",
+            "message": f"{self.name}で攻撃が下がった！(現在{battle.sb_info.rank_to_power(opponent.attack_rank):.1f}倍)",
             "player": "foe" if player.id == battle.player1.id else "ally",
             "new_atk": opponent.attack_rank
         }
@@ -542,7 +542,8 @@ def get_default_abilities() -> dict:
 def get_all_abilities_info() -> dict:
     """全特性の表示用データを返す"""
     abilities = get_default_abilities()
-    return {k: v.get_display_data() for k, v in abilities.items()}
+    data = {k: v.get_display_data() for k, v in abilities.items()}
+    return data
 
 class Battle_info:
     """
@@ -592,6 +593,11 @@ class Battle_info:
         serializable_abilities = {}
         for ability_id, ability_obj in self.abilities.items():
             serializable_abilities[ability_id] = ability_obj.get_display_data()
+        serializable_abilities["secret"] = {
+            "name": "ひみつ",
+            "description": "相手もきみのとくせいを知らないぞ",
+            "icon_type": "ノーマル"
+        }
         return serializable_abilities
 
     def try_attack(self, player_id, word: str):
@@ -676,7 +682,7 @@ class Battle_info:
                     # 毒解除
                     if self.player1.poison_turns > 0:
                         self.player1.poison_turns = 0
-                        self.events.append({"type" : "message", "message" : "毒が治った！"})
+                        self.events.append({"type" : "cure_poison", "message" : "毒が治った！", "player": "ally"})
 
                     event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : MEDICAL_RECOVERY_AMOUNT, "foe_cure" : 0}
                     self.events.append(event)
@@ -765,7 +771,7 @@ class Battle_info:
                     # 毒解除
                     if self.player2.poison_turns > 0:
                         self.player2.poison_turns = 0
-                        self.events.append({"type" : "message", "message" : "毒が治った！"})
+                        self.events.append({"type" : "cure_poison", "message" : "毒が治った！", "player": "foe"})
 
                     event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : 0, "foe_cure" : MEDICAL_RECOVERY_AMOUNT}
                     self.events.append(event)
@@ -1018,6 +1024,10 @@ class Battle_info:
         ally = self.player1 if is_p1 else self.player2
         foe = self.player2 if is_p1 else self.player1
 
+        foe_ability = foe.ability
+        if not self.is_cpu:
+            foe_ability = "secret"
+
         return {
             "type": "made_room",
             "message": "バトルルーム作成",
@@ -1037,7 +1047,7 @@ class Battle_info:
             "foe" : {
                 "max_hp" : self.MAX_HP,
                 "name" : foe.name,
-                "ability": foe.ability,
+                "ability": foe_ability,
                 "ability_change_count": foe.ability_change_count,
                 "is_poison": foe.poison_turns > 0
             }
@@ -1096,6 +1106,36 @@ class Battle_info:
         new_state["events"] = new_events
 
         return {"type": "accepted", "state": new_state}
+
+    def mask_response_for_pvp(self, response: dict) -> dict:
+        """
+        対人戦用に相手の特性情報をマスクする
+        """
+        if response.get("type") != "accepted":
+            return response
+        
+        # ディープコピーしないと元の辞書（他プレイヤーへの送信データ）まで書き換わってしまう可能性があるが、
+        # flip_turn_responseで既にコピーされている前提であれば浅いコピーでstateだけ分離すれば良い。
+        # 安全のためstateはコピーする。
+        new_response = response.copy()
+        new_state = response["state"].copy()
+        new_response["state"] = new_state
+
+        # 相手の特性を隠す
+        new_state["foe_ability"] = "secret"
+        new_state["foe_ability_change_count"] = ABILITY_CHANGE_COUNT_INIT
+        
+        # イベント内の情報もマスク
+        new_events = []
+        for e in new_state["events"]:
+            ne = e.copy()
+            if e["type"] == "ability_changed" and e.get("player") == "foe":
+                ne["new_ability"] = "secret"
+                ne["message"] = ""
+            new_events.append(ne)
+        new_state["events"] = new_events
+
+        return new_response
 
     def change_ability(self, player_id: str, new_ability_id: str):
         """プレイヤーの特性を変更する"""
