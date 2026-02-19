@@ -619,8 +619,6 @@ class Battle_info:
                     damage = int(damage * CRITICAL_HIT_MULTIPLIER)
 
                 msg = "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…" if effect > 0 else "効果はないようだ…"
-                if is_critical:
-                    msg += " 急所に当たった！"
 
                 event = {
                     "type" : "damage",
@@ -629,6 +627,12 @@ class Battle_info:
                     "foe_damage" : damage
                 }
                 self.events.append(event)
+
+                if is_critical:
+                    self.events.append({
+                        "type": "critical",
+                        "message": "急所に当たった！"
+                    })
 
                 # 防御側の特性発動チェック
                 defender_ability = self.abilities.get(self.player2.ability)
@@ -698,8 +702,6 @@ class Battle_info:
                     damage = int(damage * CRITICAL_HIT_MULTIPLIER)
 
                 msg = "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…" if effect > 0 else "効果はないようだ…"
-                if is_critical:
-                    msg += " 急所に当たった！"
 
                 event = {
                     "type" : "damage",
@@ -708,6 +710,12 @@ class Battle_info:
                     "foe_damage" : 0
                 }
                 self.events.append(event)
+
+                if is_critical:
+                    self.events.append({
+                        "type": "critical",
+                        "message": "急所に当たった！"
+                    })
 
                 # 防御側の特性発動チェック
                 defender_ability = self.abilities.get(self.player1.ability)
