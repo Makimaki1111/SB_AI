@@ -1,19 +1,17 @@
 # TODO : タイプが含まれていなかった場合の反復処理
 
 import os
-from dotenv import load_dotenv
-import google.generativeai as genai
 
 try:
     from SB_info import SB_info
 except ImportError:
     from backend.SB_info import SB_info
 
-load_dotenv()
+# load_dotenv()
 class GOOGLE_AI:
     def __init__(self, sb_info: SB_info):
-        genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-        self.model = genai.GenerativeModel("models/gemini-2.5-flash")
+        # genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+        # self.model = genai.GenerativeModel("models/gemini-2.5-flash")
         self.typed_dict = sb_info.typed_dict
 
     def get_type(self,text:str) -> list:
@@ -44,8 +42,6 @@ class GOOGLE_AI:
             print("🌝成功！:",response)
             return response
         except Exception as e:
-            print(e)
             # 使えなくなったら元々のタイプ
             ret = self.typed_dict.get(text, ("", ""))
-            print("😭失敗…:",ret)
             return [t for t in ret if t]
