@@ -171,6 +171,8 @@ const onMadeRoom = async (data) => {
   battleState.ally.ability = data.ally.ability;
   battleState.ally.abilityChangeCount = data.ally.ability_change_count;
   battleState.ally.is_poison = data.ally.is_poison;
+  battleState.foe.ability = data.foe.ability;
+  battleState.foe.abilityChangeCount = data.foe.ability_change_count;
   battleState.foe.is_poison = data.foe.is_poison;
 
   ui.setAllyHP(battleState.ally.hp, battleState.ally.maxHp);
