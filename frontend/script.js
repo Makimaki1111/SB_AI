@@ -245,6 +245,7 @@ const processEvent = async (events, is_my_turn) => {
       }else {
         alert("なにかがおかしいよ:" + e["player"]);
       }
+      ui.playStatDownEffect(e["player"] === "ally");
     } else if (e["type"] === "atk_up") {
       if(e["player"] === "ally") {
         battleState.ally.atk = e["new_atk"];
@@ -253,6 +254,17 @@ const processEvent = async (events, is_my_turn) => {
       }else {
         alert("なにかがおかしいよ:" + e["player"]);
       }
+      ui.playStatUpEffect(e["player"] === "ally");
+    } else if (e["type"] === "stat_up") {
+      const isAlly = e["player"] === "ally";
+      if (e["stat_type"] === "defense") {
+         if (isAlly) battleState.ally.def = e["new_rank"];
+         else battleState.foe.def = e["new_rank"];
+      } else {
+         if (isAlly) battleState.ally.atk = e["new_rank"];
+         else battleState.foe.atk = e["new_rank"];
+      }
+      ui.playStatUpEffect(isAlly);
     } else if (e["type"] === "drain") {
       // ダメージ適用
       battleState.ally.hp = Math.max(0, battleState.ally.hp - (e["ally_damage"] || 0));

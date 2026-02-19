@@ -165,7 +165,9 @@ class TypeStatBoostAbility(Ability):
         event = {
             "type": "stat_up",
             "message": f"{stat_name}が{msg_adverb}上がった！(現在{battle.sb_info.rank_to_power(current_rank):.1f}倍)",
-            "player": "ally" if player.id == battle.player1.id else "foe"
+            "player": "ally" if player.id == battle.player1.id else "foe",
+            "stat_type": self.stat_type,
+            "new_rank": current_rank
         }
         battle.events.append(event)
 

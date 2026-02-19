@@ -597,4 +597,50 @@ class UI{
             }, i * 80); // 少しずつずらして出現させる
         }
     }
+
+    playStatUpEffect(isAlly) {
+        const container = isAlly ? this.allyEffectContainer.selector : this.foeEffectContainer.selector;
+        
+        for (let i = 0; i < 10; i++) {
+            setTimeout(() => {
+                const particle = $(`<div class="stat-up-particle"></div>`);
+                // ランダムな位置とサイズ
+                const left = Math.random() * 180 + 20;
+                const size = Math.random() * 0.8 + 0.5;
+                
+                particle.css({
+                    left: `${left}px`,
+                    bottom: '40px', // 開始位置を少し上に調整
+                    transform: `scale(${size})`,
+                    animation: `floatUp 1.5s ease-out forwards`
+                });
+                
+                container.append(particle);
+                setTimeout(() => { particle.remove(); }, 1500);
+            }, i * 100);
+        }
+    }
+
+    playStatDownEffect(isAlly) {
+        const container = isAlly ? this.allyEffectContainer.selector : this.foeEffectContainer.selector;
+        
+        for (let i = 0; i < 10; i++) {
+            setTimeout(() => {
+                const particle = $(`<div class="stat-down-particle"></div>`);
+                // ランダムな位置とサイズ
+                const left = Math.random() * 180 + 20;
+                const size = Math.random() * 0.8 + 0.5;
+                
+                particle.css({
+                    left: `${left}px`,
+                    top: '50px', // 開始位置を少し下に調整
+                    transform: `scale(${size})`,
+                    animation: `floatDown 1.5s ease-out forwards`
+                });
+                
+                container.append(particle);
+                setTimeout(() => { particle.remove(); }, 1500);
+            }, i * 100);
+        }
+    }
 }
