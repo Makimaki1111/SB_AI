@@ -8,9 +8,9 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 try:
-    from battle import Battle_info, battle_rooms, SB_info, GOOGLE_AI
+    from battle import Battle_info, battle_rooms, SB_info, GOOGLE_AI, get_all_abilities_info
 except ImportError:
-    from backend.battle import Battle_info, battle_rooms, SB_info, GOOGLE_AI
+    from backend.battle import Battle_info, battle_rooms, SB_info, GOOGLE_AI, get_all_abilities_info
 
 app = FastAPI()
 
@@ -85,20 +85,29 @@ class ConnectionManager:
 sb_info_instance = SB_info()
 google_ai_instance = GOOGLE_AI(sb_info_instance)
 
+# ユーザー情報を保存する辞書 (player_id -> {"name": str, "ability": str})
+user_profiles: Dict[str, dict] = {}
+
 # --- 既存のREST API（必要なら残してもOK） ---
 class make_new_battle_info(BaseModel):
     player1_id: str
     player2_id: str
 
-def make_new_battle(info: make_new_battle_info):
+def make_new_battle(info: make_new_battle_info, p1_profile: dict = None, p2_profile: dict = None):
     bi = Battle_info(
         info.player1_id, 
         info.player2_id,
         sb_info=sb_info_instance,
-        google_ai=google_ai_instance
+        google_ai=google_ai_instance,
+        p1_profile=p1_profile,
+        p2_profile=p2_profile
     )
     battle_rooms[bi.room_id] = bi
     return bi.make_init_response(info.player1_id)
+
+@app.get("/abilities")
+def get_abilities_endpoint():
+    return get_all_abilities_info()
 
 class include_check_info(BaseModel):
     room_id: str
@@ -199,8 +208,22 @@ async def websocket_endpoint(websocket: WebSocket):
                 await manager.broadcast(json.dumps({"type": "error", "message": "Invalid JSON"}), "") # エラーは送信元だけに返すべきだが簡略化
                 continue
             
+            # --- ユーザー情報更新 ---
+            if req.get("type") == "update_user_info":
+                info = req.get("info", {})
+                player_id = info.get("player_id")
+                name = info.get("name")
+                ability = info.get("ability")
+                if player_id:
+                    # 名前を8文字以内に制限
+                    if name and len(name) > 8:
+                        name = name[:8]
+
+                    user_profiles[player_id] = {"name": name, "ability": ability}
+                    await websocket.send_text(json.dumps({"type": "user_info_updated", "message": "ユーザー情報を更新しました"}))
+
             # --- マッチメイキング処理 ---
-            if req.get("type") == "find_match":
+            elif req.get("type") == "find_match":
                 info = req.get("info", {})
                 player_id = info.get("player_id")
                 manager.register_player(websocket, player_id)
@@ -212,7 +235,10 @@ async def websocket_endpoint(websocket: WebSocket):
                     p1_data = waiting_player
                     p2_data = {"socket": websocket, "player_id": player_id}
                     
-                    bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=sb_info_instance, google_ai=google_ai_instance)
+                    p1_profile = user_profiles.get(p1_data["player_id"])
+                    p2_profile = user_profiles.get(p2_data["player_id"])
+
+                    bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=sb_info_instance, google_ai=google_ai_instance, p1_profile=p1_profile, p2_profile=p2_profile)
                     battle_rooms[bi.room_id] = bi
 
                     manager.join_room(p1_data["socket"], bi.room_id)
@@ -242,7 +268,10 @@ async def websocket_endpoint(websocket: WebSocket):
 
                         p2_data = {"socket": websocket, "player_id": player_id}
                         
-                        bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=sb_info_instance, google_ai=google_ai_instance, room_id=room_id)
+                        p1_profile = user_profiles.get(p1_data["player_id"])
+                        p2_profile = user_profiles.get(p2_data["player_id"])
+
+                        bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=sb_info_instance, google_ai=google_ai_instance, room_id=room_id, p1_profile=p1_profile, p2_profile=p2_profile)
                         battle_rooms[bi.room_id] = bi
 
                         manager.join_room(p1_data["socket"], bi.room_id)
@@ -267,7 +296,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 info = req.get("info", {})
                 model = make_new_battle_info(**info)
                 manager.register_player(websocket, model.player1_id)
-                res = make_new_battle(model)
+                p1_profile = user_profiles.get(model.player1_id)
+                p2_profile = user_profiles.get(model.player2_id)
+                res = make_new_battle(model, p1_profile, p2_profile)
                 # 部屋作成時は送信元を部屋に登録
                 manager.join_room(websocket, res["room_id"])
                 await websocket.send_text(json.dumps(res)) # 作成者には直接応答

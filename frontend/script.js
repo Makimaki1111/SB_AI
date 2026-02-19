@@ -487,6 +487,20 @@ function connectWebSocket() {
     const mode = urlParams.get('mode');
     const roomId = urlParams.get('roomId');
 
+    // ユーザー情報を送信
+    const name = localStorage.getItem("sb_username");
+    const ability = localStorage.getItem("sb_ability");
+    if (name || ability) {
+        sock.send(JSON.stringify({
+            type: "update_user_info",
+            info: {
+                player_id: player1_id,
+                name: name || "名無し",
+                ability: ability || ""
+            }
+        }));
+    }
+
     if (mode === 'player') {
       sendFindMatch(player1_id);
     } else if (mode === 'cpu') {

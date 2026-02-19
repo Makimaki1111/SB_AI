@@ -434,11 +434,121 @@ class IkakuAbility(Ability):
         }
         battle.events.append(event)
 
+def get_default_abilities() -> dict:
+    """デフォルトの特性セットを返す"""
+    return {
+        "ikaku": IkakuAbility(),
+        "debugger": DebuggerAbility(),
+        "passion": TypeStatBoostAbility(
+            name="じょうねつ",
+            description="感情タイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
+            icon_type="感情",
+            target_type="感情",
+            boost_amount=1
+        ),
+        "kyojin": TypePowerUpAbility(
+            name="きょじん",
+            description="人物タイプの言葉の威力が上がる",
+            icon_type="人物",
+            target_type="人物",
+            damage_multiplier=1.5
+        ),
+        "ikasui": IkasuiAbility(),
+        "rocknroll": TypeStatBoostAbility(
+            name="ロックンロール",
+            description="芸術タイプの言葉を使うとダメージを与える代わりに攻撃力がぐーんと上がる",
+            icon_type="芸術",
+            target_type="芸術",
+            boost_amount=2
+        ),
+        "mukimuki": MukimukiAbility(),
+        "training": TypeStatBoostAbility(
+            name="トレーニング",
+            description="スポーツタイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
+            icon_type="スポーツ",
+            target_type="スポーツ",
+            boost_amount=1
+        ),
+        "hoken": HokenAbility(),
+        "procrastination": TypeStatBoostAbility(
+            name="さきのばし",
+            description="時間タイプの言葉を使うとダメージを与える代わりに防御力が上がる",
+            icon_type="時間",
+            target_type="時間",
+            boost_amount=1,
+            stat_type="defense"
+        ),
+        "karate": KarateAbility(),
+        "zuboshi": ZuboshiAbility(),
+        "ishokudogen": IshokudogenAbility(),
+        "kachikochi": TypeStatBoostAbility(
+            name="かちこち",
+            description="機械タイプの言葉を使うとダメージを与える代わりに防御力が上がる",
+            icon_type="機械",
+            target_type="機械",
+            boost_amount=1,
+            stat_type="defense"
+        ),
+        "dokubari": DokubariAbility(),
+        "taifuikka": TyphoonIkkaAbility(),
+        "yadorigi": LeechSeedAbility(),
+        "jikken": TypePowerUpAbility(
+            name="じっけん",
+            description="理科タイプの言葉の威力が上がる",
+            icon_type="理科",
+            target_type="理科",
+            damage_multiplier=1.5
+        ),
+        "global": TypePowerUpAbility(
+            name="グローバル",
+            description="地名タイプの言葉の威力が上がる",
+            icon_type="地名",
+            target_type="地名",
+            damage_multiplier=1.5
+        ),
+        "shinkoushin": TypePowerUpAbility(
+            name="しんこうしん",
+            description="宗教タイプの言葉の威力が上がる",
+            icon_type="宗教",
+            target_type="宗教",
+            damage_multiplier=1.5
+        ),
+        "revolution": RevolutionAbility(),
+        "calculation": TypeStatBoostAbility(
+            name="けいさん",
+            description="数学タイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
+            icon_type="数学",
+            target_type="数学",
+            boost_amount=1
+        ),
+        "layering": TypeStatBoostAbility(
+            name="かさねぎ",
+            description="服飾タイプの言葉を使うとダメージを与える代わりに防御力が上がる",
+            icon_type="服飾",
+            target_type="服飾",
+            boost_amount=1,
+            stat_type="defense"
+        ),
+        "arming": TypeStatBoostAbility(
+            name="ぶそう",
+            description="工作タイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
+            icon_type="工作",
+            target_type="工作",
+            boost_amount=1
+        ),
+        "long_word": LongWordBonusAbility()
+    }
+
+def get_all_abilities_info() -> dict:
+    """全特性の表示用データを返す"""
+    abilities = get_default_abilities()
+    return {k: v.get_display_data() for k, v in abilities.items()}
+
 class Battle_info:
     """
     ブラウザ対戦時のマッチ情報を保持するクラス
     """
-    def __init__(self, player1_id, player2_id, sb_info: SB_info, google_ai: GOOGLE_AI, room_id: str | None = None):
+    def __init__(self, player1_id, player2_id, sb_info: SB_info, google_ai: GOOGLE_AI, room_id: str | None = None, p1_profile: dict = None, p2_profile: dict = None):
         self.room_id = room_id or str(uuid.uuid4())
         self.used = defaultdict(list)
         self.MAX_HP = MAX_HP
@@ -447,115 +557,25 @@ class Battle_info:
         self.sb_info = sb_info
         self.google_ai = google_ai
 
-        self.player1 = Player(player1_id, "じぶん")
-        self.player2 = Player(player2_id, "あいて")
+        p1_name = p1_profile.get("name") if p1_profile and p1_profile.get("name") else "じぶん"
+        p2_name = p2_profile.get("name") if p2_profile and p2_profile.get("name") else "あいて"
+
+        self.player1 = Player(player1_id, p1_name)
+        self.player2 = Player(player2_id, p2_name)
 
         # 特性関連
-        self.abilities = {
-            "ikaku": IkakuAbility(),
-            "debugger": DebuggerAbility(),
-            "passion": TypeStatBoostAbility(
-                name="じょうねつ",
-                description="感情タイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
-                icon_type="感情",
-                target_type="感情",
-                boost_amount=1
-            ),
-            "kyojin": TypePowerUpAbility(
-                name="きょじん",
-                description="人物タイプの言葉の威力が上がる",
-                icon_type="人物",
-                target_type="人物",
-                damage_multiplier=1.5
-            ),
-            "ikasui": IkasuiAbility(),
-            "rocknroll": TypeStatBoostAbility(
-                name="ロックンロール",
-                description="芸術タイプの言葉を使うとダメージを与える代わりに攻撃力がぐーんと上がる",
-                icon_type="芸術",
-                target_type="芸術",
-                boost_amount=2
-            ),
-            "mukimuki": MukimukiAbility(),
-            "training": TypeStatBoostAbility(
-                name="トレーニング",
-                description="スポーツタイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
-                icon_type="スポーツ",
-                target_type="スポーツ",
-                boost_amount=1
-            ),
-            "hoken": HokenAbility(),
-            "procrastination": TypeStatBoostAbility(
-                name="さきのばし",
-                description="時間タイプの言葉を使うとダメージを与える代わりに防御力が上がる",
-                icon_type="時間",
-                target_type="時間",
-                boost_amount=1,
-                stat_type="defense"
-            ),
-            "karate": KarateAbility(),
-            "zuboshi": ZuboshiAbility(),
-            "ishokudogen": IshokudogenAbility(),
-            "kachikochi": TypeStatBoostAbility(
-                name="かちこち",
-                description="機械タイプの言葉を使うとダメージを与える代わりに防御力が上がる",
-                icon_type="機械",
-                target_type="機械",
-                boost_amount=1,
-                stat_type="defense"
-            ),
-            "dokubari": DokubariAbility(),
-            "taifuikka": TyphoonIkkaAbility(),
-            "yadorigi": LeechSeedAbility(),
-            "jikken": TypePowerUpAbility(
-                name="じっけん",
-                description="理科タイプの言葉の威力が上がる",
-                icon_type="理科",
-                target_type="理科",
-                damage_multiplier=1.5
-            ),
-            "global": TypePowerUpAbility(
-                name="グローバル",
-                description="地名タイプの言葉の威力が上がる",
-                icon_type="地名",
-                target_type="地名",
-                damage_multiplier=1.5
-            ),
-            "shinkoushin": TypePowerUpAbility(
-                name="しんこうしん",
-                description="宗教タイプの言葉の威力が上がる",
-                icon_type="宗教",
-                target_type="宗教",
-                damage_multiplier=1.5
-            ),
-            "revolution": RevolutionAbility(),
-            "calculation": TypeStatBoostAbility(
-                name="けいさん",
-                description="数学タイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
-                icon_type="数学",
-                target_type="数学",
-                boost_amount=1
-            ),
-            "layering": TypeStatBoostAbility(
-                name="かさねぎ",
-                description="服飾タイプの言葉を使うとダメージを与える代わりに防御力が上がる",
-                icon_type="服飾",
-                target_type="服飾",
-                boost_amount=1,
-                stat_type="defense"
-            ),
-            "arming": TypeStatBoostAbility(
-                name="ぶそう",
-                description="工作タイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
-                icon_type="工作",
-                target_type="工作",
-                boost_amount=1
-            ),
-            "long_word": LongWordBonusAbility()
-        }
+        self.abilities = get_default_abilities()
         self.ability_ids = list(self.abilities.keys())
-        self.player1.ability = random.choice(self.ability_ids)
-        self.player2.ability = random.choice(self.ability_ids)
+
+        if p1_profile and p1_profile.get("ability") in self.abilities:
+            self.player1.ability = p1_profile["ability"]
+        else:
+            self.player1.ability = random.choice(self.ability_ids)
+
+        if p2_profile and p2_profile.get("ability") in self.abilities:
+            self.player2.ability = p2_profile["ability"]
+        else:
+            self.player2.ability = random.choice(self.ability_ids)
 
         self.player1_win = None
         self.player1_turn = True
