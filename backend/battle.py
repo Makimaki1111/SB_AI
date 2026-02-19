@@ -409,6 +409,31 @@ class DokubariAbility(Ability):
                 "poison_target": "foe" # 能力発動者から見て「相手」が毒になった
             })
 
+class IkakuAbility(Ability):
+    """特性「いかく」"""
+    def __init__(self):
+        super().__init__(
+            name="いかく",
+            description="動物タイプの言葉を使うとダメージを与える代わりに相手の攻撃力を下げる",
+            icon_type="動物"
+        )
+        self.replaces_damage = True
+
+    def check_condition(self, player: Player, types: list, word: str) -> bool:
+        return "動物" in types
+
+    def apply_damage_replacement_effect(self, player: Player, battle: 'Battle_info'):
+        opponent = battle.player2 if player.id == battle.player1.id else battle.player1
+        opponent.attack_rank = max(MIN_RANK, opponent.attack_rank - 1)
+        
+        event = {
+            "type": "atk_down",
+            "message": f"「{self.name}」で相手の攻撃が下がった！(現在{battle.sb_info.rank_to_power(opponent.attack_rank):.1f}倍)",
+            "player": "foe" if player.id == battle.player1.id else "ally",
+            "new_atk": opponent.attack_rank
+        }
+        battle.events.append(event)
+
 class Battle_info:
     """
     ブラウザ対戦時のマッチ情報を保持するクラス
@@ -525,7 +550,8 @@ class Battle_info:
             "karate": KarateAbility(),
             "zuboshi": ZuboshiAbility(),
             "debugger": DebuggerAbility(),
-            "dokubari": DokubariAbility()
+            "dokubari": DokubariAbility(),
+            "ikaku": IkakuAbility()
         }
         self.ability_ids = list(self.abilities.keys())
         self.player1.ability = random.choice(self.ability_ids)
