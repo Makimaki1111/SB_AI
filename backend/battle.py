@@ -1,9 +1,7 @@
 try:
     from SB_info import SB_info
-    from GOOGLE_API import GOOGLE_AI
 except ImportError:
     from backend.SB_info import SB_info
-    from backend.GOOGLE_API import GOOGLE_AI
 
 from collections import defaultdict
 from pydantic import BaseModel
@@ -551,14 +549,13 @@ class Battle_info:
     """
     ブラウザ対戦時のマッチ情報を保持するクラス
     """
-    def __init__(self, player1_id, player2_id, sb_info: SB_info, google_ai: GOOGLE_AI, room_id: str | None = None, p1_profile: dict = None, p2_profile: dict = None):
+    def __init__(self, player1_id, player2_id, sb_info: SB_info, room_id: str | None = None, p1_profile: dict = None, p2_profile: dict = None):
         self.room_id = room_id or str(uuid.uuid4())
         self.used = defaultdict(list)
         self.MAX_HP = MAX_HP
         self.is_cpu = (player2_id == "cpu")
 
         self.sb_info = sb_info
-        self.google_ai = google_ai
 
         p1_name = p1_profile.get("name") if p1_profile and p1_profile.get("name") else "じぶん"
         p2_name = p2_profile.get("name") if p2_profile and p2_profile.get("name") else "あいて"
@@ -923,14 +920,19 @@ class Battle_info:
 
     def _type_check(self,_input:str) -> list:
         """
-            AIにタイプを確認 & used更新
+            タイプを確認 & used更新 (AI無効化版)
         Args:
             _input (str): 単語
 
         Returns:
             タイプ (list)
         """
-        types = self.google_ai.get_type(_input)
+        # 辞書にあればそのタイプ、なければノーマル
+        if _input in self.sb_info.typed_dict:
+            types = [t for t in self.sb_info.typed_dict[_input] if t]
+        else:
+            types = ["ノーマル"]
+            
         self.used[_input] = types
 
         return types

@@ -7,13 +7,14 @@ import traceback
 import os
 from typing import List, Dict
 from collections import defaultdict
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 try:
-    from battle import Battle_info, battle_rooms, SB_info, GOOGLE_AI, get_all_abilities_info
+    from battle import Battle_info, battle_rooms, SB_info, get_all_abilities_info
 except ImportError:
-    from backend.battle import Battle_info, battle_rooms, SB_info, GOOGLE_AI, get_all_abilities_info
+    from backend.battle import Battle_info, battle_rooms, SB_info, get_all_abilities_info
 
 app = FastAPI()
 
@@ -28,6 +29,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# --- 資産保護ミドルウェア ---
+@app.middleware("http")
+async def protect_assets_middleware(request: Request, call_next):
+    path = request.url.path
+    # img または resource フォルダへのアクセスの場合
+    if path.startswith("/img/") or path.startswith("/resource/"):
+        referer = request.headers.get("referer")
+        # Refererヘッダーがない場合（URL直打ちなど）はアクセスを拒否
+        if not referer:
+            return Response(status_code=403, content="Access Denied")
+    response = await call_next(request)
+    return response
 
 # --- Connection Manager: WebSocket接続を管理するクラス ---
 class ConnectionManager:
@@ -94,7 +108,6 @@ class ConnectionManager:
 
 # --- DI: アプリケーション全体で共有するインスタンスを生成 ---
 sb_info_instance = SB_info()
-google_ai_instance = GOOGLE_AI(sb_info_instance)
 
 # ユーザー情報を保存する辞書 (player_id -> {"name": str, "ability": str})
 user_profiles: Dict[str, dict] = {}
@@ -109,7 +122,6 @@ def make_new_battle(info: make_new_battle_info, p1_profile: dict = None, p2_prof
         info.player1_id, 
         info.player2_id,
         sb_info=sb_info_instance,
-        google_ai=google_ai_instance,
         p1_profile=p1_profile,
         p2_profile=p2_profile
     )
@@ -259,7 +271,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         p1_profile = user_profiles.get(p1_data["player_id"])
                         p2_profile = user_profiles.get(p2_data["player_id"])
 
-                        bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=sb_info_instance, google_ai=google_ai_instance, p1_profile=p1_profile, p2_profile=p2_profile)
+                        bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=sb_info_instance, p1_profile=p1_profile, p2_profile=p2_profile)
                         battle_rooms[bi.room_id] = bi
 
                         manager.join_room(p1_data["socket"], bi.room_id)
@@ -292,7 +304,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             p1_profile = user_profiles.get(p1_data["player_id"])
                             p2_profile = user_profiles.get(p2_data["player_id"])
 
-                            bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=sb_info_instance, google_ai=google_ai_instance, room_id=room_id, p1_profile=p1_profile, p2_profile=p2_profile)
+                            bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=sb_info_instance, room_id=room_id, p1_profile=p1_profile, p2_profile=p2_profile)
                             battle_rooms[bi.room_id] = bi
 
                             manager.join_room(p1_data["socket"], bi.room_id)
@@ -448,6 +460,14 @@ async def websocket_endpoint(websocket: WebSocket):
                 logger.info(f"Battle room {room_id} was removed due to disconnection.")
 
         logger.info("WebSocket切断・登録解除")
+
+# --- 静的ファイルの配信設定 (必ず最後に追加) ---
+# backendディレクトリの親ディレクトリにあるfrontendディレクトリを取得
+current_dir = os.path.dirname(os.path.abspath(__file__))
+frontend_dir = os.path.join(os.path.dirname(current_dir), "frontend")
+
+# ルートURLでフロントエンドを配信 (html=Trueでindex.htmlを自動的に返す)
+app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
