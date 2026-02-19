@@ -771,3 +771,12 @@ html, body {
     z-index: 2000;
     cursor: pointer;
 }
+
+.poison {
+    background-color: #8f42d4;
+    color: white;
+    border-radius: 10px;
+    padding: 0 10px;
+    float: right;
+    line-height: 100%;
+}

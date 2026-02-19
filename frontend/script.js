@@ -55,8 +55,8 @@ const battleState = {
   roomId: null,
   isVsCpu: false,
   character: "",
-  ally: { hp: 0, maxHp: 0, atk: 0, def: 0, ability: '', abilityChangeCount: 0 },
-  foe: { hp: 0, maxHp: 0, atk: 0, def: 0, ability: '', abilityChangeCount: 0 },
+  ally: { hp: 0, maxHp: 0, atk: 0, def: 0, ability: '', abilityChangeCount: 0, is_poison: false },
+  foe: { hp: 0, maxHp: 0, atk: 0, def: 0, ability: '', abilityChangeCount: 0, is_poison: false },
   allAbilities: {}
 };
 
@@ -146,6 +146,7 @@ const initializeBattleScreen = () => {
   ui.showFoeWord("");
   ui.setAllyName("");
   ui.setFoeName("");
+  ui.updatePoisonStatus(false, false);
   ui.abilityInfoContainer.hide();
   ui.situationButton.hide();
 
@@ -169,11 +170,14 @@ const onMadeRoom = async (data) => {
 
   battleState.ally.ability = data.ally.ability;
   battleState.ally.abilityChangeCount = data.ally.ability_change_count;
+  battleState.ally.is_poison = data.ally.is_poison;
+  battleState.foe.is_poison = data.foe.is_poison;
 
   ui.setAllyHP(battleState.ally.hp, battleState.ally.maxHp);
   ui.setFoeHP(battleState.foe.hp, battleState.foe.maxHp);
   ui.setAllyName(data["ally"]["name"]);
   ui.setFoeName(data["foe"]["name"]);
+  ui.updatePoisonStatus(battleState.ally.is_poison, battleState.foe.is_poison);
   if (battleState.ally && typeof battleState.ally.abilityChangeCount !== 'undefined') { // Defensive check
     ui.abilityInfoContainer.selector.css('display', 'flex');
     ui.situationButton.show();
@@ -259,6 +263,12 @@ const processEvent = async (events, is_my_turn) => {
         battleState.foe.atk = e["new_ranks"]["foe_atk"];
         battleState.foe.def = e["new_ranks"]["foe_def"];
       }
+      // 毒付与イベントの場合、ここでUIを更新
+      if (e["poison_target"]) {
+        if (e["poison_target"] === "ally") battleState.ally.is_poison = true;
+        if (e["poison_target"] === "foe") battleState.foe.is_poison = true;
+        ui.updatePoisonStatus(battleState.ally.is_poison, battleState.foe.is_poison);
+      }
     }
 
     // 特性変更イベントの場合は待機時間を短くする
@@ -338,6 +348,21 @@ const onAccepted = async (data) => {
   battleState.ally.def = data.state.ally_B;
   battleState.foe.atk = data.state.foe_A;
   battleState.foe.def = data.state.foe_B;
+  
+  // 毒状態の更新（イベント同期のため、新規毒発生時はここでは更新しない）
+  battleState.ally.is_poison = data.state.ally_poison;
+  battleState.foe.is_poison = data.state.foe_poison;
+
+  let showAllyPoison = battleState.ally.is_poison;
+  let showFoePoison = battleState.foe.is_poison;
+
+  // 今回のイベントで毒が発生する場合、初期表示では毒を隠す（イベントで表示する）
+  const poisonEvent = data.state.events.find(e => e.type === "ability_trigger" && e.poison_target);
+  if (poisonEvent) {
+    if (poisonEvent.poison_target === "ally") showAllyPoison = false;
+    if (poisonEvent.poison_target === "foe") showFoePoison = false;
+  }
+  ui.updatePoisonStatus(showAllyPoison, showFoePoison);
 
   // --- 特性変更のレスポンスか判定 ---
   const isAbilityChange = data.state.events.some(e => e.type === 'ability_changed');

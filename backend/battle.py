@@ -45,6 +45,7 @@ class Player:
         self.leech_turns = 0 # やどりぎの残りターン数
         self.food_count = 0 # 食べ物使用回数
         self.medical_count = 0 # 医療使用回数
+        self.poison_turns = 0 # 毒の経過ターン数 (0なら毒ではない)
 
     def take_damage(self, damage: int):
         self.hp = max(0, self.hp - damage)
@@ -385,6 +386,29 @@ class DebuggerAbility(Ability):
             return 1.9
         return 1.0
 
+class DokubariAbility(Ability):
+    """特性「どくばり」"""
+    def __init__(self):
+        super().__init__(
+            name="どくばり",
+            description="虫タイプの言葉を使うと相手を毒状態にできる",
+            icon_type="虫"
+        )
+
+    def check_condition(self, player: Player, types: list, word: str) -> bool:
+        return "虫" in types
+
+    def apply_after_effect(self, player: Player, battle: 'Battle_info'):
+        opponent = battle.player2 if player.id == battle.player1.id else battle.player1
+        if opponent.poison_turns == 0:
+            opponent.poison_turns = 1
+            battle.events.append({
+                "type": "ability_trigger",
+                "message": f"相手は毒を受けた！",
+                "player": "ally" if player.id == battle.player1.id else "foe",
+                "poison_target": "foe" # 能力発動者から見て「相手」が毒になった
+            })
+
 class Battle_info:
     """
     ブラウザ対戦時のマッチ情報を保持するクラス
@@ -500,7 +524,8 @@ class Battle_info:
             "taifuikka": TyphoonIkkaAbility(),
             "karate": KarateAbility(),
             "zuboshi": ZuboshiAbility(),
-            "debugger": DebuggerAbility()
+            "debugger": DebuggerAbility(),
+            "dokubari": DokubariAbility()
         }
         self.ability_ids = list(self.abilities.keys())
         self.player1.ability = random.choice(self.ability_ids)
@@ -601,6 +626,12 @@ class Battle_info:
                 limit = MEDICAL_LIMIT
                 if self.player1.medical_count < limit:
                     self.player1.medical_count += 1
+                    
+                    # 毒解除
+                    if self.player1.poison_turns > 0:
+                        self.player1.poison_turns = 0
+                        self.events.append({"type" : "message", "message" : "毒が治った！"})
+
                     event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : MEDICAL_RECOVERY_AMOUNT, "foe_cure" : 0}
                     self.events.append(event)
                     self.player1.heal(MEDICAL_RECOVERY_AMOUNT)
@@ -684,6 +715,12 @@ class Battle_info:
                 limit = MEDICAL_LIMIT
                 if self.player2.medical_count < limit:
                     self.player2.medical_count += 1
+
+                    # 毒解除
+                    if self.player2.poison_turns > 0:
+                        self.player2.poison_turns = 0
+                        self.events.append({"type" : "message", "message" : "毒が治った！"})
+
                     event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : 0, "foe_cure" : MEDICAL_RECOVERY_AMOUNT}
                     self.events.append(event)
                     self.player2.heal(MEDICAL_RECOVERY_AMOUNT)
@@ -765,6 +802,22 @@ class Battle_info:
         # 勝敗が決まっている場合は処理しない
         if self.player1_win is not None:
             return
+
+        # 毒ダメージ処理
+        if defender.poison_turns > 0:
+            damage = int(self.MAX_HP * (defender.poison_turns / 16))
+            defender.take_damage(damage)
+            self.events.append({
+                "type": "damage",
+                "message": "毒のダメージを受けた！",
+                "ally_damage": damage if defender.id == self.player1.id else 0,
+                "foe_damage": 0 if defender.id == self.player1.id else damage
+            })
+            defender.poison_turns += 1
+            
+            if defender.is_defeated:
+                self.player1_win = (defender.id != self.player1.id)
+                return
 
         # やどりぎ処理
         if attacker.leech_turns > 0:
@@ -885,6 +938,7 @@ class Battle_info:
                 "ally_A" : self.player1.attack_rank,
                 "ally_B" : self.player1.defense_rank,
                 "ally_type" : self.player1.types,
+                "ally_poison" : self.player1.poison_turns > 0,
                 "ally_ability": self.player1.ability,
                 "ally_ability_change_count": self.player1.ability_change_count,
                 "ally_win" : self.player1_win,
@@ -895,6 +949,7 @@ class Battle_info:
                 "foe_A" : self.player2.attack_rank,
                 "foe_B" : self.player2.defense_rank,
                 "foe_type" : self.player2.types,
+                "foe_poison" : self.player2.poison_turns > 0,
                 "foe_ability": self.player2.ability,
                 "foe_ability_change_count": self.player2.ability_change_count,
                 "room_id" : self.room_id,
@@ -930,13 +985,15 @@ class Battle_info:
                 "max_hp" : self.MAX_HP,
                 "name" : ally.name,
                 "ability": ally.ability,
-                "ability_change_count": ally.ability_change_count
+                "ability_change_count": ally.ability_change_count,
+                "is_poison": ally.poison_turns > 0
             },
             "foe" : {
                 "max_hp" : self.MAX_HP,
                 "name" : foe.name,
                 "ability": foe.ability,
-                "ability_change_count": foe.ability_change_count
+                "ability_change_count": foe.ability_change_count,
+                "is_poison": foe.poison_turns > 0
             }
         }
 
@@ -956,6 +1013,7 @@ class Battle_info:
         new_state["ally_A"] = s["foe_A"]
         new_state["ally_B"] = s["foe_B"]
         new_state["ally_type"] = s["foe_type"]
+        new_state["ally_poison"] = s["foe_poison"]
         new_state["ally_ability"] = s["foe_ability"]
         new_state["ally_ability_change_count"] = s["foe_ability_change_count"]
         
@@ -963,6 +1021,7 @@ class Battle_info:
         new_state["foe_A"] = s["ally_A"]
         new_state["foe_B"] = s["ally_B"]
         new_state["foe_type"] = s["ally_type"]
+        new_state["foe_poison"] = s["ally_poison"]
         new_state["foe_ability"] = s["ally_ability"]
         new_state["foe_ability_change_count"] = s["ally_ability_change_count"]
 
@@ -979,6 +1038,7 @@ class Battle_info:
             if "ally_cure" in e: ne["ally_cure"] = e["foe_cure"]
             if "foe_cure" in e: ne["foe_cure"] = e["ally_cure"]
             if "player" in e: ne["player"] = "foe" if e["player"] == "ally" else "ally"
+            if "poison_target" in e: ne["poison_target"] = "foe" if e["poison_target"] == "ally" else "ally"
             if "new_ranks" in e:
                 nr = e["new_ranks"].copy()
                 nr["ally_atk"] = e["new_ranks"]["foe_atk"]

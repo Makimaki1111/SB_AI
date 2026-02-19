@@ -49,6 +49,11 @@ class UI{
         this.situationAllyA = new UIObject($('#ally-A'));
         this.situationAllyB = new UIObject($('#ally-B'));
         this.closeSituationModalBtn = new UIObject($('#situation-modal .close-modal'));
+
+        this.allyNameText = "";
+        this.foeNameText = "";
+        this.isAllyPoison = false;
+        this.isFoePoison = false;
     }
 
     _setImageWithReplaceAndFade(selector, src, duration = 100) {
@@ -261,11 +266,34 @@ class UI{
     }
 
     setAllyName(name) {
-        $('.ally-name').text(name).show();
+        this.allyNameText = name;
+        this._renderAllyName();
     }
 
     setFoeName(name) {
-        $('.foe-name').text(name).show();
+        this.foeNameText = name;
+        this._renderFoeName();
+    }
+
+    updatePoisonStatus(isAllyPoison, isFoePoison) {
+        this.isAllyPoison = isAllyPoison;
+        this.isFoePoison = isFoePoison;
+        this._renderAllyName();
+        this._renderFoeName();
+    }
+
+    _renderAllyName() {
+        const el = $('.ally-name');
+        el.text(this.allyNameText || "");
+        if (this.isAllyPoison) el.append('<span class="poison">どく</span>');
+        el.show();
+    }
+
+    _renderFoeName() {
+        const el = $('.foe-name');
+        el.text(this.foeNameText || "");
+        if (this.isFoePoison) el.append('<span class="poison">どく</span>');
+        el.show();
     }
 
     setAllyHP(hp, max_hp) {
