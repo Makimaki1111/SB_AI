@@ -875,5 +875,5 @@ html, body {
 }
 
 .damage-blink {
-    animation: blink 0.2s 5; /* 0.2秒 * 5回 = 1秒 */
+    animation: blink 0.2s 5;
 }
