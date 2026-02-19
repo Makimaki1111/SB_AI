@@ -127,7 +127,23 @@ function stopBGM(){
   }
 }
 
-const websock_server = "ws://localhost:8000/ws";
+// 現在のURLに基づいてWebSocketの接続先を決定する
+let protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+let host = window.location.host;
+
+// ローカル開発環境の判定 (localhost または 127.0.0.1)
+// フロントエンドとバックエンドのポートが異なる場合 (例: Live Server 5500 -> Backend 8000) への対応
+if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+    if (window.location.port !== "8000") {
+        host = "localhost:8000";
+    }
+} else if (!host || window.location.protocol === 'file:') {
+    // ファイルとして開いている場合など
+    host = "localhost:8000";
+    protocol = "ws:";
+}
+const websock_server = `${protocol}//${host}/ws`;
+
 let sock = null;
 let reconnectInterval = null;
 let isDisconnected = false;

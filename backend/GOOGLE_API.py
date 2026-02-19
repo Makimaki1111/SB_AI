@@ -1,7 +1,4 @@
-# TODO : タイプが含まれていなかった場合の反復処理
-
 import os
-
 try:
     from SB_info import SB_info
 except ImportError:
