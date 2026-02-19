@@ -108,6 +108,10 @@ class Ability:
         """ダメージを受けた時の効果"""
         pass
 
+    def should_force_critical(self, types: list) -> bool:
+        """急所に必ず当たるかどうか"""
+        return False
+
 class StatBoostAbility(Ability):
     """特定の条件で攻撃ランクを上昇させる特性の共通クラス"""
     def __init__(self, name: str, description: str, icon_type: str, condition_types: list = [], min_word_len: int = 0):
@@ -343,6 +347,44 @@ class HokenAbility(Ability):
             }
             battle.events.append(event)
 
+class KarateAbility(Ability):
+    """特性「からて」"""
+    def __init__(self):
+        super().__init__(
+            name="からて",
+            description="人体タイプの言葉を使った時に必ず相手の急所に当たる",
+            icon_type="人体"
+        )
+
+    def should_force_critical(self, types: list) -> bool:
+        return "人体" in types
+
+class ZuboshiAbility(Ability):
+    """特性「ずぼし」"""
+    def __init__(self):
+        super().__init__(
+            name="ずぼし",
+            description="暴言タイプの言葉を使った時に必ず相手の急所に当たる",
+            icon_type="暴言"
+        )
+
+    def should_force_critical(self, types: list) -> bool:
+        return "暴言" in types
+
+class DebuggerAbility(Ability):
+    """特性「デバッガー」"""
+    def __init__(self):
+        super().__init__(
+            name="デバッガー",
+            description="まだタイプのついていない言葉の威力が上がる",
+            icon_type="ノーマル"
+        )
+
+    def get_damage_multiplier(self, types: list, word: str) -> float:
+        if not types:
+            return 1.9
+        return 1.0
+
 class Battle_info:
     """
     ブラウザ対戦時のマッチ情報を保持するクラス
@@ -455,7 +497,10 @@ class Battle_info:
             "yadorigi": LeechSeedAbility(),
             "long_word": LongWordBonusAbility(),
             "revolution": RevolutionAbility(),
-            "taifuikka": TyphoonIkkaAbility()
+            "taifuikka": TyphoonIkkaAbility(),
+            "karate": KarateAbility(),
+            "zuboshi": ZuboshiAbility(),
+            "debugger": DebuggerAbility()
         }
         self.ability_ids = list(self.abilities.keys())
         self.player1.ability = random.choice(self.ability_ids)
@@ -563,7 +608,7 @@ class Battle_info:
                     self.events.append({"type" : "message", "message" : "もう回復できない！"})
             else:
                 # ダメージ計算
-                effect, damage, is_critical = self._calc_damage(at1,at2,dt1,dt2)
+                effect, damage, is_critical = self._calc_damage(at1,at2,dt1,dt2, ability_obj)
 
                 # 特性によるダメージ補正
                 if ability_obj:
@@ -642,7 +687,7 @@ class Battle_info:
                     self.events.append({"type" : "message", "message" : "もう回復できない！"})
             else:
                 # ダメージ計算
-                effect, damage, is_critical = self._calc_damage(at1,at2,dt1,dt2)
+                effect, damage, is_critical = self._calc_damage(at1,at2,dt1,dt2, ability_obj)
 
                 # 特性によるダメージ補正
                 if ability_obj:
@@ -769,7 +814,7 @@ class Battle_info:
 
         return types
 
-    def _calc_damage(self,at1:str, at2:str, dt1:str, dt2:str) -> tuple:
+    def _calc_damage(self,at1:str, at2:str, dt1:str, dt2:str, attacker_ability: Ability = None) -> tuple:
         """
             ダメージを計算します
         Args:
@@ -785,7 +830,9 @@ class Battle_info:
         
         # 急所判定 (暴言か人体タイプが含まれる場合、12.5%の確率)
         is_critical = False
-        if "暴言" in [at1, at2] or "人体" in [at1, at2]:
+        if attacker_ability and attacker_ability.should_force_critical([at1, at2]):
+            is_critical = True
+        elif "暴言" in [at1, at2] or "人体" in [at1, at2]:
             if random.random() < CRITICAL_HIT_CHANCE:
                 is_critical = True
 
