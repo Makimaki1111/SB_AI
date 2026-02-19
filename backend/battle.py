@@ -616,6 +616,8 @@ class Battle_info:
             return {"type" : "error", "message" : "戦闘はすでに終了しています"}
         elif(self.player1_turn ^ (player_id == self.player1.id)):
             return {"type" : "error", "message" : "自分のターンではありません"}
+        elif(not word):
+            return {"type" : "error", "message" : "単語を入力してください"}
         elif(not self.sb_info.include_in_all_words(word) and not self.sb_info.inclue_in_typed_words(word)):
             return {"type" : "error", "message" : "辞書にない単語です"}
         elif(word in self.used):
@@ -905,11 +907,15 @@ class Battle_info:
             "type2" : "",
         }
 
+        if not _input:
+            return ret
+
         if(_input in self.used):
             ret["include"] = True
             ret["used"] = True
-            ret["type1"] = self.used[_input][0]
-            ret["type2"] = self.used[_input][1] if len(self.used[_input]) == 2 else ""
+            types = self.used[_input]
+            ret["type1"] = types[0] if len(types) >= 1 else ""
+            ret["type2"] = types[1] if len(types) >= 2 else ""
         else:
             ret["include"] = self.sb_info.include_in_all_words(_input)
 
@@ -1171,7 +1177,7 @@ class Battle_info:
 
     def get_cpu_word(self):
         for i in self.sb_info.typed_dict:
-            if(i[0] == self.character and i not in self.used):
+            if(i and i[0] == self.character and i not in self.used):
                 return i
         
         return ""
