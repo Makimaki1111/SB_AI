@@ -13,6 +13,20 @@ battle_rooms = {}
 MAX_HP = 60
 FOOD_LIMIT = 6
 MEDICAL_LIMIT = 5
+MAX_RANK = 6
+MIN_RANK = -6
+ABILITY_CHANGE_COUNT_INIT = 3
+LEECH_SEED_TURNS = 4
+LEECH_SEED_DRAIN_AMOUNT = 5
+FOOD_RECOVERY_AMOUNT = 20
+MEDICAL_RECOVERY_AMOUNT = 40
+VIOLENCE_ATTACK_DROP = 2
+CRITICAL_HIT_CHANCE = 0.125
+CRITICAL_HIT_MULTIPLIER = 1.5
+BASE_DAMAGE_NORMAL = 7.0
+BASE_DAMAGE_TYPED = 10.0
+DAMAGE_RANDOM_MIN = 0.85
+DAMAGE_RANDOM_MAX = 0.99
 
 class TextInput(BaseModel):
     text:str
@@ -27,7 +41,7 @@ class Player:
         self.defense_rank = 0
         self.types = [""]
         self.ability = "" # 特性
-        self.ability_change_count = 3 # 特性変更の残り回数
+        self.ability_change_count = ABILITY_CHANGE_COUNT_INIT # 特性変更の残り回数
         self.leech_turns = 0 # やどりぎの残りターン数
         self.food_count = 0 # 食べ物使用回数
         self.medical_count = 0 # 医療使用回数
@@ -109,7 +123,7 @@ class StatBoostAbility(Ability):
         return False
 
     def apply_effect(self, player: Player, battle: 'Battle_info') -> bool:
-        player.attack_rank = min(6, player.attack_rank + 2)
+        player.attack_rank = min(MAX_RANK, player.attack_rank + 2)
         event = {
             "type": "atk_up",
             "message": f"攻撃がぐーんと上がった！",
@@ -132,11 +146,11 @@ class TypeStatBoostAbility(Ability):
 
     def apply_damage_replacement_effect(self, player: Player, battle: 'Battle_info'):
         if self.stat_type == "defense":
-            player.defense_rank = min(6, player.defense_rank + self.boost_amount)
+            player.defense_rank = min(MAX_RANK, player.defense_rank + self.boost_amount)
             current_rank = player.defense_rank
             stat_name = "防御"
         else:
-            player.attack_rank = min(6, player.attack_rank + self.boost_amount)
+            player.attack_rank = min(MAX_RANK, player.attack_rank + self.boost_amount)
             current_rank = player.attack_rank
             stat_name = "攻撃"
         
@@ -195,7 +209,7 @@ class LeechSeedAbility(Ability):
         return "植物" in types and player.leech_turns == 0
 
     def apply_damage_replacement_effect(self, player: Player, battle: 'Battle_info'):
-        player.leech_turns = 4
+        player.leech_turns = LEECH_SEED_TURNS
         battle.events.append({"type": "ability_trigger", "message": f"相手に種を植え付けた！", "player": "ally" if player.id == battle.player1.id else "foe"})
 
 class LongWordBonusAbility(Ability):
@@ -307,7 +321,7 @@ class IshokudogenAbility(Ability):
         )
 
     def get_food_recovery_amount(self, default_amount: int) -> int:
-        return 40
+        return MEDICAL_RECOVERY_AMOUNT
 
 class HokenAbility(Ability):
     """特性「ほけん」"""
@@ -320,7 +334,7 @@ class HokenAbility(Ability):
 
     def on_receive_damage(self, player: Player, attacker: Player, damage: int, effect: float, battle: 'Battle_info'):
         if effect > 1:
-            player.attack_rank = min(6, player.attack_rank + 3)
+            player.attack_rank = min(MAX_RANK, player.attack_rank + 3)
             event = {
                 "type": "atk_up",
                 "message": f"弱点を突かれて攻撃がぐぐーんと上がった！(現在{battle.sb_info.rank_to_power(player.attack_rank):.1f}倍)",
@@ -336,7 +350,7 @@ class Battle_info:
     def __init__(self, player1_id, player2_id, sb_info: SB_info, google_ai: GOOGLE_AI, room_id: str | None = None):
         self.room_id = room_id or str(uuid.uuid4())
         self.used = defaultdict(list)
-        self.MAX_HP = 60
+        self.MAX_HP = MAX_HP
         self.is_cpu = (player2_id == "cpu")
 
         self.sb_info = sb_info
@@ -530,7 +544,7 @@ class Battle_info:
                 
                 if ignore_limit or self.player1.food_count < limit:
                     self.player1.food_count += 1
-                    cure_amount = 20
+                    cure_amount = FOOD_RECOVERY_AMOUNT
                     if ability_obj:
                         cure_amount = ability_obj.get_food_recovery_amount(cure_amount)
                     event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : cure_amount, "foe_cure" : 0}
@@ -542,22 +556,30 @@ class Battle_info:
                 limit = MEDICAL_LIMIT
                 if self.player1.medical_count < limit:
                     self.player1.medical_count += 1
-                    event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : 40, "foe_cure" : 0}
+                    event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : MEDICAL_RECOVERY_AMOUNT, "foe_cure" : 0}
                     self.events.append(event)
-                    self.player1.heal(40)
+                    self.player1.heal(MEDICAL_RECOVERY_AMOUNT)
                 else:
                     self.events.append({"type" : "message", "message" : "もう回復できない！"})
             else:
                 # ダメージ計算
-                effect, damage = self._calc_damage(at1,at2,dt1,dt2)
+                effect, damage, is_critical = self._calc_damage(at1,at2,dt1,dt2)
 
                 # 特性によるダメージ補正
                 if ability_obj:
                     damage = int(damage * ability_obj.get_damage_multiplier(types, word))
 
+                # 急所補正
+                if is_critical:
+                    damage = int(damage * CRITICAL_HIT_MULTIPLIER)
+
+                msg = "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…" if effect > 0 else "効果はないようだ…"
+                if is_critical:
+                    msg += " 急所に当たった！"
+
                 event = {
                     "type" : "damage",
-                    "message" : "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…" if effect > 0 else "効果はないようだ…",
+                    "message" : msg,
                     "ally_damage" : 0,
                     "foe_damage" : damage
                 }
@@ -570,10 +592,10 @@ class Battle_info:
 
                 # 暴力で攻撃ダウン
                 if("暴力" in types):
-                    drop = 2
+                    drop = VIOLENCE_ATTACK_DROP
                     if ability_obj:
                         drop -= ability_obj.get_violence_penalty_reduction()
-                    self.player1.attack_rank = max(-6, self.player1.attack_rank - drop)
+                    self.player1.attack_rank = max(MIN_RANK, self.player1.attack_rank - drop)
                     msg_adverb = "がくっと" if drop >= 2 else ""
                     event = {
                         "type" : "atk_down",
@@ -600,7 +622,7 @@ class Battle_info:
                 
                 if ignore_limit or self.player2.food_count < limit:
                     self.player2.food_count += 1
-                    cure_amount = 20
+                    cure_amount = FOOD_RECOVERY_AMOUNT
                     if ability_obj:
                         cure_amount = ability_obj.get_food_recovery_amount(cure_amount)
                     event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : 0, "foe_cure" : cure_amount}
@@ -613,22 +635,30 @@ class Battle_info:
                 limit = MEDICAL_LIMIT
                 if self.player2.medical_count < limit:
                     self.player2.medical_count += 1
-                    event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : 0, "foe_cure" : 40}
+                    event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : 0, "foe_cure" : MEDICAL_RECOVERY_AMOUNT}
                     self.events.append(event)
-                    self.player2.heal(40)
+                    self.player2.heal(MEDICAL_RECOVERY_AMOUNT)
                 else:
                     self.events.append({"type" : "message", "message" : "もう回復できない！"})
             else:
                 # ダメージ計算
-                effect, damage = self._calc_damage(at1,at2,dt1,dt2)
+                effect, damage, is_critical = self._calc_damage(at1,at2,dt1,dt2)
 
                 # 特性によるダメージ補正
                 if ability_obj:
                     damage = int(damage * ability_obj.get_damage_multiplier(types, word))
 
+                # 急所補正
+                if is_critical:
+                    damage = int(damage * CRITICAL_HIT_MULTIPLIER)
+
+                msg = "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…" if effect > 0 else "効果はないようだ…"
+                if is_critical:
+                    msg += " 急所に当たった！"
+
                 event = {
                     "type" : "damage",
-                    "message" : "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…" if effect > 0 else "効果はないようだ…",
+                    "message" : msg,
                     "ally_damage" : damage,
                     "foe_damage" : 0
                 }
@@ -641,10 +671,10 @@ class Battle_info:
 
                 # 暴力で攻撃ダウン
                 if("暴力" in types):
-                    drop = 2
+                    drop = VIOLENCE_ATTACK_DROP
                     if ability_obj:
                         drop -= ability_obj.get_violence_penalty_reduction()
-                    self.player2.attack_rank = max(-6, self.player2.attack_rank - drop)
+                    self.player2.attack_rank = max(MIN_RANK, self.player2.attack_rank - drop)
                     msg_adverb = "がくっと" if drop >= 2 else ""
                     event = {
                         "type" : "atk_down",
@@ -685,7 +715,7 @@ class Battle_info:
 
         # やどりぎ処理
         if attacker.leech_turns > 0:
-            drain_amount = 5
+            drain_amount = LEECH_SEED_DRAIN_AMOUNT
             actual_drain = min(defender.hp, drain_amount)
             
             defender.take_damage(actual_drain)
@@ -749,40 +779,43 @@ class Battle_info:
             dt2 (str): 防御タイプ2
 
         Returns:
-            tuple: (相性, ダメージ)
+            tuple: (相性, ダメージ, 急所かどうか)
         """
         e = self.sb_info.type_effect(at1,at2,dt1,dt2)
+        
+        # 急所判定 (暴言か人体タイプが含まれる場合、12.5%の確率)
+        is_critical = False
+        if "暴言" in [at1, at2] or "人体" in [at1, at2]:
+            if random.random() < CRITICAL_HIT_CHANCE:
+                is_critical = True
+
+        # ランク補正の計算
+        if self.player1_turn:
+            atk_pow = self.sb_info.rank_to_power(self.player1.attack_rank)
+            def_pow = self.sb_info.rank_to_power(self.player2.defense_rank)
+        else:
+            atk_pow = self.sb_info.rank_to_power(self.player2.attack_rank)
+            def_pow = self.sb_info.rank_to_power(self.player1.defense_rank)
+        
+        rank_correction = atk_pow / def_pow
+        
+        if is_critical:
+            # 急所の場合、自分に不利な補正（< 1.0）を無視する
+            rank_correction = max(1.0, rank_correction)
+
+        damage = 0.0
         if(at1 == at2 == ""):
             # 攻撃がノータイプ
-            damage = 7.0
-            if(self.player1_turn):
-                damage *= self.sb_info.rank_to_power(self.player1.attack_rank)
-                damage /= self.sb_info.rank_to_power(self.player2.defense_rank)
-            else:
-                damage *= self.sb_info.rank_to_power(self.player2.attack_rank)
-                damage /= self.sb_info.rank_to_power(self.player1.defense_rank)
-            return e, int(damage)
+            damage = BASE_DAMAGE_NORMAL * rank_correction
         elif(dt1 == dt2 == ""):
             # 防御がノータイプ
-            damage = 10.0 * e
-            if(self.player1_turn):
-                damage *= self.sb_info.rank_to_power(self.player1.attack_rank)
-                damage /= self.sb_info.rank_to_power(self.player2.defense_rank)
-            else:
-                damage *= self.sb_info.rank_to_power(self.player2.attack_rank)
-                damage /= self.sb_info.rank_to_power(self.player1.defense_rank)
-            return e, int(damage)
+            damage = BASE_DAMAGE_TYPED * e * rank_correction
         else:
             # 攻守タイプあり
-            damage = 10.0 * e
-            if(self.player1_turn):
-                damage *= self.sb_info.rank_to_power(self.player1.attack_rank)
-                damage /= self.sb_info.rank_to_power(self.player2.defense_rank)
-            else:
-                damage *= self.sb_info.rank_to_power(self.player2.attack_rank)
-                damage /= self.sb_info.rank_to_power(self.player1.defense_rank)
-            damage *= random.uniform(0.85,0.99)
-            return e, int(damage)
+            damage = BASE_DAMAGE_TYPED * e * rank_correction
+            damage *= random.uniform(DAMAGE_RANDOM_MIN, DAMAGE_RANDOM_MAX)
+            
+        return e, int(damage), is_critical
 
     def _make_response(self) -> dict:
         """
