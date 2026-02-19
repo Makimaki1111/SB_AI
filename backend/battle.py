@@ -90,6 +90,10 @@ class Ability:
         """食べ物の回数制限を無視するかどうか"""
         return False
 
+    def on_receive_damage(self, player: Player, attacker: Player, damage: int, effect: float, battle: 'Battle_info'):
+        """ダメージを受けた時の効果"""
+        pass
+
 class StatBoostAbility(Ability):
     """特定の条件で攻撃ランクを上昇させる特性の共通クラス"""
     def __init__(self, name: str, description: str, icon_type: str, condition_types: list = [], min_word_len: int = 0):
@@ -240,6 +244,35 @@ class RevolutionAbility(Ability):
         }
         battle.events.append(event)
 
+class TyphoonIkkaAbility(Ability):
+    """特性「たいふういっか」"""
+    def __init__(self):
+        super().__init__(
+            name="たいふういっか",
+            description="天気タイプの言葉を使うと自分と相手の能力変化をもとに戻す",
+            icon_type="天気"
+        )
+
+    def check_condition(self, player: Player, types: list, word: str) -> bool:
+        return "天気" in types
+
+    def apply_after_effect(self, player: Player, battle: 'Battle_info'):
+        # 自分と相手を取得
+        opponent = battle.player2 if player.id == battle.player1.id else battle.player1
+
+        # ランクをリセット
+        player.attack_rank = 0
+        player.defense_rank = 0
+        opponent.attack_rank = 0
+        opponent.defense_rank = 0
+
+        event = {
+            "type": "ability_trigger",
+            "message": f"すべての能力変化が元に戻った！",
+            "player": "ally" if player.id == battle.player1.id else "foe"
+        }
+        battle.events.append(event)
+
 class IkasuiAbility(Ability):
     """特性「いかすい」"""
     def __init__(self):
@@ -263,6 +296,26 @@ class IshokudogenAbility(Ability):
 
     def get_food_recovery_amount(self, default_amount: int) -> int:
         return 40
+
+class HokenAbility(Ability):
+    """特性「ほけん」"""
+    def __init__(self):
+        super().__init__(
+            name="ほけん",
+            description="効果抜群のダメージを受けると攻撃力がぐぐーんと上がる",
+            icon_type="社会"
+        )
+
+    def on_receive_damage(self, player: Player, attacker: Player, damage: int, effect: float, battle: 'Battle_info'):
+        if effect > 1:
+            player.attack_rank = min(6, player.attack_rank + 3)
+            event = {
+                "type": "atk_up",
+                "message": f"弱点を突かれて攻撃がぐぐーんと上がった！(現在{battle.sb_info.rank_to_power(player.attack_rank):.1f}倍)",
+                "player": "ally" if player.id == battle.player1.id else "foe",
+                "new_atk": player.attack_rank
+            }
+            battle.events.append(event)
 
 class Battle_info:
     """
@@ -371,10 +424,12 @@ class Battle_info:
             ),
             "ikasui": IkasuiAbility(),
             "ishokudogen": IshokudogenAbility(),
+            "hoken": HokenAbility(),
             "mukimuki": MukimukiAbility(),
             "yadorigi": LeechSeedAbility(),
             "long_word": LongWordBonusAbility(),
-            "revolution": RevolutionAbility()
+            "revolution": RevolutionAbility(),
+            "taifuikka": TyphoonIkkaAbility()
         }
         self.ability_ids = list(self.abilities.keys())
         self.player1.ability = random.choice(self.ability_ids)
@@ -496,6 +551,11 @@ class Battle_info:
                 }
                 self.events.append(event)
 
+                # 防御側の特性発動チェック
+                defender_ability = self.abilities.get(self.player2.ability)
+                if defender_ability:
+                    defender_ability.on_receive_damage(self.player2, self.player1, damage, effect, self)
+
                 # 暴力で攻撃ダウン
                 if("暴力" in types):
                     drop = 2
@@ -561,6 +621,11 @@ class Battle_info:
                     "foe_damage" : 0
                 }
                 self.events.append(event)
+
+                # 防御側の特性発動チェック
+                defender_ability = self.abilities.get(self.player1.ability)
+                if defender_ability:
+                    defender_ability.on_receive_damage(self.player1, self.player2, damage, effect, self)
 
                 # 暴力で攻撃ダウン
                 if("暴力" in types):
