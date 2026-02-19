@@ -866,3 +866,14 @@ html, body {
         opacity: 0;
     }
 }
+
+/* --- ダメージ点滅エフェクト --- */
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+.damage-blink {
+    animation: blink 0.2s 5; /* 0.2秒 * 5回 = 1秒 */
+}

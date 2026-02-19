@@ -643,4 +643,19 @@ class UI{
             }, i * 100);
         }
     }
+
+    playDamageEffect(isAlly) {
+        const elements = isAlly ?
+            [this.allyType1Img, this.allyType2Img, this.allyOnlyTypeImg, this.allyWord] :
+            [this.foeType1Img, this.foeType2Img, this.foeOnlyTypeImg, this.foeWord];
+
+        elements.forEach(el => {
+            el.selector.addClass('damage-blink');
+        });
+
+        // 1秒後にクラスを削除（次のアニメーションのため）
+        setTimeout(() => {
+            elements.forEach(el => el.selector.removeClass('damage-blink'));
+        }, 1000);
+    }
 }
