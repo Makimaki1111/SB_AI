@@ -187,8 +187,8 @@ const onMadeRoom = async (data) => {
   battleState.ally.ability = data.ally.ability;
   battleState.ally.abilityChangeCount = data.ally.ability_change_count;
   battleState.ally.is_poison = data.ally.is_poison;
-  battleState.foe.ability = data.foe.ability;
-  battleState.foe.abilityChangeCount = data.foe.ability_change_count;
+  battleState.foe.ability = data.foe.ability || "secret";
+  battleState.foe.abilityChangeCount = data.foe.ability_change_count !== undefined ? data.foe.ability_change_count : 3;
   battleState.foe.is_poison = data.foe.is_poison;
 
   ui.setAllyHP(battleState.ally.hp, battleState.ally.maxHp);
@@ -433,8 +433,8 @@ const onAccepted = async (data) => {
     if (battleState.ally && data.state && typeof data.state.ally_ability_change_count !== 'undefined') { // Defensive check
       battleState.ally.ability = data.state.ally_ability;
       battleState.ally.abilityChangeCount = data.state.ally_ability_change_count;
-      battleState.foe.ability = data.state.foe_ability;
-      battleState.foe.abilityChangeCount = data.state.foe_ability_change_count;
+      battleState.foe.ability = data.state.foe_ability || "secret";
+      battleState.foe.abilityChangeCount = data.state.foe_ability_change_count !== undefined ? data.state.foe_ability_change_count : 3;
 
       const currentAbilityName = battleState.allAbilities[data.state.ally_ability]?.name || data.state.ally_ability;
       const foeAbilityName = battleState.allAbilities[data.state.foe_ability]?.name || data.state.foe_ability;

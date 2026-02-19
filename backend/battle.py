@@ -1032,10 +1032,6 @@ class Battle_info:
         ally = self.player1 if is_p1 else self.player2
         foe = self.player2 if is_p1 else self.player1
 
-        foe_ability = foe.ability
-        if not self.is_cpu:
-            foe_ability = "secret"
-
         return {
             "type": "made_room",
             "message": "バトルルーム作成",
@@ -1055,8 +1051,6 @@ class Battle_info:
             "foe" : {
                 "max_hp" : self.MAX_HP,
                 "name" : foe.name,
-                "ability": foe_ability,
-                "ability_change_count": foe.ability_change_count,
                 "is_poison": foe.poison_turns > 0
             }
         }
@@ -1130,8 +1124,8 @@ class Battle_info:
         new_response["state"] = new_state
 
         # 相手の特性を隠す
-        new_state["foe_ability"] = "secret"
-        new_state["foe_ability_change_count"] = ABILITY_CHANGE_COUNT_INIT
+        new_state.pop("foe_ability", None)
+        new_state.pop("foe_ability_change_count", None)
         
         # イベント内の情報もマスク
         new_events = []
@@ -1140,6 +1134,7 @@ class Battle_info:
             if e["type"] == "ability_changed" and e.get("player") == "foe":
                 ne["new_ability"] = "secret"
                 ne["message"] = ""
+                ne["new_ability_change_count"] = ABILITY_CHANGE_COUNT_INIT
             new_events.append(ne)
         new_state["events"] = new_events
 

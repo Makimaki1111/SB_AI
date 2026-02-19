@@ -71,10 +71,9 @@ class ConnectionManager:
         battle = battle_rooms[room_id]
         p2_response = battle.flip_turn_response(p1_response)
 
-        # 対人戦の場合は相手の特性情報をマスクする
-        if not battle.is_cpu:
-            p1_response = battle.mask_response_for_pvp(p1_response)
-            p2_response = battle.mask_response_for_pvp(p2_response)
+        # 相手の特性情報をマスクする (CPU戦含む)
+        p1_response = battle.mask_response_for_pvp(p1_response)
+        p2_response = battle.mask_response_for_pvp(p2_response)
 
         for connection in self.room_connections[room_id]:
             try:
