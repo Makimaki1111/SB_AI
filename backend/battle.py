@@ -11,6 +11,8 @@ import random
 import uuid
 battle_rooms = {}
 MAX_HP = 60
+FOOD_LIMIT = 6
+MEDICAL_LIMIT = 5
 
 class TextInput(BaseModel):
     text:str
@@ -27,6 +29,8 @@ class Player:
         self.ability = "" # 特性
         self.ability_change_count = 3 # 特性変更の残り回数
         self.leech_turns = 0 # やどりぎの残りターン数
+        self.food_count = 0 # 食べ物使用回数
+        self.medical_count = 0 # 医療使用回数
 
     def take_damage(self, damage: int):
         self.hp = max(0, self.hp - damage)
@@ -78,6 +82,14 @@ class Ability:
         """ダメージ計算時の倍率補正を返す"""
         return 1.0
 
+    def get_food_recovery_amount(self, default_amount: int) -> int:
+        """食べ物タイプ使用時の回復量を返す"""
+        return default_amount
+
+    def should_ignore_food_limit(self) -> bool:
+        """食べ物の回数制限を無視するかどうか"""
+        return False
+
 class StatBoostAbility(Ability):
     """特定の条件で攻撃ランクを上昇させる特性の共通クラス"""
     def __init__(self, name: str, description: str, icon_type: str, condition_types: list = [], min_word_len: int = 0):
@@ -96,7 +108,7 @@ class StatBoostAbility(Ability):
         player.attack_rank = min(6, player.attack_rank + 2)
         event = {
             "type": "atk_up",
-            "message": f"特性「{self.name}」の効果で攻撃がぐーんと上がった！",
+            "message": f"攻撃がぐーんと上がった！",
             "player": "ally" if player.id == battle.player1.id else "foe"
         }
         battle.events.append(event)
@@ -157,7 +169,7 @@ class MukimukiAbility(Ability):
     def __init__(self):
         super().__init__(
             name="むきむき",
-            description="暴力タイプの言葉を使っても攻撃力がすこししか下がらなくなる(攻撃2段階ダウンから1段階ダウンに)",
+            description="暴力タイプの言葉を使っても攻撃力がすこししか下がらなくなる",
             icon_type="暴力"
         )
 
@@ -169,7 +181,7 @@ class LeechSeedAbility(Ability):
     def __init__(self):
         super().__init__(
             name="やどりぎ",
-            description="植物タイプの言葉を使うとダメージを与える代わりに相手にやどりぎを植え付ける(4ターンの間、自分が攻撃した後に相手のHPを5減らし、自分の体力を5回復する)",
+            description="植物タイプの言葉を使うとダメージを与える代わりに相手にやどりぎを植え付ける",
             icon_type="植物"
         )
         self.replaces_damage = True
@@ -227,6 +239,30 @@ class RevolutionAbility(Ability):
             "player": "ally" if player.id == battle.player1.id else "foe"
         }
         battle.events.append(event)
+
+class IkasuiAbility(Ability):
+    """特性「いかすい」"""
+    def __init__(self):
+        super().__init__(
+            name="いかすい",
+            description="いくらでも食べることができる",
+            icon_type="食べ物"
+        )
+
+    def should_ignore_food_limit(self) -> bool:
+        return True
+
+class IshokudogenAbility(Ability):
+    """特性「いしょくどうげん」"""
+    def __init__(self):
+        super().__init__(
+            name="いしょくどうげん",
+            description="食べ物タイプの言葉で医療タイプと同じ効果が得られる",
+            icon_type="医療"
+        )
+
+    def get_food_recovery_amount(self, default_amount: int) -> int:
+        return 40
 
 class Battle_info:
     """
@@ -333,6 +369,8 @@ class Battle_info:
                 target_type="宗教",
                 damage_multiplier=1.5
             ),
+            "ikasui": IkasuiAbility(),
+            "ishokudogen": IshokudogenAbility(),
             "mukimuki": MukimukiAbility(),
             "yadorigi": LeechSeedAbility(),
             "long_word": LongWordBonusAbility(),
@@ -344,9 +382,9 @@ class Battle_info:
 
         self.player1_win = None
         self.player1_turn = True
-        self.START_CHARACTER = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわ"
+        self.START_CHARACTER = "あいうえおかきくけこさしすせそたちつてとなにねのはひふへほまみむめやゆよらりるれろわ"
         self.character = random.choice(self.START_CHARACTER)
-        self.events = [] # type: list
+        self.events = []
         self.turn = 0
         self.word = ""
 
@@ -420,13 +458,28 @@ class Battle_info:
             dt2 = self.player2.types[1] if len(self.player2.types) >= 2 else ""
             
             if("食べ物" in types):
-                event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : 20, "foe_cure" : 0}
-                self.events.append(event)
-                self.player1.heal(20)
+                limit = FOOD_LIMIT
+                ignore_limit = ability_obj and ability_obj.should_ignore_food_limit()
+                
+                if ignore_limit or self.player1.food_count < limit:
+                    self.player1.food_count += 1
+                    cure_amount = 20
+                    if ability_obj:
+                        cure_amount = ability_obj.get_food_recovery_amount(cure_amount)
+                    event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : cure_amount, "foe_cure" : 0}
+                    self.events.append(event)
+                    self.player1.heal(cure_amount)
+                else:
+                    self.events.append({"type" : "message", "message" : "もう食べられない！"})
             elif("医療" in types):
-                event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : 40, "foe_cure" : 0}
-                self.events.append(event)
-                self.player1.heal(40)
+                limit = MEDICAL_LIMIT
+                if self.player1.medical_count < limit:
+                    self.player1.medical_count += 1
+                    event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : 40, "foe_cure" : 0}
+                    self.events.append(event)
+                    self.player1.heal(40)
+                else:
+                    self.events.append({"type" : "message", "message" : "もう回復できない！"})
             else:
                 # ダメージ計算
                 effect, damage = self._calc_damage(at1,at2,dt1,dt2)
@@ -470,14 +523,29 @@ class Battle_info:
             dt2 = self.player1.types[1] if len(self.player1.types) >= 2 else ""
 
             if("食べ物" in types):
-                event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : 0, "foe_cure" : 20}
-                self.events.append(event)
-                self.player2.heal(20)
+                limit = FOOD_LIMIT
+                ignore_limit = ability_obj and ability_obj.should_ignore_food_limit()
+                
+                if ignore_limit or self.player2.food_count < limit:
+                    self.player2.food_count += 1
+                    cure_amount = 20
+                    if ability_obj:
+                        cure_amount = ability_obj.get_food_recovery_amount(cure_amount)
+                    event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : 0, "foe_cure" : cure_amount}
+                    self.events.append(event)
+                    self.player2.heal(cure_amount)
+                else:
+                    self.events.append({"type" : "message", "message" : "もう食べられない！"})
 
             elif("医療" in types):
-                event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : 0, "foe_cure" : 40}
-                self.events.append(event)
-                self.player2.heal(40)
+                limit = MEDICAL_LIMIT
+                if self.player2.medical_count < limit:
+                    self.player2.medical_count += 1
+                    event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : 0, "foe_cure" : 40}
+                    self.events.append(event)
+                    self.player2.heal(40)
+                else:
+                    self.events.append({"type" : "message", "message" : "もう回復できない！"})
             else:
                 # ダメージ計算
                 effect, damage = self._calc_damage(at1,at2,dt1,dt2)
