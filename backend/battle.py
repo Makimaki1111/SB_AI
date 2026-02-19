@@ -452,6 +452,8 @@ class Battle_info:
 
         # 特性関連
         self.abilities = {
+            "ikaku": IkakuAbility(),
+            "debugger": DebuggerAbility(),
             "passion": TypeStatBoostAbility(
                 name="じょうねつ",
                 description="感情タイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
@@ -459,6 +461,14 @@ class Battle_info:
                 target_type="感情",
                 boost_amount=1
             ),
+            "kyojin": TypePowerUpAbility(
+                name="きょじん",
+                description="人物タイプの言葉の威力が上がる",
+                icon_type="人物",
+                target_type="人物",
+                damage_multiplier=1.5
+            ),
+            "ikasui": IkasuiAbility(),
             "rocknroll": TypeStatBoostAbility(
                 name="ロックンロール",
                 description="芸術タイプの言葉を使うとダメージを与える代わりに攻撃力がぐーんと上がる",
@@ -466,6 +476,7 @@ class Battle_info:
                 target_type="芸術",
                 boost_amount=2
             ),
+            "mukimuki": MukimukiAbility(),
             "training": TypeStatBoostAbility(
                 name="トレーニング",
                 description="スポーツタイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
@@ -473,6 +484,7 @@ class Battle_info:
                 target_type="スポーツ",
                 boost_amount=1
             ),
+            "hoken": HokenAbility(),
             "procrastination": TypeStatBoostAbility(
                 name="さきのばし",
                 description="時間タイプの言葉を使うとダメージを与える代わりに防御力が上がる",
@@ -481,6 +493,9 @@ class Battle_info:
                 boost_amount=1,
                 stat_type="defense"
             ),
+            "karate": KarateAbility(),
+            "zuboshi": ZuboshiAbility(),
+            "ishokudogen": IshokudogenAbility(),
             "kachikochi": TypeStatBoostAbility(
                 name="かちこち",
                 description="機械タイプの言葉を使うとダメージを与える代わりに防御力が上がる",
@@ -489,6 +504,31 @@ class Battle_info:
                 boost_amount=1,
                 stat_type="defense"
             ),
+            "dokubari": DokubariAbility(),
+            "taifuikka": TyphoonIkkaAbility(),
+            "yadorigi": LeechSeedAbility(),
+            "jikken": TypePowerUpAbility(
+                name="じっけん",
+                description="理科タイプの言葉の威力が上がる",
+                icon_type="理科",
+                target_type="理科",
+                damage_multiplier=1.5
+            ),
+            "global": TypePowerUpAbility(
+                name="グローバル",
+                description="地名タイプの言葉の威力が上がる",
+                icon_type="地名",
+                target_type="地名",
+                damage_multiplier=1.5
+            ),
+            "shinkoushin": TypePowerUpAbility(
+                name="しんこうしん",
+                description="宗教タイプの言葉の威力が上がる",
+                icon_type="宗教",
+                target_type="宗教",
+                damage_multiplier=1.5
+            ),
+            "revolution": RevolutionAbility(),
             "calculation": TypeStatBoostAbility(
                 name="けいさん",
                 description="数学タイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
@@ -511,47 +551,7 @@ class Battle_info:
                 target_type="工作",
                 boost_amount=1
             ),
-            "kyojin": TypePowerUpAbility(
-                name="きょじん",
-                description="人物タイプの言葉の威力が上がる",
-                icon_type="人物",
-                target_type="人物",
-                damage_multiplier=1.5
-            ),
-            "jikken": TypePowerUpAbility(
-                name="じっけん",
-                description="理科タイプの言葉の威力が上がる",
-                icon_type="理科",
-                target_type="理科",
-                damage_multiplier=1.5
-            ),
-            "global": TypePowerUpAbility(
-                name="グローバル",
-                description="地名タイプの言葉の威力が上がる",
-                icon_type="地名",
-                target_type="地名",
-                damage_multiplier=1.5
-            ),
-            "shinkoushin": TypePowerUpAbility(
-                name="しんこうしん",
-                description="宗教タイプの言葉の威力が上がる",
-                icon_type="宗教",
-                target_type="宗教",
-                damage_multiplier=1.5
-            ),
-            "ikasui": IkasuiAbility(),
-            "ishokudogen": IshokudogenAbility(),
-            "hoken": HokenAbility(),
-            "mukimuki": MukimukiAbility(),
-            "yadorigi": LeechSeedAbility(),
-            "long_word": LongWordBonusAbility(),
-            "revolution": RevolutionAbility(),
-            "taifuikka": TyphoonIkkaAbility(),
-            "karate": KarateAbility(),
-            "zuboshi": ZuboshiAbility(),
-            "debugger": DebuggerAbility(),
-            "dokubari": DokubariAbility(),
-            "ikaku": IkakuAbility()
+            "long_word": LongWordBonusAbility()
         }
         self.ability_ids = list(self.abilities.keys())
         self.player1.ability = random.choice(self.ability_ids)
