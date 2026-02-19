@@ -428,7 +428,7 @@ class IkakuAbility(Ability):
         
         event = {
             "type": "atk_down",
-            "message": f"「{self.name}」で相手の攻撃が下がった！(現在{battle.sb_info.rank_to_power(opponent.attack_rank):.1f}倍)",
+            "message": f"{self.name}で相手の攻撃が下がった！(現在{battle.sb_info.rank_to_power(opponent.attack_rank):.1f}倍)",
             "player": "foe" if player.id == battle.player1.id else "ally",
             "new_atk": opponent.attack_rank
         }
