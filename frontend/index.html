@@ -60,6 +60,12 @@
 
   <script src="type_to_image.js"></script>
   <script>
+    // 本番環境（localhost以外）ではランダムマッチボタンを非表示にする
+    if (window.location.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        const vsPlayerBtn = document.getElementById('vs-player-btn');
+        if (vsPlayerBtn) vsPlayerBtn.style.display = 'none';
+    }
+
     // 設定モーダル制御
     const settingsBtn = document.getElementById('settings-btn');
     const settingsModal = document.getElementById('settings-modal');

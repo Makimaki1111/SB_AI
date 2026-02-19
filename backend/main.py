@@ -4,6 +4,7 @@ import secrets
 import asyncio
 import logging
 import traceback
+import os
 from typing import List, Dict
 from collections import defaultdict
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -239,6 +240,11 @@ async def websocket_endpoint(websocket: WebSocket):
 
             # --- マッチメイキング処理 ---
                 elif req.get("type") == "find_match":
+                    # 本番環境（Render等）ではランダムマッチを無効化
+                    if os.getenv("RENDER") or os.getenv("DISABLE_RANDOM_MATCH"):
+                        await websocket.send_text(json.dumps({"type": "error", "message": "ランダムマッチは現在無効です"}))
+                        continue
+
                     info = req.get("info", {})
                     player_id = info.get("player_id")
                     manager.register_player(websocket, player_id)
