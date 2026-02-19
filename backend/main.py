@@ -219,8 +219,12 @@ async def websocket_endpoint(websocket: WebSocket):
                 name = info.get("name")
                 ability = info.get("ability")
                 if player_id:
+                    # 名前が文字列でない場合はデフォルト値にする（エラー回避）
+                    if not isinstance(name, str):
+                        name = "名無し"
+
                     # 名前を8文字以内に制限
-                    if name and len(name) > 8:
+                    if len(name) > 8:
                         name = name[:8]
 
                     user_profiles[player_id] = {"name": name, "ability": ability}
@@ -403,6 +407,11 @@ async def websocket_endpoint(websocket: WebSocket):
             print(f"Private room {room_to_remove} was removed due to disconnection.")
 
         disconnected_player_id = manager.socket_to_player_id.get(websocket)
+        
+        # メモリリーク防止: 切断したユーザーのプロフィールを削除
+        if disconnected_player_id and disconnected_player_id in user_profiles:
+            del user_profiles[disconnected_player_id]
+
         left_rooms = manager.disconnect(websocket) # disconnect()内でsocket_to_player_idから削除される
 
         for room_id in left_rooms:
