@@ -324,13 +324,17 @@ html, body {
     height: 100%;
     background-color: #333333;
     color: white;
-    text-align: center;
+    text-align: left;
     padding: 0 1rem;
     font-size: 1.2em;
     border-radius: 0;
     z-index: 20;
     display: flex;
-    line-height: 3.5;
+    align-items: flex-start;
+    justify-content: flex-start;
+    line-height: 1.4;
+    padding-top: 10px;
+    box-sizing: border-box;
 }
 
 /* ally-imgとfoe-imgのフェードインアニメーション */
