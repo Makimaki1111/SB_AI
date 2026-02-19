@@ -240,7 +240,13 @@ class RevolutionAbility(Ability):
         event = {
             "type": "ability_trigger",
             "message": f"全ての能力変化がひっくり返った！",
-            "player": "ally" if player.id == battle.player1.id else "foe"
+            "player": "ally" if player.id == battle.player1.id else "foe",
+            "new_ranks": {
+                "ally_atk": battle.player1.attack_rank,
+                "ally_def": battle.player1.defense_rank,
+                "foe_atk": battle.player2.attack_rank,
+                "foe_def": battle.player2.defense_rank
+            }
         }
         battle.events.append(event)
 
@@ -269,7 +275,13 @@ class TyphoonIkkaAbility(Ability):
         event = {
             "type": "ability_trigger",
             "message": f"すべての能力変化が元に戻った！",
-            "player": "ally" if player.id == battle.player1.id else "foe"
+            "player": "ally" if player.id == battle.player1.id else "foe",
+            "new_ranks": {
+                "ally_atk": battle.player1.attack_rank,
+                "ally_def": battle.player1.defense_rank,
+                "foe_atk": battle.player2.attack_rank,
+                "foe_def": battle.player2.defense_rank
+            }
         }
         battle.events.append(event)
 
@@ -879,6 +891,13 @@ class Battle_info:
             if "ally_cure" in e: ne["ally_cure"] = e["foe_cure"]
             if "foe_cure" in e: ne["foe_cure"] = e["ally_cure"]
             if "player" in e: ne["player"] = "foe" if e["player"] == "ally" else "ally"
+            if "new_ranks" in e:
+                nr = e["new_ranks"].copy()
+                nr["ally_atk"] = e["new_ranks"]["foe_atk"]
+                nr["ally_def"] = e["new_ranks"]["foe_def"]
+                nr["foe_atk"] = e["new_ranks"]["ally_atk"]
+                nr["foe_def"] = e["new_ranks"]["ally_def"]
+                ne["new_ranks"] = nr
             new_events.append(ne)
         new_state["events"] = new_events
 

@@ -252,6 +252,13 @@ const processEvent = async (events, is_my_turn) => {
       battleState.ally.hp = Math.min(battleState.ally.maxHp, battleState.ally.hp + (e["ally_cure"] || 0));
       battleState.foe.hp = Math.min(battleState.foe.maxHp, battleState.foe.hp + (e["foe_cure"] || 0));
       ui.updateHPs(battleState.ally.hp, battleState.ally.maxHp, battleState.foe.hp, battleState.foe.maxHp);
+    } else if (e["type"] === "ability_trigger") {
+      if (e["new_ranks"]) {
+        battleState.ally.atk = e["new_ranks"]["ally_atk"];
+        battleState.ally.def = e["new_ranks"]["ally_def"];
+        battleState.foe.atk = e["new_ranks"]["foe_atk"];
+        battleState.foe.def = e["new_ranks"]["foe_def"];
+      }
     }
 
     // 特性変更イベントの場合は待機時間を短くする
@@ -404,6 +411,12 @@ const onAccepted = async (data) => {
 
   await sleep(1000);
   await processEvent(data["state"]["events"], data["state"]["is_my_turn"]);
+
+  // イベント再生後に最終的なステータスを確実に同期する
+  battleState.ally.atk = data.state.ally_A;
+  battleState.ally.def = data.state.ally_B;
+  battleState.foe.atk = data.state.foe_A;
+  battleState.foe.def = data.state.foe_B;
 
   if (data["state"]["ally_win"] === true) {
     onAllyWin();
