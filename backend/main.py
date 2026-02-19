@@ -2,6 +2,8 @@ import uvicorn
 import json
 import secrets
 import asyncio
+import logging
+import traceback
 from typing import List, Dict
 from collections import defaultdict
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -13,6 +15,10 @@ except ImportError:
     from backend.battle import Battle_info, battle_rooms, SB_info, GOOGLE_AI, get_all_abilities_info
 
 app = FastAPI()
+
+# --- ログ設定 ---
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 app.add_middleware(
     CORSMiddleware,
@@ -83,7 +89,7 @@ class ConnectionManager:
                 else:
                     await connection.send_text(json.dumps(p1_response))
             except Exception as e:
-                print(f"Error broadcasting to {pid}: {e}")
+                logger.error(f"Error broadcasting to {pid}: {e}")
 
 # --- DI: アプリケーション全体で共有するインスタンスを生成 ---
 sb_info_instance = SB_info()
@@ -205,81 +211,49 @@ async def websocket_endpoint(websocket: WebSocket):
     global waiting_player
     try:
         while True:
-            data = await websocket.receive_text()
             try:
+                data = await websocket.receive_text()
                 req = json.loads(data)
-            except Exception:
-                await manager.broadcast(json.dumps({"type": "error", "message": "Invalid JSON"}), "") # エラーは送信元だけに返すべきだが簡略化
+            except json.JSONDecodeError:
+                await websocket.send_text(json.dumps({"type": "error", "message": "Invalid JSON"}))
                 continue
             
             # --- ユーザー情報更新 ---
-            if req.get("type") == "update_user_info":
-                info = req.get("info", {})
-                player_id = info.get("player_id")
-                name = info.get("name")
-                ability = info.get("ability")
-                if player_id:
-                    # 名前が文字列でない場合はデフォルト値にする（エラー回避）
-                    if not isinstance(name, str):
-                        name = "名無し"
+            try:
+                if req.get("type") == "update_user_info":
+                    info = req.get("info", {})
+                    player_id = info.get("player_id")
+                    name = info.get("name")
+                    ability = info.get("ability")
+                    if player_id:
+                        # 名前が文字列でない場合はデフォルト値にする（エラー回避）
+                        if not isinstance(name, str):
+                            name = "じぶん"
 
-                    # 名前を8文字以内に制限
-                    if len(name) > 8:
-                        name = name[:8]
+                        # 名前を8文字以内に制限
+                        if len(name) > 8:
+                            name = name[:8]
 
-                    user_profiles[player_id] = {"name": name, "ability": ability}
-                    await websocket.send_text(json.dumps({"type": "user_info_updated", "message": "ユーザー情報を更新しました"}))
+                        user_profiles[player_id] = {"name": name, "ability": ability}
+                        await websocket.send_text(json.dumps({"type": "user_info_updated", "message": "ユーザー情報を更新しました"}))
 
             # --- マッチメイキング処理 ---
-            elif req.get("type") == "find_match":
-                info = req.get("info", {})
-                player_id = info.get("player_id")
-                manager.register_player(websocket, player_id)
+                elif req.get("type") == "find_match":
+                    info = req.get("info", {})
+                    player_id = info.get("player_id")
+                    manager.register_player(websocket, player_id)
 
-                if waiting_player is not None:
-                    if waiting_player["player_id"] == player_id:
-                        continue
-                    
-                    p1_data = waiting_player
-                    p2_data = {"socket": websocket, "player_id": player_id}
-                    
-                    p1_profile = user_profiles.get(p1_data["player_id"])
-                    p2_profile = user_profiles.get(p2_data["player_id"])
-
-                    bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=sb_info_instance, google_ai=google_ai_instance, p1_profile=p1_profile, p2_profile=p2_profile)
-                    battle_rooms[bi.room_id] = bi
-
-                    manager.join_room(p1_data["socket"], bi.room_id)
-                    manager.join_room(p2_data["socket"], bi.room_id)
-
-                    await p1_data["socket"].send_text(json.dumps(bi.make_init_response(p1_data["player_id"])))
-                    await p2_data["socket"].send_text(json.dumps(bi.make_init_response(p2_data["player_id"])))
-                    
-                    await start_turn_timer(bi.room_id)
-
-                    waiting_player = None
-                else:
-                    waiting_player = {"socket": websocket, "player_id": player_id}
-                    await websocket.send_text(json.dumps({"type": "waiting", "message": "対戦相手を探しています..."}))
-
-            elif req.get("type") == "join_private_room":
-                info = req.get("info", {})
-                player_id = info.get("player_id")
-                room_id = info.get("room_id")
-                manager.register_player(websocket, player_id)
-
-                if room_id: # Join existing room
-                    if room_id in private_rooms:
-                        p1_data = private_rooms[room_id]
-                        if p1_data["player_id"] == player_id:
+                    if waiting_player is not None:
+                        if waiting_player["player_id"] == player_id:
                             continue
-
+                        
+                        p1_data = waiting_player
                         p2_data = {"socket": websocket, "player_id": player_id}
                         
                         p1_profile = user_profiles.get(p1_data["player_id"])
                         p2_profile = user_profiles.get(p2_data["player_id"])
 
-                        bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=sb_info_instance, google_ai=google_ai_instance, room_id=room_id, p1_profile=p1_profile, p2_profile=p2_profile)
+                        bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=sb_info_instance, google_ai=google_ai_instance, p1_profile=p1_profile, p2_profile=p2_profile)
                         battle_rooms[bi.room_id] = bi
 
                         manager.join_room(p1_data["socket"], bi.room_id)
@@ -289,106 +263,144 @@ async def websocket_endpoint(websocket: WebSocket):
                         await p2_data["socket"].send_text(json.dumps(bi.make_init_response(p2_data["player_id"])))
                         
                         await start_turn_timer(bi.room_id)
-                        del private_rooms[room_id]
+
+                        waiting_player = None
                     else:
-                        await websocket.send_text(json.dumps({"type": "error", "message": "ルームが見つかりません"}))
-                else: # Create new room
-                    while True:
-                        new_room_id = f"{secrets.randbelow(1000000):06d}"
-                        if new_room_id not in private_rooms: break
-                    private_rooms[new_room_id] = {"socket": websocket, "player_id": player_id}
-                    await websocket.send_text(json.dumps({"type": "private_room_created", "room_id": new_room_id}))
+                        waiting_player = {"socket": websocket, "player_id": player_id}
+                        await websocket.send_text(json.dumps({"type": "waiting", "message": "対戦相手を探しています..."}))
+
+                elif req.get("type") == "join_private_room":
+                    info = req.get("info", {})
+                    player_id = info.get("player_id")
+                    room_id = info.get("room_id")
+                    manager.register_player(websocket, player_id)
+
+                    if room_id: # Join existing room
+                        if room_id in private_rooms:
+                            p1_data = private_rooms[room_id]
+                            if p1_data["player_id"] == player_id:
+                                continue
+
+                            p2_data = {"socket": websocket, "player_id": player_id}
+                            
+                            p1_profile = user_profiles.get(p1_data["player_id"])
+                            p2_profile = user_profiles.get(p2_data["player_id"])
+
+                            bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=sb_info_instance, google_ai=google_ai_instance, room_id=room_id, p1_profile=p1_profile, p2_profile=p2_profile)
+                            battle_rooms[bi.room_id] = bi
+
+                            manager.join_room(p1_data["socket"], bi.room_id)
+                            manager.join_room(p2_data["socket"], bi.room_id)
+
+                            await p1_data["socket"].send_text(json.dumps(bi.make_init_response(p1_data["player_id"])))
+                            await p2_data["socket"].send_text(json.dumps(bi.make_init_response(p2_data["player_id"])))
+                            
+                            await start_turn_timer(bi.room_id)
+                            del private_rooms[room_id]
+                        else:
+                            await websocket.send_text(json.dumps({"type": "error", "message": "ルームが見つかりません"}))
+                    else: # Create new room
+                        while True:
+                            new_room_id = f"{secrets.randbelow(1000000):06d}"
+                            if new_room_id not in private_rooms: break
+                        private_rooms[new_room_id] = {"socket": websocket, "player_id": player_id}
+                        await websocket.send_text(json.dumps({"type": "private_room_created", "room_id": new_room_id}))
 
             # typeで分岐し、既存の関数を利用
-            elif req.get("type") == "make_new_battle":
-                info = req.get("info", {})
-                model = make_new_battle_info(**info)
-                manager.register_player(websocket, model.player1_id)
-                p1_profile = user_profiles.get(model.player1_id)
-                p2_profile = user_profiles.get(model.player2_id)
-                res = make_new_battle(model, p1_profile, p2_profile)
-                # 部屋作成時は送信元を部屋に登録
-                manager.join_room(websocket, res["room_id"])
-                await websocket.send_text(json.dumps(res)) # 作成者には直接応答
-                # タイマー開始
-                await start_turn_timer(res["room_id"])
+                elif req.get("type") == "make_new_battle":
+                    info = req.get("info", {})
+                    model = make_new_battle_info(**info)
+                    manager.register_player(websocket, model.player1_id)
+                    p1_profile = user_profiles.get(model.player1_id)
+                    p2_profile = user_profiles.get(model.player2_id)
+                    res = make_new_battle(model, p1_profile, p2_profile)
+                    # 部屋作成時は送信元を部屋に登録
+                    manager.join_room(websocket, res["room_id"])
+                    await websocket.send_text(json.dumps(res)) # 作成者には直接応答
+                    # タイマー開始
+                    await start_turn_timer(res["room_id"])
 
-            elif req.get("type") == "include_check":
-                info = req.get("info", {})
-                model = include_check_info(**info)
-                res = include_check(model)
-                await websocket.send_text(json.dumps(res)) # チェック結果は本人だけでOK
+                elif req.get("type") == "include_check":
+                    info = req.get("info", {})
+                    model = include_check_info(**info)
+                    res = include_check(model)
+                    await websocket.send_text(json.dumps(res)) # チェック結果は本人だけでOK
 
-            elif req.get("type") == "submit_word":
-                info = req.get("info", {})
-                model = turn_info(**info)
-                res = turn_process(model)
-                
-                # エラーの場合はタイマーをリセットせず、送信元にのみ返す
-                if res.get("type") == "error":
-                    await websocket.send_text(json.dumps(res))
-                else:
-                    # 正常な手番の場合はタイマー停止
-                    stop_turn_timer(model.room_id)
-                    # 結果を部屋全員に送信
-                    await manager.broadcast_battle_state(model.room_id, res)
-
-                    # --- CPU自動攻撃処理 ---
-                    # バトルルーム取得
-                    room_id = getattr(model, 'room_id', None)
-                    if room_id and room_id in battle_rooms:
-                        battle = battle_rooms[room_id] # type: Battle_info
-                        
-                        # 勝敗が決まっていなければ次の処理へ
-                        if battle.player1_win is None:
-                            # CPU戦で、プレイヤーの攻撃後にCPUのターンになる場合
-                            if battle.is_cpu and not battle.player1_turn:
-                                cpu_res = battle.execute_cpu_turn()
-                                if cpu_res: await manager.broadcast_battle_state(room_id, cpu_res)
-                            
-                            # まだ勝敗が決まっていなければ次のターンのタイマー開始
-                            if battle.player1_win is None:
-                                await start_turn_timer(room_id)
-
-            elif req.get("type") == "run_away":
-                info = req.get("info", {})
-                model = run_away_info(**info)
-                if model.room_id in battle_rooms:
-                    stop_turn_timer(model.room_id)
+                elif req.get("type") == "submit_word":
+                    info = req.get("info", {})
+                    model = turn_info(**info)
+                    res = turn_process(model)
                     
-                    battle = battle_rooms[model.room_id]
-                    # 逃亡を降参として処理し、相手に通知を送る
-                    res = battle.handle_disconnection(model.player_id, message="あいてが逃げ出しました。")
-                    if res:
-                        await manager.broadcast_battle_state(model.room_id, res)
-
-                    del battle_rooms[model.room_id]
-                    print(f"Battle room {model.room_id} was removed because a player ran away.")
-
-            elif req.get("type") == "change_ability":
-                info = req.get("info", {})
-                room_id = info.get("room_id")
-                player_id = info.get("player_id")
-                new_ability_id = info.get("ability_id")
-
-                if not new_ability_id:
-                    await websocket.send_text(json.dumps({"type": "error", "message": "変更先の特性が指定されていません"}))
-                    continue
-
-                if room_id in battle_rooms:
-                    battle = battle_rooms[room_id]
-                    res = battle.change_ability(player_id, new_ability_id)
-
+                    # エラーの場合はタイマーをリセットせず、送信元にのみ返す
                     if res.get("type") == "error":
                         await websocket.send_text(json.dumps(res))
                     else:
-                        # ターンは消費しないのでタイマーは操作しない
-                        await manager.broadcast_battle_state(room_id, res)
-                else:
-                    await websocket.send_text(json.dumps({"type": "error", "message": "ルームが見つかりません"}))
+                        # 正常な手番の場合はタイマー停止
+                        stop_turn_timer(model.room_id)
+                        # 結果を部屋全員に送信
+                        await manager.broadcast_battle_state(model.room_id, res)
 
-            else:
-                await websocket.send_text(json.dumps({"type": "error", "message": "Unknown type"}))
+                        # --- CPU自動攻撃処理 ---
+                        # バトルルーム取得
+                        room_id = getattr(model, 'room_id', None)
+                        if room_id and room_id in battle_rooms:
+                            battle = battle_rooms[room_id] # type: Battle_info
+                            
+                            # 勝敗が決まっていなければ次の処理へ
+                            if battle.player1_win is None:
+                                # CPU戦で、プレイヤーの攻撃後にCPUのターンになる場合
+                                if battle.is_cpu and not battle.player1_turn:
+                                    cpu_res = battle.execute_cpu_turn()
+                                    if cpu_res: await manager.broadcast_battle_state(room_id, cpu_res)
+                                
+                                # まだ勝敗が決まっていなければ次のターンのタイマー開始
+                                if battle.player1_win is None:
+                                    await start_turn_timer(room_id)
+
+                elif req.get("type") == "run_away":
+                    info = req.get("info", {})
+                    model = run_away_info(**info)
+                    if model.room_id in battle_rooms:
+                        stop_turn_timer(model.room_id)
+                        
+                        battle = battle_rooms[model.room_id]
+                        # 逃亡を降参として処理し、相手に通知を送る
+                        res = battle.handle_disconnection(model.player_id, message="あいてが逃げ出しました。")
+                        if res:
+                            await manager.broadcast_battle_state(model.room_id, res)
+
+                        del battle_rooms[model.room_id]
+                        logger.info(f"Battle room {model.room_id} was removed because a player ran away.")
+
+                elif req.get("type") == "change_ability":
+                    info = req.get("info", {})
+                    room_id = info.get("room_id")
+                    player_id = info.get("player_id")
+                    new_ability_id = info.get("ability_id")
+
+                    if not new_ability_id:
+                        await websocket.send_text(json.dumps({"type": "error", "message": "変更先の特性が指定されていません"}))
+                        continue
+
+                    if room_id in battle_rooms:
+                        battle = battle_rooms[room_id]
+                        res = battle.change_ability(player_id, new_ability_id)
+
+                        if res.get("type") == "error":
+                            await websocket.send_text(json.dumps(res))
+                        else:
+                            # ターンは消費しないのでタイマーは操作しない
+                            await manager.broadcast_battle_state(room_id, res)
+                    else:
+                        await websocket.send_text(json.dumps({"type": "error", "message": "ルームが見つかりません"}))
+
+                else:
+                    await websocket.send_text(json.dumps({"type": "error", "message": "Unknown type"}))
+            
+            except Exception as e:
+                logger.error(f"Unexpected error in WebSocket loop: {e}")
+                logger.error(traceback.format_exc())
+                await websocket.send_text(json.dumps({"type": "error", "message": "サーバー内部エラーが発生しました"}))
     
     except WebSocketDisconnect:
         # 待機中のプレイヤーが切断した場合
@@ -404,7 +416,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 break
         if room_to_remove:
             del private_rooms[room_to_remove]
-            print(f"Private room {room_to_remove} was removed due to disconnection.")
+            logger.info(f"Private room {room_to_remove} was removed due to disconnection.")
 
         disconnected_player_id = manager.socket_to_player_id.get(websocket)
         
@@ -427,9 +439,9 @@ async def websocket_endpoint(websocket: WebSocket):
 
                 # バトルルームを削除
                 del battle_rooms[room_id]
-                print(f"Battle room {room_id} was removed due to disconnection.")
+                logger.info(f"Battle room {room_id} was removed due to disconnection.")
 
-        print("WebSocket切断・登録解除")
+        logger.info("WebSocket切断・登録解除")
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
