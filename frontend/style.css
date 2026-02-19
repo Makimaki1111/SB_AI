@@ -780,3 +780,50 @@ html, body {
     float: right;
     line-height: 100%;
 }
+
+/* --- 回復エフェクト --- */
+.effect-container {
+    position: absolute;
+    width: 220px;
+    height: 150px;
+    pointer-events: none;
+    z-index: 5; /* 楕円(1)より手前、キャラ(11)より奥 */
+}
+
+#ally-effect-container {
+    top: 80px;
+    left: 10px;
+}
+
+#foe-effect-container {
+    top: 5px;
+    right: 20px;
+}
+
+.heal-particle {
+    position: absolute;
+    color: #4CAF50; /* 緑色 */
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    font-size: 24px;
+    opacity: 0;
+    user-select: none;
+}
+.heal-particle::after {
+    content: "+"; /* プラスマークを表示 */
+}
+
+@keyframes floatUp {
+    0% {
+        transform: translateY(20px) scale(0.5);
+        opacity: 0;
+    }
+    20% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    100% {
+        transform: translateY(-60px) scale(1.2);
+        opacity: 0;
+    }
+}

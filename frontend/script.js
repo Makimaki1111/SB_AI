@@ -234,6 +234,9 @@ const processEvent = async (events, is_my_turn) => {
       battleState.ally.hp = Math.min(battleState.ally.maxHp, battleState.ally.hp + (e["ally_cure"] || 0));
       battleState.foe.hp = Math.min(battleState.foe.maxHp, battleState.foe.hp + (e["foe_cure"] || 0));
       ui.updateHPs(battleState.ally.hp, battleState.ally.maxHp, battleState.foe.hp, battleState.foe.maxHp);
+      // 回復エフェクト再生
+      if ((e["ally_cure"] || 0) > 0) ui.playHealEffect(true);
+      if ((e["foe_cure"] || 0) > 0) ui.playHealEffect(false);
     } else if (e["type"] === "atk_down") {
       if(e["player"] === "ally") {
         battleState.ally.atk = e["new_atk"];
@@ -258,6 +261,9 @@ const processEvent = async (events, is_my_turn) => {
       battleState.ally.hp = Math.min(battleState.ally.maxHp, battleState.ally.hp + (e["ally_cure"] || 0));
       battleState.foe.hp = Math.min(battleState.foe.maxHp, battleState.foe.hp + (e["foe_cure"] || 0));
       ui.updateHPs(battleState.ally.hp, battleState.ally.maxHp, battleState.foe.hp, battleState.foe.maxHp);
+      // ドレイン時の回復エフェクト
+      if ((e["ally_cure"] || 0) > 0) ui.playHealEffect(true);
+      if ((e["foe_cure"] || 0) > 0) ui.playHealEffect(false);
     } else if (e["type"] === "ability_trigger") {
       if (e["new_ranks"]) {
         battleState.ally.atk = e["new_ranks"]["ally_atk"];

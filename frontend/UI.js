@@ -50,6 +50,10 @@ class UI{
         this.situationAllyB = new UIObject($('#ally-B'));
         this.closeSituationModalBtn = new UIObject($('#situation-modal .close-modal'));
 
+        // --- エフェクト関連 ---
+        this.allyEffectContainer = new UIObject($('#ally-effect-container'));
+        this.foeEffectContainer = new UIObject($('#foe-effect-container'));
+
         this.allyNameText = "";
         this.foeNameText = "";
         this.isAllyPoison = false;
@@ -565,5 +569,32 @@ class UI{
         this.situationAllyB.selector.text(rankToPower(allyDef).toFixed(2) + "倍");
         this.situationFoeA.selector.text(rankToPower(foeAtk).toFixed(2) + "倍");
         this.situationFoeB.selector.text(rankToPower(foeDef).toFixed(2) + "倍");
+    }
+
+    // --- エフェクト再生メソッド ---
+    playHealEffect(isAlly) {
+        const container = isAlly ? this.allyEffectContainer.selector : this.foeEffectContainer.selector;
+        
+        // パーティクルを数個生成してふわふわさせる
+        for (let i = 0; i < 15; i++) {
+            setTimeout(() => {
+                const particle = $('<div class="heal-particle"></div>');
+                // ランダムな位置とサイズ
+                const left = Math.random() * 180 + 20;
+                const size = Math.random() * 0.8 + 0.5;
+                
+                particle.css({
+                    left: `${left}px`,
+                    bottom: '10px',
+                    transform: `scale(${size})`,
+                    animation: `floatUp 1.5s ease-out forwards`
+                });
+                
+                container.append(particle);
+                
+                // アニメーション終了後に削除
+                setTimeout(() => { particle.remove(); }, 1500);
+            }, i * 80); // 少しずつずらして出現させる
+        }
     }
 }
