@@ -1,46 +1,112 @@
 import csv
 import os
-from collections import defaultdict
+import sqlite3
+import tracemalloc
 
 class SB_info:
-    def __init__(self):
-        self.all_dict = defaultdict(set) # self.all_dict[頭文字] = set(単語一覧)の辞書
-        self.typed_dict = defaultdict(lambda:("","")) # 単語のタイプを返す辞書
+    def __init__(self, measure_memory=False):
+        if measure_memory:
+            tracemalloc.start() # メモリ計測開始
         self.typed_heads = set()
 
         # このファイル(SB_info.py)のあるディレクトリを取得
         base_dir = os.path.dirname(os.path.abspath(__file__))
         # dicフォルダへのパスを作成 (backend/dic/...)
         dic_dir = os.path.join(base_dir, "dic")
+        
+        # SQLiteデータベースのパス
+        self.db_path = os.path.join(base_dir, "dictionary.db")
+        
+        # 起動時にDBを再構築（データ更新対応のため）
+        if os.path.exists(self.db_path):
+            try:
+                os.remove(self.db_path)
+            except OSError:
+                pass # 削除できなくても、上書きまたはそのまま続行を試みる
+            
+        self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
+        
+        # --- 高速化設定 ---
+        # 起動時の大量インサートを高速化するための設定です
+        self.conn.execute("PRAGMA synchronous = OFF")
+        self.conn.execute("PRAGMA journal_mode = OFF")
+        
+        # テーブル作成: wordを主キーにして高速検索
+        self.conn.execute('''
+            CREATE TABLE IF NOT EXISTS words (
+                word TEXT PRIMARY KEY,
+                type1 TEXT,
+                type2 TEXT
+            )
+        ''')
 
         with open(os.path.join(dic_dir, "notype.csv"), 'r', encoding='utf-8-sig') as typed_file:
                 reader = csv.reader(typed_file)
-                typed_words_not_processing = list(reader)
-        for i in typed_words_not_processing:
-            word = i[0]
-            self.all_dict[word[0]].add(word) 
+                # ジェネレータ式を使ってメモリ消費を抑える
+                data = ((row[0], "", "") for row in reader if row)
+                self.conn.executemany("INSERT OR IGNORE INTO words (word, type1, type2) VALUES (?, ?, ?)", data)
        
         with open(os.path.join(dic_dir, "typed.csv"), 'r', encoding='utf-8-sig') as typed_file:
                 reader = csv.reader(typed_file)
-                typed_words_not_processing = list(reader)
-        for i in typed_words_not_processing:
-            #1個目:言葉、2個目:タイプ1、3個目:タイプ2
-            word,*types = i[0].split()
-            if(len(types) == 1):types.append("")
-            self.typed_dict[word] = tuple(types)
-            self.typed_heads.add(word[0])
+                
+                def typed_data_generator(reader_obj):
+                    for row in reader_obj:
+                        if row:
+                            word, *types = row[0].split()
+                            t1 = types[0] if len(types) > 0 else ""
+                            t2 = types[1] if len(types) > 1 else ""
+                            self.typed_heads.add(word[0])
+                            yield (word, t1, t2)
+
+                self.conn.executemany("INSERT OR REPLACE INTO words (word, type1, type2) VALUES (?, ?, ?)", typed_data_generator(reader))
+        
+        self.conn.commit()
+        
+        self.ability_rank_from_power = {
+            0.25:-6 ,   0.28:-5 ,   0.33:-4 ,   0.4:-3 ,   0.5:-2   ,   0.66:-1 ,   1.0:0 ,
+            1.5:1   ,   2.0:2     ,   2.5:3   ,   3.0:4    ,   3.5:5    ,   4.0:6
+        }
+
+        self.power_from_ability_rank = {
+            -6:0.25 ,   -5:0.28 ,   -4:0.33 ,   -3:0.4 ,   -2:0.5   ,   -1:0.66 ,   0:1.0 ,
+            1:1.5   ,   2:2.0     ,   3:2.5   ,   4:3.0    ,   5:3.5    ,   6:4.0   
+        }
+
+        if measure_memory:
+            # メモリ使用量を表示
+            current, peak = tracemalloc.get_traced_memory()
+            print(f"DB作成時のメモリ使用量: 現在 {current / 1024 / 1024:.2f} MB / ピーク {peak / 1024 / 1024:.2f} MB")
+            tracemalloc.stop()
         
     def include_in_all_words(self,word:str):
         """入力した単語が辞書に含まれているか判別します"""
-        return word in self.all_dict[word[0]]
+        # マルチスレッド対応のため、検索のたびにカーソルを作成・実行
+        cursor = self.conn.execute("SELECT 1 FROM words WHERE word = ?", (word,))
+        return cursor.fetchone() is not None
     
     def inclue_in_typed_words(self,word):
         """入力した単語がタイプ付き単語として登録されているか判定します"""
-        return word in self.typed_dict
+        # type1が空文字でないものをタイプ付きとみなす
+        cursor = self.conn.execute("SELECT 1 FROM words WHERE word = ? AND type1 != ''", (word,))
+        return cursor.fetchone() is not None
     
     def include_in_typed_heads(self, head):
         """入力された頭文字をもつタイプ付き単語が存在するか判定します"""
         return head in self.typed_heads
+
+    def get_types(self, word: str):
+        """単語のタイプを取得します"""
+        cursor = self.conn.execute("SELECT type1, type2 FROM words WHERE word = ?", (word,))
+        res = cursor.fetchone()
+        if res:
+            return res
+        return ("", "")
+
+    def get_typed_word_candidates(self, head: str):
+        """指定された文字で始まるタイプ付き単語のリスト（イテレータ）を返します"""
+        # ランダムに取得することでCPUの挙動を変化させる
+        cursor = self.conn.execute("SELECT word FROM words WHERE word LIKE ? || '%' AND type1 != '' ORDER BY RANDOM()", (head,))
+        return (row[0] for row in cursor)
     
     def get_next_initial(self, word:str) -> str:
         """
@@ -51,6 +117,8 @@ class SB_info:
         Returns:
             str: 次の頭文字
         """
+        if not word:
+            return ""
         if(word[-1] == "ゃ"):return 'や'
         if(word[-1] == "ゅ"):return 'ゆ'
         if(word[-1] == "ょ"):return 'よ'
@@ -141,24 +209,13 @@ class SB_info:
 
         return ret
 
-    #能力ランク
-    ability_rank_from_power = {
-        0.25:-6 ,   0.28:-5 ,   0.33:-4 ,   0.4:-3 ,   0.5:-2   ,   0.66:-1 ,   1.0:0 ,
-        1.5:1   ,   2.0:2     ,   2.5:3   ,   3.0:4    ,   3.5:5    ,   4.0:6
-    }
-
-    power_from_ability_rank = {
-        -6:0.25 ,   -5:0.28 ,   -4:0.33 ,   -3:0.4 ,   -2:0.5   ,   -1:0.66 ,   0:1.0 ,
-        1:1.5   ,   2:2.0     ,   3:2.5   ,   4:3.0    ,   5:3.5    ,   6:4.0   
-    }
-
     #攻撃・防御倍率を受け取り能力ランクを返す
     def power_to_rank(self, ability_value):
-        assert ability_value in self.ability_rank_from_power
-
-        return self.ability_rank_from_power[ability_value]
+        return self.ability_rank_from_power.get(ability_value, 0)
 
     def rank_to_power(self, ability_value):
-        assert ability_value in self.power_from_ability_rank
+        return self.power_from_ability_rank.get(ability_value, 1.0)
 
-        return self.power_from_ability_rank[ability_value]
+# このファイルを直接実行した時だけメモリ計測を行う
+if __name__ == "__main__":
+    SB_info(measure_memory=True)

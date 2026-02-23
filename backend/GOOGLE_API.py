@@ -9,7 +9,7 @@ class GOOGLE_AI:
     def __init__(self, sb_info: SB_info):
         # genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
         # self.model = genai.GenerativeModel("models/gemini-2.5-flash")
-        self.typed_dict = sb_info.typed_dict
+        self.sb_info = sb_info
 
     def get_type(self,text:str) -> list:
         """
@@ -40,5 +40,5 @@ class GOOGLE_AI:
             return response
         except Exception as e:
             # 使えなくなったら元々のタイプ
-            ret = self.typed_dict.get(text, ("", ""))
+            ret = self.sb_info.get_types(text)
             return [t for t in ret if t]
