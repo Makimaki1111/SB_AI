@@ -17,50 +17,68 @@ class SB_info:
         # SQLiteデータベースのパス
         self.db_path = os.path.join(dic_dir, "dictionary.db")
         
-        # 起動時にDBを再構築（データ更新対応のため）
+        self.conn = None
+        should_rebuild = True
+
+        # 既存のDBがあり、データが入っているか確認
         if os.path.exists(self.db_path):
             try:
-                os.remove(self.db_path)
-            except OSError:
-                pass # 削除できなくても、上書きまたはそのまま続行を試みる
+                self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
+                cursor = self.conn.execute("SELECT count(*) FROM words")
+                if cursor.fetchone()[0] > 0:
+                    should_rebuild = False
+                    # メモリ上のキャッシュ(typed_heads)だけ復元する
+                    cursor = self.conn.execute("SELECT word FROM words WHERE type1 != ''")
+                    for row in cursor:
+                        if row[0]:
+                            self.typed_heads.add(row[0][0])
+            except sqlite3.Error:
+                if self.conn: self.conn.close()
+                should_rebuild = True
+
+        if should_rebuild:
+            # 既存があれば削除して作り直す
+            if os.path.exists(self.db_path):
+                try:
+                    os.remove(self.db_path)
+                except OSError:
+                    pass
+
+            self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
             
-        self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
-        
-        # --- 高速化設定 ---
-        # 起動時の大量インサートを高速化するための設定です
-        self.conn.execute("PRAGMA synchronous = OFF")
-        self.conn.execute("PRAGMA journal_mode = OFF")
-        
-        # テーブル作成: wordを主キーにして高速検索
-        self.conn.execute('''
-            CREATE TABLE IF NOT EXISTS words (
-                word TEXT PRIMARY KEY,
-                type1 TEXT,
-                type2 TEXT
-            )
-        ''')
+            # --- 高速化設定 ---
+            self.conn.execute("PRAGMA synchronous = OFF")
+            self.conn.execute("PRAGMA journal_mode = OFF")
+            
+            # テーブル作成
+            self.conn.execute('''
+                CREATE TABLE IF NOT EXISTS words (
+                    word TEXT PRIMARY KEY,
+                    type1 TEXT,
+                    type2 TEXT
+                )
+            ''')
 
-        with open(os.path.join(dic_dir, "notype.csv"), 'r', encoding='utf-8-sig') as typed_file:
-                reader = csv.reader(typed_file)
-                # ジェネレータ式を使ってメモリ消費を抑える
-                data = ((row[0], "", "") for row in reader if row)
-                self.conn.executemany("INSERT OR IGNORE INTO words (word, type1, type2) VALUES (?, ?, ?)", data)
-       
-        with open(os.path.join(dic_dir, "typed.csv"), 'r', encoding='utf-8-sig') as typed_file:
-                reader = csv.reader(typed_file)
-                
-                def typed_data_generator(reader_obj):
-                    for row in reader_obj:
-                        if row:
-                            word, *types = row[0].split()
-                            t1 = types[0] if len(types) > 0 else ""
-                            t2 = types[1] if len(types) > 1 else ""
-                            self.typed_heads.add(word[0])
-                            yield (word, t1, t2)
-
-                self.conn.executemany("INSERT OR REPLACE INTO words (word, type1, type2) VALUES (?, ?, ?)", typed_data_generator(reader))
+            with open(os.path.join(dic_dir, "notype.csv"), 'r', encoding='utf-8-sig') as typed_file:
+                    reader = csv.reader(typed_file)
+                    data = ((row[0], "", "") for row in reader if row)
+                    self.conn.executemany("INSERT OR IGNORE INTO words (word, type1, type2) VALUES (?, ?, ?)", data)
         
-        self.conn.commit()
+            with open(os.path.join(dic_dir, "typed.csv"), 'r', encoding='utf-8-sig') as typed_file:
+                    reader = csv.reader(typed_file)
+                    
+                    def typed_data_generator(reader_obj):
+                        for row in reader_obj:
+                            if row:
+                                word, *types = row[0].split()
+                                t1 = types[0] if len(types) > 0 else ""
+                                t2 = types[1] if len(types) > 1 else ""
+                                self.typed_heads.add(word[0])
+                                yield (word, t1, t2)
+
+                    self.conn.executemany("INSERT OR REPLACE INTO words (word, type1, type2) VALUES (?, ?, ?)", typed_data_generator(reader))
+            
+            self.conn.commit()
         
         self.ability_rank_from_power = {
             0.25:-6 ,   0.28:-5 ,   0.33:-4 ,   0.4:-3 ,   0.5:-2   ,   0.66:-1 ,   1.0:0 ,
