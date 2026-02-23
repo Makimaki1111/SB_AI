@@ -90,7 +90,7 @@ function playEventSound(type, message){
 }
 
 function playIconSound(type){
-  console.log(type);
+  // console.log(type);
   let path = TYPE_SOUND_MAP[type];
   if(path !== undefined) playSound(path);
 }
@@ -573,7 +573,7 @@ function connectWebSocket() {
   sock.addEventListener("message", function (event) {
     const data = JSON.parse(event.data);
     data._receivedAt = Date.now(); // 受信時刻を記録して遅延補正に利用
-    console.log("WebSocket受信:", data);
+    // console.log("WebSocket受信:", data);
 
     // ルーム作成・参加前のエラー表示
     if (data.type === "error" && !battleState.roomId) {
