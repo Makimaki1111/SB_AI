@@ -85,7 +85,15 @@
     if (savedAbility) currentSelectedAbilityId = savedAbility;
 
     // ページ読み込み時に特性一覧を取得
-    fetch('http://localhost:8000/abilities')
+    let baseUrl = '';
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        // 開発環境: ポートが8000でない場合（Live Serverなど）はバックエンド(8000)を指定
+        if (window.location.port !== '8000') {
+            baseUrl = 'http://localhost:8000';
+        }
+    }
+
+    fetch(`${baseUrl}/abilities`)
         .then(res => res.json())
         .then(data => {
             allAbilities = data;
