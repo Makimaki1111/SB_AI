@@ -246,9 +246,11 @@ const processEvent = async (events, is_my_turn) => {
       battleState.ally.hp = Math.max(0, battleState.ally.hp - (e["ally_damage"] || 0));
       battleState.foe.hp = Math.max(0, battleState.foe.hp - (e["foe_damage"] || 0));
       ui.updateHPs(battleState.ally.hp, battleState.ally.maxHp, battleState.foe.hp, battleState.foe.maxHp);
-      // ダメージ点滅エフェクト
-      if ((e["ally_damage"] || 0) > 0) ui.playDamageEffect(true);
-      if ((e["foe_damage"] || 0) > 0) ui.playDamageEffect(false);
+      // ダメージ点滅エフェクト (毒ダメージの場合は点滅させない)
+      if (e["message"] !== "毒のダメージを受けた！") {
+        if ((e["ally_damage"] || 0) > 0) ui.playDamageEffect(true);
+        if ((e["foe_damage"] || 0) > 0) ui.playDamageEffect(false);
+      }
     } else if (e["type"] === "cure") {
       battleState.ally.hp = Math.min(battleState.ally.maxHp, battleState.ally.hp + (e["ally_cure"] || 0));
       battleState.foe.hp = Math.min(battleState.foe.maxHp, battleState.foe.hp + (e["foe_cure"] || 0));

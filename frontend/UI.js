@@ -60,7 +60,7 @@ class UI{
         this.isFoePoison = false;
     }
 
-    _setImageWithReplaceAndFade(selector, src, duration = 100) {
+    _setImageWithReplaceAndFade(selector, src, duration = 300) {
         if (!selector || selector.length === 0) return;
 
         // 同じ画像が表示されている場合は更新しない（点滅防止）
@@ -148,8 +148,9 @@ class UI{
 
     showAllyWord(word){
         this.allyWord.selector.text(word);
-        this.allyWord.selector.show();
+        this.allyWord.selector.stop(true, false).css('opacity', 0).show();
         this._adjustWordScale(this.allyWord.selector);
+        this.allyWord.selector.animate({ opacity: 1 }, 300);
     }
 
     // ---------- 置換: showAllyImage ----------
@@ -201,8 +202,9 @@ class UI{
 
     showFoeWord(word){
         this.foeWord.selector.text(word);
-        this.foeWord.selector.show();
+        this.foeWord.selector.stop(true, false).css('opacity', 0).show();
         this._adjustWordScale(this.foeWord.selector);
+        this.foeWord.selector.animate({ opacity: 1 }, 300);
     }
 
     // ---------- 置換: showFoeImage ----------
