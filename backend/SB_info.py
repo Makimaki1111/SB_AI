@@ -15,7 +15,7 @@ class SB_info:
         dic_dir = os.path.join(base_dir, "dic")
         
         # SQLiteデータベースのパス
-        self.db_path = os.path.join(base_dir, "dictionary.db")
+        self.db_path = os.path.join(dic_dir, "dictionary.db")
         
         # 起動時にDBを再構築（データ更新対応のため）
         if os.path.exists(self.db_path):
