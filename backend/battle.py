@@ -928,8 +928,8 @@ class Battle_info:
             タイプ (list)
         """
         # 辞書にあればそのタイプ、なければノーマル
-        if _input in self.sb_info.typed_dict:
-            types = [t for t in self.sb_info.typed_dict[_input] if t]
+        if self.sb_info.inclue_in_typed_words(_input):
+            types = [t for t in self.sb_info.get_types(_input) if t]
         else:
             types = ["ノーマル"]
             
@@ -1173,9 +1173,10 @@ class Battle_info:
         return self._make_response()
 
     def get_cpu_word(self):
-        for i in self.sb_info.typed_dict:
-            if(i and i[0] == self.character and i not in self.used):
-                return i
+        candidates = self.sb_info.get_typed_word_candidates(self.character)
+        for word in candidates:
+            if word not in self.used:
+                return word
         
         return ""
 
