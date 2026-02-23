@@ -759,6 +759,21 @@ function preloadImages() {
   });
 }
 
+// 画面サイズに合わせてスケーリングする関数
+function adjustWindowScale() {
+  const phoneBox = document.querySelector('.phone-box');
+  if (!phoneBox) return;
+
+  const originalWidth = 450;
+  const originalHeight = 720; // 450 * 1.6 (aspect-ratio 10/16)
+  
+  const scaleX = window.innerWidth / originalWidth;
+  const scaleY = window.innerHeight / originalHeight;
+  const scale = Math.min(scaleX, scaleY, 1.0); // 拡大はしない
+
+  phoneBox.style.transform = scale < 1 ? `scale(${scale})` : 'none';
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   // DOMの準備ができた後にUIインスタンスを生成
   ui = new UI();
@@ -883,4 +898,8 @@ document.addEventListener("DOMContentLoaded", () => {
     ui.hideSituationModal();
     playSound("resource/pera.mp3");
   });
+
+  // 画面リサイズ対応
+  window.addEventListener('resize', adjustWindowScale);
+  adjustWindowScale(); // 初期実行
 });
