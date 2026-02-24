@@ -97,11 +97,16 @@ function playSound(path){
     if (!path) return false;
     
     let audio;
-    // キャッシュにあればクローンして使う（同時再生対応のため）
+    // キャッシュにあればそれを使う（cloneNodeはスマホで再生できない場合があるため廃止）
+    // ※連続再生時に音が途切れる副作用があるが、再生されないよりは良い
     if (audioCache[path]) {
-        audio = audioCache[path].cloneNode();
+        audio = audioCache[path];
+        audio.pause();
+        audio.currentTime = 0;
     } else {
         audio = new Audio(path);
+        // キャッシュに追加
+        audioCache[path] = audio;
     }
 
     const p = audio.play();
@@ -198,45 +203,27 @@ function stopBGM(){
 
 // モバイルブラウザの自動再生制限対策：ユーザー操作時に音声を一瞬再生してアンロックする
 function unlockAudios() {
-    // 特にBGMと重要なSEをアンロック
-    const unlockList = [
-        "resource/silent_0_1s.mp3",
-        "resource/horizon.mp3",
-        "resource/overflow.mp3",
-        "resource/start.mp3",
-        "resource/end.mp3",
-        "resource/pera.mp3",
-        "resource/concent.mp3"
-    ];
+    // 無音ファイルのみを再生してオーディオコンテキストをアンロックする
+    // iOSなどでは volume=0 が効かずに音が漏れるため、他のファイルは再生しない
+    const path = "resource/silent_0_1s.mp3";
     
-    unlockList.forEach(path => {
-        // ★追加: 現在BGMとして再生中の曲なら、アンロック処理（再生→停止）をスキップする
-        // これにより、startBGMで再生開始されたBGMを誤って止めてしまうのを防ぐ
-        if (bgmAudio && currentBgmPath === path && !bgmAudio.paused) {
-            return;
-        }
-
-        let audio = audioCache[path];
-        if (!audio) {
-            audio = new Audio(path);
-            audio.preload = 'auto';
-            audioCache[path] = audio;
-        }
-        
-        // 再生してすぐに停止（音量0にしておくことでノイズを防ぐ）
-        const originalVolume = audio.volume;
-        audio.volume = 0;
-        const p = audio.play();
-        if (p && typeof p.then === 'function') {
-            p.then(() => {
-                audio.pause();
-                audio.currentTime = 0;
-                audio.volume = 0.45; // 音量を戻す
-            }).catch(e => {
-                // console.warn("Unlock failed for " + path, e);
-            });
-        }
-    });
+    let audio = audioCache[path];
+    if (!audio) {
+        audio = new Audio(path);
+        audio.preload = 'auto';
+        audioCache[path] = audio;
+    }
+    
+    // 再生してすぐに停止
+    const p = audio.play();
+    if (p && typeof p.then === 'function') {
+        p.then(() => {
+            audio.pause();
+            audio.currentTime = 0;
+        }).catch(e => {
+            console.warn("Unlock silent audio failed", e);
+        });
+    }
 }
 
 // 現在のURLに基づいてWebSocketの接続先を決定する
@@ -919,8 +906,9 @@ function preloadImages() {
 
 // 画面サイズに合わせてスケーリングする関数
 function adjustWindowScale() {
-  const phoneBox = document.querySelector('.phone-box');
-  if (!phoneBox) return;
+  // タイトル画面とバトル画面の両方の .phone-box を取得
+  const phoneBoxes = document.querySelectorAll('.phone-box');
+  if (phoneBoxes.length === 0) return;
 
   const originalWidth = 450;
   const originalHeight = 720; // 450 * 1.6 (aspect-ratio 10/16)
@@ -929,7 +917,9 @@ function adjustWindowScale() {
   const scaleY = (window.innerHeight * 0.96) / originalHeight;
   const scale = Math.min(scaleX, scaleY, 1.0); // 拡大はしない
 
-  phoneBox.style.transform = scale < 1 ? `scale(${scale})` : 'none';
+  phoneBoxes.forEach(box => {
+      box.style.transform = scale < 1 ? `scale(${scale})` : 'none';
+  });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
