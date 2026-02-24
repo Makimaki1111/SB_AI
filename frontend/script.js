@@ -108,6 +108,8 @@ function playSound(path){
         // キャッシュに追加
         audioCache[path] = audio;
     }
+    
+    audio.volume = 1.0; // SEは最大音量で再生
 
     const p = audio.play();
     if (p && typeof p.then === 'function') {
@@ -176,7 +178,7 @@ function startBGM(bgmPath){
     
     bgmAudio = audio;
     bgmAudio.loop = true;
-    bgmAudio.volume = 0.45;
+    bgmAudio.volume = 0.3; // BGMの音量を少し下げる
     currentBgmPath = bgmPath;
 
     const p = bgmAudio.play();
