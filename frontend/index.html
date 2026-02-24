@@ -199,8 +199,13 @@
     }
 
     // ユーザー操作時に再生を試みる（ブラウザの自動再生制限対策）
-    document.body.addEventListener('click', startTitleBGM, { once: true });
-    document.body.addEventListener('touchstart', startTitleBGM, { once: true });
+    const userInteractionHandler = () => {
+        if (typeof startTitleBGM === 'function') startTitleBGM();
+        if (typeof unlockAudios === 'function') unlockAudios();
+    };
+
+    document.body.addEventListener('click', userInteractionHandler, { once: true });
+    document.body.addEventListener('touchstart', userInteractionHandler, { once: true });
 
     // 音声ファイルのプリロード（バトル画面での遅延対策）
     const preloadAudioList = [
