@@ -174,8 +174,8 @@
         const originalWidth = 450;
         const originalHeight = 720; // 450 * 1.6 (aspect-ratio 10/16)
         
-        const scaleX = window.innerWidth / originalWidth;
-        const scaleY = window.innerHeight / originalHeight;
+        const scaleX = (window.innerWidth * 0.96) / originalWidth;
+        const scaleY = (window.innerHeight * 0.96) / originalHeight;
         const scale = Math.min(scaleX, scaleY, 1.0); // 拡大はしない
 
         phoneBox.style.transform = scale < 1 ? `scale(${scale})` : 'none';

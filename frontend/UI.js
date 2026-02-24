@@ -510,7 +510,10 @@ class UI{
     }
 
     showAbilityModal() {
-        this.abilityModal.selector.fadeIn('fast');
+        this.abilityModal.selector.css({
+            display: 'flex',
+            opacity: 0
+        }).animate({ opacity: 1 }, 'fast');
     }
 
     hideAbilityModal() {
