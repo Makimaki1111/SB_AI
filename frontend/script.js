@@ -139,15 +139,24 @@ let currentBgmPath = null;
 function startBGM(bgmPath){
   try{
     // 既にAudioがない、または違う曲が指定された場合は作り直す
-    if(!bgmAudio || currentBgmPath !== bgmPath) {
-      if(bgmAudio) {
+    if(bgmAudio && currentBgmPath !== bgmPath) {
         bgmAudio.pause();
-      }
-      bgmAudio = new Audio(bgmPath);
-      bgmAudio.loop = true;
-      bgmAudio.volume = 0.45;
-      currentBgmPath = bgmPath;
+        bgmAudio.currentTime = 0;
     }
+
+    // キャッシュから取得、なければ新規作成
+    let audio = audioCache[bgmPath];
+    if (!audio) {
+        audio = new Audio(bgmPath);
+        audio.preload = 'auto';
+        audioCache[bgmPath] = audio;
+    }
+    
+    bgmAudio = audio;
+    bgmAudio.loop = true;
+    bgmAudio.volume = 0.45;
+    currentBgmPath = bgmPath;
+
     const p = bgmAudio.play();
     if (p && typeof p.then === 'function') p.catch(e => console.warn('BGM play failed', e));
     return true;
@@ -168,6 +177,42 @@ function stopBGM(){
     console.warn('stopBGM error', e);
     return false;
   }
+}
+
+// モバイルブラウザの自動再生制限対策：ユーザー操作時に音声を一瞬再生してアンロックする
+function unlockAudios() {
+    // 特にBGMと重要なSEをアンロック
+    const unlockList = [
+        "resource/horizon.mp3",
+        "resource/overflow.mp3",
+        "resource/start.mp3",
+        "resource/end.mp3",
+        "resource/pera.mp3",
+        "resource/concent.mp3"
+    ];
+    
+    unlockList.forEach(path => {
+        let audio = audioCache[path];
+        if (!audio) {
+            audio = new Audio(path);
+            audio.preload = 'auto';
+            audioCache[path] = audio;
+        }
+        
+        // 再生してすぐに停止（音量0にしておくことでノイズを防ぐ）
+        const originalVolume = audio.volume;
+        audio.volume = 0;
+        const p = audio.play();
+        if (p && typeof p.then === 'function') {
+            p.then(() => {
+                audio.pause();
+                audio.currentTime = 0;
+                audio.volume = 0.45; // 音量を戻す
+            }).catch(e => {
+                // console.warn("Unlock failed for " + path, e);
+            });
+        }
+    });
 }
 
 // 現在のURLに基づいてWebSocketの接続先を決定する
