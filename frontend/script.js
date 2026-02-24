@@ -67,6 +67,7 @@ function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
 // 音声バッファのキャッシュ (Web Audio API用)
 const audioCache = {};
+const lastPlayTime = {}; // 重複再生防止用のタイムスタンプ記録
 
 // --- Web Audio API 制御 ---
 let audioCtx = null;
@@ -77,8 +78,8 @@ let bgmAudioElement = null; // フォールバック用（HTML5 Audio）
 let currentBgmPath = null;
 
 // 音量設定 (初期値)
-let BGM_VOLUME = 0.3;
-let SE_VOLUME = 1.0;
+let BGM_VOLUME = 0.1;
+let SE_VOLUME = 0.5;
 
 // Web Audio APIの初期化
 function initAudioContext() {
@@ -161,6 +162,15 @@ async function preloadSounds() {
 async function playSound(path){
   try {
     if (!path) return false;
+
+    // 短時間の重複再生防止 (50ms以内の連打は無視)
+    // これにより、クリックイベントの重複発火による音量増大（二重再生）を防ぐ
+    const now = Date.now();
+    if (lastPlayTime[path] && now - lastPlayTime[path] < 50) {
+        return false;
+    }
+    lastPlayTime[path] = now;
+
     initAudioContext();
     if (audioCtx.state === 'suspended') await audioCtx.resume();
     
@@ -218,9 +228,6 @@ async function startBGM(bgmPath){
         return true;
     }
 
-    // 違う曲が再生されている、または停止中の場合は既存を停止
-    stopBGM();
-
     const buffer = await loadAudio(bgmPath);
     if (!buffer) return false;
     
@@ -230,6 +237,9 @@ async function startBGM(bgmPath){
         bgmSource.buffer = buffer;
         bgmSource.loop = true;
         bgmSource.connect(bgmGainNode); // BGM用音量ノードに接続
+        
+        // 再生直前に既存のBGMを確実に停止する（ロード中の競合対策）
+        stopBGM();
         bgmSource.start(0);
     } else if (buffer instanceof HTMLAudioElement) {
         // HTML5 Audio (フォールバック)
@@ -237,6 +247,9 @@ async function startBGM(bgmPath){
         bgmAudioElement.loop = true;
         bgmAudioElement.volume = BGM_VOLUME;
         bgmAudioElement.currentTime = 0;
+        
+        // 再生直前に既存のBGMを確実に停止する
+        stopBGM();
         bgmAudioElement.play().catch(e => console.warn('BGM play failed', e));
     }
     
@@ -253,6 +266,7 @@ function stopBGM(){
     if(bgmSource){
       try {
         bgmSource.stop();
+        bgmSource.disconnect();
       } catch(e) {
         // 既に止まっている場合など
       }
