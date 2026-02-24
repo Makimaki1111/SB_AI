@@ -79,6 +79,7 @@ function preloadSounds() {
   paths.add("resource/overflow.mp3");
   paths.add("resource/concent.mp3");
   paths.add("resource/pera.mp3");
+  paths.add("resource/silent_0_1s.mp3");
 
   paths.forEach(path => {
     if (!audioCache[path]) {
@@ -183,6 +184,7 @@ function stopBGM(){
 function unlockAudios() {
     // 特にBGMと重要なSEをアンロック
     const unlockList = [
+        "resource/silent_0_1s.mp3",
         "resource/horizon.mp3",
         "resource/overflow.mp3",
         "resource/start.mp3",
