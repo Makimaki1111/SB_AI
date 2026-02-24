@@ -198,6 +198,21 @@
     // ユーザー操作時に再生を試みる（ブラウザの自動再生制限対策）
     document.body.addEventListener('click', startTitleBGM, { once: true });
     document.body.addEventListener('touchstart', startTitleBGM, { once: true });
+
+    // 音声ファイルのプリロード（バトル画面での遅延対策）
+    const preloadAudioList = [
+        "resource/horizon.mp3",
+        "resource/overflow.mp3",
+        "resource/start.mp3",
+        "resource/end.mp3",
+        "resource/pera.mp3",
+        "resource/concent.mp3"
+    ];
+    preloadAudioList.forEach(src => {
+        const audio = new Audio();
+        audio.src = src;
+        audio.preload = 'auto';
+    });
   </script>
 </body>
 </html>

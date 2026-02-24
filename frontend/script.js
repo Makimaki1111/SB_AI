@@ -64,13 +64,50 @@ let ui;
 
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
+// 音声ファイルのキャッシュ
+const audioCache = {};
+
+function preloadSounds() {
+  const paths = new Set();
+  // マップからパスを収集
+  Object.values(TYPE_SOUND_MAP).forEach(p => paths.add(p));
+  Object.values(EVENT_SOUND_MAP).forEach(p => paths.add(p));
+  Object.values(DAMAGE_MSG_MAP).forEach(p => paths.add(p));
+  
+  // 個別に指定されているBGMやSE
+  paths.add("resource/horizon.mp3");
+  paths.add("resource/overflow.mp3");
+  paths.add("resource/concent.mp3");
+  paths.add("resource/pera.mp3");
+
+  paths.forEach(path => {
+    if (!audioCache[path]) {
+        const audio = new Audio();
+        audio.src = path;
+        audio.preload = 'auto';
+        audioCache[path] = audio;
+    }
+  });
+}
+
 function playSound(path){
   try {
     if (!path) return false;
-    const audio = new Audio(path);
+    
+    let audio;
+    // キャッシュにあればクローンして使う（同時再生対応のため）
+    if (audioCache[path]) {
+        audio = audioCache[path].cloneNode();
+    } else {
+        audio = new Audio(path);
+    }
+
     const p = audio.play();
     if (p && typeof p.then === 'function') {
-      p.catch(e => console.warn('playEffectSound play failed', e));
+      p.catch(e => {
+        // 自動再生ポリシーやロードエラーで再生できない場合がある
+        // console.warn('Sound play failed', e);
+      });
     }
     return true;
   } catch (e) {
@@ -808,6 +845,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 画像のプリロードを開始
   preloadImages();
+
+  // 音声のプリロードを開始
+  preloadSounds();
 
   // 待機中BGM再生
   startBGM("resource/horizon.mp3");
