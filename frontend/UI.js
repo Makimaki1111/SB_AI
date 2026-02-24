@@ -39,7 +39,7 @@ class UI{
         this.abilityChangeCounterDisplay = new UIObject($('#counter'));
         this.abilityChangeRemainDisplay = new UIObject($('#remain'));
         this.abilityModal = new UIObject($('#ability-modal'));
-        this.closeAbilityModalBtn = new UIObject($('.close-modal')); // "とじる" ボタン
+        this.closeAbilityModalBtn = new UIObject($('#ability-modal .close-modal')); // "とじる" ボタン
         this.skillsList = new UIObject($('#skills')); // 選択可能な特性アイコンのコンテナ
 
         // --- 状況モーダル関連 ---
