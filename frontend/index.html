@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>しりとりの対戦バトル</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
   <!-- タイトル画面 -->
@@ -86,7 +89,8 @@
 
     // ページ読み込み時に特性一覧を取得
     let baseUrl = '';
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    const hostname = window.location.hostname;
+    if (!hostname || window.location.protocol === 'file:' || hostname === 'localhost' || hostname === '127.0.0.1') {
         // 開発環境: ポートが8000でない場合（Live Serverなど）はバックエンド(8000)を指定
         if (window.location.port !== '8000') {
             baseUrl = 'http://localhost:8000';
@@ -174,8 +178,8 @@
         const originalWidth = 450;
         const originalHeight = 720; // 450 * 1.6 (aspect-ratio 10/16)
         
-        const scaleX = window.innerWidth / originalWidth;
-        const scaleY = window.innerHeight / originalHeight;
+        const scaleX = (window.innerWidth * 0.96) / originalWidth;
+        const scaleY = (window.innerHeight * 0.96) / originalHeight;
         const scale = Math.min(scaleX, scaleY, 1.0); // 拡大はしない
 
         phoneBox.style.transform = scale < 1 ? `scale(${scale})` : 'none';
@@ -183,6 +187,48 @@
 
     window.addEventListener('resize', adjustWindowScale);
     adjustWindowScale(); // 初期実行
+
+    // タイトル画面BGM再生
+    let titleBgm = null;
+    function startTitleBGM() {
+        if (titleBgm) return;
+        titleBgm = new Audio('resource/horizon.mp3');
+        titleBgm.loop = true;
+        titleBgm.volume = 0.45;
+        titleBgm.play().catch(e => console.log("BGM自動再生ブロック:", e));
+    }
+
+    // ユーザー操作時に再生を試みる（ブラウザの自動再生制限対策）
+    document.body.addEventListener('click', startTitleBGM, { once: true });
+    document.body.addEventListener('touchstart', startTitleBGM, { once: true });
+
+    // 音声ファイルのプリロード（バトル画面での遅延対策）
+    const preloadAudioList = [
+        "resource/horizon.mp3",
+        "resource/overflow.mp3",
+        "resource/start.mp3",
+        "resource/end.mp3",
+        "resource/pera.mp3",
+        "resource/concent.mp3",
+        // 戦闘用SE・タイプ別SE
+        "resource/normal.mp3", "resource/animal.mp3", "resource/plant.mp3", "resource/place.mp3",
+        "resource/emote.mp3", "resource/art.mp3", "resource/food.mp3", "resource/violence.mp3",
+        "resource/health.mp3", "resource/body.mp3", "resource/mech.mp3", "resource/science.mp3",
+        "resource/time.mp3", "resource/person.mp3", "resource/work.mp3", "resource/cloth.mp3",
+        "resource/society.mp3", "resource/play.mp3", "resource/bug.mp3", "resource/math.mp3",
+        "resource/insult.mp3", "resource/religion.mp3", "resource/sports.mp3", "resource/weather.mp3",
+        "resource/tale.mp3",
+        "resource/heal.mp3", "resource/down.mp3", "resource/up.mp3", "resource/seed_damage.mp3",
+        "resource/effective.mp3", "resource/middmg.mp3", "resource/noneffective.mp3", "resource/seeded.mp3"
+    ];
+    // ガベージコレクションで読み込みが中断されないようにグローバル変数に保持
+    window.preloadedAudios = [];
+    preloadAudioList.forEach(src => {
+        const audio = new Audio();
+        audio.src = src;
+        audio.preload = 'auto';
+        window.preloadedAudios.push(audio);
+    });
   </script>
 </body>
 </html>

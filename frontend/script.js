@@ -64,13 +64,50 @@ let ui;
 
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
+// 音声ファイルのキャッシュ
+const audioCache = {};
+
+function preloadSounds() {
+  const paths = new Set();
+  // マップからパスを収集
+  Object.values(TYPE_SOUND_MAP).forEach(p => paths.add(p));
+  Object.values(EVENT_SOUND_MAP).forEach(p => paths.add(p));
+  Object.values(DAMAGE_MSG_MAP).forEach(p => paths.add(p));
+  
+  // 個別に指定されているBGMやSE
+  paths.add("resource/horizon.mp3");
+  paths.add("resource/overflow.mp3");
+  paths.add("resource/concent.mp3");
+  paths.add("resource/pera.mp3");
+
+  paths.forEach(path => {
+    if (!audioCache[path]) {
+        const audio = new Audio();
+        audio.src = path;
+        audio.preload = 'auto';
+        audioCache[path] = audio;
+    }
+  });
+}
+
 function playSound(path){
   try {
     if (!path) return false;
-    const audio = new Audio(path);
+    
+    let audio;
+    // キャッシュにあればクローンして使う（同時再生対応のため）
+    if (audioCache[path]) {
+        audio = audioCache[path].cloneNode();
+    } else {
+        audio = new Audio(path);
+    }
+
     const p = audio.play();
     if (p && typeof p.then === 'function') {
-      p.catch(e => console.warn('playEffectSound play failed', e));
+      p.catch(e => {
+        // 自動再生ポリシーやロードエラーで再生できない場合がある
+        // console.warn('Sound play failed', e);
+      });
     }
     return true;
   } catch (e) {
@@ -97,13 +134,19 @@ function playIconSound(type){
 
 // --- BGM 制御 ---
 let bgmAudio = null;
+let currentBgmPath = null;
 
 function startBGM(bgmPath){
   try{
-    if(!bgmAudio) {
+    // 既にAudioがない、または違う曲が指定された場合は作り直す
+    if(!bgmAudio || currentBgmPath !== bgmPath) {
+      if(bgmAudio) {
+        bgmAudio.pause();
+      }
       bgmAudio = new Audio(bgmPath);
       bgmAudio.loop = true;
       bgmAudio.volume = 0.45;
+      currentBgmPath = bgmPath;
     }
     const p = bgmAudio.play();
     if (p && typeof p.then === 'function') p.catch(e => console.warn('BGM play failed', e));
@@ -211,6 +254,7 @@ const onMadeRoom = async (data) => {
   }
 
   ui.showMessage("マッチングした！")
+  playEventSound("start", "");
   startBGM("resource/overflow.mp3");
   await sleep(1500);
   if(data["state"]["is_my_turn"] === true){
@@ -767,8 +811,8 @@ function adjustWindowScale() {
   const originalWidth = 450;
   const originalHeight = 720; // 450 * 1.6 (aspect-ratio 10/16)
   
-  const scaleX = window.innerWidth / originalWidth;
-  const scaleY = window.innerHeight / originalHeight;
+  const scaleX = (window.innerWidth * 0.96) / originalWidth;
+  const scaleY = (window.innerHeight * 0.96) / originalHeight;
   const scale = Math.min(scaleX, scaleY, 1.0); // 拡大はしない
 
   phoneBox.style.transform = scale < 1 ? `scale(${scale})` : 'none';
@@ -801,6 +845,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 画像のプリロードを開始
   preloadImages();
+
+  // 音声のプリロードを開始
+  preloadSounds();
+
+  // 待機中BGM再生
+  startBGM("resource/horizon.mp3");
 
   // BGM ボタン初期化: 同じ id が複数ある場合もあるので querySelectorAll で全てにバインド
   try {
