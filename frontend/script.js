@@ -54,6 +54,7 @@ const TURN_TIME_LIMIT = 20; // 秒（バックエンドの設定と合わせる�
 const battleState = {
   roomId: null,
   isVsCpu: false,
+  mode: null, // 'player', 'cpu', 'room'
   character: "",
   ally: { hp: 0, maxHp: 0, atk: 0, def: 0, ability: '', abilityChangeCount: 0, is_poison: false },
   foe: { hp: 0, maxHp: 0, atk: 0, def: 0, ability: '', abilityChangeCount: 0, is_poison: false },
@@ -139,11 +140,26 @@ let currentBgmPath = null;
 
 function startBGM(bgmPath){
   try{
-    // 既にAudioがない、または違う曲が指定された場合は作り直す
-    if(bgmAudio && currentBgmPath !== bgmPath) {
+    // 同じ曲が既に再生中なら何もしない
+    if(bgmAudio && currentBgmPath === bgmPath && !bgmAudio.paused) {
+        return true;
+    }
+
+    // 違う曲が再生されている、または停止中の場合は既存を停止
+    if(bgmAudio) {
         bgmAudio.pause();
         bgmAudio.currentTime = 0;
     }
+
+    // ★追加対策: キャッシュにある主要なBGMを名指しで強制停止する
+    // bgmAudioの参照がずれていても、実体を確実に止めるため
+    const bgmList = ["resource/horizon.mp3", "resource/overflow.mp3"];
+    bgmList.forEach(path => {
+        if (path !== bgmPath && audioCache[path]) {
+            audioCache[path].pause();
+            audioCache[path].currentTime = 0;
+        }
+    });
 
     // キャッシュから取得、なければ新規作成
     let audio = audioCache[bgmPath];
@@ -194,6 +210,12 @@ function unlockAudios() {
     ];
     
     unlockList.forEach(path => {
+        // ★追加: 現在BGMとして再生中の曲なら、アンロック処理（再生→停止）をスキップする
+        // これにより、startBGMで再生開始されたBGMを誤って止めてしまうのを防ぐ
+        if (bgmAudio && currentBgmPath === path && !bgmAudio.paused) {
+            return;
+        }
+
         let audio = audioCache[path];
         if (!audio) {
             audio = new Audio(path);
@@ -237,6 +259,7 @@ const websock_server = `${protocol}//${host}/ws`;
 let sock = null;
 let reconnectInterval = null;
 let isDisconnected = false;
+let isManualClose = false;
 
 // onAccepted が実行中かどうかを示すフラグ
 let isProcessingAccepted = false;
@@ -244,6 +267,7 @@ let isProcessingAccepted = false;
 let pendingAcceptedQueue = [];
 
 const initializeBattleScreen = () => {
+  ui.showBattleScreen();
   ui.showMessage();
   ui.hidePreImg();
   ui.hideAllyImage();
@@ -260,6 +284,7 @@ const initializeBattleScreen = () => {
   ui.stopTimer();
 
   battleState.roomId = null;
+  battleState.character = "";
   battleState.character = "";
 }
 
@@ -463,6 +488,23 @@ const onAllyLose = () => {
   ui.stopTimer();
 }
 
+const backToTitle = () => {
+  isManualClose = true;
+  if (sock) {
+    sock.close();
+    sock = null;
+  }
+  ui.showTitleScreen();
+  ui.hideBackToTitleBtn();
+  
+  // メッセージ類をリセット
+  ui.hideMessage();
+  ui.hideWaitMessage();
+  ui.hideModalMessage();
+
+  startBGM("resource/horizon.mp3");
+}
+
 const onOpponentDisconnected = (data) => {
   stopBGM();
   playEventSound("end", "");
@@ -622,7 +664,19 @@ const onError = (data) => {
 }
 
 // WebSocket接続とイベントリスナー登録
-function connectWebSocket() {
+window.startBattle = function(mode, roomId = null) {
+  battleState.mode = mode;
+  if (mode === 'player' || mode === 'room') {
+    battleState.isVsCpu = false;
+  } else if (mode === 'cpu') {
+    battleState.isVsCpu = true;
+  }
+  
+  initializeBattleScreen();
+  connectWebSocket(mode, roomId);
+}
+
+function connectWebSocket(mode, roomId) {
   // 既に接続があれば切断
   if (sock && sock.readyState === WebSocket.OPEN) {
     sock.close();
@@ -632,11 +686,6 @@ function connectWebSocket() {
 
   sock.addEventListener("open", function () {
     console.log("WebSocket接続が開かれました");
-
-    // 接続が確立したらバトル開始メッセージを送信
-    const urlParams = new URLSearchParams(window.location.search);
-    const mode = urlParams.get('mode');
-    const roomId = urlParams.get('roomId');
 
     // ユーザー情報を送信
     const name = localStorage.getItem("sb_username");
@@ -657,7 +706,13 @@ function connectWebSocket() {
     } else if (mode === 'cpu') {
       sendMakeNewBattle(player1_id, cpu_id);
     } else if (mode === 'room') {
-      sendJoinPrivateRoom(player1_id, roomId);
+      if (roomId) {
+          sendJoinPrivateRoom(player1_id, roomId);
+      } else {
+          // バックエンドが create_private_room に対応していない可能性があるため、
+          // 以前の仕様に合わせて join_private_room に空のIDを送ることで作成リクエストとする
+          sendJoinPrivateRoom(player1_id, "");
+      }
     }
   });
 
@@ -669,7 +724,7 @@ function connectWebSocket() {
     // ルーム作成・参加前のエラー表示
     if (data.type === "error" && !battleState.roomId) {
       alert(data.message);
-      window.location.href = "index.html";
+      backToTitle();
       return;
     }
 
@@ -705,25 +760,37 @@ function connectWebSocket() {
   sock.addEventListener("close", function () {
     console.log("WebSocket接続が閉じられました");
     isDisconnected = true;
-    stopBGM();
+    
+    // 意図的な切断でない場合のみBGMを停止
+    if (!isManualClose) stopBGM();
+    
     // ゲームが終了しておらず、意図しない切断だった場合にメッセージを表示してリダイレクト
-    if (battleState.ally.hp > 0 && battleState.foe.hp > 0) {
-        alert("サーバーとの接続が切れました。タイトル画面に戻ります。");
-        window.location.href = "index.html";
+    if (!isManualClose && battleState.ally.hp > 0 && battleState.foe.hp > 0) {
+        // alert("サーバーとの接続が切れました。タイトル画面に戻ります。");
+        backToTitle();
     }
+    isManualClose = false;
   });
   
   /*
   sock.addEventListener("error", function (e) {
     console.error("WebSocketエラー:", e);
     ui.showTitleScreen();
-    ui.hideBackToTitleBtn();
-    initializeBattleScreen();
     isDisconnected = true;
-    alert("エラーが発生しました。タイトル画面に戻ります。");
+    // alert("エラーが発生しました。タイトル画面に戻ります。");
     startReconnectAttempt();
   });
   */
+}
+
+// プライベートルーム作成用関数を追加
+function sendCreatePrivateRoom(player_id) {
+    if (sock && sock.readyState === WebSocket.OPEN) {
+        sock.send(JSON.stringify({
+            type: "create_private_room", // バックエンドがこれに対応している必要あり
+            info: { player_id: player_id }
+        }));
+    }
 }
 
 function sendFindMatch(player_id) {
@@ -869,26 +936,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // DOMの準備ができた後にUIインスタンスを生成
   ui = new UI();
 
-  // URLから対戦モードを取得して battleState を設定
-  const urlParams = new URLSearchParams(window.location.search);
-  const mode = urlParams.get('mode');
-
-  if (mode === 'player' || mode === 'room') {
-    battleState.isVsCpu = false;
-  } else if (mode === 'cpu') {
-    battleState.isVsCpu = true;
-  } else {
-    alert("対戦モードが指定されていません。タイトルに戻ります。");
-    // index.htmlのパスは環境に合わせて調整してください
-    window.location.href = "index.html";
-    return;
-  }
-
-  // 画面を初期化
-  initializeBattleScreen();
-  
-  // WebSocket接続を開始 (この中でバトル開始メッセージが送られる)
-  connectWebSocket();
+  // 初期状態はタイトル画面を表示
+  ui.showTitleScreen();
 
   // 画像のプリロードを開始
   preloadImages();
@@ -912,6 +961,10 @@ document.addEventListener("DOMContentLoaded", () => {
   } catch (e) {
     console.warn('BGM init failed', e);
   }
+
+  ui.backToTitleBtn.onClick(() => {
+      backToTitle();
+  });
 
   // エンターで送信
   ui.input.selector.on("keydown", (e) => {
@@ -955,7 +1008,7 @@ document.addEventListener("DOMContentLoaded", () => {
   ui.cancelBtn.onClick(() => {
     if (confirm("本当ににげますか？")) {
       sendRunAway(battleState.roomId, player1_id);
-      window.location.href = "index.html";
+      backToTitle();
     }
   });
 

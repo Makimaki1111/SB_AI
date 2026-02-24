@@ -4,6 +4,7 @@ class UI{
         this.battleScreen = new UIObject($('#battle-screen'));
         this.vsPlayerBtn = new UIObject($('#vs-player-btn'));
         this.vsCpuBtn = new UIObject($('#vs-cpu-btn'));
+        this.createRoomBtn = new UIObject($('#create-room-btn'));
         this.input = new UIObject($('#input'));
         this.submitButton = new UIObject($('#submit'));
         
@@ -58,6 +59,16 @@ class UI{
         this.foeNameText = "";
         this.isAllyPoison = false;
         this.isFoePoison = false;
+    }
+
+    showTitleScreen() {
+        this.battleScreen.hide();
+        this.titleScreen.show();
+    }
+
+    showBattleScreen() {
+        this.titleScreen.hide();
+        this.battleScreen.selector.css('display', 'flex'); // Flexboxレイアウトを維持
     }
 
     _setImageWithReplaceAndFade(selector, src, duration = 300) {
@@ -384,6 +395,7 @@ class UI{
         const el = this.backToTitleBtn.selector;
         // display のみ切り替え、見た目は CSS の初期スタイルに任せる
         el.removeClass('bt-visible');
+        el.css('display', 'inline-block'); // show()だとblockになる可能性があるため
         el.show();
         // 少し遅延してクラスを付与（トランジション発火）
         setTimeout(() => {
