@@ -218,10 +218,13 @@
         "resource/heal.mp3", "resource/down.mp3", "resource/up.mp3", "resource/seed_damage.mp3",
         "resource/effective.mp3", "resource/middmg.mp3", "resource/noneffective.mp3", "resource/seeded.mp3"
     ];
+    // ガベージコレクションで読み込みが中断されないようにグローバル変数に保持
+    window.preloadedAudios = [];
     preloadAudioList.forEach(src => {
         const audio = new Audio();
         audio.src = src;
         audio.preload = 'auto';
+        window.preloadedAudios.push(audio);
     });
   </script>
 </body>
