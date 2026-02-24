@@ -558,6 +558,8 @@ html, body {
   align-items: center;
   gap: 10px;
   cursor: pointer;
+  font-family: "M PLUS 1p", sans-serif;
+  font-weight: 700;
 }
 
 #ability-info-container p {
