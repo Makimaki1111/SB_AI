@@ -73,6 +73,7 @@ let audioCtx = null;
 let bgmGainNode = null;
 let seGainNode = null;
 let bgmSource = null;
+let bgmAudioElement = null; // フォールバック用（HTML5 Audio）
 let currentBgmPath = null;
 
 // 音量設定 (初期値)
@@ -103,6 +104,10 @@ window.setBGMVolume = function(val) {
         // ノイズ防止のため少し時間をかけて滑らかに変更
         bgmGainNode.gain.setTargetAtTime(val, audioCtx.currentTime, 0.1);
     }
+    // HTML5 Audio (フォールバック時)
+    if (bgmAudioElement) {
+        bgmAudioElement.volume = val;
+    }
 };
 
 window.setSEVolume = function(val) {
@@ -123,8 +128,14 @@ async function loadAudio(path) {
         audioCache[path] = audioBuffer;
         return audioBuffer;
     } catch (e) {
-        console.warn(`Failed to load audio: ${path}`, e);
-        return null;
+        console.warn(`Web Audio API load failed, falling back to HTML5 Audio: ${path}`, e);
+        // フォールバック: HTML5 Audio オブジェクトを生成して返す
+        // (file:// プロトコルなどで fetch が CORS エラーになる場合の対策)
+        return new Promise((resolve) => {
+            const audio = new Audio(path);
+            audioCache[path] = audio;
+            resolve(audio);
+        });
     }
 }
 
@@ -156,11 +167,20 @@ async function playSound(path){
     const buffer = await loadAudio(path);
     if (!buffer) return false;
 
-    const source = audioCtx.createBufferSource();
-    source.buffer = buffer;
-    source.connect(seGainNode); // SE用音量ノードに接続
-    source.start(0);
-    
+    if (buffer instanceof AudioBuffer) {
+        // Web Audio API
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(seGainNode); // SE用音量ノードに接続
+        source.start(0);
+    } else if (buffer instanceof HTMLAudioElement) {
+        // HTML5 Audio (フォールバック)
+        // SEは重ねて再生したいので cloneNode する
+        const audio = buffer.cloneNode();
+        audio.volume = SE_VOLUME;
+        audio.play().catch(e => console.warn('HTML5 Audio play failed', e));
+    }
+
     return true;
   } catch (e) {
     console.warn('playEffectSound error', e);
@@ -192,7 +212,9 @@ async function startBGM(bgmPath){
     if (audioCtx.state === 'suspended') await audioCtx.resume();
 
     // 同じ曲が既に再生中なら何もしない
-    if(bgmSource && currentBgmPath === bgmPath) {
+    if(bgmSource && currentBgmPath === bgmPath) return true;
+    // フォールバック時のチェック
+    if(bgmAudioElement && currentBgmPath === bgmPath && !bgmAudioElement.paused) {
         return true;
     }
 
@@ -202,11 +224,21 @@ async function startBGM(bgmPath){
     const buffer = await loadAudio(bgmPath);
     if (!buffer) return false;
     
-    bgmSource = audioCtx.createBufferSource();
-    bgmSource.buffer = buffer;
-    bgmSource.loop = true;
-    bgmSource.connect(bgmGainNode); // BGM用音量ノードに接続
-    bgmSource.start(0);
+    if (buffer instanceof AudioBuffer) {
+        // Web Audio API
+        bgmSource = audioCtx.createBufferSource();
+        bgmSource.buffer = buffer;
+        bgmSource.loop = true;
+        bgmSource.connect(bgmGainNode); // BGM用音量ノードに接続
+        bgmSource.start(0);
+    } else if (buffer instanceof HTMLAudioElement) {
+        // HTML5 Audio (フォールバック)
+        bgmAudioElement = buffer;
+        bgmAudioElement.loop = true;
+        bgmAudioElement.volume = BGM_VOLUME;
+        bgmAudioElement.currentTime = 0;
+        bgmAudioElement.play().catch(e => console.warn('BGM play failed', e));
+    }
     
     currentBgmPath = bgmPath;
     return true;
@@ -226,6 +258,13 @@ function stopBGM(){
       }
       bgmSource = null;
     }
+    // HTML5 Audio の停止
+    if(bgmAudioElement){
+        bgmAudioElement.pause();
+        bgmAudioElement.currentTime = 0;
+        bgmAudioElement = null;
+    }
+
     currentBgmPath = null;
     return true;
   } catch(e){
