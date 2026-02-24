@@ -108,6 +108,8 @@ function playSound(path){
         // キャッシュに追加
         audioCache[path] = audio;
     }
+    
+    audio.volume = 1.0; // SEは最大音量で再生
 
     const p = audio.play();
     if (p && typeof p.then === 'function') {
@@ -176,7 +178,7 @@ function startBGM(bgmPath){
     
     bgmAudio = audio;
     bgmAudio.loop = true;
-    bgmAudio.volume = 0.45;
+    bgmAudio.volume = 0.3; // BGMの音量を少し下げる
     currentBgmPath = bgmPath;
 
     const p = bgmAudio.play();
@@ -202,17 +204,10 @@ function stopBGM(){
 }
 
 // モバイルブラウザの自動再生制限対策：ユーザー操作時に音声を一瞬再生してアンロックする
-function unlockAudios() {
-    // 特にBGMと重要なSEをアンロック
-    const unlockList = [
-        "resource/silent_0_1s.mp3",
-        "resource/horizon.mp3",
-        "resource/overflow.mp3",
-        "resource/start.mp3",
-        "resource/end.mp3",
-        "resource/pera.mp3",
-        "resource/concent.mp3"
-    ];
+function unlockAudioContext() {
+    // 無音ファイルのみを再生してオーディオコンテキストをアンロックする
+    // iOSなどでは volume=0 が効かずに音が漏れるため、他のファイルは再生しない
+    const path = "resource/silent_0_1s.mp3";
     
     unlockList.forEach(path => {
         // ★追加: 現在BGMとして再生中の曲なら、アンロック処理（再生→停止）をスキップする

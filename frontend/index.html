@@ -296,40 +296,11 @@
     // ユーザー操作時に再生を試みる（ブラウザの自動再生制限対策）
     const userInteractionHandler = () => {
         if (typeof startBGM === 'function') startBGM('resource/horizon.mp3');
-        if (typeof unlockAudios === 'function') unlockAudios();
+        if (typeof unlockAudioContext === 'function') unlockAudioContext();
     };
 
     document.body.addEventListener('click', userInteractionHandler, { once: true });
     document.body.addEventListener('touchstart', userInteractionHandler, { once: true });
-
-    // 音声ファイルのプリロード（バトル画面での遅延対策）
-    const preloadAudioList = [
-        "resource/silent_0_1s.mp3",
-        "resource/horizon.mp3",
-        "resource/overflow.mp3",
-        "resource/start.mp3",
-        "resource/end.mp3",
-        "resource/pera.mp3",
-        "resource/concent.mp3",
-        // 戦闘用SE・タイプ別SE
-        "resource/normal.mp3", "resource/animal.mp3", "resource/plant.mp3", "resource/place.mp3",
-        "resource/emote.mp3", "resource/art.mp3", "resource/food.mp3", "resource/violence.mp3",
-        "resource/health.mp3", "resource/body.mp3", "resource/mech.mp3", "resource/science.mp3",
-        "resource/time.mp3", "resource/person.mp3", "resource/work.mp3", "resource/cloth.mp3",
-        "resource/society.mp3", "resource/play.mp3", "resource/bug.mp3", "resource/math.mp3",
-        "resource/insult.mp3", "resource/religion.mp3", "resource/sports.mp3", "resource/weather.mp3",
-        "resource/tale.mp3",
-        "resource/heal.mp3", "resource/down.mp3", "resource/up.mp3", "resource/seed_damage.mp3",
-        "resource/effective.mp3", "resource/middmg.mp3", "resource/noneffective.mp3", "resource/seeded.mp3"
-    ];
-    // ガベージコレクションで読み込みが中断されないようにグローバル変数に保持
-    window.preloadedAudios = [];
-    preloadAudioList.forEach(src => {
-        const audio = new Audio();
-        audio.src = src;
-        audio.preload = 'auto';
-        window.preloadedAudios.push(audio);
-    });
   </script>
 </body>
 </html>
