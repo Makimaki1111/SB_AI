@@ -8,6 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700;800&display=swap" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="type_to_image.js"></script>
+  <script src="UIObject.js"></script>
+  <script src="UI.js"></script>
+  <script src="script.js"></script>
 </head>
 <body>
   <!-- タイトル画面 -->
@@ -17,15 +22,88 @@
         <p>機能を色々追加したい</p>
         <h1>しりとりの対戦バトル (β版)</h1>
         <!-- ボタンをbattle.htmlへのリンクに変更 -->
-        <a href="battle.html?mode=player" id="vs-player-btn">ランダムマッチ</a>
-        <a href="battle.html?mode=cpu" id="vs-cpu-btn">コンピュータ戦</a>
+        <a id="vs-player-btn">ランダムマッチ</a>
+        <a id="vs-cpu-btn">コンピュータ戦</a>
         <hr style="width: 80%; border-top: 1px solid #ccc; margin: 1rem 0;">
-        <a href="battle.html?mode=room" id="create-room-btn">ルーム作成</a>
+        <a id="create-room-btn">ルーム作成</a>
         <div style="display: flex; gap: 8px; align-items: center; width: 72%; max-width: 340px; margin-top: 8px;">
           <input type="text" id="room-id-input" placeholder="ルームID" style="flex-grow: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem;">
           <button id="join-room-btn" style="padding: 10px 16px; border-radius: 8px; border: none; background-color: #4CAF50; color: white; font-size: 1rem; cursor: pointer;">参加する</button>
         </div>
         <button id="settings-btn" style="width: 72%; max-width: 340px; padding: 14px 22px; font-size: 1.4rem; font-weight: 700; border-radius: 12px; border: none; background: #ddd; color: #222; box-shadow: 0 6px 12px rgba(0,0,0,0.12); cursor: pointer;">設定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- バトル画面 (初期非表示) -->
+  <div id="battle-screen" style="display: none;">
+    <div class="phone-box">
+      <div class="top-image">
+        <img src="img/ground.jpg" alt="背景画像" />
+
+        <!-- 白い楕円（左下） -->
+        <div class="ellipse ellipse-left"></div>
+
+        <!-- 右下ふきだし -->
+        <div class="balloon right">
+          <div class="ally-name"></div>
+          <div class="bar"><div class="ally-hp-bar"></div></div>
+          <div class="hp"></div>
+        </div>
+
+        <!-- エフェクト用コンテナ (キャラの背後に表示するため z-index を調整) -->
+        <div id="ally-effect-container" class="effect-container"></div>
+        <div id="foe-effect-container" class="effect-container"></div>
+
+        <img id="ally-type1-img" src=""/>
+        <img id="ally-type2-img" src=""/>
+        <img id="ally-only-type-img" src=""/>
+        <div class="ally-word"></div>
+
+        <!-- 白い楕円（右上） -->
+        <div class="ellipse ellipse-right"></div>
+
+        <!-- 左上ふきだし -->
+        <div class="balloon left">
+          <div class="foe-name"></div>
+          <div class="bar"><div class="foe-hp-bar"></div></div>
+          <div class="hp"></div>
+        </div>
+
+        <img id="foe-type1-img" src=""/>
+        <img id="foe-type2-img" src=""/>
+        <img id="foe-only-type-img" src=""/>
+        <div class="foe-word"></div>
+      </div>
+
+      <div class="content">
+        <!-- アクションエリア: タイマー、メッセージ、入力 -->
+        <div class="action-area">
+          <div class="input-wrapper">
+            <div id="timer-container"><div id="timer-bar"></div></div>
+            <div id="text">
+              <input type="text" id="input" autocomplete="off" placeholder="「」からはじまることば" />
+              <button type="submit" id="submit">▶</button>
+              <img id="include-img" src="" alt="動的画像" />
+            </div>
+            <div id="message"></div>
+            <div id="wait-message"></div>
+          </div>
+          <!-- アクションボタンエリア -->
+          <div id="actions-wrapper">
+            <div id="situation-button" class="button">
+              <p>じょうきょう</p>
+            </div>
+            <div id="ability-info-container">
+              <p>とくせい</p>
+            </div>
+          </div>
+        </div>
+        <a id="back-to-title-btn" style="display:none;">タイトルに戻る</a>
+        <!-- フッターエリア: ボタン類 -->
+        <div class="footer-area">
+          <button id="cancel-battle-btn">にげる</button>
+        </div>
       </div>
     </div>
   </div>
@@ -61,7 +139,47 @@
     </div>
   </div>
 
-  <script src="type_to_image.js"></script>
+  <!-- 特性選択モーダル -->
+  <div id="ability-modal" style="display: none;">
+    <!-- 特性変更時などに表示するモーダルメッセージ -->
+    <div id="modal-message"></div>
+    <div id="ally-tokusei">
+        <span>自分</span>
+        <div class="tokusei-name" id="ally-current-ability-name">---</div>
+        <div class="tokusei-desc" id="ally-current-ability-desc"></div>
+    </div>
+    <div id="foe-tokusei">
+        <span>相手</span>
+        <div class="tokusei-name" id="foe-current-ability-name">---</div>
+        <div class="tokusei-desc" id="foe-current-ability-desc"></div>
+    </div>
+    <div id="middle">
+        <span class="tapto">タップしてとくせいを変える<span id="counter">(あと<span id="remain">0</span>回)</span></span>
+        <div id="skills">
+            <!-- ここにJavaScriptで選択可能な特性のリストが生成されます -->
+        </div>
+    </div>
+    <div class="close-modal">とじる</div>
+  </div>
+  <!-- 状況確認モーダル -->
+  <div id="situation-modal" style="display: none;">
+    <div id="s-foe-info">
+        <h3>あいて<span id="foe-rank"></span></h3>
+        <p>こうげき<br><span id="foe-A">1.0倍</span></p>
+        <p>ぼうぎょ<br><span id="foe-B">1.0倍</span></p>
+    </div>
+    <div id="s-ally-info">
+        <h3>じぶん<span id="ally-rank"></span></h3>
+        <p>こうげき<br><span id="ally-A">1.0倍</span></p>
+        <p>ぼうぎょ<br><span id="ally-B">1.0倍</span></p>
+    </div>
+
+    <div id="last-foe-word"></div>
+    <div class="types"></div>
+    <div class="will-damaged"></div>
+    <div class="close-modal">とじる</div>
+  </div>
+
   <script>
     // 本番環境（localhost以外）ではランダムマッチボタンを非表示にする
     if (window.location.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
@@ -161,46 +279,23 @@
         if (reRender) renderAbilities();
     }
 
+    // バトル開始ボタンのイベントリスナー
+    document.getElementById('vs-player-btn').addEventListener('click', () => startBattle('player'));
+    document.getElementById('vs-cpu-btn').addEventListener('click', () => startBattle('cpu'));
+    document.getElementById('create-room-btn').addEventListener('click', () => startBattle('room', null));
+
     document.getElementById('join-room-btn').addEventListener('click', () => {
         const roomId = document.getElementById('room-id-input').value;
         if (roomId && roomId.trim() !== '') {
-            window.location.href = `battle.html?mode=room&roomId=${roomId.trim()}`;
+            startBattle('room', roomId.trim());
         } else {
             alert('ルームIDを入力してください。');
         }
     });
 
-    // 画面サイズに合わせてスケーリングする関数
-    function adjustWindowScale() {
-        const phoneBox = document.querySelector('.phone-box');
-        if (!phoneBox) return;
-
-        const originalWidth = 450;
-        const originalHeight = 720; // 450 * 1.6 (aspect-ratio 10/16)
-        
-        const scaleX = (window.innerWidth * 0.96) / originalWidth;
-        const scaleY = (window.innerHeight * 0.96) / originalHeight;
-        const scale = Math.min(scaleX, scaleY, 1.0); // 拡大はしない
-
-        phoneBox.style.transform = scale < 1 ? `scale(${scale})` : 'none';
-    }
-
-    window.addEventListener('resize', adjustWindowScale);
-    adjustWindowScale(); // 初期実行
-
-    // タイトル画面BGM再生
-    let titleBgm = null;
-    function startTitleBGM() {
-        if (titleBgm) return;
-        titleBgm = new Audio('resource/horizon.mp3');
-        titleBgm.loop = true;
-        titleBgm.volume = 0.45;
-        titleBgm.play().catch(e => console.log("BGM自動再生ブロック:", e));
-    }
-
     // ユーザー操作時に再生を試みる（ブラウザの自動再生制限対策）
     const userInteractionHandler = () => {
-        if (typeof startTitleBGM === 'function') startTitleBGM();
+        if (typeof startBGM === 'function') startBGM('resource/horizon.mp3');
         if (typeof unlockAudios === 'function') unlockAudios();
     };
 
