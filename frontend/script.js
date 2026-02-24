@@ -259,6 +259,7 @@ const websock_server = `${protocol}//${host}/ws`;
 let sock = null;
 let reconnectInterval = null;
 let isDisconnected = false;
+let isManualClose = false;
 
 // onAccepted が実行中かどうかを示すフラグ
 let isProcessingAccepted = false;
@@ -488,13 +489,19 @@ const onAllyLose = () => {
 }
 
 const backToTitle = () => {
-  stopBGM();
+  isManualClose = true;
   if (sock) {
     sock.close();
     sock = null;
   }
   ui.showTitleScreen();
   ui.hideBackToTitleBtn();
+  
+  // メッセージ類をリセット
+  ui.hideMessage();
+  ui.hideWaitMessage();
+  ui.hideModalMessage();
+
   startBGM("resource/horizon.mp3");
 }
 
@@ -702,7 +709,9 @@ function connectWebSocket(mode, roomId) {
       if (roomId) {
           sendJoinPrivateRoom(player1_id, roomId);
       } else {
-          sendCreatePrivateRoom(player1_id);
+          // バックエンドが create_private_room に対応していない可能性があるため、
+          // 以前の仕様に合わせて join_private_room に空のIDを送ることで作成リクエストとする
+          sendJoinPrivateRoom(player1_id, "");
       }
     }
   });
@@ -751,12 +760,16 @@ function connectWebSocket(mode, roomId) {
   sock.addEventListener("close", function () {
     console.log("WebSocket接続が閉じられました");
     isDisconnected = true;
-    stopBGM();
+    
+    // 意図的な切断でない場合のみBGMを停止
+    if (!isManualClose) stopBGM();
+    
     // ゲームが終了しておらず、意図しない切断だった場合にメッセージを表示してリダイレクト
-    if (battleState.ally.hp > 0 && battleState.foe.hp > 0) {
+    if (!isManualClose && battleState.ally.hp > 0 && battleState.foe.hp > 0) {
         // alert("サーバーとの接続が切れました。タイトル画面に戻ります。");
         backToTitle();
     }
+    isManualClose = false;
   });
   
   /*
