@@ -65,23 +65,71 @@ let ui;
 
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
-// 音声ファイルのキャッシュ
+// 音声バッファのキャッシュ (Web Audio API用)
 const audioCache = {};
+
+// --- Web Audio API 制御 ---
+let audioCtx = null;
+let bgmGainNode = null;
+let seGainNode = null;
+let bgmSource = null;
+let currentBgmPath = null;
 
 // 音量設定 (初期値)
 let BGM_VOLUME = 0.3;
 let SE_VOLUME = 1.0;
 
+// Web Audio APIの初期化
+function initAudioContext() {
+    if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+        
+        // BGM用ゲインノード（音量調整）
+        bgmGainNode = audioCtx.createGain();
+        bgmGainNode.gain.value = BGM_VOLUME;
+        bgmGainNode.connect(audioCtx.destination);
+
+        // SE用ゲインノード（音量調整）
+        seGainNode = audioCtx.createGain();
+        seGainNode.gain.value = SE_VOLUME;
+        seGainNode.connect(audioCtx.destination);
+    }
+}
+
 window.setBGMVolume = function(val) {
     BGM_VOLUME = val;
-    if (bgmAudio) bgmAudio.volume = val;
+    if (bgmGainNode && audioCtx) {
+        // ノイズ防止のため少し時間をかけて滑らかに変更
+        bgmGainNode.gain.setTargetAtTime(val, audioCtx.currentTime, 0.1);
+    }
 };
 
 window.setSEVolume = function(val) {
     SE_VOLUME = val;
+    if (seGainNode && audioCtx) {
+        seGainNode.gain.setTargetAtTime(val, audioCtx.currentTime, 0.1);
+    }
 };
 
-function preloadSounds() {
+// 音声ファイルのロードとデコード
+async function loadAudio(path) {
+    if (audioCache[path]) return audioCache[path];
+
+    try {
+        const response = await fetch(path);
+        const arrayBuffer = await response.arrayBuffer();
+        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        audioCache[path] = audioBuffer;
+        return audioBuffer;
+    } catch (e) {
+        console.warn(`Failed to load audio: ${path}`, e);
+        return null;
+    }
+}
+
+async function preloadSounds() {
+  initAudioContext();
   const paths = new Set();
   // マップからパスを収集
   Object.values(TYPE_SOUND_MAP).forEach(p => paths.add(p));
@@ -93,44 +141,26 @@ function preloadSounds() {
   paths.add("resource/overflow.mp3");
   paths.add("resource/concent.mp3");
   paths.add("resource/pera.mp3");
-  paths.add("resource/silent_0_1s.mp3");
 
-  paths.forEach(path => {
-    if (!audioCache[path]) {
-        const audio = new Audio();
-        audio.src = path;
-        audio.preload = 'auto';
-        audioCache[path] = audio;
-    }
-  });
+  // 並列ロード
+  const promises = Array.from(paths).map(p => loadAudio(p));
+  await Promise.all(promises);
 }
 
-function playSound(path){
+async function playSound(path){
   try {
     if (!path) return false;
+    initAudioContext();
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
     
-    let audio;
-    // キャッシュにあればそれを使う（cloneNodeはスマホで再生できない場合があるため廃止）
-    // ※連続再生時に音が途切れる副作用があるが、再生されないよりは良い
-    if (audioCache[path]) {
-        audio = audioCache[path];
-        audio.pause();
-        audio.currentTime = 0;
-    } else {
-        audio = new Audio(path);
-        // キャッシュに追加
-        audioCache[path] = audio;
-    }
-    
-    audio.volume = SE_VOLUME; // 設定された音量で再生
+    const buffer = await loadAudio(path);
+    if (!buffer) return false;
 
-    const p = audio.play();
-    if (p && typeof p.then === 'function') {
-      p.catch(e => {
-        // 自動再生ポリシーやロードエラーで再生できない場合がある
-        // console.warn('Sound play failed', e);
-      });
-    }
+    const source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(seGainNode); // SE用音量ノードに接続
+    source.start(0);
+    
     return true;
   } catch (e) {
     console.warn('playEffectSound error', e);
@@ -154,48 +184,31 @@ function playIconSound(type){
   if(path !== undefined) playSound(path);
 }
 
-// --- BGM 制御 ---
-let bgmAudio = null;
-let currentBgmPath = null;
+// --- BGM 制御 (Web Audio API) ---
 
-function startBGM(bgmPath){
+async function startBGM(bgmPath){
   try{
+    initAudioContext();
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+
     // 同じ曲が既に再生中なら何もしない
-    if(bgmAudio && currentBgmPath === bgmPath && !bgmAudio.paused) {
+    if(bgmSource && currentBgmPath === bgmPath) {
         return true;
     }
 
     // 違う曲が再生されている、または停止中の場合は既存を停止
-    if(bgmAudio) {
-        bgmAudio.pause();
-        bgmAudio.currentTime = 0;
-    }
+    stopBGM();
 
-    // ★追加対策: キャッシュにある主要なBGMを名指しで強制停止する
-    // bgmAudioの参照がずれていても、実体を確実に止めるため
-    const bgmList = ["resource/horizon.mp3", "resource/overflow.mp3"];
-    bgmList.forEach(path => {
-        if (path !== bgmPath && audioCache[path]) {
-            audioCache[path].pause();
-            audioCache[path].currentTime = 0;
-        }
-    });
-
-    // キャッシュから取得、なければ新規作成
-    let audio = audioCache[bgmPath];
-    if (!audio) {
-        audio = new Audio(bgmPath);
-        audio.preload = 'auto';
-        audioCache[bgmPath] = audio;
-    }
+    const buffer = await loadAudio(bgmPath);
+    if (!buffer) return false;
     
-    bgmAudio = audio;
-    bgmAudio.loop = true;
-    bgmAudio.volume = BGM_VOLUME; // 設定された音量を使用
+    bgmSource = audioCtx.createBufferSource();
+    bgmSource.buffer = buffer;
+    bgmSource.loop = true;
+    bgmSource.connect(bgmGainNode); // BGM用音量ノードに接続
+    bgmSource.start(0);
+    
     currentBgmPath = bgmPath;
-
-    const p = bgmAudio.play();
-    if (p && typeof p.then === 'function') p.catch(e => console.warn('BGM play failed', e));
     return true;
   } catch(e){
     console.warn('startBGM error', e);
@@ -205,10 +218,15 @@ function startBGM(bgmPath){
 
 function stopBGM(){
   try{
-    if(bgmAudio){
-      bgmAudio.pause();
-      try { bgmAudio.currentTime = 0; } catch(e){}
+    if(bgmSource){
+      try {
+        bgmSource.stop();
+      } catch(e) {
+        // 既に止まっている場合など
+      }
+      bgmSource = null;
     }
+    currentBgmPath = null;
     return true;
   } catch(e){
     console.warn('stopBGM error', e);
@@ -218,46 +236,16 @@ function stopBGM(){
 
 // モバイルブラウザの自動再生制限対策：ユーザー操作時に音声を一瞬再生してアンロックする
 function unlockAudioContext() {
-    // 無音ファイルのみを再生してオーディオコンテキストをアンロックする
-    // iOSなどでは volume=0 が効かずに音が漏れるため、基本は無音ファイルを使う
-    // ただし、SEが鳴らない対策として、主要なSEもここで一度ロード・再生（即停止）させておく
-    const unlockList = [
-        "resource/silent_0_1s.mp3",
-        "resource/pera.mp3", // 決定音
-        "resource/start.mp3",
-        "resource/end.mp3"
-    ];
-    
-    unlockList.forEach(path => {
-        // ★追加: 現在BGMとして再生中の曲なら、アンロック処理（再生→停止）をスキップする
-        // これにより、startBGMで再生開始されたBGMを誤って止めてしまうのを防ぐ
-        if (bgmAudio && currentBgmPath === path && !bgmAudio.paused) {
-            return;
-        }
-
-        let audio = audioCache[path];
-        if (!audio) {
-            audio = new Audio(path);
-            audio.preload = 'auto';
-            audioCache[path] = audio;
-        }
-        
-        // 再生してすぐに停止（音量0にしておくことでノイズを防ぐ）
-        const originalVolume = audio.volume;
-        // iOSではvolume=0でも音が漏れることがあるが、silent_0_1s.mp3なら問題ない。
-        // 他のSEは一瞬音がするかもしれないが、再生許可を得るために必要。
-        audio.volume = 0.001; 
-        const p = audio.play();
-        if (p && typeof p.then === 'function') {
-            p.then(() => {
-                audio.pause();
-                audio.currentTime = 0;
-                audio.volume = originalVolume; // 元の音量に戻す
-            }).catch(e => {
-                // console.warn("Unlock failed for " + path, e);
-            });
-        }
-    });
+    initAudioContext();
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    // 無音バッファを生成して再生（ファイルロード不要）
+    const buffer = audioCtx.createBuffer(1, 1, 22050);
+    const source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioCtx.destination);
+    source.start(0);
 }
 
 // 現在のURLに基づいてWebSocketの接続先を決定する
