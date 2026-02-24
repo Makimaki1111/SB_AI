@@ -68,6 +68,19 @@ function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 // 音声ファイルのキャッシュ
 const audioCache = {};
 
+// 音量設定 (初期値)
+let BGM_VOLUME = 0.3;
+let SE_VOLUME = 1.0;
+
+window.setBGMVolume = function(val) {
+    BGM_VOLUME = val;
+    if (bgmAudio) bgmAudio.volume = val;
+};
+
+window.setSEVolume = function(val) {
+    SE_VOLUME = val;
+};
+
 function preloadSounds() {
   const paths = new Set();
   // マップからパスを収集
@@ -109,7 +122,7 @@ function playSound(path){
         audioCache[path] = audio;
     }
     
-    audio.volume = 1.0; // SEは最大音量で再生
+    audio.volume = SE_VOLUME; // 設定された音量で再生
 
     const p = audio.play();
     if (p && typeof p.then === 'function') {
@@ -178,7 +191,7 @@ function startBGM(bgmPath){
     
     bgmAudio = audio;
     bgmAudio.loop = true;
-    bgmAudio.volume = 0.3; // BGMの音量を少し下げる
+    bgmAudio.volume = BGM_VOLUME; // 設定された音量を使用
     currentBgmPath = bgmPath;
 
     const p = bgmAudio.play();
@@ -206,8 +219,14 @@ function stopBGM(){
 // モバイルブラウザの自動再生制限対策：ユーザー操作時に音声を一瞬再生してアンロックする
 function unlockAudioContext() {
     // 無音ファイルのみを再生してオーディオコンテキストをアンロックする
-    // iOSなどでは volume=0 が効かずに音が漏れるため、他のファイルは再生しない
-    const path = "resource/silent_0_1s.mp3";
+    // iOSなどでは volume=0 が効かずに音が漏れるため、基本は無音ファイルを使う
+    // ただし、SEが鳴らない対策として、主要なSEもここで一度ロード・再生（即停止）させておく
+    const unlockList = [
+        "resource/silent_0_1s.mp3",
+        "resource/pera.mp3", // 決定音
+        "resource/start.mp3",
+        "resource/end.mp3"
+    ];
     
     unlockList.forEach(path => {
         // ★追加: 現在BGMとして再生中の曲なら、アンロック処理（再生→停止）をスキップする
@@ -225,7 +244,9 @@ function unlockAudioContext() {
         
         // 再生してすぐに停止（音量0にしておくことでノイズを防ぐ）
         const originalVolume = audio.volume;
-        audio.volume = 0;
+        // iOSではvolume=0でも音が漏れることがあるが、silent_0_1s.mp3なら問題ない。
+        // 他のSEは一瞬音がするかもしれないが、再生許可を得るために必要。
+        audio.volume = 0.001; 
         const p = audio.play();
         if (p && typeof p.then === 'function') {
             p.then(() => {
@@ -1004,6 +1025,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!text.trim() || !battleState.roomId) return;
     ui.clearInput();
     ui.hidePreImg();
+    playSound("resource/pera.mp3"); // 送信時の決定音（スマホ対策：クリックイベント内で鳴らす）
     sendSubmitWord(battleState.roomId, player1_id, text);
   });
 
