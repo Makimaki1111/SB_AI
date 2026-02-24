@@ -6,6 +6,11 @@ html, body {
   justify-content: center;
   align-items: center;
   overflow: hidden;
+  font-family: "M PLUS 1p", sans-serif;
+}
+
+input, button, textarea, select {
+  font-family: "M PLUS 1p", sans-serif;
 }
 
 .phone-box {
