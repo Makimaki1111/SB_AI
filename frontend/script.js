@@ -97,11 +97,16 @@ function playSound(path){
     if (!path) return false;
     
     let audio;
-    // キャッシュにあればクローンして使う（同時再生対応のため）
+    // キャッシュにあればそれを使う（cloneNodeはスマホで再生できない場合があるため廃止）
+    // ※連続再生時に音が途切れる副作用があるが、再生されないよりは良い
     if (audioCache[path]) {
-        audio = audioCache[path].cloneNode();
+        audio = audioCache[path];
+        audio.pause();
+        audio.currentTime = 0;
     } else {
         audio = new Audio(path);
+        // キャッシュに追加
+        audioCache[path] = audio;
     }
 
     const p = audio.play();
@@ -919,8 +924,9 @@ function preloadImages() {
 
 // 画面サイズに合わせてスケーリングする関数
 function adjustWindowScale() {
-  const phoneBox = document.querySelector('.phone-box');
-  if (!phoneBox) return;
+  // タイトル画面とバトル画面の両方の .phone-box を取得
+  const phoneBoxes = document.querySelectorAll('.phone-box');
+  if (phoneBoxes.length === 0) return;
 
   const originalWidth = 450;
   const originalHeight = 720; // 450 * 1.6 (aspect-ratio 10/16)
@@ -929,7 +935,9 @@ function adjustWindowScale() {
   const scaleY = (window.innerHeight * 0.96) / originalHeight;
   const scale = Math.min(scaleX, scaleY, 1.0); // 拡大はしない
 
-  phoneBox.style.transform = scale < 1 ? `scale(${scale})` : 'none';
+  phoneBoxes.forEach(box => {
+      box.style.transform = scale < 1 ? `scale(${scale})` : 'none';
+  });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
