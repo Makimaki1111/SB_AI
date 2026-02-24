@@ -204,7 +204,7 @@ function stopBGM(){
 }
 
 // モバイルブラウザの自動再生制限対策：ユーザー操作時に音声を一瞬再生してアンロックする
-function unlockAudios() {
+function unlockAudioContext() {
     // 無音ファイルのみを再生してオーディオコンテキストをアンロックする
     // iOSなどでは volume=0 が効かずに音が漏れるため、他のファイルは再生しない
     const path = "resource/silent_0_1s.mp3";
