@@ -86,7 +86,8 @@
 
     // ページ読み込み時に特性一覧を取得
     let baseUrl = '';
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    const hostname = window.location.hostname;
+    if (!hostname || window.location.protocol === 'file:' || hostname === 'localhost' || hostname === '127.0.0.1') {
         // 開発環境: ポートが8000でない場合（Live Serverなど）はバックエンド(8000)を指定
         if (window.location.port !== '8000') {
             baseUrl = 'http://localhost:8000';
@@ -183,6 +184,20 @@
 
     window.addEventListener('resize', adjustWindowScale);
     adjustWindowScale(); // 初期実行
+
+    // タイトル画面BGM再生
+    let titleBgm = null;
+    function startTitleBGM() {
+        if (titleBgm) return;
+        titleBgm = new Audio('resource/horizon.mp3');
+        titleBgm.loop = true;
+        titleBgm.volume = 0.45;
+        titleBgm.play().catch(e => console.log("BGM自動再生ブロック:", e));
+    }
+
+    // ユーザー操作時に再生を試みる（ブラウザの自動再生制限対策）
+    document.body.addEventListener('click', startTitleBGM, { once: true });
+    document.body.addEventListener('touchstart', startTitleBGM, { once: true });
   </script>
 </body>
 </html>

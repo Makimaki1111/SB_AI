@@ -97,13 +97,19 @@ function playIconSound(type){
 
 // --- BGM 制御 ---
 let bgmAudio = null;
+let currentBgmPath = null;
 
 function startBGM(bgmPath){
   try{
-    if(!bgmAudio) {
+    // 既にAudioがない、または違う曲が指定された場合は作り直す
+    if(!bgmAudio || currentBgmPath !== bgmPath) {
+      if(bgmAudio) {
+        bgmAudio.pause();
+      }
       bgmAudio = new Audio(bgmPath);
       bgmAudio.loop = true;
       bgmAudio.volume = 0.45;
+      currentBgmPath = bgmPath;
     }
     const p = bgmAudio.play();
     if (p && typeof p.then === 'function') p.catch(e => console.warn('BGM play failed', e));
@@ -211,6 +217,7 @@ const onMadeRoom = async (data) => {
   }
 
   ui.showMessage("マッチングした！")
+  playEventSound("start", "");
   startBGM("resource/overflow.mp3");
   await sleep(1500);
   if(data["state"]["is_my_turn"] === true){
@@ -801,6 +808,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 画像のプリロードを開始
   preloadImages();
+
+  // 待機中BGM再生
+  startBGM("resource/horizon.mp3");
 
   // BGM ボタン初期化: 同じ id が複数ある場合もあるので querySelectorAll で全てにバインド
   try {
