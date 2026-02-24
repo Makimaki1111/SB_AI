@@ -209,7 +209,7 @@ function unlockAudios() {
             p.then(() => {
                 audio.pause();
                 audio.currentTime = 0;
-                audio.volume = 0.45; // 音量を戻す
+                audio.volume = originalVolume; // 元の音量に戻す
             }).catch(e => {
                 // console.warn("Unlock failed for " + path, e);
             });
