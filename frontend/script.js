@@ -349,8 +349,6 @@ if (window.location.hostname === "localhost" || window.location.hostname === "12
 const websock_server = `${protocol}//${host}/ws`;
 
 let sock = null;
-let reconnectInterval = null;
-let isDisconnected = false;
 let isManualClose = false;
 
 // onAccepted が実行中かどうかを示すフラグ
@@ -371,13 +369,15 @@ const initializeBattleScreen = () => {
   ui.updatePoisonStatus(false, false);
   ui.abilityInfoContainer.hide();
   ui.situationButton.hide();
+  // モーダルを閉じる
+  ui.hideSituationModal();
+  ui.hideAbilityModal();
 
   ui.resetHP();
   ui.stopTimer();
   ui.resetSituationInfo();
 
   battleState.roomId = null;
-  battleState.character = "";
   battleState.character = "";
 }
 
@@ -587,6 +587,10 @@ const backToTitle = () => {
   ui.hideMessage();
   ui.hideWaitMessage();
   ui.hideModalMessage();
+  // モーダルが開いていたら閉じる
+  ui.hideSituationModal();
+  ui.hideAbilityModal();
+  ui.resetSituationInfo();
 
   startBGM("resource/horizon.mp3");
 }
@@ -750,6 +754,9 @@ const onError = (data) => {
 
 // WebSocket接続とイベントリスナー登録
 window.startBattle = function(mode, roomId = null) {
+  // iOS対策: バトル開始のクリックイベント内で確実にAudioContextをアンロックする
+  unlockAudioContext();
+
   battleState.mode = mode;
   if (mode === 'player' || mode === 'room') {
     battleState.isVsCpu = false;
@@ -857,26 +864,6 @@ function connectWebSocket(mode, roomId) {
     }
     // isManualClose = false; // ここでのリセットを削除（タイトル画面滞在中に遅れてイベントが来てもBGMを止めないため）
   });
-  
-  /*
-  sock.addEventListener("error", function (e) {
-    console.error("WebSocketエラー:", e);
-    ui.showTitleScreen();
-    isDisconnected = true;
-    // alert("エラーが発生しました。タイトル画面に戻ります。");
-    startReconnectAttempt();
-  });
-  */
-}
-
-// プライベートルーム作成用関数を追加
-function sendCreatePrivateRoom(player_id) {
-    if (sock && sock.readyState === WebSocket.OPEN) {
-        sock.send(JSON.stringify({
-            type: "create_private_room", // バックエンドがこれに対応している必要あり
-            info: { player_id: player_id }
-        }));
-    }
 }
 
 function sendFindMatch(player_id) {
@@ -946,45 +933,6 @@ function sendChangeAbility(abilityId) {
   }
 }
 
-function startReconnectAttempt() {
-  // 再接続を試みる関数
-  if (reconnectInterval) return;
-  
-  reconnectInterval = setInterval(() => {
-    console.log("再接続を試みています...");
-    try {
-      const testSock = new WebSocket(websock_server);
-      let isConnected = false;
-      
-      testSock.addEventListener("open", () => {
-        console.log("サーバーが復帰しました。再接続します。");
-        isConnected = true;
-        testSock.close();
-        clearInterval(reconnectInterval);
-        reconnectInterval = null;
-        isDisconnected = false;
-        connectWebSocket();
-      });
-      
-      testSock.addEventListener("error", () => {
-        console.log("まだサーバーが利用できません...");
-        if (!isConnected) {
-          testSock.close();
-        }
-      });
-      
-      // 0.8秒でタイムアウト
-      setTimeout(() => {
-        if (!isConnected && testSock.readyState !== WebSocket.CLOSED) {
-          testSock.close();
-        }
-      }, 300);
-    } catch (e) {
-      console.error("再接続試行エラー:", e);
-    }
-  }, 5000); // 1秒ごとに試行
-}
-
 function preloadImages() {
   const images = [
     "img/ground.jpg",
@@ -1036,21 +984,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 待機中BGM再生
   startBGM("resource/horizon.mp3");
-
-  // BGM ボタン初期化: 同じ id が複数ある場合もあるので querySelectorAll で全てにバインド
-  try {
-    updateBGMButtons();
-    const bgmNodes = document.querySelectorAll('#bgm-toggle-btn');
-    bgmNodes.forEach(n => {
-        n.addEventListener('click', (e) => {
-            e.preventDefault();
-            toggleBGM();
-        });
-    });
-  } catch (e) {
-    console.warn('BGM init failed', e);
-  }
-
   ui.backToTitleBtn.onClick(() => {
       backToTitle();
   });
@@ -1073,9 +1006,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const text = ui.input.selector.val();
     if(text) {
       if(text.charAt(0) !== battleState.character){
-        ui.alertWrongChar();
-      } else if(text.charAt(text.length - 1) === "ん") {
-        ui.alertNN();
+        // 開始文字不一致（UI表示なし）
+        // 「ん」で終わる（UI表示なし）
       } else {
         sendIncludeCheck(battleState.roomId, text);
       }

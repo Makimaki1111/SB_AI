@@ -383,14 +383,6 @@ class UI{
         this.input.selector.attr('placeholder', text);
     }
 
-    alertWrongChar(){
-        
-    }
-
-    alertNN() {
-        
-    }
-
     showBackToTitleBtn() {
         const el = this.backToTitleBtn.selector;
         // display のみ切り替え、見た目は CSS の初期スタイルに任せる
