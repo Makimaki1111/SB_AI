@@ -349,8 +349,6 @@ if (window.location.hostname === "localhost" || window.location.hostname === "12
 const websock_server = `${protocol}//${host}/ws`;
 
 let sock = null;
-let reconnectInterval = null;
-let isDisconnected = false;
 let isManualClose = false;
 
 // onAccepted が実行中かどうかを示すフラグ
@@ -380,7 +378,6 @@ const initializeBattleScreen = () => {
   ui.resetSituationInfo();
 
   battleState.roomId = null;
-  battleState.character = "";
   battleState.character = "";
 }
 
@@ -867,26 +864,6 @@ function connectWebSocket(mode, roomId) {
     }
     // isManualClose = false; // ここでのリセットを削除（タイトル画面滞在中に遅れてイベントが来てもBGMを止めないため）
   });
-  
-  /*
-  sock.addEventListener("error", function (e) {
-    console.error("WebSocketエラー:", e);
-    ui.showTitleScreen();
-    isDisconnected = true;
-    // alert("エラーが発生しました。タイトル画面に戻ります。");
-    startReconnectAttempt();
-  });
-  */
-}
-
-// プライベートルーム作成用関数を追加
-function sendCreatePrivateRoom(player_id) {
-    if (sock && sock.readyState === WebSocket.OPEN) {
-        sock.send(JSON.stringify({
-            type: "create_private_room", // バックエンドがこれに対応している必要あり
-            info: { player_id: player_id }
-        }));
-    }
 }
 
 function sendFindMatch(player_id) {
@@ -954,45 +931,6 @@ function sendChangeAbility(abilityId) {
       }
     }));
   }
-}
-
-function startReconnectAttempt() {
-  // 再接続を試みる関数
-  if (reconnectInterval) return;
-  
-  reconnectInterval = setInterval(() => {
-    console.log("再接続を試みています...");
-    try {
-      const testSock = new WebSocket(websock_server);
-      let isConnected = false;
-      
-      testSock.addEventListener("open", () => {
-        console.log("サーバーが復帰しました。再接続します。");
-        isConnected = true;
-        testSock.close();
-        clearInterval(reconnectInterval);
-        reconnectInterval = null;
-        isDisconnected = false;
-        connectWebSocket();
-      });
-      
-      testSock.addEventListener("error", () => {
-        console.log("まだサーバーが利用できません...");
-        if (!isConnected) {
-          testSock.close();
-        }
-      });
-      
-      // 0.8秒でタイムアウト
-      setTimeout(() => {
-        if (!isConnected && testSock.readyState !== WebSocket.CLOSED) {
-          testSock.close();
-        }
-      }, 300);
-    } catch (e) {
-      console.error("再接続試行エラー:", e);
-    }
-  }, 5000); // 1秒ごとに試行
 }
 
 function preloadImages() {
@@ -1068,9 +1006,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const text = ui.input.selector.val();
     if(text) {
       if(text.charAt(0) !== battleState.character){
-        ui.alertWrongChar();
-      } else if(text.charAt(text.length - 1) === "ん") {
-        ui.alertNN();
+        // 開始文字不一致（UI表示なし）
+        // 「ん」で終わる（UI表示なし）
       } else {
         sendIncludeCheck(battleState.roomId, text);
       }
