@@ -367,6 +367,9 @@ const initializeBattleScreen = () => {
   ui.updatePoisonStatus(false, false);
   ui.abilityInfoContainer.hide();
   ui.situationButton.hide();
+  // モーダルを閉じる
+  ui.hideSituationModal();
+  ui.hideAbilityModal();
 
   ui.resetHP();
   ui.stopTimer();
@@ -583,6 +586,10 @@ const backToTitle = () => {
   ui.hideMessage();
   ui.hideWaitMessage();
   ui.hideModalMessage();
+  // モーダルが開いていたら閉じる
+  ui.hideSituationModal();
+  ui.hideAbilityModal();
+  ui.resetSituationInfo();
 
   startBGM("resource/horizon.mp3");
 }
