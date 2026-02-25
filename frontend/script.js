@@ -246,7 +246,11 @@ function playIconSound(type){
 async function startBGM(bgmPath){
   try{
     initAudioContext();
-    if (audioCtx.state === 'suspended') await audioCtx.resume();
+    // iOS対策: await audioCtx.resume() をすると、待機中にユーザー操作の権限が切れ、
+    // その後の再生がブロックされることがあるため、awaitせずにリクエストだけ投げておく。
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
 
     // 同じ曲が既に再生中なら何もしない
     if(bgmSource && currentBgmPath === bgmPath) return true;
