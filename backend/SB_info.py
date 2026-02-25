@@ -2,6 +2,7 @@ import csv
 import os
 import sqlite3
 import tracemalloc
+import random
 
 class SB_info:
     def __init__(self, measure_memory=False):
@@ -123,8 +124,10 @@ class SB_info:
     def get_typed_word_candidates(self, head: str):
         """指定された文字で始まるタイプ付き単語のリスト（イテレータ）を返します"""
         # ランダムに取得することでCPUの挙動を変化させる
-        cursor = self.conn.execute("SELECT word FROM words WHERE word LIKE ? || '%' AND type1 != '' ORDER BY RANDOM()", (head,))
-        return (row[0] for row in cursor)
+        cursor = self.conn.execute("SELECT word FROM words WHERE word LIKE ? || '%' AND type1 != ''", (head,))
+        candidates = [row[0] for row in cursor]
+        random.shuffle(candidates)
+        return candidates
     
     def get_next_initial(self, word:str) -> str:
         """
