@@ -13,7 +13,7 @@ FOOD_LIMIT = 6
 MEDICAL_LIMIT = 5
 MAX_RANK = 6
 MIN_RANK = -6
-ABILITY_CHANGE_COUNT_INIT = 3
+ABILITY_CHANGE_COUNT_INIT = 2
 LEECH_SEED_TURNS = 4
 LEECH_SEED_DRAIN_AMOUNT = 5
 FOOD_RECOVERY_AMOUNT = 20
@@ -931,7 +931,7 @@ class Battle_info:
         if self.sb_info.inclue_in_typed_words(_input):
             types = [t for t in self.sb_info.get_types(_input) if t]
         else:
-            types = ["ノーマル"]
+            types = [""]
             
         self.used[_input] = types
 
