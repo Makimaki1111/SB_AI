@@ -554,7 +554,6 @@ const onAllyWin = () => {
   ui.showMessage("あいてとの勝負に勝った！");
   ui.disableInput();
   ui.showBackToTitleBtn();
-  ui.hideCancelBtn();
   ui.stopTimer();
 }
 
@@ -564,7 +563,6 @@ const onAllyLose = () => {
   ui.showMessage("あいてとの勝負に負けた…");
   ui.disableInput();
   ui.showBackToTitleBtn();
-  ui.hideCancelBtn();
   ui.stopTimer();
 }
 
@@ -592,7 +590,6 @@ const onOpponentDisconnected = (data) => {
   ui.setWaitMessage("あいてが切断しました", 0);
   ui.disableInput();
   ui.showBackToTitleBtn();
-  ui.hideCancelBtn();
   ui.stopTimer();
 }
 
@@ -760,6 +757,7 @@ window.startBattle = function(mode, roomId = null) {
 }
 
 function connectWebSocket(mode, roomId) {
+  isManualClose = false; // 新しい接続を開始する時にフラグをリセット
   // 既に接続があれば切断
   if (sock && sock.readyState === WebSocket.OPEN) {
     sock.close();
@@ -852,7 +850,7 @@ function connectWebSocket(mode, roomId) {
         // alert("サーバーとの接続が切れました。タイトル画面に戻ります。");
         backToTitle();
     }
-    isManualClose = false;
+    // isManualClose = false; // ここでのリセットを削除（タイトル画面滞在中に遅れてイベントが来てもBGMを止めないため）
   });
   
   /*
