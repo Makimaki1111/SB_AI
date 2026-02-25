@@ -1046,21 +1046,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 待機中BGM再生
   startBGM("resource/horizon.mp3");
-
-  // BGM ボタン初期化: 同じ id が複数ある場合もあるので querySelectorAll で全てにバインド
-  try {
-    updateBGMButtons();
-    const bgmNodes = document.querySelectorAll('#bgm-toggle-btn');
-    bgmNodes.forEach(n => {
-        n.addEventListener('click', (e) => {
-            e.preventDefault();
-            toggleBGM();
-        });
-    });
-  } catch (e) {
-    console.warn('BGM init failed', e);
-  }
-
   ui.backToTitleBtn.onClick(() => {
       backToTitle();
   });
