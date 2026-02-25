@@ -122,6 +122,16 @@ window.setSEVolume = function(val) {
 async function loadAudio(path) {
     if (audioCache[path]) return audioCache[path];
 
+    // file:// プロトコルでは fetch が CORS エラーになるため、最初から HTML5 Audio を使用する
+    if (window.location.protocol === 'file:') {
+        return new Promise((resolve) => {
+            const audio = new Audio(path);
+            audio.preload = 'auto';
+            audioCache[path] = audio;
+            resolve(audio);
+        });
+    }
+
     try {
         const response = await fetch(path);
         const arrayBuffer = await response.arrayBuffer();
@@ -163,10 +173,10 @@ async function playSound(path){
   try {
     if (!path) return false;
 
-    // 短時間の重複再生防止 (50ms以内の連打は無視)
+    // 短時間の重複再生防止 (100ms以内の連打は無視)
     // これにより、クリックイベントの重複発火による音量増大（二重再生）を防ぐ
     const now = Date.now();
-    if (lastPlayTime[path] && now - lastPlayTime[path] < 50) {
+    if (lastPlayTime[path] && now - lastPlayTime[path] < 100) {
         return false;
     }
     lastPlayTime[path] = now;
@@ -181,13 +191,28 @@ async function playSound(path){
         // Web Audio API
         const source = audioCtx.createBufferSource();
         source.buffer = buffer;
-        source.connect(seGainNode); // SE用音量ノードに接続
+
+        // 個別音量調整: pera.mp3 が大きすぎるため、このファイルだけ音量を下げる
+        let volumeScale = 1.0;
+        if (path.includes("pera.mp3")) {
+            volumeScale = 0.3; // 30%に調整
+        }
+
+        // ローカルのゲインノードを作成して音量を調整
+        const localGain = audioCtx.createGain();
+        localGain.gain.value = volumeScale;
+
+        // 接続: source -> localGain -> seGainNode (全体のSE音量) -> destination
+        source.connect(localGain);
+        localGain.connect(seGainNode);
         source.start(0);
     } else if (buffer instanceof HTMLAudioElement) {
         // HTML5 Audio (フォールバック)
         // SEは重ねて再生したいので cloneNode する
         const audio = buffer.cloneNode();
-        audio.volume = SE_VOLUME;
+        let volumeScale = 1.0;
+        if (path.includes("pera.mp3")) { volumeScale = 0.3; }
+        audio.volume = SE_VOLUME * volumeScale;
         audio.play().catch(e => console.warn('HTML5 Audio play failed', e));
     }
 
@@ -231,6 +256,9 @@ async function startBGM(bgmPath){
     const buffer = await loadAudio(bgmPath);
     if (!buffer) return false;
     
+    // 再生準備の前に、既存のBGMを確実に停止する
+    stopBGM();
+
     if (buffer instanceof AudioBuffer) {
         // Web Audio API
         bgmSource = audioCtx.createBufferSource();
@@ -238,8 +266,6 @@ async function startBGM(bgmPath){
         bgmSource.loop = true;
         bgmSource.connect(bgmGainNode); // BGM用音量ノードに接続
         
-        // 再生直前に既存のBGMを確実に停止する（ロード中の競合対策）
-        stopBGM();
         bgmSource.start(0);
     } else if (buffer instanceof HTMLAudioElement) {
         // HTML5 Audio (フォールバック)
@@ -247,9 +273,7 @@ async function startBGM(bgmPath){
         bgmAudioElement.loop = true;
         bgmAudioElement.volume = BGM_VOLUME;
         bgmAudioElement.currentTime = 0;
-        
-        // 再生直前に既存のBGMを確実に停止する
-        stopBGM();
+
         bgmAudioElement.play().catch(e => console.warn('BGM play failed', e));
     }
     
@@ -1066,7 +1090,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!text.trim() || !battleState.roomId) return;
     ui.clearInput();
     ui.hidePreImg();
-    playSound("resource/pera.mp3"); // 送信時の決定音（スマホ対策：クリックイベント内で鳴らす）
+    // playSound("resource/pera.mp3"); // 送信時の決定音は不要なためコメントアウト
     sendSubmitWord(battleState.roomId, player1_id, text);
   });
 
