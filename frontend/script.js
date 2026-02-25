@@ -370,6 +370,7 @@ const initializeBattleScreen = () => {
 
   ui.resetHP();
   ui.stopTimer();
+  ui.resetSituationInfo();
 
   battleState.roomId = null;
   battleState.character = "";
@@ -567,6 +568,9 @@ const onAllyLose = () => {
 }
 
 const backToTitle = () => {
+  // iOS対策: 画面遷移時にAudioContextを確実に有効化する
+  unlockAudioContext();
+
   isManualClose = true;
   if (sock) {
     sock.close();
@@ -1092,6 +1096,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // にげるボタン
   ui.cancelBtn.onClick(() => {
     if (confirm("本当ににげますか？")) {
+      // iOS対策: ダイアログを閉じた後にAudioContextの再開を試みる
+      unlockAudioContext();
       sendRunAway(battleState.roomId, player1_id);
       backToTitle();
     }
