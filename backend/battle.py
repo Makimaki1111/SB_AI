@@ -128,9 +128,11 @@ class StatBoostAbility(Ability):
     def apply_effect(self, player: Player, battle: 'Battle_info') -> bool:
         player.attack_rank = min(MAX_RANK, player.attack_rank + 2)
         event = {
-            "type": "atk_up",
+            "type": "stat_up",
             "message": f"攻撃がぐーんと上がった！",
-            "player": "ally" if player.id == battle.player1.id else "foe"
+            "player": "ally" if player.id == battle.player1.id else "foe",
+            "stat_type": "attack",
+            "new_rank": player.attack_rank
         }
         battle.events.append(event)
         return True
@@ -341,10 +343,11 @@ class HokenAbility(Ability):
         if effect > 1:
             player.attack_rank = min(MAX_RANK, player.attack_rank + 3)
             event = {
-                "type": "atk_up",
+                "type": "stat_up",
                 "message": f"弱点を突かれて攻撃がぐぐーんと上がった！(現在{battle.sb_info.rank_to_power(player.attack_rank):.1f}倍)",
                 "player": "ally" if player.id == battle.player1.id else "foe",
-                "new_atk": player.attack_rank
+                "stat_type": "attack",
+                "new_rank": player.attack_rank
             }
             battle.events.append(event)
 
@@ -427,10 +430,11 @@ class IkakuAbility(Ability):
         opponent.attack_rank = max(MIN_RANK, opponent.attack_rank - 1)
         
         event = {
-            "type": "atk_down",
+            "type": "stat_down",
             "message": f"{self.name}で攻撃が下がった！(現在{battle.sb_info.rank_to_power(opponent.attack_rank):.1f}倍)",
             "player": "foe" if player.id == battle.player1.id else "ally",
-            "new_atk": opponent.attack_rank
+            "stat_type": "attack",
+            "new_rank": opponent.attack_rank
         }
         battle.events.append(event)
 
@@ -731,10 +735,11 @@ class Battle_info:
                     self.player1.attack_rank = max(MIN_RANK, self.player1.attack_rank - drop)
                     msg_adverb = "がくっと" if drop >= 2 else ""
                     event = {
-                        "type" : "atk_down",
+                        "type" : "stat_down",
                         "message" : f"攻撃が{msg_adverb}下がった！(現在{self.sb_info.rank_to_power(self.player1.attack_rank)}倍)",
                         "player" : "ally",
-                        "new_atk" : self.player1.attack_rank
+                        "stat_type": "attack",
+                        "new_rank" : self.player1.attack_rank
                     }
                     self.events.append(event)
 
@@ -820,10 +825,11 @@ class Battle_info:
                     self.player2.attack_rank = max(MIN_RANK, self.player2.attack_rank - drop)
                     msg_adverb = "がくっと" if drop >= 2 else ""
                     event = {
-                        "type" : "atk_down",
+                        "type" : "stat_down",
                         "message" : f"攻撃が{msg_adverb}下がった！(現在{self.sb_info.rank_to_power(self.player2.attack_rank)}倍)",
                         "player" : "foe",
-                        "new_atk" : self.player2.attack_rank
+                        "stat_type": "attack",
+                        "new_rank" : self.player2.attack_rank
                     }
                     self.events.append(event)
 

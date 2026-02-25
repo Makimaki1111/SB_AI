@@ -30,16 +30,18 @@ const EVENT_SOUND_MAP = {
   "cure": "resource/heal.mp3",
   "start": "resource/start.mp3",
   "end": "resource/end.mp3",
-  "atk_down": "resource/down.mp3",
-  "atk_up": "resource/up.mp3",
-  "drain": "resource/seed_damage.mp3"
+  "stat_down": "resource/down.mp3",
+  "drain": "resource/seed_damage.mp3",
+  "stat_up": "resource/up.mp3"
 };
 
 const DAMAGE_MSG_MAP = {
   "効果はばつぐんだ！": "resource/effective.mp3",
   "ふつうのダメージだ": "resource/middmg.mp3",
   "効果はいまひとつのようだ…": "resource/noneffective.mp3",
-  "相手に種を植え付けた！": "resource/seeded.mp3"
+  "相手に種を植え付けた！": "resource/seeded.mp3",
+  "毒のダメージを受けた！": "resource/poison.mp3",
+  "毒を受けた！": "resource/poison.mp3"
 };
 
 // プレイヤーIDをランダム生成して保存（対人戦で識別するため）
@@ -460,24 +462,16 @@ const processEvent = async (events, is_my_turn) => {
       // 回復エフェクト再生
       if ((e["ally_cure"] || 0) > 0) ui.playHealEffect(true);
       if ((e["foe_cure"] || 0) > 0) ui.playHealEffect(false);
-    } else if (e["type"] === "atk_down") {
-      if(e["player"] === "ally") {
-        battleState.ally.atk = e["new_atk"];
-      }else if(e["player"] === "foe"){
-        battleState.foe.atk = e["new_atk"];
-      }else {
-        alert("なにかがおかしいよ:" + e["player"]);
+    } else if (e["type"] === "stat_down") {
+      const isAlly = e["player"] === "ally";
+      if (e["stat_type"] === "defense") {
+         if (isAlly) battleState.ally.def = e["new_rank"];
+         else battleState.foe.def = e["new_rank"];
+      } else {
+         if (isAlly) battleState.ally.atk = e["new_rank"];
+         else battleState.foe.atk = e["new_rank"];
       }
-      ui.playStatDownEffect(e["player"] === "ally");
-    } else if (e["type"] === "atk_up") {
-      if(e["player"] === "ally") {
-        battleState.ally.atk = e["new_atk"];
-      }else if(e["player"] === "foe"){
-        battleState.foe.atk = e["new_atk"];
-      }else {
-        alert("なにかがおかしいよ:" + e["player"]);
-      }
-      ui.playStatUpEffect(e["player"] === "ally");
+      ui.playStatDownEffect(isAlly);
     } else if (e["type"] === "stat_up") {
       const isAlly = e["player"] === "ally";
       if (e["stat_type"] === "defense") {
