@@ -4,6 +4,7 @@ import secrets
 import asyncio
 import logging
 import traceback
+from urllib.parse import urlparse
 import os
 from typing import List, Dict
 from collections import defaultdict
@@ -37,9 +38,18 @@ async def protect_assets_middleware(request: Request, call_next):
     # img または resource フォルダへのアクセスの場合
     if path.startswith("/img/") or path.startswith("/resource/"):
         referer = request.headers.get("referer")
+        
         # Refererヘッダーがない場合（URL直打ちなど）はアクセスを拒否
         if not referer:
             return Response(status_code=403, content="Access Denied")
+            
+        # Refererのホスト名が、リクエスト先のホスト名と一致しない場合は拒否（ホットリンク対策）
+        request_host = request.headers.get("host")
+        if request_host:
+            referer_netloc = urlparse(referer).netloc
+            if referer_netloc != request_host:
+                return Response(status_code=403, content="Access Denied")
+
     response = await call_next(request)
     return response
 
