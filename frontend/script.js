@@ -163,10 +163,10 @@ async function playSound(path){
   try {
     if (!path) return false;
 
-    // 短時間の重複再生防止 (50ms以内の連打は無視)
+    // 短時間の重複再生防止 (100ms以内の連打は無視)
     // これにより、クリックイベントの重複発火による音量増大（二重再生）を防ぐ
     const now = Date.now();
-    if (lastPlayTime[path] && now - lastPlayTime[path] < 50) {
+    if (lastPlayTime[path] && now - lastPlayTime[path] < 100) {
         return false;
     }
     lastPlayTime[path] = now;
@@ -181,7 +181,18 @@ async function playSound(path){
         // Web Audio API
         const source = audioCtx.createBufferSource();
         source.buffer = buffer;
-        source.connect(seGainNode); // SE用音量ノードに接続
+
+        // 個別音量調整: pera.mp3 が大きすぎるため下げる
+        let volumeScale = 1.0;
+        if (path.includes("pera.mp3")) {
+            volumeScale = 0.6;
+        }
+
+        const localGain = audioCtx.createGain();
+        localGain.gain.value = volumeScale;
+
+        source.connect(localGain);
+        localGain.connect(seGainNode); // SE用音量ノードに接続
         source.start(0);
     } else if (buffer instanceof HTMLAudioElement) {
         // HTML5 Audio (フォールバック)
@@ -727,6 +738,9 @@ const onError = (data) => {
 
 // WebSocket接続とイベントリスナー登録
 window.startBattle = function(mode, roomId = null) {
+  // iOS対策: バトル開始のクリックイベント内で確実にAudioContextをアンロックする
+  unlockAudioContext();
+
   battleState.mode = mode;
   if (mode === 'player' || mode === 'room') {
     battleState.isVsCpu = false;
@@ -1066,7 +1080,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!text.trim() || !battleState.roomId) return;
     ui.clearInput();
     ui.hidePreImg();
-    playSound("resource/pera.mp3"); // 送信時の決定音（スマホ対策：クリックイベント内で鳴らす）
+    // playSound("resource/pera.mp3"); // 送信時の音は削除（無音にする）
     sendSubmitWord(battleState.roomId, player1_id, text);
   });
 
