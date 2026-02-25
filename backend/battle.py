@@ -164,7 +164,7 @@ class TypeStatBoostAbility(Ability):
         
         event = {
             "type": "stat_up",
-            "message": f"{stat_name}が{msg_adverb}上がった！(現在{battle.sb_info.rank_to_power(current_rank):.1f}倍)",
+            "message": f"{stat_name}が{msg_adverb}上がった！(現在{battle.sb_info.rank_to_power(current_rank)}倍)",
             "player": "ally" if player.id == battle.player1.id else "foe",
             "stat_type": self.stat_type,
             "new_rank": current_rank
@@ -344,7 +344,7 @@ class HokenAbility(Ability):
             player.attack_rank = min(MAX_RANK, player.attack_rank + 3)
             event = {
                 "type": "stat_up",
-                "message": f"弱点を突かれて攻撃がぐぐーんと上がった！(現在{battle.sb_info.rank_to_power(player.attack_rank):.1f}倍)",
+                "message": f"弱点を突かれて攻撃がぐぐーんと上がった！(現在{battle.sb_info.rank_to_power(player.attack_rank)}倍)",
                 "player": "ally" if player.id == battle.player1.id else "foe",
                 "stat_type": "attack",
                 "new_rank": player.attack_rank
@@ -431,7 +431,7 @@ class IkakuAbility(Ability):
         
         event = {
             "type": "stat_down",
-            "message": f"{self.name}で攻撃が下がった！(現在{battle.sb_info.rank_to_power(opponent.attack_rank):.1f}倍)",
+            "message": f"{self.name}で攻撃が下がった！(現在{battle.sb_info.rank_to_power(opponent.attack_rank)}倍)",
             "player": "foe" if player.id == battle.player1.id else "ally",
             "stat_type": "attack",
             "new_rank": opponent.attack_rank

@@ -370,6 +370,7 @@ const initializeBattleScreen = () => {
 
   ui.resetHP();
   ui.stopTimer();
+  ui.resetSituationInfo();
 
   battleState.roomId = null;
   battleState.character = "";

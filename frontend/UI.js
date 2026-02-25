@@ -578,6 +578,13 @@ class UI{
         this.situationModal.selector.fadeOut('fast');
     }
 
+    resetSituationInfo() {
+        this.situationAllyA.selector.text("1.0倍");
+        this.situationAllyB.selector.text("1.0倍");
+        this.situationFoeA.selector.text("1.0倍");
+        this.situationFoeB.selector.text("1.0倍");
+    }
+
     updateSituationInfo(allyAtk, allyDef, foeAtk, foeDef) {
         // ランクから倍率への変換マップ (backend/SB_info.py と同期)
         const rankToPower = (rank) => {
@@ -588,10 +595,19 @@ class UI{
             return mapping[rank] || 1.0;
         };
 
-        this.situationAllyA.selector.text(rankToPower(allyAtk).toFixed(2) + "倍");
-        this.situationAllyB.selector.text(rankToPower(allyDef).toFixed(2) + "倍");
-        this.situationFoeA.selector.text(rankToPower(foeAtk).toFixed(2) + "倍");
-        this.situationFoeB.selector.text(rankToPower(foeDef).toFixed(2) + "倍");
+        const formatMultiplier = (num) => {
+            // 整数（1.0, 2.0など）の場合は小数点以下1桁で表示
+            if (num % 1 === 0) {
+                return num.toFixed(1);
+            }
+            // 小数（1.5, 0.66など）の場合はそのまま表示
+            return num.toString();
+        };
+
+        this.situationAllyA.selector.text(formatMultiplier(rankToPower(allyAtk)) + "倍");
+        this.situationAllyB.selector.text(formatMultiplier(rankToPower(allyDef)) + "倍");
+        this.situationFoeA.selector.text(formatMultiplier(rankToPower(foeAtk)) + "倍");
+        this.situationFoeB.selector.text(formatMultiplier(rankToPower(foeDef)) + "倍");
     }
 
     // --- エフェクト再生メソッド ---
