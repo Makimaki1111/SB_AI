@@ -3,12 +3,14 @@ import os
 import sqlite3
 import tracemalloc
 import random
+from collections import defaultdict
 
 class SB_info:
     def __init__(self, measure_memory=False):
         if measure_memory:
             tracemalloc.start() # メモリ計測開始
         self.typed_heads = set()
+        self.typed_word_map = defaultdict(list) # 頭文字ごとの単語リストをメモリに保持して高速化
 
         # このファイル(SB_info.py)のあるディレクトリを取得
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -31,8 +33,10 @@ class SB_info:
                     # メモリ上のキャッシュ(typed_heads)だけ復元する
                     cursor = self.conn.execute("SELECT word FROM words WHERE type1 != ''")
                     for row in cursor:
-                        if row[0]:
-                            self.typed_heads.add(row[0][0])
+                        word = row[0]
+                        if word:
+                            self.typed_heads.add(word[0])
+                            self.typed_word_map[word[0]].append(word)
             except sqlite3.Error:
                 if self.conn: self.conn.close()
                 should_rebuild = True
@@ -75,6 +79,7 @@ class SB_info:
                                 t1 = types[0] if len(types) > 0 else ""
                                 t2 = types[1] if len(types) > 1 else ""
                                 self.typed_heads.add(word[0])
+                                self.typed_word_map[word[0]].append(word)
                                 yield (word, t1, t2)
 
                     self.conn.executemany("INSERT OR REPLACE INTO words (word, type1, type2) VALUES (?, ?, ?)", typed_data_generator(reader))
@@ -123,9 +128,9 @@ class SB_info:
 
     def get_typed_word_candidates(self, head: str):
         """指定された文字で始まるタイプ付き単語のリスト（イテレータ）を返します"""
-        # ランダムに取得することでCPUの挙動を変化させる
-        cursor = self.conn.execute("SELECT word FROM words WHERE word LIKE ? || '%' AND type1 != ''", (head,))
-        candidates = [row[0] for row in cursor]
+        # DBアクセスをやめ、メモリ上のマップから取得することで高速化
+        # Renderの0.1CPU環境でも負荷がかからないようにする
+        candidates = self.typed_word_map.get(head, [])[:]
         random.shuffle(candidates)
         return candidates
     
