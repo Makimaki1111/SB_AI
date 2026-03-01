@@ -1,4 +1,5 @@
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   background: white;
@@ -9,7 +10,10 @@ html, body {
   font-family: "M PLUS 1p", sans-serif;
 }
 
-input, button, textarea, select {
+input,
+button,
+textarea,
+select {
   font-family: "M PLUS 1p", sans-serif;
 }
 
@@ -19,7 +23,7 @@ input, button, textarea, select {
   aspect-ratio: 10 / 16;
   background-color: #fce5cd;
   border-radius: 16px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -43,7 +47,8 @@ input, button, textarea, select {
   padding: 0 0 0 0;
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* 上下のエリアを離す */
+  justify-content: space-between;
+  /* 上下のエリアを離す */
   gap: 1rem;
 }
 
@@ -52,14 +57,16 @@ input, button, textarea, select {
   flex: 1;
   display: flex;
   flex-direction: column;
-  position: relative; /* 画像などの絶対配置の基準 */
+  position: relative;
+  /* 画像などの絶対配置の基準 */
 }
 
 .input-wrapper {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0rem; /* 要素間の間隔をgapで一括管理 */
+  gap: 0rem;
+  /* 要素間の間隔をgapで一括管理 */
   min-height: 5.3em;
 }
 
@@ -76,7 +83,8 @@ input, button, textarea, select {
   height: 8px;
   background-color: #e0e0e0;
   border-radius: 4px;
-  margin-bottom: 0; /* gapで管理するため削除 */
+  margin-bottom: 0;
+  /* gapで管理するため削除 */
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -122,22 +130,24 @@ input, button, textarea, select {
   margin-top: 0.5rem;
 }
 
-#input {
-    width: 80%;
-    height: 30px;
-    border-radius: 20px;
-    font-size: 1.4em;
-    /* border: 2px solid #646464; */
-    border: none;
-    padding-top: 6px;
-    padding-bottom: 4px;
-    background-color: #E6ECF0;
-    padding-left: 15px;
-    font-family: "M PLUS 1p", sans-serif;
-    font-weight: 400;
+#input,
+#double-input {
+  width: 80%;
+  height: 30px;
+  border-radius: 20px;
+  font-size: 1.4em;
+  /* border: 2px solid #646464; */
+  border: none;
+  padding-top: 6px;
+  padding-bottom: 4px;
+  background-color: #E6ECF0;
+  padding-left: 15px;
+  font-family: "M PLUS 1p", sans-serif;
+  font-weight: 400;
 }
 
-#submit {
+#submit,
+#double-submit {
   font-size: 1.4em;
   border: none;
   width: 42px;
@@ -150,7 +160,8 @@ input, button, textarea, select {
   align-items: center;
   justify-content: center;
   color: #333;
-  padding: 0 0 0 3px; /* アイコンを中央に寄せるための微調整 */
+  padding: 0 0 0 3px;
+  /* アイコンを中央に寄せるための微調整 */
   box-sizing: border-box;
 }
 
@@ -164,7 +175,7 @@ input, button, textarea, select {
   font-size: 16px;
   width: 180px;
   height: 55px;
-  box-shadow: 0 0 4px rgba(0,0,0,0.2);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
   z-index: 2;
 }
 
@@ -233,18 +244,18 @@ input, button, textarea, select {
 }
 
 .ally-word {
-    position: absolute;
-    top: 180px;
-    left: 25%;
-    transform: translateX(-50%);
-    font-weight: bold;
-    color: #2A2A2A;
-    font-family: "M PLUS 1p", sans-serif;
-    white-space: nowrap;
-    letter-spacing: -2px;
-    font-size: 32px;
-    text-align: center;
-    z-index: 1;
+  position: absolute;
+  top: 180px;
+  left: 25%;
+  transform: translateX(-50%);
+  font-weight: bold;
+  color: #2A2A2A;
+  font-family: "M PLUS 1p", sans-serif;
+  white-space: nowrap;
+  letter-spacing: -2px;
+  font-size: 32px;
+  text-align: center;
+  z-index: 1;
 }
 
 #foe-only-type-img {
@@ -278,25 +289,26 @@ input, button, textarea, select {
 }
 
 .foe-word {
-    position: absolute;
-    top: 82px;
-    right: 29%;
-    transform: translateX(50%);
-    font-weight: bold;
-    color: #2A2A2A;
-    font-family: "M PLUS 1p", sans-serif;
-    white-space: nowrap;
-    letter-spacing: -2px;
-    font-size: 32px;
-    text-align: center;
-    z-index: 1;
+  position: absolute;
+  top: 82px;
+  right: 29%;
+  transform: translateX(50%);
+  font-weight: bold;
+  color: #2A2A2A;
+  font-family: "M PLUS 1p", sans-serif;
+  white-space: nowrap;
+  letter-spacing: -2px;
+  font-size: 32px;
+  text-align: center;
+  z-index: 1;
 }
 
 #include-img {
   position: absolute;
   top: 0;
   right: 4rem;
-  transform: translateY(-75%); /* タイマーバーの上に配置 */
+  transform: translateY(-75%);
+  /* タイマーバーの上に配置 */
   /* 他の要素と被らないようサイズを調整 */
   height: 100px;
   opacity: 0.5;
@@ -306,60 +318,62 @@ input, button, textarea, select {
 }
 
 #wait-message {
-    background-color: #fce5cd;
-    width: fit-content;
-    border-radius: 5px 5px 0 0;
-    font-style: italic;
-    position: absolute;
-    top: auto;
-    bottom: 0;
-    left: 0;
-    margin: 0;
-    z-index: 30;
-    padding: 2px 6px;
-    font-size: 0.80rem;
+  background-color: #fce5cd;
+  width: fit-content;
+  border-radius: 5px 5px 0 0;
+  font-style: italic;
+  position: absolute;
+  top: auto;
+  bottom: 0;
+  left: 0;
+  margin: 0;
+  z-index: 30;
+  padding: 2px 6px;
+  font-size: 0.80rem;
 }
 
 #wait-message:empty {
-    display: none;
+  display: none;
 }
 
 #message {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: #333333;
-    color: white;
-    text-align: left;
-    padding: 0 1rem;
-    font-size: 1.2em;
-    border-radius: 0;
-    z-index: 20;
-    display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
-    line-height: 1.4;
-    padding-top: 10px;
-    box-sizing: border-box;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #333333;
+  color: white;
+  text-align: left;
+  padding: 0 1rem;
+  font-size: 1.2em;
+  border-radius: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  line-height: 1.4;
+  padding-top: 10px;
+  box-sizing: border-box;
 }
 
 /* ally-imgとfoe-imgのフェードインアニメーション */
-#ally-img, #foe-img {
-    opacity: 0;
-    animation: fadeIn 1.5s forwards;
+#ally-img,
+#foe-img {
+  opacity: 0;
+  animation: fadeIn 1.5s forwards;
 }
 
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* タイトル画面用: ボタンを中央に大きく配置 */
@@ -407,7 +421,10 @@ input, button, textarea, select {
 }
 
 /* 対人戦 / コンピュータ戦 ボタン共通 */
-#vs-human-btn, #vs-player-btn, #vs-cpu-btn, #create-room-btn {
+#vs-human-btn,
+#vs-player-btn,
+#vs-cpu-btn,
+#create-room-btn {
   display: inline-block;
   width: 72%;
   max-width: 340px;
@@ -418,20 +435,26 @@ input, button, textarea, select {
   border: none;
   background: linear-gradient(180deg, #ffd77a, #ffb84d);
   color: #222;
-  box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
   cursor: pointer;
   text-align: center;
   text-decoration: none;
 }
 
-#vs-human-btn:hover, #vs-player-btn:hover, #vs-cpu-btn:hover {
+#vs-human-btn:hover,
+#vs-player-btn:hover,
+#vs-cpu-btn:hover {
   transform: translateY(-2px);
   transition: transform 120ms ease-in-out;
 }
 
 /* スマホ向けにさらに大きく見せる */
 @media (max-width: 420px) {
-  #vs-human-btn, #vs-player-btn, #vs-cpu-btn, #create-room-btn {
+
+  #vs-human-btn,
+  #vs-player-btn,
+  #vs-cpu-btn,
+  #create-room-btn {
     width: 86%;
     font-size: 1.6rem;
     padding: 16px 20px;
@@ -440,7 +463,8 @@ input, button, textarea, select {
 
 /* Back to title button: fade+slide in and larger size */
 #back-to-title-btn {
-  display: none; /* JS will toggle display */
+  display: none;
+  /* JS will toggle display */
   opacity: 0;
   transform: translateY(8px);
   transition: opacity 320ms ease, transform 320ms ease;
@@ -451,7 +475,7 @@ input, button, textarea, select {
   border: none;
   background: linear-gradient(180deg, #ffd77a, #ffb84d);
   color: #222;
-  box-shadow: 0 8px 18px rgba(0,0,0,0.14);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
   cursor: pointer;
   position: absolute;
   right: 1.8rem;
@@ -470,9 +494,9 @@ input, button, textarea, select {
 /* コンピュータ戦用の中断ボタン */
 #cancel-battle-btn {
   /* position: absolute を解除し、footer-area内で配置 */
-  
+
   z-index: 100;
-  
+
   /* モダンなスタイル */
   padding: 12px 32px;
   font-size: 1.1rem;
@@ -516,31 +540,32 @@ input, button, textarea, select {
 }
 
 .button {
-    font-size: 18px;
-    position: absolute;
-    color: white;
-    text-align: center;
-    cursor: pointer;
-    font-family: "M PLUS 1p", sans-serif;
-    font-weight: 700;
-    margin: 10px;
-    border-radius: 10px;
+  font-size: 18px;
+  position: absolute;
+  color: white;
+  text-align: center;
+  cursor: pointer;
+  font-family: "M PLUS 1p", sans-serif;
+  font-weight: 700;
+  margin: 10px;
+  border-radius: 10px;
 }
 
 #situation-button {
-    display: none;
-    width: 43%;
-    height: 150px;
-    background-color: #9A5252;
-    border: 5px solid #C44041;
-    line-height: 150px;
-    position: relative; /* .buttonのabsoluteを上書き */
-    margin: 0;
-    border-radius: 15px;
+  display: none;
+  width: 43%;
+  height: 150px;
+  background-color: #9A5252;
+  border: 5px solid #C44041;
+  line-height: 150px;
+  position: relative;
+  /* .buttonのabsoluteを上書き */
+  margin: 0;
+  border-radius: 15px;
 }
 
 #situation-button p {
-    margin: 0;
+  margin: 0;
 }
 
 /* 特性情報コンテナ */
@@ -551,7 +576,8 @@ input, button, textarea, select {
   border-radius: 15px;
   width: 43%;
   height: 150px;
-  margin: 0; /* ラッパーで配置するためマージンリセット */
+  margin: 0;
+  /* ラッパーで配置するためマージンリセット */
 
   /* テキストの色を白に */
   color: white;
@@ -577,334 +603,368 @@ input, button, textarea, select {
 
 /* --- 特性選択モーダル --- */
 #ability-modal {
-    position: fixed;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: white;
-    margin-left: 0;
-    z-index: 1000;
-    border-radius: 0px;
-    display: none;
-    flex-direction: column;
-    justify-content: flex-start;
-    padding-bottom: 60px; /* 閉じるボタンの高さ分 */
-    box-sizing: border-box;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: white;
+  margin-left: 0;
+  z-index: 1000;
+  border-radius: 0px;
+  display: none;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding-bottom: 60px;
+  /* 閉じるボタンの高さ分 */
+  box-sizing: border-box;
 }
 
 #ally-tokusei {
-    position: static;
-    margin: 5px auto 10px auto;
-    text-align: left;
-    width: 90%;
-    background: #f9f9f9;
-    padding: 5px 10px;
-    border-radius: 8px;
+  position: static;
+  margin: 5px auto 10px auto;
+  text-align: left;
+  width: 90%;
+  background: #f9f9f9;
+  padding: 5px 10px;
+  border-radius: 8px;
 }
 
 #foe-tokusei {
-    position: static;
-    width: 90%;
-    margin: 10px auto 5px auto;
-    background: #f9f9f9;
-    padding: 5px 10px;
-    border-radius: 8px;
+  position: static;
+  width: 90%;
+  margin: 10px auto 5px auto;
+  background: #f9f9f9;
+  padding: 5px 10px;
+  border-radius: 8px;
 }
 
 .tokusei-name {
-    background-color: #DCDADC;
-    font-size: 16px;
+  background-color: #DCDADC;
+  font-size: 16px;
 }
 
 .tokusei-desc {
-    background-color: white;
-    text-align: left;
-    border: 1px solid #ccc; /* Add border for visibility */
-    padding: 5px;
-    min-height: 1.2em;
+  background-color: white;
+  text-align: left;
+  border: 1px solid #ccc;
+  /* Add border for visibility */
+  padding: 5px;
+  min-height: 1.2em;
 }
 
-#ability-modal .tapto{
-    margin-left: 10px;
-    font-family: "M PLUS 1p", sans-serif;
-    font-weight: 700;
+#ability-modal .tapto {
+  margin-left: 10px;
+  font-family: "M PLUS 1p", sans-serif;
+  font-weight: 700;
 }
 
 #skills {
-    height: auto;
-    flex: 1;
-    overflow-y: auto;
-    padding: 10px;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-content: flex-start;
+  height: auto;
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: flex-start;
 }
 
-#middle{
-    width: 100%;
-    text-align: center;
-    position: static;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+#middle {
+  width: 100%;
+  text-align: center;
+  position: static;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.skill-icon{
-    width: 52px;
-    height: 52px;
+.skill-icon {
+  width: 52px;
+  height: 52px;
 }
 
 .skill-item {
-    text-align: center;
-    line-height: 60%;
-    width: 64px;
-    top: 0px;
-    padding: 2px;
-    border: 1px solid white;
-    box-sizing: border-box;
-    background-color: #efe8e8;
-    border-radius: 10px;
-    z-index: 2;
-    overflow: hidden;
-    cursor: pointer;
-    margin: 4px;
+  text-align: center;
+  line-height: 60%;
+  width: 64px;
+  top: 0px;
+  padding: 2px;
+  border: 1px solid white;
+  box-sizing: border-box;
+  background-color: #efe8e8;
+  border-radius: 10px;
+  z-index: 2;
+  overflow: hidden;
+  cursor: pointer;
+  margin: 4px;
 }
 
 .skill-item.disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .skill-item.selected {
-    background-color: #c8e6c9; /* 少し濃い緑 */
-    border: 2px solid #4CAF50;
-    opacity: 1; /* disabledを上書き */
+  background-color: #c8e6c9;
+  /* 少し濃い緑 */
+  border: 2px solid #4CAF50;
+  opacity: 1;
+  /* disabledを上書き */
 }
 
 .skill-item.selected span {
-    background-color: #e8f5e9;
-    font-weight: bold;
+  background-color: #e8f5e9;
+  font-weight: bold;
 }
 
 .skill-item:not(.disabled):hover {
-    border-color: #448ec6;
-    background-color: #e0f0ff;
+  border-color: #448ec6;
+  background-color: #e0f0ff;
 }
 
-.skill-item span{
-    font-size: 10px;
-    word-break: keep-all;
-    padding-left: 5px;
-    padding-right: 5px;
-    border-radius: 10px;
-    background-color: white;
-    letter-spacing: -1px;
-    display: inline-block;
-    margin-top: 4px;
+.skill-item span {
+  font-size: 10px;
+  word-break: keep-all;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-radius: 10px;
+  background-color: white;
+  letter-spacing: -1px;
+  display: inline-block;
+  margin-top: 4px;
 }
 
 .close-modal {
-    position: absolute;
-    width: 100%;
-    height: 60px;
-    bottom: 0;
-    background-color: #448ec6;
-    color: white;
-    text-align: center;
-    line-height: 60px;
-    cursor: pointer;
-    left: 0;
-    font-size: 1.2rem;
-    font-family: "M PLUS 1p", sans-serif;
-    font-weight: 700;
-    z-index: 10;
+  position: absolute;
+  width: 100%;
+  height: 60px;
+  bottom: 0;
+  background-color: #448ec6;
+  color: white;
+  text-align: center;
+  line-height: 60px;
+  cursor: pointer;
+  left: 0;
+  font-size: 1.2rem;
+  font-family: "M PLUS 1p", sans-serif;
+  font-weight: 700;
+  z-index: 10;
 }
 
 #modal-message {
-    background-color: cornflowerblue;
-    color: white;
-    position: absolute;
-    width: 100%;
-    /* z-indexを他の要素より高く設定 */
-    z-index: 1500;
-    text-align: center;
-    padding: 10px;
-    top: 0;
-    left: 0;
-    box-sizing: border-box;
-    display: none; /* 初期状態では非表示 */
+  background-color: cornflowerblue;
+  color: white;
+  position: absolute;
+  width: 100%;
+  /* z-indexを他の要素より高く設定 */
+  z-index: 1500;
+  text-align: center;
+  padding: 10px;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  display: none;
+  /* 初期状態では非表示 */
 }
 
 /* --- 状況確認モーダル --- */
 #situation-modal {
-    position: fixed;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: white;
-    margin-left: 0;
-    z-index: 1000;
-    border-radius: 0px;
-    display: none;
-    flex-direction: column;
-    padding-top: 40px;
-    padding-bottom: 60px; /* とじるボタンの高さ分を確保 */
-    box-sizing: border-box;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: white;
+  margin-left: 0;
+  z-index: 1000;
+  border-radius: 0px;
+  display: none;
+  flex-direction: column;
+  padding-top: 40px;
+  padding-bottom: 60px;
+  /* とじるボタンの高さ分を確保 */
+  box-sizing: border-box;
 }
 
-#s-foe-info, #s-ally-info {
-    width: 80%;
-    margin: 10px auto;
-    padding: 15px;
-    border: 2px solid #ccc;
-    border-radius: 15px;
-    background-color: #f9f9f9;
-    text-align: center;
-    font-family: "M PLUS 1p", sans-serif;
-    font-weight: 700;
+#s-foe-info,
+#s-ally-info {
+  width: 80%;
+  margin: 10px auto;
+  padding: 15px;
+  border: 2px solid #ccc;
+  border-radius: 15px;
+  background-color: #f9f9f9;
+  text-align: center;
+  font-family: "M PLUS 1p", sans-serif;
+  font-weight: 700;
 }
 
-#s-foe-info h3, #s-ally-info h3 {
-    margin-top: 0;
-    border-bottom: 2px solid #ddd;
-    padding-bottom: 10px;
-    margin-bottom: 10px;
+#s-foe-info h3,
+#s-ally-info h3 {
+  margin-top: 0;
+  border-bottom: 2px solid #ddd;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
 }
 
-#s-foe-info p, #s-ally-info p {
-    display: inline-block;
-    width: 45%;
-    margin: 5px 0;
-    font-size: 1.1em;
+#s-foe-info p,
+#s-ally-info p {
+  display: inline-block;
+  width: 45%;
+  margin: 5px 0;
+  font-size: 1.1em;
 }
 
-#s-foe-info span, #s-ally-info span {
-    font-weight: normal;
-    color: #555;
+#s-foe-info span,
+#s-ally-info span {
+  font-weight: normal;
+  color: #555;
 }
 
 /* 状況モーダル専用の閉じるボタン設定（優先度を上げるためID指定） */
 #situation-modal .close-modal {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 60px;
-    line-height: 60px;
-    background-color: #448ec6;
-    color: white;
-    text-align: center;
-    font-size: 1.2rem;
-    font-family: "M PLUS 1p", sans-serif;
-    font-weight: 700;
-    z-index: 2000;
-    cursor: pointer;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  line-height: 60px;
+  background-color: #448ec6;
+  color: white;
+  text-align: center;
+  font-size: 1.2rem;
+  font-family: "M PLUS 1p", sans-serif;
+  font-weight: 700;
+  z-index: 2000;
+  cursor: pointer;
 }
 
 .poison {
-    background-color: #8f42d4;
-    color: white;
-    border-radius: 10px;
-    padding: 0 10px;
-    float: right;
-    line-height: 100%;
+  background-color: #8f42d4;
+  color: white;
+  border-radius: 10px;
+  padding: 0 10px;
+  float: right;
+  line-height: 100%;
 }
 
 /* --- 回復エフェクト --- */
 .effect-container {
-    position: absolute;
-    width: 220px;
-    height: 150px;
-    pointer-events: none;
-    z-index: 5; /* 楕円(1)より手前、キャラ(11)より奥 */
+  position: absolute;
+  width: 220px;
+  height: 150px;
+  pointer-events: none;
+  z-index: 5;
+  /* 楕円(1)より手前、キャラ(11)より奥 */
 }
 
 #ally-effect-container {
-    top: 80px;
-    left: 0px;
+  top: 80px;
+  left: 0px;
 }
 
 #foe-effect-container {
-    top: 5px;
-    right: 20px;
+  top: 5px;
+  right: 20px;
 }
 
 .heal-particle {
-    position: absolute;
-    color: #4CAF50; /* 緑色 */
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    font-size: 24px;
-    opacity: 0;
-    user-select: none;
+  position: absolute;
+  color: #4CAF50;
+  /* 緑色 */
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  font-size: 24px;
+  opacity: 0;
+  user-select: none;
 }
+
 .heal-particle::after {
-    content: "+"; /* プラスマークを表示 */
+  content: "+";
+  /* プラスマークを表示 */
 }
 
 @keyframes floatUp {
-    0% {
-        transform: translateY(20px) scale(0.5);
-        opacity: 0;
-    }
-    20% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-    100% {
-        transform: translateY(-60px) scale(1.2);
-        opacity: 0;
-    }
+  0% {
+    transform: translateY(20px) scale(0.5);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  100% {
+    transform: translateY(-60px) scale(1.2);
+    opacity: 0;
+  }
 }
 
 /* --- 能力上昇エフェクト --- */
 .stat-up-particle {
-    position: absolute;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    font-size: 24px;
-    opacity: 0;
-    user-select: none;
-    color: #FF4500; /* オレンジレッド (上昇はすべて赤) */
+  position: absolute;
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  font-size: 24px;
+  opacity: 0;
+  user-select: none;
+  color: #FF4500;
+  /* オレンジレッド (上昇はすべて赤) */
 }
-.stat-up-particle::after { content: "▲"; }
+
+.stat-up-particle::after {
+  content: "▲";
+}
 
 /* --- 能力下降エフェクト --- */
 .stat-down-particle {
-    position: absolute;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    font-size: 24px;
-    opacity: 0;
-    user-select: none;
-    color: #1E90FF; /* ドジャーブルー (下降はすべて青) */
+  position: absolute;
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  font-size: 24px;
+  opacity: 0;
+  user-select: none;
+  color: #1E90FF;
+  /* ドジャーブルー (下降はすべて青) */
 }
-.stat-down-particle::after { content: "▼"; }
+
+.stat-down-particle::after {
+  content: "▼";
+}
 
 @keyframes floatDown {
-    0% {
-        transform: translateY(-20px) scale(0.5);
-        opacity: 0;
-    }
-    20% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-    100% {
-        transform: translateY(60px) scale(1.2);
-        opacity: 0;
-    }
+  0% {
+    transform: translateY(-20px) scale(0.5);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  100% {
+    transform: translateY(60px) scale(1.2);
+    opacity: 0;
+  }
 }
 
 /* --- ダメージ点滅エフェクト --- */
 @keyframes blink {
-    0% { opacity: 1; }
-    50% { opacity: 0; }
-    100% { opacity: 1; }
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }
 
 .damage-blink {
-    animation: blink 0.2s 5;
+  animation: blink 0.2s 5;
 }

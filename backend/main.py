@@ -14,8 +14,10 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 try:
     from battle import Battle_info, battle_rooms, SB_info, get_all_abilities_info
+    from double_battle import DoubleBattle_info
 except ImportError:
     from backend.battle import Battle_info, battle_rooms, SB_info, get_all_abilities_info
+    from backend.double_battle import DoubleBattle_info
 
 app = FastAPI()
 
@@ -180,6 +182,11 @@ manager = ConnectionManager()
 
 waiting_player = None # {"socket": WebSocket, "player_id": str}
 private_rooms: Dict[str, Dict] = {} # {room_id: {"socket": WebSocket, "player_id": str}}
+
+# Double Battle Global Stores
+double_battle_rooms: Dict[str, DoubleBattle_info] = {}
+# For double battle, room requires 2 players (1v1 double) or 4 players (2v2 double)
+double_private_rooms: Dict[str, Dict] = {} # {room_id: {"mode": str, "players": [{"socket": WS, "player_id": str}]}}
 
 # --- タイマー管理 ---
 TIME_LIMIT = 20 # 秒
@@ -470,6 +477,154 @@ async def websocket_endpoint(websocket: WebSocket):
                 logger.info(f"Battle room {room_id} was removed due to disconnection.")
 
         logger.info("WebSocket切断・登録解除")
+
+
+
+# --- ダブルバトル用 WebSocket対応部分 ---
+@app.websocket("/ws/double")
+async def websocket_double_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            try:
+                data = await websocket.receive_text()
+                req = json.loads(data)
+            except json.JSONDecodeError:
+                await websocket.send_text(json.dumps({"type": "error", "message": "Invalid JSON"}))
+                continue
+            try:
+                # ユーザー情報の更新
+                if req.get("type") == "update_user_info":
+                    info = req.get("info", {})
+                    player_id = info.get("player_id")
+                    name = info.get("name")
+                    ability = info.get("ability")
+                    if player_id:
+                        if not isinstance(name, str): name = "じぶん"
+                        if len(name) > 8: name = name[:8]
+                        user_profiles[player_id] = {"name": name, "ability": ability}
+                        await websocket.send_text(json.dumps({"type": "user_info_updated", "message": "ユーザー情報を更新しました"}))
+
+                # ルーム作成
+                elif req.get("type") == "create_double_room":
+                    logger.info("hit create_double_room")
+                    info = req.get("info", {})
+                    player_id = info.get("player_id")
+                    mode = info.get("mode", "1v1_double")  # 1v1_double or 2v2_double
+                    logger.info(f"registering player_id: {player_id}")
+                    manager.register_player(websocket, player_id)
+
+                    while True:
+                        new_room_id = f"{secrets.randbelow(1000000):06d}"
+                        if new_room_id not in double_private_rooms: break
+                    
+                    logger.info(f"created room id: {new_room_id}")
+                    double_private_rooms[new_room_id] = {
+                        "mode": mode,
+                        "players": [{"socket": websocket, "player_id": player_id}]
+                    }
+                    logger.info("sending double_room_created text")
+                    await websocket.send_text(json.dumps({"type": "double_room_created", "room_id": new_room_id, "mode": mode}))
+                    logger.info("success create_double_room")
+
+                # ルーム参加
+                elif req.get("type") == "join_double_room":
+                    info = req.get("info", {})
+                    player_id = info.get("player_id")
+                    room_id = info.get("room_id")
+                    manager.register_player(websocket, player_id)
+
+                    if room_id and room_id in double_private_rooms:
+                        room_data = double_private_rooms[room_id]
+                        mode = room_data["mode"]
+                        players = room_data["players"]
+
+                        # 既に参加済みの場合は無視
+                        if any(p["player_id"] == player_id for p in players):
+                            continue
+
+                        players.append({"socket": websocket, "player_id": player_id})
+                        
+                        target_player_count = 2 if mode == "1v1_double" else 4
+
+                        # メンバーが揃った場合、バトル開始
+                        if len(players) == target_player_count:
+                            if mode == "1v1_double":
+                                team1_ids = [players[0]["player_id"]]
+                                team2_ids = [players[1]["player_id"]]
+                            else: # 2v2_double
+                                team1_ids = [players[0]["player_id"], players[1]["player_id"]]
+                                team2_ids = [players[2]["player_id"], players[3]["player_id"]]
+
+                            bi = DoubleBattle_info(mode, team1_ids, team2_ids, sb_info=sb_info_instance, room_id=room_id, profiles=user_profiles)
+                            double_battle_rooms[bi.room_id] = bi
+
+                            for p in players:
+                                manager.join_room(p["socket"], bi.room_id)
+                                init_res = bi._make_response()
+                                init_res["type"] = "init_double_battle"
+                                await p["socket"].send_text(json.dumps(init_res))
+                            
+                            del double_private_rooms[room_id]
+                        else:
+                            # 待機状態を全メンバーに通知
+                            for p in players:
+                                await p["socket"].send_text(json.dumps({
+                                    "type": "waiting_for_players", 
+                                    "current": len(players), 
+                                    "required": target_player_count
+                                }))
+                    else:
+                        await websocket.send_text(json.dumps({"type": "error", "message": "ルームが見つかりません"}))
+
+                # 単語送信（攻撃）
+                elif req.get("type") == "submit_word_double":
+                    info = req.get("info", {})
+                    room_id = info.get("room_id")
+                    player_id = info.get("player_id")
+                    word = info.get("word")
+                    target_char_id = info.get("target_char_id")
+
+                    if room_id in double_battle_rooms:
+                        battle = double_battle_rooms[room_id]
+                        res = battle.try_attack(player_id, word, target_char_id)
+                        
+                        if res.get("type") == "error":
+                            await websocket.send_text(json.dumps(res))
+                        else:
+                            await manager.broadcast(json.dumps(res), room_id)
+                    else:
+                        await websocket.send_text(json.dumps({"type": "error", "message": "戦闘は終了しました"}))
+
+                else:
+                    await websocket.send_text(json.dumps({"type": "error", "message": "Unknown type for double setup"}))
+            except Exception as e:
+                logger.error(f"Unexpected error in /ws/double loop: {e}")
+                logger.error(traceback.format_exc())
+                await websocket.send_text(json.dumps({"type": "error", "message": "サーバー内部エラーが発生しました"}))
+        
+    except WebSocketDisconnect:
+        player_id_to_remove = manager.socket_to_player_id.get(websocket)
+        room_to_remove = None
+        for room_id, data in double_private_rooms.items():
+            for i, p in enumerate(data["players"]):
+                if p["player_id"] == player_id_to_remove:
+                    data["players"].pop(i)
+                    if len(data["players"]) == 0:
+                        room_to_remove = room_id
+                    break
+        if room_to_remove:
+            del double_private_rooms[room_to_remove]
+            logger.info(f"Double private room {room_to_remove} removed.")
+
+        left_rooms = manager.disconnect(websocket)
+        for room_id in left_rooms:
+            if room_id in double_battle_rooms:
+                # 誰かが切断したら強制終了メッセージをブロードキャストして部屋を削除
+                abort_msg = json.dumps({"type": "error", "message": "対戦相手との通信が切断されました"})
+                await manager.broadcast(abort_msg, room_id)
+                del double_battle_rooms[room_id]
+                logger.info(f"Double battle room {room_id} was removed due to disconnection.")
 
 # --- 静的ファイルの配信設定 (必ず最後に追加) ---
 # backendディレクトリの親ディレクトリにあるfrontendディレクトリを取得

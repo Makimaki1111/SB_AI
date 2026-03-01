@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ダブルバトル (β版)</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="double_style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <!-- ダブルバトル ロビー画面 -->
+    <div id="double-lobby-screen" style="display: block;">
+        <div class="phone-box">
+            <div class="content">
+                <h1>ダブルバトル ロビー</h1>
+
+                <div
+                    style="margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 10px; background: rgba(255,255,255,0.8);">
+                    <h3>モード選択</h3>
+                    <div style="display: flex; gap: 10px; margin-top: 10px; justify-content: center;">
+                        <label><input type="radio" name="double_mode" value="1v1_double" checked> 1人2役 (計2名)</label>
+                        <label><input type="radio" name="double_mode" value="2v2_double"> 4人協力対戦 (計4名)</label>
+                    </div>
+                </div>
+
+                <a id="create-double-room-btn" class="button"
+                    style="display: block; text-align: center; margin-bottom: 20px; background-color: #4CAF50; color: white; padding: 15px; border-radius: 10px; text-decoration: none; font-weight: bold; cursor: pointer;">ルームを作成する</a>
+
+                <div
+                    style="display: flex; gap: 8px; align-items: center; width: 100%; max-width: 340px; margin-top: 8px; margin: 0 auto;">
+                    <input type="text" id="double-room-id-input" placeholder="ルームID"
+                        style="flex-grow: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem;">
+                    <button id="join-double-room-btn"
+                        style="padding: 10px 16px; border-radius: 8px; border: none; background-color: #2196F3; color: white; font-size: 1rem; cursor: pointer;">参加する</button>
+                </div>
+
+                <div id="lobby-message" style="margin-top: 20px; color: #333; font-weight: bold; text-align: center;">
+                </div>
+
+                <div style="margin-top: 40px; text-align: center;">
+                    <a href="index.html" style="color: #666; text-decoration: underline;">タイトルに戻る</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ダブルバトル 対戦画面 (初期非表示) -->
+    <div id="double-battle-screen" style="display: none;">
+        <div class="phone-box">
+            <div class="top-image" id="double-top-image">
+                <img src="img/ground.jpg" alt="背景画像" />
+
+                <!-- ＝＝ 自分サイド (左下) ＝＝ -->
+                <!-- キャラ表示用コンテナ -->
+                <div class="double-char-container bottom-left">
+                    <!-- 自キャラA -->
+                    <div class="char-wrapper" id="char-p1a-wrapper">
+                        <img id="p1a-img" class="char-sprite" src="img/animal.gif" />
+                        <div class="double-word" id="p1a-word"></div>
+                        <div id="p1a-effect-container" class="effect-container"></div>
+                    </div>
+                    <!-- 自キャラB -->
+                    <div class="char-wrapper" id="char-p1b-wrapper">
+                        <img id="p1b-img" class="char-sprite" src="img/animal.gif" />
+                        <div class="double-word" id="p1b-word"></div>
+                        <div id="p1b-effect-container" class="effect-container"></div>
+                    </div>
+                </div>
+
+                <!-- 自分サイド情報ウィンドウ (1つのバルーンに統合) -->
+                <div class="balloon right double-balloon" id="team1-balloon">
+                    <div class="team-info">
+                        <div class="member-info">
+                            <span class="member-name" id="p1a-name">じぶん(A)</span>
+                            <div class="bar double-hp-box">
+                                <div class="ally-hp-bar" id="p1a-hp-bar"></div>
+                            </div>
+                            <div class="hp double-hp-text" id="p1a-hp-text"></div>
+                        </div>
+                        <div class="member-info">
+                            <span class="member-name" id="p1b-name">じぶん(B)</span>
+                            <div class="bar double-hp-box">
+                                <div class="ally-hp-bar" id="p1b-hp-bar"></div>
+                            </div>
+                            <div class="hp double-hp-text" id="p1b-hp-text"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ＝＝ 敵サイド (右上) ＝＝ -->
+                <!-- キャラ表示用コンテナ -->
+                <div class="double-char-container top-right">
+                    <!-- 敵キャラB (奥に配置するためDOMでも先に書くかCSSで調整) -->
+                    <div class="char-wrapper" id="char-p2b-wrapper">
+                        <img id="p2b-img" class="char-sprite" src="img/animal.gif" />
+                        <div class="double-word" id="p2b-word"></div>
+                        <div id="p2b-effect-container" class="effect-container"></div>
+                    </div>
+                    <!-- 敵キャラA -->
+                    <div class="char-wrapper" id="char-p2a-wrapper">
+                        <img id="p2a-img" class="char-sprite" src="img/animal.gif" />
+                        <div class="double-word" id="p2a-word"></div>
+                        <div id="p2a-effect-container" class="effect-container"></div>
+                    </div>
+                </div>
+
+                <!-- 敵サイド情報ウィンドウ (1つのバルーンに統合) -->
+                <div class="balloon left double-balloon" id="team2-balloon">
+                    <div class="team-info">
+                        <div class="member-info">
+                            <span class="member-name" id="p2a-name">あいて(A)</span>
+                            <div class="bar double-hp-box">
+                                <div class="foe-hp-bar" id="p2a-hp-bar"></div>
+                            </div>
+                            <div class="hp double-hp-text" id="p2a-hp-text"></div>
+                        </div>
+                        <div class="member-info">
+                            <span class="member-name" id="p2b-name">あいて(B)</span>
+                            <div class="bar double-hp-box">
+                                <div class="foe-hp-bar" id="p2b-hp-bar"></div>
+                            </div>
+                            <div class="hp double-hp-text" id="p2b-hp-text"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="content">
+                <!-- アクションエリア -->
+                <div class="action-area">
+                    <div class="input-wrapper" id="input-wrapper">
+                        <div id="timer-container">
+                            <div id="timer-bar"></div>
+                        </div>
+                        <div id="text">
+                            <input type="text" id="input" autocomplete="off" placeholder="「」からはじまることば" />
+                            <button type="submit" id="submit">▶</button>
+                            <img id="include-img" src="" alt="動的画像" />
+                        </div>
+                        <div id="message"></div>
+                        <div id="wait-message"
+                            style="text-align: center; font-size: 14px; font-weight: bold; color: #333; margin-top: 4px; display: none;">
+                        </div>
+                    </div>
+
+                    <!-- ★ 新規追加: ターゲット選択UI (「入力部」の直下) -->
+                    <div id="target-selection-ui"
+                        style="display: none; justify-content: space-around; margin-top: 4px; background: rgba(255,255,255,0.7); padding: 4px; border-radius: 6px;">
+                        <div style="font-size: 0.85em; font-weight: bold; align-self: center; margin-right: 5px;">
+                            ターゲット:</div>
+                        <button class="target-btn" id="target-p2a-btn">あいてA</button>
+                        <button class="target-btn" id="target-p2b-btn">あいてB</button>
+                    </div>
+
+                    <!-- アクションボタンエリア -->
+                    <div id="actions-wrapper">
+                        <div id="situation-button" class="button">
+                            <p>じょうきょう</p>
+                        </div>
+                        <div id="ability-info-container" class="button">
+                            <p>とくせい</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- フッターエリア -->
+                <div class="footer-area" style="margin-top: 15px;">
+                    <a href="index.html" id="double-back-to-title-btn"
+                        style="display:none; text-align: center; width: 100%; margin-bottom: 10px;">タイトルに戻る</a>
+                    <button id="double-cancel-battle-btn"
+                        style="width: 100%; padding: 10px; background: #e57373; color: white; border: none; border-radius: 8px; cursor: pointer;">にげる</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ダブルバトル用 状況確認モーダル -->
+    <div id="situation-modal" style="display: none;">
+        <div style="display: flex; justify-content: space-between; width: 100%;">
+            <!-- Left: Own Team -->
+            <div style="text-align: left; width: 45%;">
+                <h3 style="margin-top: 5px; margin-bottom: 10px; border-bottom: 2px solid #ccc;">じぶんチーム</h3>
+                <div id="s-p1a-info" style="margin-bottom: 10px;">
+                    <h4 style="margin: 0; color: #ff5722;" id="s-p1a-name">じぶんA</h4>
+                    <p style="margin: 0; font-size: 0.9em;">こうげき: <span id="s-p1a-atk">1.0倍</span></p>
+                    <p style="margin: 0; font-size: 0.9em;">ぼうぎょ: <span id="s-p1a-def">1.0倍</span></p>
+                </div>
+                <div id="s-p1b-info">
+                    <h4 style="margin: 0; color: #ff5722;" id="s-p1b-name">じぶんB</h4>
+                    <p style="margin: 0; font-size: 0.9em;">こうげき: <span id="s-p1b-atk">1.0倍</span></p>
+                    <p style="margin: 0; font-size: 0.9em;">ぼうぎょ: <span id="s-p1b-def">1.0倍</span></p>
+                </div>
+            </div>
+            <!-- Right: Opponent Team -->
+            <div style="text-align: right; width: 45%;">
+                <h3 style="margin-top: 5px; margin-bottom: 10px; border-bottom: 2px solid #ccc;">あいてチーム</h3>
+                <div id="s-p2a-info" style="margin-bottom: 10px;">
+                    <h4 style="margin: 0; color: #00bcd4;" id="s-p2a-name">あいてA</h4>
+                    <p style="margin: 0; font-size: 0.9em;">こうげき: <span id="s-p2a-atk">1.0倍</span></p>
+                    <p style="margin: 0; font-size: 0.9em;">ぼうぎょ: <span id="s-p2a-def">1.0倍</span></p>
+                </div>
+                <div id="s-p2b-info">
+                    <h4 style="margin: 0; color: #00bcd4;" id="s-p2b-name">あいてB</h4>
+                    <p style="margin: 0; font-size: 0.9em;">こうげき: <span id="s-p2b-atk">1.0倍</span></p>
+                    <p style="margin: 0; font-size: 0.9em;">ぼうぎょ: <span id="s-p2b-def">1.0倍</span></p>
+                </div>
+            </div>
+        </div>
+        <div class="close-modal" id="close-situation-modal-btn">とじる</div>
+    </div>
+
+    <!-- ダブルバトル用 特性確認モーダル -->
+    <div id="ability-modal" style="display: none;">
+        <div style="display: flex; justify-content: space-between; width: 100%;">
+            <!-- Left: Own Team -->
+            <div style="text-align: left; width: 48%;">
+                <div style="margin-bottom: 20px;">
+                    <span style="font-weight: bold; font-size: 1.1em;" id="a-p1a-name">じぶんA</span>
+                    <div class="tokusei-name" id="a-p1a-ability-name"
+                        style="font-size: 1em; color: #ff5722; font-weight: bold; margin-top: 4px;">---</div>
+                    <div class="tokusei-desc" id="a-p1a-ability-desc" style="font-size: 0.8em; color: #666;"></div>
+                </div>
+                <div>
+                    <span style="font-weight: bold; font-size: 1.1em;" id="a-p1b-name">じぶんB</span>
+                    <div class="tokusei-name" id="a-p1b-ability-name"
+                        style="font-size: 1em; color: #ff5722; font-weight: bold; margin-top: 4px;">---</div>
+                    <div class="tokusei-desc" id="a-p1b-ability-desc" style="font-size: 0.8em; color: #666;"></div>
+                </div>
+            </div>
+            <!-- Right: Opponent Team -->
+            <div style="text-align: right; width: 48%;">
+                <div style="margin-bottom: 20px;">
+                    <span style="font-weight: bold; font-size: 1.1em;" id="a-p2a-name">あいてA</span>
+                    <div class="tokusei-name" id="a-p2a-ability-name"
+                        style="font-size: 1em; color: #00bcd4; font-weight: bold; margin-top: 4px;">---</div>
+                    <div class="tokusei-desc" id="a-p2a-ability-desc" style="font-size: 0.8em; color: #666;"></div>
+                </div>
+                <div>
+                    <span style="font-weight: bold; font-size: 1.1em;" id="a-p2b-name">あいてB</span>
+                    <div class="tokusei-name" id="a-p2b-ability-name"
+                        style="font-size: 1em; color: #00bcd4; font-weight: bold; margin-top: 4px;">---</div>
+                    <div class="tokusei-desc" id="a-p2b-ability-desc" style="font-size: 0.8em; color: #666;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="close-modal" id="close-ability-modal-btn">とじる</div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="type_to_image.js"></script>
+    <!-- UIとベースロジックを流用 -->
+    <script src="UIObject.js"></script>
+    <script src="double_UI.js"></script>
+    <script src="double_script.js"></script>
+
+</body>
+
+</html>
