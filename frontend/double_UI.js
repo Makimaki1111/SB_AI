@@ -52,7 +52,8 @@ class DoubleUI {
     initCharUI(id) {
         return {
             wrapper: new UIObject($(`#char-${id}-wrapper`)),
-            img: new UIObject($(`#${id}-img`)),
+            img1: new UIObject($(`#${id}-img-1`)),
+            img2: new UIObject($(`#${id}-img-2`)),
             word: new UIObject($(`#${id}-word`)),
             effect: new UIObject($(`#${id}-effect-container`)),
             nameEl: new UIObject($(`#${id}-name`)),
@@ -79,10 +80,12 @@ class DoubleUI {
     setCharVisibility(id, visible) {
         if (visible) {
             this.chars[id].wrapper.show();
-            this.chars[id].img.selector.css('opacity', 1).removeClass('damage-blink');
+            this.chars[id].img1.selector.css('opacity', 1).removeClass('damage-blink');
+            this.chars[id].img2.selector.css('opacity', 1).removeClass('damage-blink');
         } else {
             // slightly transparent or hidden based on preference
-            this.chars[id].img.selector.css('opacity', 0.3);
+            this.chars[id].img1.selector.css('opacity', 0.3);
+            this.chars[id].img2.selector.css('opacity', 0.3);
             this.setWord(id, "");
         }
     }
@@ -121,11 +124,26 @@ class DoubleUI {
         }
     }
 
-    setCharImage(id, type) {
-        if (this.chars[id] && window.type_to_image) {
-            const newImg = window.type_to_image[type];
+    setCharImage(id, types) {
+        if (!this.chars[id] || typeof type_to_image === "undefined" || !types || types.length === 0) return;
+
+        if (types.length === 2) {
+            const newImg1 = type_to_image[types[0]];
+            const newImg2 = type_to_image[types[1]];
+            if (newImg1) {
+                this.chars[id].img1.selector.attr('src', "img/" + newImg1 + ".gif").show();
+                this.chars[id].img2.selector.hide();
+                if (newImg2) {
+                    setTimeout(() => {
+                        if (this.chars[id]) this.chars[id].img2.selector.attr('src', "img/" + newImg2 + ".gif").show();
+                    }, 80);
+                }
+            }
+        } else {
+            const newImg = type_to_image[types[0]];
             if (newImg) {
-                this.chars[id].img.selector.attr('src', "img/" + newImg + ".gif");
+                this.chars[id].img1.selector.attr('src', "img/" + newImg + ".gif").show();
+                this.chars[id].img2.selector.hide();
             }
         }
     }
@@ -136,9 +154,13 @@ class DoubleUI {
         const container = this.chars[id].effect.selector;
 
         if (type === "damage") {
-            this.chars[id].img.selector.addClass('damage-blink');
+            this.chars[id].img1.selector.addClass('damage-blink');
+            this.chars[id].img2.selector.addClass('damage-blink');
             setTimeout(() => {
-                this.chars[id].img.selector.removeClass('damage-blink');
+                if (this.chars[id]) {
+                    this.chars[id].img1.selector.removeClass('damage-blink');
+                    this.chars[id].img2.selector.removeClass('damage-blink');
+                }
             }, 1000);
         }
         else if (type === "heal") {

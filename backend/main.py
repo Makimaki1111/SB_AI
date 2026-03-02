@@ -1,6 +1,7 @@
 import uvicorn
 import json
 import secrets
+import uuid
 import asyncio
 import logging
 import traceback
@@ -527,6 +528,26 @@ async def websocket_double_endpoint(websocket: WebSocket):
                     await websocket.send_text(json.dumps({"type": "double_room_created", "room_id": new_room_id, "mode": mode}))
                     logger.info("success create_double_room")
 
+                # CPU戦ルーム作成＆参加 (デバッグ用)
+                elif req.get("type") == "join_double_cpu_room":
+                    info = req.get("info", {})
+                    player_id = info.get("player_id")
+                    manager.register_player(websocket, player_id)
+
+                    room_id = f"cpu_double_{uuid.uuid4().hex[:6]}"
+                    mode = "1v1_double"
+                    
+                    team1_ids = [player_id]
+                    team2_ids = ["cpu_p2a", "cpu_p2b"]
+
+                    bi = DoubleBattle_info(mode, team1_ids, team2_ids, sb_info=sb_info_instance, room_id=room_id, profiles=user_profiles, is_cpu=True)
+                    double_battle_rooms[bi.room_id] = bi
+
+                    manager.join_room(websocket, bi.room_id)
+                    init_res = bi._make_response()
+                    init_res["type"] = "init_double_battle"
+                    await websocket.send_text(json.dumps(init_res))
+
                 # ルーム参加
                 elif req.get("type") == "join_double_room":
                     info = req.get("info", {})
@@ -593,6 +614,14 @@ async def websocket_double_endpoint(websocket: WebSocket):
                             await websocket.send_text(json.dumps(res))
                         else:
                             await manager.broadcast(json.dumps(res), room_id)
+                            
+                            # CPUの連続ターンの可能性も考慮してループ (p1bも死んでいて敵2連続行動の場合など)
+                            while battle.is_cpu and battle.get_current_actor().owner_id.startswith("cpu_") and not battle.team1_win is not None:
+                                import asyncio
+                                await asyncio.sleep(1.0) # CPUの思考時間の演出
+                                cpu_res = battle.execute_cpu_turn()
+                                if cpu_res:
+                                    await manager.broadcast(json.dumps(cpu_res), room_id)
                     else:
                         await websocket.send_text(json.dumps({"type": "error", "message": "戦闘は終了しました"}))
 

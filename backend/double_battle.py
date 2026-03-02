@@ -37,9 +37,10 @@ class DoubleBattle_info:
     2体のキャラクター(A, B) vs 2体のキャラクター(A, B)の戦いを想定。
     """
     # mode = '1v1_double' (2 players, 4 chars) or '2v2_double' (4 players, 4 chars)
-    def __init__(self, mode: str, team1_players: list, team2_players: list, sb_info: SB_info, room_id: str | None = None, profiles: dict = None):
+    def __init__(self, mode: str, team1_players: list, team2_players: list, sb_info: SB_info, room_id: str | None = None, profiles: dict = None, is_cpu: bool = False):
         self.room_id = room_id or str(uuid.uuid4())
         self.mode = mode
+        self.is_cpu = is_cpu
         self.used = defaultdict(list)
         self.sb_info = sb_info
         
@@ -54,8 +55,12 @@ class DoubleBattle_info:
         self.p1b = self._create_character(team1_players[1] if len(team1_players) > 1 else team1_players[0], 'p1b', "じぶんB", profiles)
         
         # チーム2 (Player2サイド: p2a, p2b)
-        self.p2a = self._create_character(team2_players[0], 'p2a', "あいてA", profiles)
-        self.p2b = self._create_character(team2_players[1] if len(team2_players) > 1 else team2_players[0], 'p2b', "あいてB", profiles)
+        if self.is_cpu:
+            self.p2a = self._create_character(team2_players[0], 'p2a', "CPU_A", profiles)
+            self.p2b = self._create_character(team2_players[1] if len(team2_players) > 1 else team2_players[0], 'p2b', "CPU_B", profiles)
+        else:
+            self.p2a = self._create_character(team2_players[0], 'p2a', "あいてA", profiles)
+            self.p2b = self._create_character(team2_players[1] if len(team2_players) > 1 else team2_players[0], 'p2b', "あいてB", profiles)
 
         self.team1 = [self.p1a, self.p1b]
         self.team2 = [self.p2a, self.p2b]
@@ -146,6 +151,12 @@ class DoubleBattle_info:
         damage *= random.uniform(DAMAGE_RANDOM_MIN, DAMAGE_RANDOM_MAX)
         return effect, int(damage), is_critical
 
+    def _is_valid_initial(self, word: str):
+        return word.startswith(self.character)
+
+    def _is_used(self, word: str):
+        return word in self.used
+
     def try_attack(self, player_id: str, word: str, target_char_id: str = None):
         if self.team1_win is not None:
             return {"type": "error", "message": "戦闘はすでに終了しています"}
@@ -158,7 +169,7 @@ class DoubleBattle_info:
         if not self.sb_info.include_in_all_words(word) and not self.sb_info.inclue_in_typed_words(word):
             return {"type": "error", "message": "辞書にない単語です"}
         if word in self.used: return {"type": "error", "message": "使用済みの単語です"}
-        if word[0] != self.character: return {"type": "error", "message": "開始文字がマッチしていません"}
+        if not self._is_valid_initial(word): return {"type": "error", "message": f"「{self.character}」からはじまることばを入力してください"}
         if self.sb_info.get_next_initial(word) == "ん": return {"type": "error", "message": "「ん」で終わっています"}
         if not self.sb_info.include_in_typed_heads(self.sb_info.get_next_initial(word)):
             return {"type": "error", "message": "禁止された単語です"}
@@ -331,6 +342,34 @@ class DoubleBattle_info:
         self.word = ""
         self.events = []
         return ret
+
+    def get_cpu_word(self):
+        candidates = self.sb_info.get_typed_word_candidates(self.character)
+        for word in candidates:
+            if not self._is_used(word):
+                return word
+        return ""
+
+    def execute_cpu_turn(self):
+        actor = self.get_current_actor()
+        cpu_word = self.get_cpu_word()
+        if cpu_word:
+            # CPUは生存している敵陣のターゲットをランダムに狙う
+            valid_targets = [p.id for p in self.team1 if not p.is_defeated]
+            if not valid_targets:
+                self.team1_win = False
+                return self._make_response()
+            target_id = random.choice(valid_targets)
+            return self.try_attack(actor.owner_id, cpu_word, target_char_id=target_id)
+        else:
+            # 降参扱い
+            actor.hp = 0
+            self.events.append({"text": f"{actor.name}は ことばを思いつかなかった！", "character_id": actor.id})
+            if self._check_win_condition():
+                self.events.append({"text": "チーム1の勝利！" if self.team1_win else "チーム2の勝利！", "character_id": "system"})
+            else:
+                self._advance_turn_index()
+            return self._make_response()
 
     def _make_response(self):
         # フロントエンドに通知する情報の構築

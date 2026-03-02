@@ -39,6 +39,11 @@
                         style="padding: 10px 16px; border-radius: 8px; border: none; background-color: #2196F3; color: white; font-size: 1rem; cursor: pointer;">参加する</button>
                 </div>
 
+                <!-- CPU戦(デバッグ用) -->
+                <button id="cpu-double-battle-btn"
+                    style="display: block; width: 100%; max-width: 340px; margin: 20px auto 0 auto; padding: 12px; border-radius: 8px; border: none; background-color: #9C27B0; color: white; font-size: 1rem; font-weight: bold; cursor: pointer;">CPU戦
+                    (デバッグ)</button>
+
                 <div id="lobby-message" style="margin-top: 20px; color: #333; font-weight: bold; text-align: center;">
                 </div>
 
@@ -60,13 +65,15 @@
                 <div class="double-char-container bottom-left">
                     <!-- 自キャラA -->
                     <div class="char-wrapper" id="char-p1a-wrapper">
-                        <img id="p1a-img" class="char-sprite" src="img/animal.gif" />
+                        <img id="p1a-img-1" class="char-sprite" src="" style="display:none;" />
+                        <img id="p1a-img-2" class="char-sprite type2-sprite" src="" style="display:none;" />
                         <div class="double-word" id="p1a-word"></div>
                         <div id="p1a-effect-container" class="effect-container"></div>
                     </div>
                     <!-- 自キャラB -->
                     <div class="char-wrapper" id="char-p1b-wrapper">
-                        <img id="p1b-img" class="char-sprite" src="img/animal.gif" />
+                        <img id="p1b-img-1" class="char-sprite" src="" style="display:none;" />
+                        <img id="p1b-img-2" class="char-sprite type2-sprite" src="" style="display:none;" />
                         <div class="double-word" id="p1b-word"></div>
                         <div id="p1b-effect-container" class="effect-container"></div>
                     </div>
@@ -97,13 +104,15 @@
                 <div class="double-char-container top-right">
                     <!-- 敵キャラB (奥に配置するためDOMでも先に書くかCSSで調整) -->
                     <div class="char-wrapper" id="char-p2b-wrapper">
-                        <img id="p2b-img" class="char-sprite" src="img/animal.gif" />
+                        <img id="p2b-img-1" class="char-sprite" src="" style="display:none;" />
+                        <img id="p2b-img-2" class="char-sprite type2-sprite" src="" style="display:none;" />
                         <div class="double-word" id="p2b-word"></div>
                         <div id="p2b-effect-container" class="effect-container"></div>
                     </div>
                     <!-- 敵キャラA -->
                     <div class="char-wrapper" id="char-p2a-wrapper">
-                        <img id="p2a-img" class="char-sprite" src="img/animal.gif" />
+                        <img id="p2a-img-1" class="char-sprite" src="" style="display:none;" />
+                        <img id="p2a-img-2" class="char-sprite type2-sprite" src="" style="display:none;" />
                         <div class="double-word" id="p2a-word"></div>
                         <div id="p2a-effect-container" class="effect-container"></div>
                     </div>
@@ -253,6 +262,7 @@
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/wanakana"></script>
     <script src="type_to_image.js"></script>
     <!-- UIとベースロジックを流用 -->
     <script src="UIObject.js"></script>

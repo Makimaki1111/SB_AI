@@ -20,10 +20,18 @@
     margin: 0;
 }
 
+/* ダブルバトル画面上部領域: 元のbattle-areaに相当 */
+.double-battle-area {
+    flex: 1;
+    position: relative;
+    min-height: 260px;
+    max-height: 50vh;
+}
+
 /* キャラクター２体表示用コンテナ */
 .double-char-container {
     position: absolute;
-    width: 250px;
+    width: 210px;
     height: 150px;
     /* border: 1px dotted red; /* デバッグ用 */
     z-index: 10;
@@ -58,10 +66,16 @@
 }
 
 .char-sprite {
-    max-width: 100%;
-    max-height: 100%;
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
     z-index: 11;
-    display: block;
+}
+
+.char-sprite.type2-sprite {
+    z-index: 12;
+    transform: translate(15px, -10px);
 }
 
 /* 奥のキャラを少し小さく／高くする等、Z軸の重なり調整 (オプション) */
@@ -91,12 +105,16 @@
     transform: translateX(-50%);
     font-weight: bold;
     color: #2A2A2A;
+    background-color: rgba(255, 255, 255, 0.85);
+    padding: 2px 12px;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
     white-space: nowrap;
     letter-spacing: -1.5px;
     font-size: 24px;
     font-family: "M PLUS 1p", sans-serif;
     text-align: center;
-    z-index: 20;
+    z-index: 50;
     display: none;
 }
 
@@ -106,21 +124,21 @@
     /* 人数分伸びるように */
     min-height: 60px;
     padding: 8px;
-    width: 160px;
+    width: 145px;
 }
 
 /* 敵サイド（右上キャラ）のバルーンは「左上」に配置して被りを防ぐ */
 #double-battle-screen .balloon.left.double-balloon {
-    top: 10px;
-    left: 10px;
+    top: 5px;
+    left: 0px;
     right: auto;
     bottom: auto;
 }
 
 /* 自分サイド（左下キャラ）のバルーンは「右下」に配置して被りを防ぐ */
 #double-battle-screen .balloon.right.double-balloon {
-    bottom: 20px;
-    right: 10px;
+    bottom: 5px;
+    right: 0px;
     top: auto;
     left: auto;
 }

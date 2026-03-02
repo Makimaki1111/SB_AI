@@ -57,6 +57,11 @@ $(() => {
     // UI初期化
     ui = new DoubleUI();
 
+    // Wanakana.jsによるローマ字→ひらがな自動変換を設定
+    if (typeof wanakana !== 'undefined') {
+        wanakana.bind(document.getElementById('input'));
+    }
+
     $('#create-double-room-btn').on('click', () => {
         const mode = $('input[name="double_mode"]:checked').val();
         connectDoubleWebSocket('create', mode);
@@ -69,6 +74,10 @@ $(() => {
             return;
         }
         connectDoubleWebSocket('join', null, roomId);
+    });
+
+    $('#cpu-double-battle-btn').on('click', () => {
+        connectDoubleWebSocket('cpu');
     });
 
     $('#double-cancel-battle-btn').on('click', () => {
@@ -147,6 +156,11 @@ function connectDoubleWebSocket(action, mode, roomId) {
             ws.send(JSON.stringify({
                 type: "join_double_room",
                 info: { player_id: player1_id, room_id: roomId }
+            }));
+        } else if (action === 'cpu') {
+            ws.send(JSON.stringify({
+                type: "join_double_cpu_room",
+                info: { player_id: player1_id }
             }));
         }
     });
@@ -236,11 +250,11 @@ async function handleTurnResult(data) {
         const uiLastActorId = getUIId(data.last_actor_id);
         ui.setWord(uiLastActorId, data.word);
 
-        let charType = "ノーマル";
+        let types = ["ノーマル"];
         if (data.characters[data.last_actor_id].types && data.characters[data.last_actor_id].types.length > 0) {
-            charType = data.characters[data.last_actor_id].types[0];
+            types = data.characters[data.last_actor_id].types;
         }
-        ui.setCharImage(uiLastActorId, charType);
+        ui.setCharImage(uiLastActorId, types);
 
         await sleep(1000); // 1秒「間」を作る
     }
