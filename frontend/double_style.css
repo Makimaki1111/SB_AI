@@ -39,7 +39,7 @@
 
 /* 自分サイド（左下） */
 .double-char-container.bottom-left {
-    bottom: -10px;
+    bottom: 35px;
     left: -10px;
     display: flex;
     align-items: flex-end;
@@ -48,7 +48,7 @@
 
 /* 敵サイド（右上） */
 .double-char-container.top-right {
-    top: -10px;
+    top: 5px;
     right: -10px;
     display: flex;
     align-items: flex-end;
@@ -129,7 +129,7 @@
 
 /* 敵サイド（右上キャラ）のバルーンは「左上」に配置して被りを防ぐ */
 #double-battle-screen .balloon.left.double-balloon {
-    top: 5px;
+    top: 50px;
     left: 0px;
     right: auto;
     bottom: auto;

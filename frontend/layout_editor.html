@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ダブルバトル レイアウトエディター</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="double_style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* エディター専用スタイル */
+        body {
+            display: flex;
+            background: #1a1a2e;
+            margin: 0;
+            height: 100vh;
+            font-family: "M PLUS 1p", sans-serif;
+        }
+
+        #editor-preview {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #editor-preview h1 {
+            color: #FFD700;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        /* phone-box が実際のサイズで表示されるように */
+        #editor-preview .phone-box {
+            pointer-events: auto;
+        }
+
+        /* エディター上では全要素表示 */
+        #double-battle-screen {
+            display: block !important;
+        }
+
+        .double-word {
+            display: block !important;
+        }
+
+        /* ドラッグ選択時のハイライト */
+        .drag-selected {
+            outline: 3px dashed #FFD700 !important;
+            outline-offset: 3px;
+        }
+
+        /* コントロールパネル */
+        #ctrl {
+            width: 360px;
+            background: #16213e;
+            padding: 15px;
+            overflow-y: auto;
+            border-left: 2px solid #0f3460;
+            color: #eee;
+            font-size: 12px;
+        }
+
+        #ctrl h2 {
+            color: #FFD700;
+            font-size: 14px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 4px;
+            margin: 10px 0 6px;
+        }
+
+        .cg {
+            background: #1a1a3e;
+            padding: 8px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .cg h3 {
+            color: #aaa;
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+
+        .cr {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+
+        .cr label {
+            width: 65px;
+            text-align: right;
+            color: #ccc;
+            flex-shrink: 0;
+        }
+
+        .cr input[type="range"] {
+            flex: 1;
+            accent-color: #FFD700;
+        }
+
+        .cr .v {
+            width: 35px;
+            text-align: center;
+            color: #FFD700;
+            font-weight: bold;
+        }
+
+        #css-out {
+            background: #0d1b2a;
+            color: #0f8;
+            font-family: monospace;
+            font-size: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            white-space: pre-wrap;
+            max-height: 280px;
+            overflow-y: auto;
+            border: 1px solid #333;
+            line-height: 1.4;
+            margin-top: 5px;
+        }
+
+        #copy-btn {
+            background: #FFD700;
+            color: #1a1a2e;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        #copy-btn:hover {
+            background: #ffed4a;
+        }
+
+        .hint {
+            font-size: 10px;
+            color: #888;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- 左: 実際のバトル画面プレビュー -->
+    <div id="editor-preview">
+        <h1>📐 ダブルバトル レイアウトエディター</h1>
+        <div id="double-battle-screen">
+            <div class="phone-box">
+                <div class="top-image" id="double-top-image" style="overflow:visible; flex:none; height:300px;">
+                    <img src="img/ground.jpg" alt="背景画像" />
+
+                    <!-- 自分サイド (左下) -->
+                    <div class="double-char-container bottom-left" id="el-ally-chars">
+                        <div class="char-wrapper" id="char-p1b-wrapper">
+                            <img class="char-sprite" src="img/food.gif" style="display:block;" />
+                            <div class="double-word" id="p1b-word">しりとり</div>
+                        </div>
+                        <div class="char-wrapper" id="char-p1a-wrapper">
+                            <img class="char-sprite" src="img/plant.gif" style="display:block;" />
+                            <div class="double-word" id="p1a-word">りんご</div>
+                        </div>
+                    </div>
+
+                    <!-- 敵サイド (右上) -->
+                    <div class="double-char-container top-right" id="el-enemy-chars">
+                        <div class="char-wrapper" id="char-p2b-wrapper">
+                            <img class="char-sprite" src="img/violence.gif" style="display:block;" />
+                            <div class="double-word" id="p2b-word">ごりら</div>
+                        </div>
+                        <div class="char-wrapper" id="char-p2a-wrapper">
+                            <img class="char-sprite" src="img/person.gif" style="display:block;" />
+                            <div class="double-word" id="p2a-word">らっぱ</div>
+                        </div>
+                    </div>
+
+                    <!-- 敵バルーン (左上) -->
+                    <div class="balloon left double-balloon" id="el-enemy-balloon">
+                        <div class="team-info">
+                            <div class="member-info">
+                                <span class="member-name">CPU_A(A)</span>
+                                <div class="bar double-hp-box">
+                                    <div class="foe-hp-bar" style="width:100%"></div>
+                                </div>
+                                <div class="hp double-hp-text">60/60</div>
+                            </div>
+                            <div class="member-info">
+                                <span class="member-name">CPU_B(B)</span>
+                                <div class="bar double-hp-box">
+                                    <div class="foe-hp-bar" style="width:100%"></div>
+                                </div>
+                                <div class="hp double-hp-text">60/60</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 味方バルーン (右下) -->
+                    <div class="balloon right double-balloon" id="el-ally-balloon">
+                        <div class="team-info">
+                            <div class="member-info">
+                                <span class="member-name">じぶんA(A)</span>
+                                <div class="bar double-hp-box">
+                                    <div class="ally-hp-bar" style="width:100%"></div>
+                                </div>
+                                <div class="hp double-hp-text">60/60</div>
+                            </div>
+                            <div class="member-info">
+                                <span class="member-name">じぶんB(B)</span>
+                                <div class="bar double-hp-box">
+                                    <div class="ally-hp-bar" style="width:100%"></div>
+                                </div>
+                                <div class="hp double-hp-text">60/60</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content">
+                    <div class="action-area">
+                        <div class="input-wrapper">
+                            <div id="text">
+                                <input type="text" id="input" autocomplete="off" placeholder="「に」からはじまることば" disabled />
+                                <button type="submit" id="submit">▶</button>
+                            </div>
+                            <div id="wait-message" style="font-size:12px;color:#888;">あなたのターンです (じぶんA(A))</div>
+                        </div>
+                        <div
+                            style="min-height:46px;display:flex;align-items:center;justify-content:center;margin-top:6px;">
+                            <div
+                                style="display:flex;justify-content:center;align-items:center;gap:12px;padding:6px 12px;background:rgba(255,255,255,0.7);border-radius:12px;width:85%;">
+                                <div style="font-size:0.9em;font-weight:bold;color:#444;">ターゲット:</div>
+                                <button class="target-btn">あいてA</button>
+                                <button class="target-btn">あいてB</button>
+                            </div>
+                        </div>
+                        <div id="actions-wrapper">
+                            <div id="situation-button" style="display:flex;justify-content:center;align-items:center;">
+                                <p>じょうきょう</p>
+                            </div>
+                            <div id="ability-info-container"
+                                style="display:flex;justify-content:center;align-items:center;">
+                                <p>とくせい</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="footer-area">
+                        <button id="cancel-battle-btn">にげる</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 右: コントロールパネル -->
+    <div id="ctrl">
+        <h2>🎮 要素の位置調整</h2>
+        <p class="hint">スライダーで調整 or プレビュー上でドラッグ</p>
+
+        <div class="cg">
+            <h3>味方キャラ (左下)</h3>
+            <div class="cr"><label>bottom:</label><input type="range" id="s-ac-b" min="-30" max="150" value="-10"><span
+                    class="v" id="v-ac-b">-10</span>px</div>
+            <div class="cr"><label>left:</label><input type="range" id="s-ac-l" min="-50" max="250" value="-10"><span
+                    class="v" id="v-ac-l">-10</span>px</div>
+        </div>
+        <div class="cg">
+            <h3>敵キャラ (右上)</h3>
+            <div class="cr"><label>top:</label><input type="range" id="s-ec-t" min="-30" max="200" value="-10"><span
+                    class="v" id="v-ec-t">-10</span>px</div>
+            <div class="cr"><label>right:</label><input type="range" id="s-ec-r" min="-50" max="250" value="-10"><span
+                    class="v" id="v-ec-r">-10</span>px</div>
+        </div>
+        <div class="cg">
+            <h3>敵バルーン (左上)</h3>
+            <div class="cr"><label>top:</label><input type="range" id="s-eb-t" min="0" max="250" value="5"><span
+                    class="v" id="v-eb-t">5</span>px</div>
+            <div class="cr"><label>left:</label><input type="range" id="s-eb-l" min="0" max="300" value="0"><span
+                    class="v" id="v-eb-l">0</span>px</div>
+        </div>
+        <div class="cg">
+            <h3>味方バルーン (右下)</h3>
+            <div class="cr"><label>bottom:</label><input type="range" id="s-ab-b" min="-20" max="200" value="5"><span
+                    class="v" id="v-ab-b">5</span>px</div>
+            <div class="cr"><label>right:</label><input type="range" id="s-ab-r" min="0" max="300" value="0"><span
+                    class="v" id="v-ab-r">0</span>px</div>
+        </div>
+        <div class="cg">
+            <h3>味方の単語</h3>
+            <div class="cr"><label>top:</label><input type="range" id="s-aw-t" min="-100" max="150" value="100"><span
+                    class="v" id="v-aw-t">100</span>%</div>
+            <div class="cr"><label>left:</label><input type="range" id="s-aw-l" min="-50" max="200" value="50"><span
+                    class="v" id="v-aw-l">50</span>%</div>
+        </div>
+        <div class="cg">
+            <h3>敵の単語</h3>
+            <div class="cr"><label>top:</label><input type="range" id="s-ew-t" min="-100" max="150" value="100"><span
+                    class="v" id="v-ew-t">100</span>%</div>
+            <div class="cr"><label>left:</label><input type="range" id="s-ew-l" min="-50" max="200" value="50"><span
+                    class="v" id="v-ew-l">50</span>%</div>
+        </div>
+
+        <h2>📋 CSS出力</h2>
+        <div id="css-out"></div>
+        <button id="copy-btn" onclick="copyCSS()">📋 CSSをコピー</button>
+    </div>
+
+    <script>
+        // --- スライダー → 要素への反映 ---
+        const S = {
+            's-ac-b': { el: 'el-ally-chars', p: 'bottom' },
+            's-ac-l': { el: 'el-ally-chars', p: 'left' },
+            's-ec-t': { el: 'el-enemy-chars', p: 'top' },
+            's-ec-r': { el: 'el-enemy-chars', p: 'right' },
+            's-eb-t': { el: 'el-enemy-balloon', p: 'top' },
+            's-eb-l': { el: 'el-enemy-balloon', p: 'left' },
+            's-ab-b': { el: 'el-ally-balloon', p: 'bottom' },
+            's-ab-r': { el: 'el-ally-balloon', p: 'right' },
+        };
+
+        // 初期値をCSSから読み取り
+        window.addEventListener('DOMContentLoaded', () => {
+            const cs = (id) => getComputedStyle(document.getElementById(id));
+            const topImg = document.getElementById('double-top-image');
+            const th = topImg.offsetHeight;
+            const tw = topImg.offsetWidth;
+
+            // 味方キャラ
+            const ac = document.getElementById('el-ally-chars');
+            const acRect = ac.getBoundingClientRect();
+            const tiRect = topImg.getBoundingClientRect();
+            setSlider('s-ac-b', Math.round(tiRect.bottom - acRect.bottom));
+            setSlider('s-ac-l', Math.round(acRect.left - tiRect.left));
+            // 敵キャラ
+            const ec = document.getElementById('el-enemy-chars');
+            const ecRect = ec.getBoundingClientRect();
+            setSlider('s-ec-t', Math.round(ecRect.top - tiRect.top));
+            setSlider('s-ec-r', Math.round(tiRect.right - ecRect.right));
+            // 敵バルーン
+            const eb = document.getElementById('el-enemy-balloon');
+            const ebRect = eb.getBoundingClientRect();
+            setSlider('s-eb-t', Math.round(ebRect.top - tiRect.top));
+            setSlider('s-eb-l', Math.round(ebRect.left - tiRect.left));
+            // 味方バルーン
+            const ab = document.getElementById('el-ally-balloon');
+            const abRect = ab.getBoundingClientRect();
+            setSlider('s-ab-b', Math.round(tiRect.bottom - abRect.bottom));
+            setSlider('s-ab-r', Math.round(tiRect.right - abRect.right));
+
+            genCSS();
+        });
+
+        function setSlider(id, val) {
+            const s = document.getElementById(id);
+            s.value = val;
+            document.getElementById('v' + id.slice(1)).textContent = val;
+        }
+
+        for (const [id, cfg] of Object.entries(S)) {
+            document.getElementById(id).addEventListener('input', function () {
+                document.getElementById('v' + id.slice(1)).textContent = this.value;
+                document.getElementById(cfg.el).style[cfg.p] = this.value + 'px';
+                genCSS();
+            });
+        }
+
+        // 単語スライダー
+        ['s-aw-t', 's-aw-l', 's-ew-t', 's-ew-l'].forEach(id => {
+            document.getElementById(id).addEventListener('input', function () {
+                document.getElementById('v' + id.slice(1)).textContent = this.value;
+                const isAlly = id.includes('-aw-');
+                const isTop = id.endsWith('-t');
+                const words = document.querySelectorAll(isAlly ? '.bottom-left .double-word' : '.top-right .double-word');
+                words.forEach(w => {
+                    if (isTop) w.style.top = this.value + '%';
+                    else { w.style.left = this.value + '%'; w.style.transform = `translateX(-${this.value}%)`; }
+                });
+                genCSS();
+            });
+        });
+
+        // --- ドラッグ ---
+        let drag = null, dx = 0, dy = 0;
+        ['el-ally-chars', 'el-enemy-chars', 'el-enemy-balloon', 'el-ally-balloon'].forEach(id => {
+            const el = document.getElementById(id);
+            el.style.cursor = 'grab';
+            el.addEventListener('mousedown', e => {
+                e.preventDefault();
+                drag = el;
+                const r = el.getBoundingClientRect();
+                dx = e.clientX - r.left; dy = e.clientY - r.top;
+                document.querySelectorAll('.drag-selected').forEach(d => d.classList.remove('drag-selected'));
+                el.classList.add('drag-selected');
+            });
+        });
+
+        document.addEventListener('mousemove', e => {
+            if (!drag) return;
+            const pr = document.getElementById('double-top-image').getBoundingClientRect();
+            const x = e.clientX - pr.left - dx;
+            const y = e.clientY - pr.top - dy;
+            const id = drag.id;
+
+            if (id === 'el-ally-chars') {
+                const b = Math.round(pr.height - y - drag.offsetHeight);
+                drag.style.bottom = b + 'px'; drag.style.left = Math.round(x) + 'px';
+                drag.style.top = 'auto'; drag.style.right = 'auto';
+                setSlider('s-ac-b', b); setSlider('s-ac-l', Math.round(x));
+            } else if (id === 'el-enemy-chars') {
+                const r = Math.round(pr.width - x - drag.offsetWidth);
+                drag.style.top = Math.round(y) + 'px'; drag.style.right = r + 'px';
+                drag.style.bottom = 'auto'; drag.style.left = 'auto';
+                setSlider('s-ec-t', Math.round(y)); setSlider('s-ec-r', r);
+            } else if (id === 'el-enemy-balloon') {
+                drag.style.top = Math.round(y) + 'px'; drag.style.left = Math.round(x) + 'px';
+                drag.style.bottom = 'auto'; drag.style.right = 'auto';
+                setSlider('s-eb-t', Math.round(y)); setSlider('s-eb-l', Math.round(x));
+            } else if (id === 'el-ally-balloon') {
+                const b = Math.round(pr.height - y - drag.offsetHeight);
+                const r = Math.round(pr.width - x - drag.offsetWidth);
+                drag.style.bottom = b + 'px'; drag.style.right = r + 'px';
+                drag.style.top = 'auto'; drag.style.left = 'auto';
+                setSlider('s-ab-b', b); setSlider('s-ab-r', r);
+            }
+            genCSS();
+        });
+        document.addEventListener('mouseup', () => { drag = null; });
+
+        // --- CSS生成 ---
+        function genCSS() {
+            const g = id => document.getElementById(id).value;
+            const css =
+                `.double-char-container.bottom-left {
+    bottom: ${g('s-ac-b')}px;
+    left: ${g('s-ac-l')}px;
+}
+
+.double-char-container.top-right {
+    top: ${g('s-ec-t')}px;
+    right: ${g('s-ec-r')}px;
+}
+
+#double-battle-screen .balloon.left.double-balloon {
+    top: ${g('s-eb-t')}px;
+    left: ${g('s-eb-l')}px;
+}
+
+#double-battle-screen .balloon.right.double-balloon {
+    bottom: ${g('s-ab-b')}px;
+    right: ${g('s-ab-r')}px;
+}
+
+/* 味方の単語 */
+.bottom-left .double-word {
+    top: ${g('s-aw-t')}%;
+    left: ${g('s-aw-l')}%;
+    transform: translateX(-${g('s-aw-l')}%);
+}
+
+/* 敵の単語 */
+.top-right .double-word {
+    top: ${g('s-ew-t')}%;
+    left: ${g('s-ew-l')}%;
+    transform: translateX(-${g('s-ew-l')}%);
+}`;
+            document.getElementById('css-out').textContent = css;
+        }
+
+        function copyCSS() {
+            navigator.clipboard.writeText(document.getElementById('css-out').textContent).then(() => {
+                const b = document.getElementById('copy-btn');
+                b.textContent = '✅ コピー完了！';
+                setTimeout(() => b.textContent = '📋 CSSをコピー', 2000);
+            });
+        }
+    </script>
+</body>
+
+</html>
