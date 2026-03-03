@@ -127,22 +127,36 @@ class DoubleUI {
     setCharImage(id, types) {
         if (!this.chars[id] || typeof type_to_image === "undefined" || !types || types.length === 0) return;
 
+        const fadeInImage = (selector, src) => {
+            selector.stop(true, false);
+            selector.hide().attr('src', '').css('opacity', '');
+            const img = new Image();
+            img.onload = () => {
+                selector.css({ opacity: 0, display: 'block' });
+                selector.attr('src', src);
+                selector.animate({ opacity: 1 }, 300, () => {
+                    selector.css('opacity', '');
+                });
+            };
+            img.src = src;
+        };
+
         if (types.length === 2) {
             const newImg1 = type_to_image[types[0]];
             const newImg2 = type_to_image[types[1]];
             if (newImg1) {
-                this.chars[id].img1.selector.attr('src', "img/" + newImg1 + ".gif").show();
+                fadeInImage(this.chars[id].img1.selector, "img/" + newImg1 + ".gif");
                 this.chars[id].img2.selector.hide();
                 if (newImg2) {
                     setTimeout(() => {
-                        if (this.chars[id]) this.chars[id].img2.selector.attr('src', "img/" + newImg2 + ".gif").show();
+                        if (this.chars[id]) fadeInImage(this.chars[id].img2.selector, "img/" + newImg2 + ".gif");
                     }, 80);
                 }
             }
         } else {
             const newImg = type_to_image[types[0]];
             if (newImg) {
-                this.chars[id].img1.selector.attr('src', "img/" + newImg + ".gif").show();
+                fadeInImage(this.chars[id].img1.selector, "img/" + newImg + ".gif");
                 this.chars[id].img2.selector.hide();
             }
         }
