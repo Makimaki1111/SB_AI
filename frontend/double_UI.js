@@ -35,6 +35,7 @@ class DoubleUI {
         this.closeSituationModalBtn = new UIObject($('#close-situation-modal-btn'));
         this.abilityModal = new UIObject($('#ability-modal'));
         this.closeAbilityModalBtn = new UIObject($('#close-ability-modal-btn'));
+        this.modalMessage = new UIObject($('#double-modal-message'));
 
         // Events binding
         this.submitButton.selector.on('click', () => {
@@ -339,18 +340,73 @@ class DoubleUI {
         }
     }
 
-    updateAbilityInfo(chars, allAbilities) {
-        for (let id of ['p1a', 'p1b', 'p2a', 'p2b']) {
-            if (chars[id]) {
-                $(`#a-${id}-name`).text(chars[id].name);
-                const abilityObj = allAbilities[chars[id].ability];
-                if (abilityObj) {
-                    $(`#a-${id}-ability-name`).text(abilityObj.name);
-                    $(`#a-${id}-ability-desc`).text(abilityObj.description);
-                } else {
-                    $(`#a-${id}-ability-name`).text(chars[id].ability || "---");
-                    $(`#a-${id}-ability-desc`).text("");
+    showModalMessage(message, time = 2000) {
+        this.modalMessage.selector.text(message);
+        this.modalMessage.selector.show();
+        if (isFinite(time) && time > 0) {
+            setTimeout(() => {
+                this.modalMessage.selector.fadeOut('fast');
+            }, time);
+        }
+    }
+
+    updateAbilityInfo(chars, allAbilities, onSelectCallback) {
+        // 自分チーム (p1a, p1b) — 選択可能
+        for (let id of ['p1a', 'p1b']) {
+            if (!chars[id]) continue;
+            $(`#a-${id}-name`).text(chars[id].name);
+            // タブラベルも更新
+            $(`#tab-${id}`).text(chars[id].name);
+
+            const currentAbility = chars[id].ability;
+            const abilityObj = allAbilities[currentAbility];
+            if (abilityObj) {
+                $(`#a-${id}-ability-name`).text(abilityObj.name);
+                $(`#a-${id}-ability-desc`).text(abilityObj.description);
+            } else {
+                $(`#a-${id}-ability-name`).text(currentAbility || "---");
+                $(`#a-${id}-ability-desc`).text("");
+            }
+
+            const changeCount = chars[id].ability_change_count || 0;
+            $(`#a-${id}-remain`).text(`(あと${changeCount}回)`);
+
+            const listEl = $(`#a-${id}-skills`);
+            listEl.empty();
+            const canChange = changeCount > 0;
+
+            for (const [abilityId, abilityInfo] of Object.entries(allAbilities)) {
+                if (abilityId === 'secret') continue;
+                const container = $('<div>').attr('id', `${id}-${abilityId}`).addClass('skill-item');
+                const iconType = abilityInfo.icon_type || 'ノーマル';
+                const iconName = type_to_image[iconType] || 'normal';
+                const iconImg = $('<img>').addClass('skill-icon').attr('src', `img/${iconName}.gif`).attr('alt', abilityInfo.name);
+                const nameSpan = $('<span>').text(abilityInfo.name);
+                container.append(iconImg, $('<br>'), nameSpan);
+
+                if (abilityId === currentAbility) {
+                    container.addClass('selected');
                 }
+                if (abilityId !== currentAbility && canChange) {
+                    container.on('click', () => onSelectCallback(id, abilityId));
+                } else {
+                    container.addClass('disabled');
+                }
+                listEl.append(container);
+            }
+        }
+
+        // 相手チーム (p2a, p2b) — 表示のみ
+        for (let id of ['p2a', 'p2b']) {
+            if (!chars[id]) continue;
+            $(`#a-${id}-name`).text(chars[id].name);
+            const abilityObj = allAbilities[chars[id].ability];
+            if (abilityObj) {
+                $(`#a-${id}-ability-name`).text(abilityObj.name);
+                $(`#a-${id}-ability-desc`).text(abilityObj.description);
+            } else {
+                $(`#a-${id}-ability-name`).text(chars[id].ability || "---");
+                $(`#a-${id}-ability-desc`).text("");
             }
         }
     }

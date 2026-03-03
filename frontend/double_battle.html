@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ダブルバトル (β版)</title>
     <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="double_style.css?v=3" />
+    <link rel="stylesheet" href="double_style.css?v=6" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700;800&display=swap" rel="stylesheet">
@@ -225,35 +225,52 @@
 
     <!-- ダブルバトル用 特性確認モーダル -->
     <div id="ability-modal" style="display: none;">
-        <div style="display: flex; justify-content: space-between; width: 100%;">
-            <!-- Left: Own Team -->
-            <div style="text-align: left; width: 48%;">
-                <div style="margin-bottom: 20px;">
-                    <span style="font-weight: bold; font-size: 1.1em;" id="a-p1a-name">じぶんA</span>
-                    <div class="tokusei-name" id="a-p1a-ability-name"
-                        style="font-size: 1em; color: #ff5722; font-weight: bold; margin-top: 4px;">---</div>
-                    <div class="tokusei-desc" id="a-p1a-ability-desc" style="font-size: 0.8em; color: #666;"></div>
-                </div>
-                <div>
-                    <span style="font-weight: bold; font-size: 1.1em;" id="a-p1b-name">じぶんB</span>
-                    <div class="tokusei-name" id="a-p1b-ability-name"
-                        style="font-size: 1em; color: #ff5722; font-weight: bold; margin-top: 4px;">---</div>
-                    <div class="tokusei-desc" id="a-p1b-ability-desc" style="font-size: 0.8em; color: #666;"></div>
-                </div>
+        <!-- モーダルメッセージ -->
+        <div id="double-modal-message"></div>
+        <!-- 自分チームのとくせい (選択可能) -->
+        <div style="margin-bottom: 12px;">
+            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                <button class="char-tab active" id="tab-p1a" onclick="switchAbilityTab('p1a')">じぶんA</button>
+                <button class="char-tab" id="tab-p1b" onclick="switchAbilityTab('p1b')">じぶんB</button>
             </div>
-            <!-- Right: Opponent Team -->
-            <div style="text-align: right; width: 48%;">
-                <div style="margin-bottom: 20px;">
-                    <span style="font-weight: bold; font-size: 1.1em;" id="a-p2a-name">あいてA</span>
-                    <div class="tokusei-name" id="a-p2a-ability-name"
-                        style="font-size: 1em; color: #00bcd4; font-weight: bold; margin-top: 4px;">---</div>
-                    <div class="tokusei-desc" id="a-p2a-ability-desc" style="font-size: 0.8em; color: #666;"></div>
+            <div id="ability-tab-p1a" class="ability-tab-content">
+                <div style="margin-bottom: 6px;">
+                    <span style="font-weight:bold;" id="a-p1a-name">じぶんA</span>
+                    <span class="tokusei-name" id="a-p1a-ability-name"
+                        style="color:#ff5722;font-weight:bold;margin-left:8px;">---</span>
                 </div>
-                <div>
-                    <span style="font-weight: bold; font-size: 1.1em;" id="a-p2b-name">あいてB</span>
+                <div class="tokusei-desc" id="a-p1a-ability-desc" style="font-size:0.8em;color:#666;margin-bottom:6px;">
+                </div>
+                <div style="font-size:0.85em;color:#888;">タップしてとくせいを変える <span id="a-p1a-remain">(あと0回)</span></div>
+                <div id="a-p1a-skills" class="double-skills-list"></div>
+            </div>
+            <div id="ability-tab-p1b" class="ability-tab-content" style="display:none;">
+                <div style="margin-bottom: 6px;">
+                    <span style="font-weight:bold;" id="a-p1b-name">じぶんB</span>
+                    <span class="tokusei-name" id="a-p1b-ability-name"
+                        style="color:#ff5722;font-weight:bold;margin-left:8px;">---</span>
+                </div>
+                <div class="tokusei-desc" id="a-p1b-ability-desc" style="font-size:0.8em;color:#666;margin-bottom:6px;">
+                </div>
+                <div style="font-size:0.85em;color:#888;">タップしてとくせいを変える <span id="a-p1b-remain">(あと0回)</span></div>
+                <div id="a-p1b-skills" class="double-skills-list"></div>
+            </div>
+        </div>
+        <!-- 相手チームのとくせい (表示のみ) -->
+        <div style="border-top: 1px solid #ddd; padding-top: 10px;">
+            <div style="font-weight:bold; color:#00bcd4; margin-bottom:6px;">あいてチーム</div>
+            <div style="display:flex; gap: 12px;">
+                <div style="flex:1;">
+                    <span style="font-weight:bold;" id="a-p2a-name">あいてA</span>
+                    <div class="tokusei-name" id="a-p2a-ability-name"
+                        style="color:#00bcd4;font-weight:bold;font-size:0.9em;">---</div>
+                    <div class="tokusei-desc" id="a-p2a-ability-desc" style="font-size:0.75em;color:#666;"></div>
+                </div>
+                <div style="flex:1;">
+                    <span style="font-weight:bold;" id="a-p2b-name">あいてB</span>
                     <div class="tokusei-name" id="a-p2b-ability-name"
-                        style="font-size: 1em; color: #00bcd4; font-weight: bold; margin-top: 4px;">---</div>
-                    <div class="tokusei-desc" id="a-p2b-ability-desc" style="font-size: 0.8em; color: #666;"></div>
+                        style="color:#00bcd4;font-weight:bold;font-size:0.9em;">---</div>
+                    <div class="tokusei-desc" id="a-p2b-ability-desc" style="font-size:0.75em;color:#666;"></div>
                 </div>
             </div>
         </div>

@@ -100,7 +100,9 @@ $(() => {
     });
 
     ui.abilityInfoContainer.selector.on('click', () => {
-        ui.updateAbilityInfo(doubleBattleState.chars, doubleBattleState.allAbilities);
+        ui.updateAbilityInfo(doubleBattleState.chars, doubleBattleState.allAbilities, (charId, abilityId) => {
+            sendChangeAbilityDouble(charId, abilityId);
+        });
         ui.showAbilityModal();
         if (typeof playSound === 'function') playSound("resource/pera.mp3");
     });
@@ -337,6 +339,20 @@ async function handleTurnResult(data) {
 
     updateUIWithCharacters(data.characters);
 
+    // 特性変更イベントの場合、モーダルを再描画
+    const abilityChangeEvent = data.events && data.events.find(e => e.type === 'ability_changed');
+    if (abilityChangeEvent) {
+        // モーダル内の選択肢を再描画して、選択状態を更新
+        ui.updateAbilityInfo(doubleBattleState.chars, doubleBattleState.allAbilities, (charId, abilityId) => {
+            sendChangeAbilityDouble(charId, abilityId);
+        });
+
+        // 確認メッセージを表示 (script.jsと同じ)
+        ui.showModalMessage(abilityChangeEvent.message || 'とくせいを変更した！', 2000);
+
+        if (typeof playSound === 'function') playSound("resource/concent.mp3");
+    }
+
     if (data.team1_win !== null) {
         if (data.team1_win) {
             ui.showMessage("自分チーム(左下)の勝利！");
@@ -459,6 +475,28 @@ function backToLobby() {
         sock.close();
         sock = null;
     }
-    // シングルバトルと同様に、タイトル(index.html)へ戻る
     window.location.href = 'index.html';
+}
+
+function switchAbilityTab(charId) {
+    // タブの切り替え
+    document.querySelectorAll('.char-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + charId).classList.add('active');
+    document.querySelectorAll('.ability-tab-content').forEach(c => c.style.display = 'none');
+    document.getElementById('ability-tab-' + charId).style.display = 'block';
+}
+
+function sendChangeAbilityDouble(charId, abilityId) {
+    if (sock && sock.readyState === WebSocket.OPEN) {
+        // charIdはUI上のID(p1a/p1b)。myTeamによって実際のIDに変換
+        const realCharId = getRealId(charId);
+        sock.send(JSON.stringify({
+            type: "change_ability_double",
+            info: {
+                room_id: doubleBattleState.roomId,
+                char_id: realCharId,
+                ability_id: abilityId
+            }
+        }));
+    }
 }

@@ -625,6 +625,23 @@ async def websocket_double_endpoint(websocket: WebSocket):
                     else:
                         await websocket.send_text(json.dumps({"type": "error", "message": "戦闘は終了しました"}))
 
+                # 特性変更
+                elif req.get("type") == "change_ability_double":
+                    info = req.get("info", {})
+                    room_id = info.get("room_id")
+                    char_id = info.get("char_id")
+                    ability_id = info.get("ability_id")
+
+                    if room_id in double_battle_rooms:
+                        battle = double_battle_rooms[room_id]
+                        res = battle.change_ability(char_id, ability_id)
+                        if res.get("type") == "error":
+                            await websocket.send_text(json.dumps(res))
+                        else:
+                            await manager.broadcast(json.dumps(res), room_id)
+                    else:
+                        await websocket.send_text(json.dumps({"type": "error", "message": "戦闘は終了しました"}))
+
                 else:
                     await websocket.send_text(json.dumps({"type": "error", "message": "Unknown type for double setup"}))
             except Exception as e:

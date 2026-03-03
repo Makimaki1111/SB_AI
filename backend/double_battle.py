@@ -371,6 +371,38 @@ class DoubleBattle_info:
                 self._advance_turn_index()
             return self._make_response()
 
+    def change_ability(self, char_id: str, new_ability_id: str):
+        """キャラクターの特性を変更する"""
+        char = getattr(self, char_id, None)
+        if not char:
+            return {"type": "error", "message": "存在しないキャラクターです"}
+
+        if char.ability_change_count <= 0:
+            return {"type": "error", "message": "特性はもう変更できません"}
+
+        if new_ability_id not in self.abilities:
+            return {"type": "error", "message": "存在しない特性です"}
+
+        if new_ability_id == char.ability:
+            return {"type": "error", "message": "現在の特性と同じです"}
+
+        char.ability_change_count -= 1
+        char.ability = new_ability_id
+
+        ability_display_name = self.abilities[new_ability_id].name
+
+        event = {
+            "type": "ability_changed",
+            "message": f"{char.name}の特性が「{ability_display_name}」に変わった！ (残り変更回数: {char.ability_change_count})",
+            "char_id": char.id,
+            "new_ability": new_ability_id,
+            "new_ability_change_count": char.ability_change_count
+        }
+        self.events.append(event)
+
+        res = self._make_response()
+        return res
+
     def _make_response(self):
         # フロントエンドに通知する情報の構築
         current_actor = self.get_current_actor()
@@ -407,6 +439,8 @@ class DoubleBattle_info:
             "defense_rank": p.defense_rank,
             "types": p.types,
             "ability": p.ability,
+            "ability_change_count": p.ability_change_count,
             "is_defeated": p.is_defeated,
             "owner_id": p.owner_id
         }
+
