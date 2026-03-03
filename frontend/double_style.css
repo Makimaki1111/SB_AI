@@ -28,6 +28,11 @@
     max-height: 50vh;
 }
 
+#double-battle-screen .top-image {
+    flex: none;
+    height: 259.43px;
+}
+
 /* キャラクター２体表示用コンテナ */
 .double-char-container {
     position: absolute;
@@ -40,7 +45,7 @@
 /* 自分サイド（左下） */
 .double-char-container.bottom-left {
     bottom: 35px;
-    left: -10px;
+    left: 32px;
     display: flex;
     align-items: flex-end;
     justify-content: space-around;
@@ -48,8 +53,8 @@
 
 /* 敵サイド（右上） */
 .double-char-container.top-right {
-    top: 5px;
-    right: -10px;
+    top: -46px;
+    right: 30px;
     display: flex;
     align-items: flex-end;
     justify-content: space-around;
@@ -79,21 +84,21 @@
 }
 
 /* 奥のキャラを少し小さく／高くする等、Z軸の重なり調整 (オプション) */
-#char-p1b-wrapper {
+#char-p1a-wrapper {
     transform: scale(0.9) translate(-10px, -15px);
     z-index: 10;
 }
 
-#char-p1a-wrapper {
+#char-p1b-wrapper {
     z-index: 12;
 }
 
-#char-p2b-wrapper {
+#char-p2a-wrapper {
     transform: scale(0.9) translate(10px, -15px);
     z-index: 10;
 }
 
-#char-p2a-wrapper {
+#char-p2b-wrapper {
     z-index: 12;
 }
 
@@ -129,7 +134,7 @@
 
 /* 敵サイド（右上キャラ）のバルーンは「左上」に配置して被りを防ぐ */
 #double-battle-screen .balloon.left.double-balloon {
-    top: 50px;
+    top: 12px;
     left: 0px;
     right: auto;
     bottom: auto;
@@ -137,10 +142,17 @@
 
 /* 自分サイド（左下キャラ）のバルーンは「右下」に配置して被りを防ぐ */
 #double-battle-screen .balloon.right.double-balloon {
-    bottom: 5px;
+    bottom: 12px;
     right: 0px;
     top: auto;
     left: auto;
+}
+
+/* 味方の単語 */
+.bottom-left .double-word {
+    top: 88%;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 .team-info {

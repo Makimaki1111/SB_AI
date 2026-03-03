@@ -16,6 +16,7 @@
             margin: 0;
             height: 100vh;
             font-family: "M PLUS 1p", sans-serif;
+            overflow-x: auto;
         }
 
         #editor-preview {
@@ -24,6 +25,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            min-width: 500px;
         }
 
         #editor-preview h1 {
@@ -155,30 +157,30 @@
         <h1>📐 ダブルバトル レイアウトエディター</h1>
         <div id="double-battle-screen">
             <div class="phone-box">
-                <div class="top-image" id="double-top-image" style="overflow:visible; flex:none; height:300px;">
+                <div class="top-image" id="double-top-image" style="overflow:visible;">
                     <img src="img/ground.jpg" alt="背景画像" />
 
                     <!-- 自分サイド (左下) -->
                     <div class="double-char-container bottom-left" id="el-ally-chars">
-                        <div class="char-wrapper" id="char-p1b-wrapper">
-                            <img class="char-sprite" src="img/food.gif" style="display:block;" />
-                            <div class="double-word" id="p1b-word">しりとり</div>
-                        </div>
                         <div class="char-wrapper" id="char-p1a-wrapper">
                             <img class="char-sprite" src="img/plant.gif" style="display:block;" />
                             <div class="double-word" id="p1a-word">りんご</div>
+                        </div>
+                        <div class="char-wrapper" id="char-p1b-wrapper">
+                            <img class="char-sprite" src="img/food.gif" style="display:block;" />
+                            <div class="double-word" id="p1b-word">しりとり</div>
                         </div>
                     </div>
 
                     <!-- 敵サイド (右上) -->
                     <div class="double-char-container top-right" id="el-enemy-chars">
-                        <div class="char-wrapper" id="char-p2b-wrapper">
-                            <img class="char-sprite" src="img/violence.gif" style="display:block;" />
-                            <div class="double-word" id="p2b-word">ごりら</div>
-                        </div>
                         <div class="char-wrapper" id="char-p2a-wrapper">
                             <img class="char-sprite" src="img/person.gif" style="display:block;" />
                             <div class="double-word" id="p2a-word">らっぱ</div>
+                        </div>
+                        <div class="char-wrapper" id="char-p2b-wrapper">
+                            <img class="char-sprite" src="img/violence.gif" style="display:block;" />
+                            <div class="double-word" id="p2b-word">ごりら</div>
                         </div>
                     </div>
 
@@ -266,36 +268,36 @@
 
         <div class="cg">
             <h3>味方キャラ (左下)</h3>
-            <div class="cr"><label>bottom:</label><input type="range" id="s-ac-b" min="-30" max="150" value="-10"><span
-                    class="v" id="v-ac-b">-10</span>px</div>
-            <div class="cr"><label>left:</label><input type="range" id="s-ac-l" min="-50" max="250" value="-10"><span
-                    class="v" id="v-ac-l">-10</span>px</div>
+            <div class="cr"><label>bottom:</label><input type="range" id="s-ac-b" min="-30" max="150" value="32"><span
+                    class="v" id="v-ac-b">32</span>px</div>
+            <div class="cr"><label>left:</label><input type="range" id="s-ac-l" min="-50" max="250" value="32"><span
+                    class="v" id="v-ac-l">32</span>px</div>
         </div>
         <div class="cg">
             <h3>敵キャラ (右上)</h3>
-            <div class="cr"><label>top:</label><input type="range" id="s-ec-t" min="-30" max="200" value="-10"><span
-                    class="v" id="v-ec-t">-10</span>px</div>
-            <div class="cr"><label>right:</label><input type="range" id="s-ec-r" min="-50" max="250" value="-10"><span
-                    class="v" id="v-ec-r">-10</span>px</div>
+            <div class="cr"><label>top:</label><input type="range" id="s-ec-t" min="-50" max="200" value="-30"><span
+                    class="v" id="v-ec-t">-30</span>px</div>
+            <div class="cr"><label>right:</label><input type="range" id="s-ec-r" min="-50" max="250" value="28"><span
+                    class="v" id="v-ec-r">28</span>px</div>
         </div>
         <div class="cg">
             <h3>敵バルーン (左上)</h3>
-            <div class="cr"><label>top:</label><input type="range" id="s-eb-t" min="0" max="250" value="5"><span
-                    class="v" id="v-eb-t">5</span>px</div>
+            <div class="cr"><label>top:</label><input type="range" id="s-eb-t" min="0" max="250" value="12"><span
+                    class="v" id="v-eb-t">12</span>px</div>
             <div class="cr"><label>left:</label><input type="range" id="s-eb-l" min="0" max="300" value="0"><span
                     class="v" id="v-eb-l">0</span>px</div>
         </div>
         <div class="cg">
             <h3>味方バルーン (右下)</h3>
-            <div class="cr"><label>bottom:</label><input type="range" id="s-ab-b" min="-20" max="200" value="5"><span
-                    class="v" id="v-ab-b">5</span>px</div>
+            <div class="cr"><label>bottom:</label><input type="range" id="s-ab-b" min="-20" max="200" value="12"><span
+                    class="v" id="v-ab-b">12</span>px</div>
             <div class="cr"><label>right:</label><input type="range" id="s-ab-r" min="0" max="300" value="0"><span
                     class="v" id="v-ab-r">0</span>px</div>
         </div>
         <div class="cg">
             <h3>味方の単語</h3>
-            <div class="cr"><label>top:</label><input type="range" id="s-aw-t" min="-100" max="150" value="100"><span
-                    class="v" id="v-aw-t">100</span>%</div>
+            <div class="cr"><label>top:</label><input type="range" id="s-aw-t" min="-100" max="150" value="88"><span
+                    class="v" id="v-aw-t">88</span>%</div>
             <div class="cr"><label>left:</label><input type="range" id="s-aw-l" min="-50" max="200" value="50"><span
                     class="v" id="v-aw-l">50</span>%</div>
         </div>
@@ -325,35 +327,7 @@
             's-ab-r': { el: 'el-ally-balloon', p: 'right' },
         };
 
-        // 初期値をCSSから読み取り
         window.addEventListener('DOMContentLoaded', () => {
-            const cs = (id) => getComputedStyle(document.getElementById(id));
-            const topImg = document.getElementById('double-top-image');
-            const th = topImg.offsetHeight;
-            const tw = topImg.offsetWidth;
-
-            // 味方キャラ
-            const ac = document.getElementById('el-ally-chars');
-            const acRect = ac.getBoundingClientRect();
-            const tiRect = topImg.getBoundingClientRect();
-            setSlider('s-ac-b', Math.round(tiRect.bottom - acRect.bottom));
-            setSlider('s-ac-l', Math.round(acRect.left - tiRect.left));
-            // 敵キャラ
-            const ec = document.getElementById('el-enemy-chars');
-            const ecRect = ec.getBoundingClientRect();
-            setSlider('s-ec-t', Math.round(ecRect.top - tiRect.top));
-            setSlider('s-ec-r', Math.round(tiRect.right - ecRect.right));
-            // 敵バルーン
-            const eb = document.getElementById('el-enemy-balloon');
-            const ebRect = eb.getBoundingClientRect();
-            setSlider('s-eb-t', Math.round(ebRect.top - tiRect.top));
-            setSlider('s-eb-l', Math.round(ebRect.left - tiRect.left));
-            // 味方バルーン
-            const ab = document.getElementById('el-ally-balloon');
-            const abRect = ab.getBoundingClientRect();
-            setSlider('s-ab-b', Math.round(tiRect.bottom - abRect.bottom));
-            setSlider('s-ab-r', Math.round(tiRect.right - abRect.right));
-
             genCSS();
         });
 
