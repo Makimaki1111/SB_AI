@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ダブルバトル (β版)</title>
     <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="double_style.css" />
+    <link rel="stylesheet" href="double_style.css?v=3" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700;800&display=swap" rel="stylesheet">
@@ -153,37 +153,36 @@
                             <img id="include-img" src="" alt="動的画像" />
                         </div>
                         <div id="message"></div>
-                        <div id="wait-message"
-                            style="text-align: center; font-size: 14px; font-weight: bold; color: #333; margin-top: 4px; display: none;">
-                        </div>
+                        <div id="wait-message"></div>
                     </div>
 
-                    <!-- ★ 新規追加: ターゲット選択UI (「入力部」の直下) -->
-                    <div id="target-selection-ui"
-                        style="display: none; justify-content: space-around; margin-top: 4px; background: rgba(255,255,255,0.7); padding: 4px; border-radius: 6px;">
-                        <div style="font-size: 0.85em; font-weight: bold; align-self: center; margin-right: 5px;">
-                            ターゲット:</div>
-                        <button class="target-btn" id="target-p2a-btn">あいてA</button>
-                        <button class="target-btn" id="target-p2b-btn">あいてB</button>
+                    <!-- ★ 新規追加: ターゲット選択UI (専用の高さ確保ラッパー) -->
+                    <div
+                        style="min-height: 46px; display: flex; align-items: center; justify-content: center; margin-top: 6px;">
+                        <div id="target-selection-ui"
+                            style="display: none; justify-content: center; align-items: center; gap: 12px; padding: 6px 12px; background: rgba(255,255,255,0.7); border-radius: 12px; box-sizing: border-box; width: 85%;">
+                            <div style="font-size: 0.9em; font-weight: bold; color: #444;">ターゲット:</div>
+                            <button class="target-btn" id="target-p2a-btn">あいてA</button>
+                            <button class="target-btn" id="target-p2b-btn">あいてB</button>
+                        </div>
                     </div>
 
                     <!-- アクションボタンエリア -->
                     <div id="actions-wrapper">
-                        <div id="situation-button" class="button">
+                        <div id="situation-button">
                             <p>じょうきょう</p>
                         </div>
-                        <div id="ability-info-container" class="button">
+                        <div id="ability-info-container">
                             <p>とくせい</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- フッターエリア -->
-                <div class="footer-area" style="margin-top: 15px;">
-                    <a href="index.html" id="double-back-to-title-btn"
-                        style="display:none; text-align: center; width: 100%; margin-bottom: 10px;">タイトルに戻る</a>
-                    <button id="double-cancel-battle-btn"
-                        style="width: 100%; padding: 10px; background: #e57373; color: white; border: none; border-radius: 8px; cursor: pointer;">にげる</button>
+                <a id="back-to-title-btn" style="display:none;" href="index.html">タイトルに戻る</a>
+                <!-- フッターエリア: ボタン類 -->
+                <div class="footer-area">
+                    <button id="cancel-battle-btn" style="position: relative; z-index: 100;"
+                        onclick="backToLobby()">にげる</button>
                 </div>
             </div>
         </div>
@@ -266,8 +265,8 @@
     <script src="type_to_image.js"></script>
     <!-- UIとベースロジックを流用 -->
     <script src="UIObject.js"></script>
-    <script src="double_UI.js"></script>
-    <script src="double_script.js"></script>
+    <script src="double_UI.js?v=3"></script>
+    <script src="double_script.js?v=3"></script>
 
 </body>
 

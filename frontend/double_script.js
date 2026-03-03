@@ -6,6 +6,8 @@ if (!player1_id) {
 }
 
 const TURN_TIME_LIMIT = 20;
+let isProcessingTurnResult = false;
+const pendingTurnResults = [];
 
 const doubleBattleState = {
     roomId: null,
@@ -80,10 +82,6 @@ $(() => {
         connectDoubleWebSocket('cpu');
     });
 
-    $('#double-cancel-battle-btn').on('click', () => {
-        // ダブルバトルでの「にげる」処理
-        backToLobby();
-    });
 
     // ターゲット選択ボタン
     $('#target-p2a-btn').on('click', () => selectTarget('p2a'));
@@ -134,6 +132,11 @@ function connectDoubleWebSocket(action, mode, roomId) {
     ws.addEventListener("open", function () {
         console.log("Double WebSocket connected");
 
+        // 即座にボタンを表示（接続完了時）
+        ui.situationButton.show();
+        ui.abilityInfoContainer.show();
+        ui.targetSelectionUi.selector.css('display', 'flex');
+
         const name = localStorage.getItem("sb_username");
         const ability = localStorage.getItem("sb_ability");
         if (name || ability) {
@@ -178,10 +181,26 @@ function connectDoubleWebSocket(action, mode, roomId) {
         } else if (data.type === "init_double_battle") {
             await initDoubleBattle(data);
         } else if (data.type === "turn_result") {
-            await handleTurnResult(data);
+            if (isProcessingTurnResult) {
+                // 前のターン結果を処理中の場合はキューに入れる
+                pendingTurnResults.push(data);
+            } else {
+                isProcessingTurnResult = true;
+                await handleTurnResult(data);
+                isProcessingTurnResult = false;
+
+                // キューに溜まったターン結果を順に処理する（script.jsと同じパターン）
+                while (pendingTurnResults.length > 0) {
+                    await sleep(500);
+                    isProcessingTurnResult = true;
+                    const next = pendingTurnResults.shift();
+                    await handleTurnResult(next);
+                    isProcessingTurnResult = false;
+                }
+            }
         } else if (data.type === "error") {
             // エラー表示をUIに反映
-            ui.setWaitMessage(data.message);
+            ui.setWaitMessage(data.message, 2000);
         }
     });
 
@@ -208,6 +227,12 @@ async function initDoubleBattle(data) {
     }
 
     ui.resetAll();
+
+    // resetAll()で隠れてしまうため、再表示する
+    ui.situationButton.show();
+    ui.abilityInfoContainer.show();
+    ui.targetSelectionUi.selector.css('display', 'flex');
+
     updateUIWithCharacters(data.characters);
 
     ui.showMessage("バトルスタート！");
@@ -218,10 +243,6 @@ async function initDoubleBattle(data) {
 
     await sleep(1500);
     ui.hideMessage();
-
-    // Show buttons
-    ui.situationButton.selector.css('display', 'flex');
-    ui.abilityInfoContainer.selector.css('display', 'flex');
 
     handleTurnStart(data);
 }
@@ -259,26 +280,58 @@ async function handleTurnResult(data) {
         await sleep(1000); // 1秒「間」を作る
     }
 
-    // process events sequentially to show animations
+    // process events sequentially to show animations (script.js の processEvent と同じタイミング)
     if (data.events && data.events.length > 0) {
         for (let e of data.events) {
-            ui.showMessage(e.message);
-            await sleep(1000); // メッセージを読ませる間
+            // 特性変更イベントの場合は#messageに文章を表示しない
+            if (e.type !== "ability_changed") {
+                ui.showMessage(e.message || "");
+            }
+            if (typeof playEventSound === 'function') {
+                playEventSound(e.type, e.message);
+            }
 
+            // エフェクト処理（メッセージ表示直後に即実行 — script.js と同じ）
             if (e.type === "damage") {
-                ui.playEffect(getUIId(e.target), e.type);
-                // 攻撃アニメーション（少し揺れるなど）
-                if (e.attacker) {
-                    $(`#char-${getUIId(e.attacker)}-wrapper img`).animate({ marginLeft: "10px" }, 100).animate({ marginLeft: "0px" }, 100);
+                if (e.damage !== undefined && doubleBattleState.chars[e.target]) {
+                    doubleBattleState.chars[e.target].hp = Math.max(0, doubleBattleState.chars[e.target].hp - e.damage);
+                    const targetChar = doubleBattleState.chars[e.target];
+                    ui.setHP(getUIId(e.target), targetChar.hp, targetChar.maxHp);
+                }
+                // ダメージ点滅エフェクト (毒ダメージの場合は点滅させない)
+                if (e.message !== "毒のダメージを受けた！") {
+                    ui.playEffect(getUIId(e.target), e.type);
                 }
             } else if (e.type === "cure") {
+                if (e.amount !== undefined && doubleBattleState.chars[e.target]) {
+                    doubleBattleState.chars[e.target].hp = Math.min(doubleBattleState.chars[e.target].maxHp, doubleBattleState.chars[e.target].hp + e.amount);
+                    const targetChar = doubleBattleState.chars[e.target];
+                    ui.setHP(getUIId(e.target), targetChar.hp, targetChar.maxHp);
+                }
                 ui.playEffect(getUIId(e.target), "heal");
             } else if (e.type === "stat_down") {
                 ui.playEffect(getUIId(e.target), "stat_down");
+            } else if (e.type === "stat_up") {
+                ui.playEffect(getUIId(e.target), "stat_up");
+            } else if (e.type === "drain") {
+                // ダメージ適用
+                if (e.damage !== undefined && doubleBattleState.chars[e.target]) {
+                    doubleBattleState.chars[e.target].hp = Math.max(0, doubleBattleState.chars[e.target].hp - e.damage);
+                    const targetChar = doubleBattleState.chars[e.target];
+                    ui.setHP(getUIId(e.target), targetChar.hp, targetChar.maxHp);
+                }
+                // 回復適用
+                if (e.cure_amount !== undefined && doubleBattleState.chars[e.attacker]) {
+                    doubleBattleState.chars[e.attacker].hp = Math.min(doubleBattleState.chars[e.attacker].maxHp, doubleBattleState.chars[e.attacker].hp + e.cure_amount);
+                    const atkChar = doubleBattleState.chars[e.attacker];
+                    ui.setHP(getUIId(e.attacker), atkChar.hp, atkChar.maxHp);
+                }
+                ui.playEffect(getUIId(e.attacker), "heal");
             }
-            if (e.type !== "text") {
-                await sleep(1000); // エフェクト用の間
-            }
+
+            // 特性変更イベントの場合は待機時間を短くする（script.js と同じ）
+            const waitTime = e.type === "ability_changed" ? 100 : 1000;
+            await sleep(waitTime);
         }
     }
 
@@ -367,7 +420,7 @@ function selectTarget(uiTargetId) {
 function sendDoubleSubmitWord(word) {
     if (!doubleBattleState.isMyTurn) return;
     if (!word) {
-        ui.setWaitMessage("単語を入力してください");
+        ui.setWaitMessage("単語を入力してください", 2000);
         return;
     }
 
@@ -378,7 +431,7 @@ function sendDoubleSubmitWord(word) {
     const p2b_alive = doubleBattleState.chars[p2b_real] && !doubleBattleState.chars[p2b_real].is_defeated;
 
     if (p2a_alive && p2b_alive && !doubleBattleState.currentTargetId) {
-        ui.setWaitMessage("ターゲットを選択してください");
+        ui.setWaitMessage("ターゲットを選択してください", 2000);
         return;
     }
 
@@ -406,9 +459,6 @@ function backToLobby() {
         sock.close();
         sock = null;
     }
-    $('#double-battle-screen').hide();
-    $('#double-lobby-screen').show();
-    $('#lobby-message').text('');
-    $('#double-room-id-input').val('');
-    $('#create-double-room-btn').show();
+    // シングルバトルと同様に、タイトル(index.html)へ戻る
+    window.location.href = 'index.html';
 }

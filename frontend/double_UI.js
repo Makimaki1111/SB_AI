@@ -12,8 +12,8 @@ class DoubleUI {
         this.message = new UIObject($('#message'));
         this.waitMessage = new UIObject($('#wait-message'));
 
-        this.backToTitleBtn = new UIObject($('#double-back-to-title-btn'));
-        this.cancelBtn = new UIObject($('#double-cancel-battle-btn'));
+        this.backToTitleBtn = new UIObject($('#back-to-title-btn'));
+        this.cancelBtn = new UIObject($('#cancel-battle-btn'));
 
         this.timerBar = $('#timer-bar');
         this.timerContainer = $('#timer-container');
@@ -198,8 +198,16 @@ class DoubleUI {
         this.message.selector.hide();
     }
 
-    setWaitMessage(msg) {
+    setWaitMessage(msg, timeout = 0) {
         this.waitMessage.selector.text(msg).show();
+        this.disableInput();
+
+        if (timeout > 0) {
+            setTimeout(() => {
+                this.hideWaitMessage();
+                this.enableInput();
+            }, timeout);
+        }
     }
 
     hideWaitMessage() {
