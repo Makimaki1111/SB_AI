@@ -625,6 +625,19 @@ async def websocket_double_endpoint(websocket: WebSocket):
                     else:
                         await websocket.send_text(json.dumps({"type": "error", "message": "戦闘は終了しました"}))
 
+                # タイプチェック（入力中プレビュー）
+                elif req.get("type") == "include_check_double":
+                    info = req.get("info", {})
+                    room_id = info.get("room_id")
+                    word = info.get("word", "")
+
+                    if room_id in double_battle_rooms:
+                        battle = double_battle_rooms[room_id]
+                        res = battle.include_check(word)
+                        await websocket.send_text(json.dumps(res))
+                    else:
+                        await websocket.send_text(json.dumps({"type": "error", "message": "戦闘は終了しました"}))
+
                 # 特性変更
                 elif req.get("type") == "change_ability_double":
                     info = req.get("info", {})

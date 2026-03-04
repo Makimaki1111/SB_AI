@@ -112,6 +112,24 @@ $(() => {
         if (typeof playSound === 'function') playSound("resource/pera.mp3");
     });
 
+    // 入力中のタイプチェック (script.jsと同じ)
+    ui.input.selector.on('input', () => {
+        if (!doubleBattleState.roomId) {
+            ui.hidePreImg();
+            return;
+        }
+        const text = ui.input.selector.val();
+        if (text) {
+            if (text.charAt(0) !== doubleBattleState.character) {
+                // 開始文字不一致
+            } else {
+                sendIncludeCheckDouble(doubleBattleState.roomId, text);
+            }
+        } else {
+            ui.hidePreImg();
+        }
+    });
+
     // Fetch abilities for modals
     let baseUrl = '';
     const hostname = window.location.hostname;
@@ -203,6 +221,9 @@ function connectDoubleWebSocket(action, mode, roomId) {
         } else if (data.type === "error") {
             // エラー表示をUIに反映
             ui.setWaitMessage(data.message, 2000);
+        } else if (data.type === "pre_check") {
+            // include_checkの結果
+            onDoublePreCheck(data);
         }
     });
 
@@ -305,15 +326,31 @@ async function handleTurnResult(data) {
                     ui.playEffect(getUIId(e.target), e.type);
                 }
             } else if (e.type === "cure") {
-                if (e.amount !== undefined && doubleBattleState.chars[e.target]) {
-                    doubleBattleState.chars[e.target].hp = Math.min(doubleBattleState.chars[e.target].maxHp, doubleBattleState.chars[e.target].hp + e.amount);
+                if (e.cure_amount !== undefined && doubleBattleState.chars[e.target]) {
+                    doubleBattleState.chars[e.target].hp = Math.min(doubleBattleState.chars[e.target].maxHp, doubleBattleState.chars[e.target].hp + e.cure_amount);
                     const targetChar = doubleBattleState.chars[e.target];
                     ui.setHP(getUIId(e.target), targetChar.hp, targetChar.maxHp);
                 }
                 ui.playEffect(getUIId(e.target), "heal");
             } else if (e.type === "stat_down") {
+                // ランク値の更新 (script.jsと同じ)
+                if (e.target && doubleBattleState.chars[e.target]) {
+                    if (e.stat_type === "defense") {
+                        doubleBattleState.chars[e.target].defense_rank = e.new_rank;
+                    } else {
+                        doubleBattleState.chars[e.target].attack_rank = e.new_rank;
+                    }
+                }
                 ui.playEffect(getUIId(e.target), "stat_down");
             } else if (e.type === "stat_up") {
+                // ランク値の更新 (script.jsと同じ)
+                if (e.target && doubleBattleState.chars[e.target]) {
+                    if (e.stat_type === "defense") {
+                        doubleBattleState.chars[e.target].defense_rank = e.new_rank;
+                    } else {
+                        doubleBattleState.chars[e.target].attack_rank = e.new_rank;
+                    }
+                }
                 ui.playEffect(getUIId(e.target), "stat_up");
             } else if (e.type === "drain") {
                 // ダメージ適用
@@ -329,6 +366,27 @@ async function handleTurnResult(data) {
                     ui.setHP(getUIId(e.attacker), atkChar.hp, atkChar.maxHp);
                 }
                 ui.playEffect(getUIId(e.attacker), "heal");
+            } else if (e.type === "ability_trigger") {
+                // 特性発動イベント — 毒付与やランク変化を処理
+                if (e.poison_target && doubleBattleState.chars[e.poison_target]) {
+                    doubleBattleState.chars[e.poison_target].is_poison = true;
+                    ui.updatePoisonStatus(e.poison_target, true);
+                }
+                // ランク一括変化 (持っている場合)
+                if (e.new_ranks) {
+                    for (const [charId, ranks] of Object.entries(e.new_ranks)) {
+                        if (doubleBattleState.chars[charId]) {
+                            doubleBattleState.chars[charId].attack_rank = ranks.attack_rank;
+                            doubleBattleState.chars[charId].defense_rank = ranks.defense_rank;
+                        }
+                    }
+                }
+            } else if (e.type === "cure_poison") {
+                // 毒解除
+                if (e.target && doubleBattleState.chars[e.target]) {
+                    doubleBattleState.chars[e.target].is_poison = false;
+                    ui.updatePoisonStatus(e.target, false);
+                }
             }
 
             // 特性変更イベントの場合は待機時間を短くする（script.js と同じ）
@@ -488,7 +546,6 @@ function switchAbilityTab(charId) {
 
 function sendChangeAbilityDouble(charId, abilityId) {
     if (sock && sock.readyState === WebSocket.OPEN) {
-        // charIdはUI上のID(p1a/p1b)。myTeamによって実際のIDに変換
         const realCharId = getRealId(charId);
         sock.send(JSON.stringify({
             type: "change_ability_double",
@@ -498,5 +555,26 @@ function sendChangeAbilityDouble(charId, abilityId) {
                 ability_id: abilityId
             }
         }));
+    }
+}
+
+function sendIncludeCheckDouble(roomId, word) {
+    if (sock && sock.readyState === WebSocket.OPEN) {
+        sock.send(JSON.stringify({
+            type: "include_check_double",
+            info: { room_id: roomId, word: word }
+        }));
+    }
+}
+
+function onDoublePreCheck(data) {
+    if (data.include === true) {
+        if (data.used === true) {
+            ui.showUsedWord(data);
+        } else {
+            ui.showPreImg();
+        }
+    } else {
+        ui.hidePreImg();
     }
 }

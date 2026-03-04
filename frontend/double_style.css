@@ -284,3 +284,62 @@
     box-sizing: border-box;
     display: none;
 }
+
+/* --- エフェクトコンテナ --- */
+.effect-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 20;
+}
+
+/* --- 能力上昇エフェクト --- */
+.stat-up-particle {
+    position: absolute;
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    font-size: 24px;
+    opacity: 0;
+    user-select: none;
+    color: #FF4500;
+}
+
+.stat-up-particle::after {
+    content: "▲";
+}
+
+/* --- 能力下降エフェクト --- */
+.stat-down-particle {
+    position: absolute;
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    font-size: 24px;
+    opacity: 0;
+    user-select: none;
+    color: #1E90FF;
+}
+
+.stat-down-particle::after {
+    content: "▼";
+}
+
+@keyframes floatDown {
+    0% {
+        transform: translateY(-20px) scale(0.5);
+        opacity: 0;
+    }
+
+    20% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+
+    100% {
+        transform: translateY(60px) scale(1.2);
+        opacity: 0;
+    }
+}

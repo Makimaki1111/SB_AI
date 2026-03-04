@@ -95,6 +95,35 @@ class DoubleUI {
         this.chars[id].nameEl.selector.text(nameText);
     }
 
+    showPreImg() {
+        this.includeImg.selector.attr('src', "img/unaware.gif");
+        this.includeImg.selector.css('display', 'block');
+    }
+
+    hidePreImg() {
+        this.includeImg.selector.css('display', 'none');
+        this.includeImg.selector.attr('src', "");
+    }
+
+    showUsedWord(data) {
+        this.includeImg.selector.attr('src', "img/god.gif");
+        this.includeImg.selector.css('display', 'block');
+    }
+
+    updatePoisonStatus(charId, isPoison) {
+        // charIdはサーバー上のID (p1a, p1b, p2a, p2b)
+        const uiId = getUIId(charId);
+        if (this.chars[uiId]) {
+            const nameEl = this.chars[uiId].nameEl.selector;
+            const currentName = nameEl.text().replace(' 🟣', '');
+            if (isPoison) {
+                nameEl.text(currentName + ' 🟣');
+            } else {
+                nameEl.text(currentName);
+            }
+        }
+    }
+
     setHP(id, hp, max_hp) {
         const dom = this.chars[id].hpBar.selector;
         let new_bar_vw = (hp / max_hp) * 100;
@@ -182,7 +211,6 @@ class DoubleUI {
             for (let i = 0; i < 15; i++) {
                 setTimeout(() => {
                     const particle = $('<div class="heal-particle"></div>');
-                    // 位置はコンテナ相対
                     const left = Math.random() * 80;
                     const size = Math.random() * 0.8 + 0.5;
                     particle.css({
@@ -194,6 +222,40 @@ class DoubleUI {
                     container.append(particle);
                     setTimeout(() => { particle.remove(); }, 1500);
                 }, i * 80);
+            }
+        }
+        else if (type === "stat_up") {
+            for (let i = 0; i < 10; i++) {
+                setTimeout(() => {
+                    const particle = $('<div class="stat-up-particle"></div>');
+                    const left = Math.random() * 80;
+                    const size = Math.random() * 0.8 + 0.5;
+                    particle.css({
+                        left: `${left}px`,
+                        bottom: '0px',
+                        transform: `scale(${size})`,
+                        animation: `floatUp 1.5s ease-out forwards`
+                    });
+                    container.append(particle);
+                    setTimeout(() => { particle.remove(); }, 1500);
+                }, i * 100);
+            }
+        }
+        else if (type === "stat_down") {
+            for (let i = 0; i < 10; i++) {
+                setTimeout(() => {
+                    const particle = $('<div class="stat-down-particle"></div>');
+                    const left = Math.random() * 80;
+                    const size = Math.random() * 0.8 + 0.5;
+                    particle.css({
+                        left: `${left}px`,
+                        top: '0px',
+                        transform: `scale(${size})`,
+                        animation: `floatDown 1.5s ease-out forwards`
+                    });
+                    container.append(particle);
+                    setTimeout(() => { particle.remove(); }, 1500);
+                }, i * 100);
             }
         }
     }

@@ -4,9 +4,9 @@ except ImportError:
     from backend.SB_info import SB_info
 
 try:
-    from battle import Player, get_default_abilities, MAX_HP, FOOD_LIMIT, MEDICAL_LIMIT, MIN_RANK, MAX_RANK, FOOD_RECOVERY_AMOUNT, MEDICAL_RECOVERY_AMOUNT, CRITICAL_HIT_CHANCE, CRITICAL_HIT_MULTIPLIER, BASE_DAMAGE_NORMAL, BASE_DAMAGE_TYPED, DAMAGE_RANDOM_MIN, DAMAGE_RANDOM_MAX, VIOLENCE_ATTACK_DROP
+    from battle import Player, get_default_abilities, MAX_HP, FOOD_LIMIT, MEDICAL_LIMIT, MIN_RANK, MAX_RANK, FOOD_RECOVERY_AMOUNT, MEDICAL_RECOVERY_AMOUNT, CRITICAL_HIT_CHANCE, CRITICAL_HIT_MULTIPLIER, BASE_DAMAGE_NORMAL, BASE_DAMAGE_TYPED, DAMAGE_RANDOM_MIN, DAMAGE_RANDOM_MAX, VIOLENCE_ATTACK_DROP, LEECH_SEED_TURNS, LEECH_SEED_DRAIN_AMOUNT
 except ImportError:
-    from backend.battle import Player, get_default_abilities, MAX_HP, FOOD_LIMIT, MEDICAL_LIMIT, MIN_RANK, MAX_RANK, FOOD_RECOVERY_AMOUNT, MEDICAL_RECOVERY_AMOUNT, CRITICAL_HIT_CHANCE, CRITICAL_HIT_MULTIPLIER, BASE_DAMAGE_NORMAL, BASE_DAMAGE_TYPED, DAMAGE_RANDOM_MIN, DAMAGE_RANDOM_MAX, VIOLENCE_ATTACK_DROP
+    from backend.battle import Player, get_default_abilities, MAX_HP, FOOD_LIMIT, MEDICAL_LIMIT, MIN_RANK, MAX_RANK, FOOD_RECOVERY_AMOUNT, MEDICAL_RECOVERY_AMOUNT, CRITICAL_HIT_CHANCE, CRITICAL_HIT_MULTIPLIER, BASE_DAMAGE_NORMAL, BASE_DAMAGE_TYPED, DAMAGE_RANDOM_MIN, DAMAGE_RANDOM_MAX, VIOLENCE_ATTACK_DROP, LEECH_SEED_TURNS, LEECH_SEED_DRAIN_AMOUNT
 
 from collections import defaultdict
 from pydantic import BaseModel
@@ -157,6 +157,89 @@ class DoubleBattle_info:
     def _is_used(self, word: str):
         return word in self.used
 
+    def _patch_ability_events(self, current_actor, target_actor):
+        """特性が生成したイベントの ally/foe 形式を char_id 形式に変換する"""
+        for event in self.events:
+            # player: "ally"/"foe" → target: char_id
+            if "player" in event and event["player"] in ("ally", "foe"):
+                event["target"] = current_actor.id if event["player"] == "ally" else target_actor.id
+                del event["player"]
+            # poison_target: "ally"/"foe" → poison_target: char_id
+            if "poison_target" in event and event["poison_target"] in ("ally", "foe"):
+                event["poison_target"] = current_actor.id if event["poison_target"] == "ally" else target_actor.id
+            # new_ranks: ally_atk/foe_atk 形式 → per-char 形式
+            if "new_ranks" in event:
+                old = event["new_ranks"]
+                if "ally_atk" in old:
+                    event["new_ranks"] = {
+                        current_actor.id: {"attack_rank": old["ally_atk"], "defense_rank": old["ally_def"]},
+                        target_actor.id: {"attack_rank": old["foe_atk"], "defense_rank": old["foe_def"]}
+                    }
+            # ally_damage/foe_damage 形式 → target + damage 形式
+            if "ally_damage" in event:
+                ally_dmg = event.pop("ally_damage", 0)
+                foe_dmg = event.pop("foe_damage", 0)
+                if ally_dmg > 0:
+                    event["target"] = current_actor.id
+                    event["damage"] = ally_dmg
+                elif foe_dmg > 0:
+                    event["target"] = target_actor.id
+                    event["damage"] = foe_dmg
+            # ally_cure/foe_cure 形式 → attacker + cure_amount 形式
+            if "ally_cure" in event:
+                ally_cure = event.pop("ally_cure", 0)
+                foe_cure = event.pop("foe_cure", 0)
+                if ally_cure > 0:
+                    event["attacker"] = current_actor.id
+                    event["cure_amount"] = ally_cure
+                elif foe_cure > 0:
+                    event["attacker"] = target_actor.id
+                    event["cure_amount"] = foe_cure
+
+    def _process_end_of_turn_effects(self, attacker, defender):
+        """ターン終了時の継続効果（毒、やどりぎなど）を処理する"""
+        if self.team1_win is not None:
+            return
+
+        # 毒ダメージ処理
+        if defender.poison_turns > 0:
+            damage = int(MAX_HP * (defender.poison_turns / 16))
+            defender.take_damage(damage)
+            self.events.append({
+                "type": "damage",
+                "message": "毒のダメージを受けた！",
+                "target": defender.id,
+                "damage": damage
+            })
+            defender.poison_turns += 1
+
+            if defender.is_defeated:
+                self.events.append({"type": "message", "message": f"{defender.name}はたおれた！"})
+                defender.is_active = False
+                return
+
+        # やどりぎ処理
+        if attacker.leech_turns > 0:
+            drain_amount = LEECH_SEED_DRAIN_AMOUNT
+            actual_drain = min(defender.hp, drain_amount)
+
+            defender.take_damage(actual_drain)
+            attacker.heal(actual_drain)
+            attacker.leech_turns -= 1
+
+            self.events.append({
+                "type": "drain",
+                "message": "やどりぎで体力を奪った！",
+                "target": defender.id,
+                "damage": actual_drain,
+                "attacker": attacker.id,
+                "cure_amount": actual_drain
+            })
+
+            if defender.is_defeated:
+                self.events.append({"type": "message", "message": f"{defender.name}はたおれた！"})
+                defender.is_active = False
+
     def try_attack(self, player_id: str, word: str, target_char_id: str = None):
         if self.team1_win is not None:
             return {"type": "error", "message": "戦闘はすでに終了しています"}
@@ -197,20 +280,20 @@ class DoubleBattle_info:
         
         ability_obj = self.abilities.get(current_actor.ability)
 
+        # === 特性互換レイヤー ===
+        # 特性クラスは battle.player1 / battle.player2 を参照するため、
+        # 一時的にセットして互換性を確保する
+        self.player1 = current_actor
+        self.player2 = target_actor
+
         # ダメージ計算を代替する特性の処理
         if ability_obj and ability_obj.replaces_damage and ability_obj.check_condition(current_actor, types, word):
-            # TODO: double battle specific ability implementations may be needed, but for now we reuse.
-            # In battle.py, apply_damage_replacement_effect takes (player, battle). We need to pass self (DoubleBattle_info) 
-            # Note: We might need to slightly adapt abilities to handle double battle context later if needed,
-            # but for now we will try to reuse it as much as possible.
-            try:
-                ability_obj.apply_damage_replacement_effect(current_actor, self)
-            except AttributeError:
-                # Fallback if the ability expects a single Battle_info specifically and fails
-                pass 
+            ability_obj.apply_damage_replacement_effect(current_actor, self)
+            self._patch_ability_events(current_actor, target_actor)
 
             self.character = self.sb_info.get_next_initial(word)
             self.used[word].append(current_actor.id)
+            self.last_actor_id = current_actor.id
             self._advance_turn_index()
             # skip dead players
             self.get_current_actor()
@@ -222,10 +305,9 @@ class DoubleBattle_info:
         original_attack_rank = current_actor.attack_rank
         ability_activated = False
         if ability_obj and not ability_obj.replaces_damage and ability_obj.check_condition(current_actor, types, word):
-            # Same fallback handling for apply_effect
             try:
                 ability_activated = ability_obj.apply_effect(current_actor, self)
-            except AttributeError:
+            except (AttributeError, TypeError):
                 pass
 
 
@@ -296,12 +378,12 @@ class DoubleBattle_info:
                     "message": "急所に当たった！"
                 })
 
-            # 防御側の特性発動チェック (一部の特性はBattle_infoを期待しているためtry-except)
+            # 防御側の特性発動チェック
             defender_ability = self.abilities.get(target_actor.ability)
             if defender_ability:
                 try:
                     defender_ability.on_receive_damage(target_actor, current_actor, damage, effect, self)
-                except AttributeError:
+                except (AttributeError, TypeError):
                     pass
 
             # 暴力で攻撃ダウン
@@ -326,6 +408,24 @@ class DoubleBattle_info:
                 target_actor.is_active = False
 
         self._check_win_condition()
+
+        # --- 特性効果を元に戻す ---
+        if ability_activated:
+            current_actor.attack_rank = original_attack_rank
+
+        # ダメージ計算後の特性効果適用 (どくばり, たいふういっか 等)
+        if ability_obj and not ability_obj.replaces_damage and ability_obj.check_condition(current_actor, types, word):
+            try:
+                ability_obj.apply_after_effect(current_actor, self)
+            except (AttributeError, TypeError):
+                pass
+
+        # ターン終了時効果（毒、やどりぎ等）
+        self._process_end_of_turn_effects(current_actor, target_actor)
+        self._check_win_condition()
+
+        # 特性が生成したイベントを修正 (ally/foe → char_id)
+        self._patch_ability_events(current_actor, target_actor)
         
         # 次の文字
         self.character = self.sb_info.get_next_initial(word)
@@ -370,6 +470,32 @@ class DoubleBattle_info:
             else:
                 self._advance_turn_index()
             return self._make_response()
+
+    def include_check(self, word: str):
+        """入力中の単語のタイプチェック（ダブルバトル用）"""
+        ret = {
+            "type": "pre_check",
+            "name": word,
+            "include": False,
+            "used": False,
+            "type1": "",
+            "type2": "",
+        }
+
+        if not word:
+            return ret
+
+        if word in self.used:
+            ret["include"] = True
+            ret["used"] = True
+            # usedはdefaultdict(list)なので、タイプを取得
+            types = self.sb_info.get_types(word) if self.sb_info.inclue_in_typed_words(word) else [""]
+            ret["type1"] = types[0] if len(types) >= 1 else ""
+            ret["type2"] = types[1] if len(types) >= 2 else ""
+        else:
+            ret["include"] = self.sb_info.include_in_all_words(word)
+
+        return ret
 
     def change_ability(self, char_id: str, new_ability_id: str):
         """キャラクターの特性を変更する"""
