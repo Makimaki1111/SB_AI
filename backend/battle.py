@@ -41,6 +41,7 @@ class Player:
         self.ability = "" # 特性
         self.ability_change_count = ABILITY_CHANGE_COUNT_INIT # 特性変更の残り回数
         self.leech_turns = 0 # やどりぎの残りターン数
+        self.leech_target_id = None # やどりぎを植えられた相手のID
         self.food_count = 0 # 食べ物使用回数
         self.medical_count = 0 # 医療使用回数
         self.poison_turns = 0 # 毒の経過ターン数 (0なら毒ではない)
@@ -217,6 +218,8 @@ class LeechSeedAbility(Ability):
 
     def apply_damage_replacement_effect(self, player: Player, battle: 'Battle_info'):
         player.leech_turns = LEECH_SEED_TURNS
+        if hasattr(battle, 'player2') and battle.player2:
+            player.leech_target_id = battle.player2.id
         battle.events.append({"type": "ability_trigger", "message": f"相手に種を植え付けた！", "player": "ally" if player.id == battle.player1.id else "foe"})
 
 class LongWordBonusAbility(Ability):
@@ -880,25 +883,35 @@ class Battle_info:
 
         # やどりぎ処理
         if attacker.leech_turns > 0:
-            drain_amount = LEECH_SEED_DRAIN_AMOUNT
-            actual_drain = min(defender.hp, drain_amount)
-            
-            defender.take_damage(actual_drain)
-            attacker.heal(actual_drain)
-            attacker.leech_turns -= 1
+            actual_defender = defender
+            if hasattr(attacker, 'leech_target_id') and attacker.leech_target_id:
+                if attacker.leech_target_id == self.player1.id:
+                    actual_defender = self.player1
+                elif attacker.leech_target_id == self.player2.id:
+                    actual_defender = self.player2
 
-            # 吸収イベント（ダメージと回復を同時に行う）
-            self.events.append({
-                "type": "drain",
-                "message": "やどりぎで体力を奪った！",
-                "ally_damage": 0 if attacker.id == self.player1.id else actual_drain,
-                "foe_damage": actual_drain if attacker.id == self.player1.id else 0,
-                "ally_cure": actual_drain if attacker.id == self.player1.id else 0,
-                "foe_cure": 0 if attacker.id == self.player1.id else actual_drain
-            })
+            if not actual_defender.is_defeated:
+                drain_amount = LEECH_SEED_DRAIN_AMOUNT
+                actual_drain = min(actual_defender.hp, drain_amount)
+                
+                actual_defender.take_damage(actual_drain)
+                attacker.heal(actual_drain)
+                attacker.leech_turns -= 1
 
-            if defender.is_defeated:
-                self.player1_win = (attacker.id == self.player1.id)
+                # 吸収イベント（ダメージと回復を同時に行う）
+                self.events.append({
+                    "type": "drain",
+                    "message": "やどりぎで体力を奪った！",
+                    "ally_damage": 0 if attacker.id == self.player1.id else actual_drain,
+                    "foe_damage": actual_drain if attacker.id == self.player1.id else 0,
+                    "ally_cure": actual_drain if attacker.id == self.player1.id else 0,
+                    "foe_cure": 0 if attacker.id == self.player1.id else actual_drain
+                })
+
+                if actual_defender.is_defeated:
+                    self.player1_win = (attacker.id == self.player1.id)
+            else:
+                attacker.leech_turns = 0
 
     def include_check(self,_input:str):
         ret = {

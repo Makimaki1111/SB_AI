@@ -220,25 +220,35 @@ class DoubleBattle_info:
 
         # やどりぎ処理
         if attacker.leech_turns > 0:
-            drain_amount = LEECH_SEED_DRAIN_AMOUNT
-            actual_drain = min(defender.hp, drain_amount)
+            actual_defender = defender
+            if hasattr(attacker, 'leech_target_id') and attacker.leech_target_id:
+                for char in [self.p1a, self.p1b, self.p2a, self.p2b]:
+                    if char and char.id == attacker.leech_target_id:
+                        actual_defender = char
+                        break
 
-            defender.take_damage(actual_drain)
-            attacker.heal(actual_drain)
-            attacker.leech_turns -= 1
+            if not actual_defender.is_defeated:
+                drain_amount = LEECH_SEED_DRAIN_AMOUNT
+                actual_drain = min(actual_defender.hp, drain_amount)
 
-            self.events.append({
-                "type": "drain",
-                "message": "やどりぎで体力を奪った！",
-                "target": defender.id,
-                "damage": actual_drain,
-                "attacker": attacker.id,
-                "cure_amount": actual_drain
-            })
+                actual_defender.take_damage(actual_drain)
+                attacker.heal(actual_drain)
+                attacker.leech_turns -= 1
 
-            if defender.is_defeated:
-                self.events.append({"type": "message", "message": f"{defender.name}はたおれた！"})
-                defender.is_active = False
+                self.events.append({
+                    "type": "drain",
+                    "message": "やどりぎで体力を奪った！",
+                    "target": actual_defender.id,
+                    "damage": actual_drain,
+                    "attacker": attacker.id,
+                    "cure_amount": actual_drain
+                })
+
+                if actual_defender.is_defeated:
+                    self.events.append({"type": "message", "message": f"{actual_defender.name}はたおれた！"})
+                    actual_defender.is_active = False
+            else:
+                attacker.leech_turns = 0
 
     def try_attack(self, player_id: str, word: str, target_char_id: str = None):
         if self.team1_win is not None:
@@ -289,6 +299,10 @@ class DoubleBattle_info:
         # ダメージ計算を代替する特性の処理
         if ability_obj and ability_obj.replaces_damage and ability_obj.check_condition(current_actor, types, word):
             ability_obj.apply_damage_replacement_effect(current_actor, self)
+
+            # やどりぎ等のターン終了時効果処理 (single playerと同じ)
+            self._process_end_of_turn_effects(current_actor, target_actor)
+            self._check_win_condition()
             self._patch_ability_events(current_actor, target_actor)
 
             self.character = self.sb_info.get_next_initial(word)
