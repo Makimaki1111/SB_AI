@@ -91,8 +91,11 @@ class DoubleUI {
         }
     }
 
-    setName(id, nameText) {
+    setName(id, nameText, isPoison = false) {
         this.chars[id].nameEl.selector.text(nameText);
+        if (isPoison) {
+            this.chars[id].nameEl.selector.append('<span class="poison">どく</span>');
+        }
     }
 
     showPreImg() {
@@ -115,11 +118,9 @@ class DoubleUI {
         const uiId = getUIId(charId);
         if (this.chars[uiId]) {
             const nameEl = this.chars[uiId].nameEl.selector;
-            const currentName = nameEl.text().replace(' 🟣', '');
+            nameEl.find('.poison').remove();
             if (isPoison) {
-                nameEl.text(currentName + ' 🟣');
-            } else {
-                nameEl.text(currentName);
+                nameEl.append('<span class="poison">どく</span>');
             }
         }
     }

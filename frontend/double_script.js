@@ -277,7 +277,7 @@ function updateUIWithCharacters(chars) {
             doubleBattleState.chars[id] = chars[id];
 
             const uiId = getUIId(id);
-            ui.setName(uiId, chars[id].name);
+            ui.setName(uiId, chars[id].name, chars[id].is_poison);
             ui.setHP(uiId, chars[id].hp, chars[id].maxHp);
             if (chars[id].is_defeated) {
                 ui.setCharVisibility(uiId, false);

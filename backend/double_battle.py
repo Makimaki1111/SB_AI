@@ -201,22 +201,22 @@ class DoubleBattle_info:
         if self.team1_win is not None:
             return
 
-        # 毒ダメージ処理
-        if defender.poison_turns > 0:
-            damage = int(MAX_HP * (defender.poison_turns / 16))
-            defender.take_damage(damage)
-            self.events.append({
-                "type": "damage",
-                "message": "毒のダメージを受けた！",
-                "target": defender.id,
-                "damage": damage
-            })
-            defender.poison_turns += 1
+        # 毒ダメージ処理 (毒を付与したキャラクターの行動終了時に発動)
+        for p in [self.p1a, self.p1b, self.p2a, self.p2b]:
+            if p and not p.is_defeated and p.poison_turns > 0 and getattr(p, 'poisoner_id', None) == attacker.id:
+                damage = int(MAX_HP * (p.poison_turns / 16))
+                p.take_damage(damage)
+                self.events.append({
+                    "type": "damage",
+                    "message": "毒のダメージを受けた！",
+                    "target": p.id,
+                    "damage": damage
+                })
+                p.poison_turns += 1
 
-            if defender.is_defeated:
-                self.events.append({"type": "message", "message": f"{defender.name}はたおれた！"})
-                defender.is_active = False
-                return
+                if p.is_defeated:
+                    self.events.append({"type": "message", "message": f"{p.name}はたおれた！"})
+                    p.is_active = False
 
         # やどりぎ処理
         if attacker.leech_turns > 0:
@@ -355,6 +355,7 @@ class DoubleBattle_info:
                 # 毒解除
                 if current_actor.poison_turns > 0:
                     current_actor.poison_turns = 0
+                    current_actor.poisoner_id = None
                     self.events.append({"type": "cure_poison", "message": f"{current_actor.name}の毒が治った！", "target": current_actor.id})
 
                 event = {"type": "cure", "message": f"{current_actor.name}の体力が回復した", "target": current_actor.id, "cure_amount": MEDICAL_RECOVERY_AMOUNT}
@@ -581,6 +582,7 @@ class DoubleBattle_info:
             "ability": p.ability,
             "ability_change_count": p.ability_change_count,
             "is_defeated": p.is_defeated,
+            "is_poison": p.poison_turns > 0,
             "owner_id": p.owner_id
         }
 

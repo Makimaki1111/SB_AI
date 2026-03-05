@@ -45,6 +45,7 @@ class Player:
         self.food_count = 0 # 食べ物使用回数
         self.medical_count = 0 # 医療使用回数
         self.poison_turns = 0 # 毒の経過ターン数 (0なら毒ではない)
+        self.poisoner_id = None # 毒を付与したプレイヤーのID
 
     def take_damage(self, damage: int):
         self.hp = max(0, self.hp - damage)
@@ -408,6 +409,7 @@ class DokubariAbility(Ability):
         opponent = battle.player2 if player.id == battle.player1.id else battle.player1
         if opponent.poison_turns == 0:
             opponent.poison_turns = 1
+            opponent.poisoner_id = player.id
             battle.events.append({
                 "type": "ability_trigger",
                 "message": f"毒を受けた！",
@@ -690,6 +692,7 @@ class Battle_info:
                     # 毒解除
                     if self.player1.poison_turns > 0:
                         self.player1.poison_turns = 0
+                        self.player1.poisoner_id = None
                         self.events.append({"type" : "cure_poison", "message" : "毒が治った！", "player": "ally"})
 
                     event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : MEDICAL_RECOVERY_AMOUNT, "foe_cure" : 0}
@@ -780,6 +783,7 @@ class Battle_info:
                     # 毒解除
                     if self.player2.poison_turns > 0:
                         self.player2.poison_turns = 0
+                        self.player2.poisoner_id = None
                         self.events.append({"type" : "cure_poison", "message" : "毒が治った！", "player": "foe"})
 
                     event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : 0, "foe_cure" : MEDICAL_RECOVERY_AMOUNT}
@@ -865,21 +869,21 @@ class Battle_info:
         if self.player1_win is not None:
             return
 
-        # 毒ダメージ処理
-        if defender.poison_turns > 0:
-            damage = int(self.MAX_HP * (defender.poison_turns / 16))
-            defender.take_damage(damage)
-            self.events.append({
-                "type": "damage",
-                "message": "毒のダメージを受けた！",
-                "ally_damage": damage if defender.id == self.player1.id else 0,
-                "foe_damage": 0 if defender.id == self.player1.id else damage
-            })
-            defender.poison_turns += 1
-            
-            if defender.is_defeated:
-                self.player1_win = (defender.id != self.player1.id)
-                return
+        # 毒ダメージ処理 (毒を付与したキャラクターの行動終了時に発動)
+        for p in [self.player1, self.player2]:
+            if not p.is_defeated and p.poison_turns > 0 and getattr(p, 'poisoner_id', None) == attacker.id:
+                damage = int(self.MAX_HP * (p.poison_turns / 16))
+                p.take_damage(damage)
+                self.events.append({
+                    "type": "damage",
+                    "message": "毒のダメージを受けた！",
+                    "ally_damage": damage if p.id == self.player1.id else 0,
+                    "foe_damage": 0 if p.id == self.player1.id else damage
+                })
+                p.poison_turns += 1
+                
+                if p.is_defeated:
+                    self.player1_win = (p.id != self.player1.id)
 
         # やどりぎ処理
         if attacker.leech_turns > 0:

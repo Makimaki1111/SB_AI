@@ -343,3 +343,12 @@
         opacity: 0;
     }
 }
+
+.poison {
+    background-color: #8f42d4;
+    color: white;
+    border-radius: 10px;
+    padding: 0 10px;
+    float: right;
+    line-height: 100%;
+}
