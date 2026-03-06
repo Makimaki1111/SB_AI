@@ -235,6 +235,40 @@ def stop_turn_timer(room_id: str):
         timer_tasks[room_id].cancel()
         del timer_tasks[room_id]
 
+async def double_timeout_handler(room_id: str):
+    try:
+        await asyncio.sleep(TIME_LIMIT)
+        if room_id in double_battle_rooms:
+            battle = double_battle_rooms[room_id]
+            res = battle.timeout()
+            await manager.broadcast_battle_state(room_id, res, is_double=True)
+
+            if battle.team1_win is not None:
+                stop_double_turn_timer(room_id)
+            else:
+                if battle.is_cpu and battle.current_turn_team != "team1":
+                    await asyncio.sleep(1)
+                    cpu_res = battle.execute_cpu_turn()
+                    if cpu_res:
+                        await manager.broadcast_battle_state(room_id, cpu_res, is_double=True)
+                
+                if battle.team1_win is None:
+                    await start_double_turn_timer(room_id)
+    except asyncio.CancelledError:
+        pass
+
+async def start_double_turn_timer(room_id: str):
+    if room_id in double_battle_rooms and double_battle_rooms[room_id].is_cpu:
+        return
+    stop_double_turn_timer(room_id)
+    timer_tasks[room_id] = asyncio.create_task(double_timeout_handler(room_id))
+
+def stop_double_turn_timer(room_id: str):
+    if room_id in timer_tasks:
+        timer_tasks[room_id].cancel()
+        del timer_tasks[room_id]
+
+
 # --- WebSocket対応部分 ---
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -585,6 +619,7 @@ async def websocket_double_endpoint(websocket: WebSocket):
                                 init_res = bi._make_response()
                                 init_res["type"] = "init_double_battle"
                                 await p["socket"].send_text(json.dumps(init_res))
+                            await start_double_turn_timer(bi.room_id)
                             
                             del double_private_rooms[room_id]
                         else:
@@ -614,7 +649,15 @@ async def websocket_double_endpoint(websocket: WebSocket):
                             await websocket.send_text(json.dumps(res))
                         else:
                             await manager.broadcast(json.dumps(res), room_id)
+                            # 行動成功後、タイマーリセット
+                            await start_double_turn_timer(room_id)
                             
+                            # 勝負がついた場合はタイマー停止と部屋削除
+                            if battle.team1_win is not None:
+                                stop_double_turn_timer(room_id)
+                                del double_battle_rooms[room_id]
+                                logger.info(f"Double battle room {room_id} was removed because a team won.")
+                                
                             # CPUの連続ターンの可能性も考慮してループ (p1bも死んでいて敵2連続行動の場合など)
                             while battle.is_cpu and battle.get_current_actor().owner_id.startswith("cpu_") and not battle.team1_win is not None:
                                 import asyncio
@@ -622,6 +665,13 @@ async def websocket_double_endpoint(websocket: WebSocket):
                                 cpu_res = battle.execute_cpu_turn()
                                 if cpu_res:
                                     await manager.broadcast(json.dumps(cpu_res), room_id)
+                                    
+                                    if battle.team1_win is not None:
+                                        stop_double_turn_timer(room_id)
+                                        del double_battle_rooms[room_id]
+                                        break
+                                    
+                            await start_double_turn_timer(room_id)
                     else:
                         await websocket.send_text(json.dumps({"type": "error", "message": "戦闘は終了しました"}))
 

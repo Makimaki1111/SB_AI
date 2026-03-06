@@ -245,6 +245,9 @@ function connectDoubleWebSocket(action, mode, roomId) {
         } else if (data.type === "error") {
             // エラー表示をUIに反映
             ui.setWaitMessage(data.message, 2000);
+
+            // 重要：エラーになった場合は入力を再有効化する
+            ui.enableInput();
         } else if (data.type === "pre_check") {
             // include_checkの結果
             onDoublePreCheck(data);
@@ -314,8 +317,11 @@ function updateUIWithCharacters(chars) {
 async function handleTurnResult(data) {
     ui.hideInputArea();
 
-    // Show the played word if it was a valid turn
-    if (data.word && data.last_actor_id) {
+    // タイムアウト（時間切れ）かどうか判定
+    const isTimeout = data.events && data.events.some(e => e.message && e.message.includes("時間切れ"));
+
+    // Show the played word if it was a valid turn AND not a timeout
+    if (!isTimeout && data.word && data.last_actor_id) {
         const uiLastActorId = getUIId(data.last_actor_id);
         ui.setWord(uiLastActorId, data.word);
 
