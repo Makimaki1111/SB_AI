@@ -386,7 +386,8 @@ class DoubleUI {
     showAbilityModal() { this.abilityModal.selector.fadeIn('fast'); }
     hideAbilityModal() { this.abilityModal.selector.fadeOut('fast'); }
 
-    updateSituationInfo(chars) {
+    updateSituationInfo(state) {
+        const chars = state.chars;
         const rankToPower = (rank) => {
             const mapping = {
                 "-6": 0.25, "-5": 0.28, "-4": 0.33, "-3": 0.4, "-2": 0.5, "-1": 0.66, "0": 1.0,

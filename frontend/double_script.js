@@ -96,7 +96,7 @@ $(() => {
 
     // Modal Events
     ui.situationButton.selector.on('click', () => {
-        ui.updateSituationInfo(doubleBattleState.chars);
+        ui.updateSituationInfo(doubleBattleState);
         ui.showSituationModal();
         if (typeof playSound === 'function') playSound("resource/pera.mp3");
     });
@@ -263,6 +263,7 @@ async function initDoubleBattle(data) {
     battleState = data; // store room state
     doubleBattleState.roomId = data.room_id;
     doubleBattleState.mode = data.mode;
+    doubleBattleState.lastFoeWord = null; // バトル開始時にリセット
 
     // Determine myTeam based on owner_id
     doubleBattleState.myTeam = 'team1';
@@ -317,6 +318,13 @@ async function handleTurnResult(data) {
     if (data.word && data.last_actor_id) {
         const uiLastActorId = getUIId(data.last_actor_id);
         ui.setWord(uiLastActorId, data.word);
+
+        // 相手チームの言葉を記録
+        if (doubleBattleState.myTeam === 'team1' && (uiLastActorId === 'p2a' || uiLastActorId === 'p2b')) {
+            doubleBattleState.lastFoeWord = data.word;
+        } else if (doubleBattleState.myTeam === 'team2' && (uiLastActorId === 'p1a' || uiLastActorId === 'p1b')) {
+            doubleBattleState.lastFoeWord = data.word;
+        }
 
         let types = [];
         if (data.characters[data.last_actor_id].types && data.characters[data.last_actor_id].types.length > 0) {

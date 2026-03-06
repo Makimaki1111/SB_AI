@@ -249,19 +249,59 @@
 /* とくせいモーダル タブ */
 .char-tab {
     padding: 6px 16px;
-    border: 2px solid #ccc;
-    border-radius: 8px;
-    background: #f5f5f5;
-    font-weight: bold;
-    font-size: 0.9em;
+    border: none;
+    border-radius: 6px;
+    background: #e0e0e0;
     cursor: pointer;
-    transition: all 0.2s;
+    font-weight: bold;
+    color: #666;
 }
 
 .char-tab.active {
     background: #ff5722;
-    color: #fff;
-    border-color: #ff5722;
+    color: white;
+}
+
+#tab-p2a.active,
+#tab-p2b.active {
+    background: #00bcd4;
+}
+
+/* じょうきょうモーダル 詳細情報スタイル */
+#s-p1a-info,
+#s-p1b-info,
+#s-p2a-info,
+#s-p2b-info {
+    width: 90%;
+    margin: 10px auto;
+    padding: 10px;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    background-color: #f9f9f9;
+    text-align: center;
+    font-family: "M PLUS 1p", sans-serif;
+    font-weight: 700;
+}
+
+#s-p1a-info p,
+#s-p1b-info p,
+#s-p2a-info p,
+#s-p2b-info p {
+    text-align: center;
+    display: block;
+    margin: 5px 0;
+    font-size: 1em;
+}
+
+#s-p1a-info span,
+#s-p1b-info span,
+#s-p2a-info span,
+#s-p2b-info span {
+    font-weight: normal;
+    color: #555;
+    display: inline-block;
+    width: 60px;
+    text-align: center;
 }
 
 .double-skills-list {
