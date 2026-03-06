@@ -437,8 +437,8 @@ async function handleTurnResult(data) {
 
     updateUIWithCharacters(data.characters);
 
-    // 特性変更イベントの場合、モーダルを再描画
-    const abilityChangeEvent = data.events && data.events.find(e => e.type === 'ability_changed');
+    // 特性変更イベントの場合、最新の変更を取得するためにreverseしてfindする
+    const abilityChangeEvent = data.events && [...data.events].reverse().find(e => e.type === 'ability_changed');
     if (abilityChangeEvent) {
         // モーダル内の選択肢を再描画して、選択状態を更新
         ui.updateAbilityInfo(doubleBattleState.chars, doubleBattleState.allAbilities, (charId, abilityId) => {

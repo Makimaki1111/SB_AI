@@ -232,10 +232,6 @@
         <div id="double-modal-message"></div>
         <!-- 自分チームのとくせい (選択可能) -->
         <div style="margin-bottom: 12px;">
-            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                <button class="char-tab active" id="tab-p1a" onclick="switchAbilityTab('p1a')">じぶんA</button>
-                <button class="char-tab" id="tab-p1b" onclick="switchAbilityTab('p1b')">じぶんB</button>
-            </div>
             <div id="ability-tab-p1a" class="ability-tab-content">
                 <div style="margin-bottom: 6px;">
                     <span style="font-weight:bold;" id="a-p1a-name">じぶんA</span>
@@ -257,6 +253,11 @@
                 </div>
                 <div style="font-size:0.85em;color:#888;">タップしてとくせいを変える <span id="a-p1b-remain">(あと0回)</span></div>
                 <div id="a-p1b-skills" class="double-skills-list"></div>
+            </div>
+
+            <div style="display: flex; gap: 8px; margin-top: 15px;">
+                <button class="char-tab active" id="tab-p1a" onclick="switchAbilityTab('p1a')">じぶんA</button>
+                <button class="char-tab" id="tab-p1b" onclick="switchAbilityTab('p1b')">じぶんB</button>
             </div>
         </div>
 
