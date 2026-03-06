@@ -421,6 +421,7 @@ select {
 }
 
 /* 対人戦 / コンピュータ戦 ボタン共通 */
+.button-lobby,
 #vs-human-btn,
 #vs-player-btn,
 #vs-cpu-btn,
@@ -439,8 +440,10 @@ select {
   cursor: pointer;
   text-align: center;
   text-decoration: none;
+  box-sizing: border-box;
 }
 
+.button-lobby:hover,
 #vs-human-btn:hover,
 #vs-player-btn:hover,
 #vs-cpu-btn:hover {
@@ -448,9 +451,24 @@ select {
   transition: transform 120ms ease-in-out;
 }
 
+/* ロビー・タイトル画面のボタンコンテナ */
+.title-buttons-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: 16px;
+  margin-top: 50px;
+  position: relative;
+  z-index: 10;
+  /* タイトル等と被らないよう配慮 */
+}
+
 /* スマホ向けにさらに大きく見せる */
 @media (max-width: 420px) {
 
+  .button-lobby,
   #vs-human-btn,
   #vs-player-btn,
   #vs-cpu-btn,

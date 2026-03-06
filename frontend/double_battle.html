@@ -5,8 +5,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ダブルバトル (β版)</title>
-    <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="double_style.css?v=6" />
+    <link rel="stylesheet" href="style.css?v=7" />
+    <link rel="stylesheet" href="double_style.css?v=7" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700;800&display=swap" rel="stylesheet">
@@ -19,36 +19,39 @@
             <div class="content">
                 <h1>ダブルバトル ロビー</h1>
 
-                <div
-                    style="margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 10px; background: rgba(255,255,255,0.8);">
-                    <h3>モード選択</h3>
-                    <div style="display: flex; gap: 10px; margin-top: 10px; justify-content: center;">
-                        <label><input type="radio" name="double_mode" value="1v1_double" checked> 1人2役 (計2名)</label>
-                        <label><input type="radio" name="double_mode" value="2v2_double"> 4人協力対戦 (計4名)</label>
+                <!-- メニューボタン群をコンテナでラップして重なりと間隔を管理 -->
+                <div class="title-buttons-container" style="margin-top: 50px;">
+                    <div
+                        style="width: 72%; max-width: 340px; padding: 15px; border: 1px solid #ccc; border-radius: 12px; background: rgba(255,255,255,0.8); box-sizing: border-box;">
+                        <h3 style="margin-top: 0;">モード選択</h3>
+                        <div
+                            style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px; font-weight: bold;">
+                            <label><input type="radio" name="double_mode" value="1v1_double" checked> 1人2役 (計2名)</label>
+                            <label><input type="radio" name="double_mode" value="2v2_double"> 4人協力対戦 (計4名)</label>
+                        </div>
                     </div>
-                </div>
 
-                <a id="create-double-room-btn" class="button"
-                    style="display: block; text-align: center; margin-bottom: 20px; background-color: #4CAF50; color: white; padding: 15px; border-radius: 10px; text-decoration: none; font-weight: bold; cursor: pointer;">ルームを作成する</a>
+                    <a id="create-double-room-btn" class="button-lobby"
+                        style="background: linear-gradient(180deg, #81c784, #4caf50); color: white; margin-top: 10px;">ルームを作成する</a>
 
-                <div
-                    style="display: flex; gap: 8px; align-items: center; width: 100%; max-width: 340px; margin-top: 8px; margin: 0 auto;">
-                    <input type="text" id="double-room-id-input" placeholder="ルームID"
-                        style="flex-grow: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem;">
-                    <button id="join-double-room-btn"
-                        style="padding: 10px 16px; border-radius: 8px; border: none; background-color: #2196F3; color: white; font-size: 1rem; cursor: pointer;">参加する</button>
-                </div>
+                    <div
+                        style="display: flex; gap: 8px; align-items: center; width: 72%; max-width: 340px; margin: 0 auto; box-sizing: border-box;">
+                        <input type="text" id="double-room-id-input" placeholder="ルームID"
+                            style="flex-grow: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; box-sizing: border-box;">
+                        <button id="join-double-room-btn"
+                            style="padding: 10px 16px; border-radius: 8px; border: none; background: linear-gradient(180deg, #64b5f6, #1e88e5); color: white; font-size: 1rem; font-weight: 700; cursor: pointer; white-space: nowrap; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">参加する</button>
+                    </div>
 
-                <!-- CPU戦(デバッグ用) -->
-                <button id="cpu-double-battle-btn"
-                    style="display: block; width: 100%; max-width: 340px; margin: 20px auto 0 auto; padding: 12px; border-radius: 8px; border: none; background-color: #9C27B0; color: white; font-size: 1rem; font-weight: bold; cursor: pointer;">CPU戦
-                    (デバッグ)</button>
+                    <!-- CPU戦(デバッグ用) -->
+                    <button id="cpu-double-battle-btn" class="button-lobby"
+                        style="background: linear-gradient(180deg, #ba68c8, #8e24aa); color: white;">CPU戦
+                        (デバッグ)</button>
 
-                <div id="lobby-message" style="margin-top: 20px; color: #333; font-weight: bold; text-align: center;">
-                </div>
+                    <div id="lobby-message" style="color: #333; font-weight: bold; text-align: center;">
+                    </div>
 
-                <div style="margin-top: 40px; text-align: center;">
-                    <a href="index.html" style="color: #666; text-decoration: underline;">タイトルに戻る</a>
+                    <a href="index.html" class="button-lobby"
+                        style="background: linear-gradient(180deg, #f0f0f0, #d4d4d4); color: #333; margin-bottom: 20px;">タイトルに戻る</a>
                 </div>
             </div>
         </div>
