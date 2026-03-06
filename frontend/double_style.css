@@ -90,15 +90,17 @@
 }
 
 #char-p1b-wrapper {
+    transform: scale(1.0) translate(20px, 0px);
     z-index: 12;
 }
 
 #char-p2a-wrapper {
-    transform: scale(0.9) translate(10px, -15px);
+    transform: scale(0.9) translate(-14px, -15px);
     z-index: 10;
 }
 
 #char-p2b-wrapper {
+    transform: scale(1.0) translate(0px, 0px);
     z-index: 12;
 }
 
@@ -110,13 +112,9 @@
     transform: translateX(-50%);
     font-weight: bold;
     color: #2A2A2A;
-    background-color: rgba(255, 255, 255, 0.85);
-    padding: 2px 12px;
-    border-radius: 12px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
     white-space: nowrap;
-    letter-spacing: -1.5px;
-    font-size: 24px;
+    letter-spacing: -2px;
+    font-size: 28px;
     font-family: "M PLUS 1p", sans-serif;
     text-align: center;
     z-index: 50;
@@ -136,21 +134,31 @@
 #double-battle-screen .balloon.left.double-balloon {
     top: 12px;
     left: 0px;
-    right: auto;
-    bottom: auto;
 }
 
 /* 自分サイド（左下キャラ）のバルーンは「右下」に配置して被りを防ぐ */
 #double-battle-screen .balloon.right.double-balloon {
     bottom: 12px;
     right: 0px;
-    top: auto;
-    left: auto;
 }
 
 /* 味方の単語 */
 .bottom-left .double-word {
     top: 88%;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* 敵の単語 */
+.top-right .double-word {
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* 敵の単語 */
+.top-right .double-word {
+    top: 100%;
     left: 50%;
     transform: translateX(-50%);
 }

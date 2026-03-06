@@ -144,11 +144,30 @@ class DoubleUI {
         }
     }
 
+    _adjustWordScale(element) {
+        const maxWidth = 110; // ダブルバトル用に短めに設定
+        const domElement = element.get ? element.get(0) : element;
+
+        if (!domElement) return;
+
+        // 一旦スケールをリセットして本来の幅を取得
+        domElement.style.transform = 'translateX(-50%) scaleX(1)';
+
+        if (domElement.scrollWidth > maxWidth) {
+            const scale = maxWidth / domElement.scrollWidth;
+            domElement.style.transform = `translateX(-50%) scaleX(${scale})`;
+        } else {
+            domElement.style.transform = `translateX(-50%) scaleX(1)`;
+        }
+    }
+
     setWord(id, wordText) {
         const dom = this.chars[id].word.selector;
         if (wordText) {
             dom.text(wordText);
+            // dispaly:noneだと幅が0になるため、いったん見えない状態(opacity:0)でshowしてから幅を量る
             dom.stop(true, false).css('opacity', 0).show();
+            this._adjustWordScale(dom);
             dom.animate({ opacity: 1 }, 300);
         } else {
             dom.hide();

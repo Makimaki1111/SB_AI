@@ -60,6 +60,8 @@
             background: #16213e;
             padding: 15px;
             overflow-y: auto;
+            height: 100vh;
+            box-sizing: border-box;
             border-left: 2px solid #0f3460;
             color: #eee;
             font-size: 12px;
@@ -267,19 +269,49 @@
         <p class="hint">スライダーで調整 or プレビュー上でドラッグ</p>
 
         <div class="cg">
-            <h3>味方キャラ (左下)</h3>
+            <h3>味方キャラ (左下) 全体</h3>
             <div class="cr"><label>bottom:</label><input type="range" id="s-ac-b" min="-30" max="150" value="32"><span
                     class="v" id="v-ac-b">32</span>px</div>
             <div class="cr"><label>left:</label><input type="range" id="s-ac-l" min="-50" max="250" value="32"><span
                     class="v" id="v-ac-l">32</span>px</div>
         </div>
         <div class="cg">
-            <h3>敵キャラ (右上)</h3>
+            <h3>敵キャラ (右上) 全体</h3>
             <div class="cr"><label>top:</label><input type="range" id="s-ec-t" min="-50" max="200" value="-30"><span
                     class="v" id="v-ec-t">-30</span>px</div>
             <div class="cr"><label>right:</label><input type="range" id="s-ec-r" min="-50" max="250" value="28"><span
                     class="v" id="v-ec-r">28</span>px</div>
         </div>
+
+        <div class="cg">
+            <h3>みかたA (P1A) の位置</h3>
+            <div class="cr"><label>X:</label><input type="range" id="s-p1a-x" min="-100" max="100" value="-10"><span
+                    class="v" id="v-p1a-x">-10</span>px</div>
+            <div class="cr"><label>Y:</label><input type="range" id="s-p1a-y" min="-100" max="100" value="-15"><span
+                    class="v" id="v-p1a-y">-15</span>px</div>
+        </div>
+        <div class="cg">
+            <h3>みかたB (P1B) の位置</h3>
+            <div class="cr"><label>X:</label><input type="range" id="s-p1b-x" min="-100" max="100" value="0"><span
+                    class="v" id="v-p1b-x">0</span>px</div>
+            <div class="cr"><label>Y:</label><input type="range" id="s-p1b-y" min="-100" max="100" value="0"><span
+                    class="v" id="v-p1b-y">0</span>px</div>
+        </div>
+        <div class="cg">
+            <h3>てきA (P2A) の位置</h3>
+            <div class="cr"><label>X:</label><input type="range" id="s-p2a-x" min="-100" max="100" value="10"><span
+                    class="v" id="v-p2a-x">10</span>px</div>
+            <div class="cr"><label>Y:</label><input type="range" id="s-p2a-y" min="-100" max="100" value="-15"><span
+                    class="v" id="v-p2a-y">-15</span>px</div>
+        </div>
+        <div class="cg">
+            <h3>てきB (P2B) の位置</h3>
+            <div class="cr"><label>X:</label><input type="range" id="s-p2b-x" min="-100" max="100" value="0"><span
+                    class="v" id="v-p2b-x">0</span>px</div>
+            <div class="cr"><label>Y:</label><input type="range" id="s-p2b-y" min="-100" max="100" value="0"><span
+                    class="v" id="v-p2b-y">0</span>px</div>
+        </div>
+
         <div class="cg">
             <h3>敵バルーン (左上)</h3>
             <div class="cr"><label>top:</label><input type="range" id="s-eb-t" min="0" max="250" value="12"><span
@@ -307,6 +339,11 @@
                     class="v" id="v-ew-t">100</span>%</div>
             <div class="cr"><label>left:</label><input type="range" id="s-ew-l" min="-50" max="200" value="50"><span
                     class="v" id="v-ew-l">50</span>%</div>
+        </div>
+        <div class="cg">
+            <h3>単語の最大長 (スケール縮小用)</h3>
+            <div class="cr"><label>max-width:</label><input type="range" id="s-w-mw" min="50" max="300"
+                    value="125"><span class="v" id="v-w-mw">125</span>px</div>
         </div>
 
         <h2>📋 CSS出力</h2>
@@ -345,6 +382,29 @@
             });
         }
 
+        // 個別キャラ位置スライダー
+        const charConfigs = {
+            'p1a': { scale: 0.9 },
+            'p1b': { scale: 1.0 },
+            'p2a': { scale: 0.9 },
+            'p2b': { scale: 1.0 }
+        };
+
+        ['p1a', 'p1b', 'p2a', 'p2b'].forEach(char => {
+            ['x', 'y'].forEach(axis => {
+                const id = `s-${char}-${axis}`;
+                document.getElementById(id).addEventListener('input', function () {
+                    document.getElementById(`v-${char}-${axis}`).textContent = this.value;
+                    const el = document.getElementById(`char-${char}-wrapper`);
+                    const x = document.getElementById(`s-${char}-x`).value;
+                    const y = document.getElementById(`s-${char}-y`).value;
+                    const scale = charConfigs[char].scale;
+                    el.style.transform = `scale(${scale}) translate(${x}px, ${y}px)`;
+                    genCSS();
+                });
+            });
+        });
+
         // 単語スライダー
         ['s-aw-t', 's-aw-l', 's-ew-t', 's-ew-l'].forEach(id => {
             document.getElementById(id).addEventListener('input', function () {
@@ -352,13 +412,38 @@
                 const isAlly = id.includes('-aw-');
                 const isTop = id.endsWith('-t');
                 const words = document.querySelectorAll(isAlly ? '.bottom-left .double-word' : '.top-right .double-word');
+                const mw = parseInt(document.getElementById('s-w-mw').value);
                 words.forEach(w => {
                     if (isTop) w.style.top = this.value + '%';
-                    else { w.style.left = this.value + '%'; w.style.transform = `translateX(-${this.value}%)`; }
+                    else {
+                        w.style.left = this.value + '%';
+                        const wWidth = w.scrollWidth;
+                        const scale = wWidth > mw ? mw / wWidth : 1;
+                        w.style.transform = `translateX(-${this.value}%) scaleX(${scale})`;
+                    }
                 });
                 genCSS();
             });
         });
+
+        document.getElementById('s-w-mw').addEventListener('input', function () {
+            document.getElementById('v-w-mw').textContent = this.value;
+            const mw = parseInt(this.value);
+            ['s-aw-l', 's-ew-l'].forEach(id => {
+                const val = document.getElementById(id).value;
+                const isAlly = id === 's-aw-l';
+                const words = document.querySelectorAll(isAlly ? '.bottom-left .double-word' : '.top-right .double-word');
+                words.forEach(w => {
+                    // we need to temporarily remove scale to get true scrollWidth
+                    w.style.transform = `translateX(-${val}%) scaleX(1)`;
+                    const wWidth = w.scrollWidth;
+                    const scale = wWidth > mw ? mw / wWidth : 1;
+                    w.style.transform = `translateX(-${val}%) scaleX(${scale})`;
+                });
+            });
+            genCSS();
+        });
+
 
         // --- ドラッグ ---
         let drag = null, dx = 0, dy = 0;
@@ -421,6 +506,26 @@
     right: ${g('s-ec-r')}px;
 }
 
+#char-p1a-wrapper {
+    transform: scale(0.9) translate(${g('s-p1a-x')}px, ${g('s-p1a-y')}px);
+    z-index: 10;
+}
+
+#char-p1b-wrapper {
+    transform: scale(1.0) translate(${g('s-p1b-x')}px, ${g('s-p1b-y')}px);
+    z-index: 12;
+}
+
+#char-p2a-wrapper {
+    transform: scale(0.9) translate(${g('s-p2a-x')}px, ${g('s-p2a-y')}px);
+    z-index: 10;
+}
+
+#char-p2b-wrapper {
+    transform: scale(1.0) translate(${g('s-p2b-x')}px, ${g('s-p2b-y')}px);
+    z-index: 12;
+}
+
 #double-battle-screen .balloon.left.double-balloon {
     top: ${g('s-eb-t')}px;
     left: ${g('s-eb-l')}px;
@@ -443,7 +548,15 @@
     top: ${g('s-ew-t')}%;
     left: ${g('s-ew-l')}%;
     transform: translateX(-${g('s-ew-l')}%);
-}`;
+}
+
+/* 
+ * ※ 単語の最大長設定 (double_UI.js に反映してね)
+ * _adjustWordScale(element) {
+ *     const maxWidth = ${g('s-w-mw')}; 
+ *     ...
+ * }
+ */`;
             document.getElementById('css-out').textContent = css;
         }
 
