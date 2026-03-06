@@ -112,6 +112,23 @@ $(() => {
         if (typeof playSound === 'function') playSound("resource/pera.mp3");
     });
 
+    // 逃げる（降参）ボタン
+    ui.cancelBtn.selector.on('click', () => {
+        if (confirm("本当に逃げますか？\n（チームが全滅扱いになる可能性があります）")) {
+            if (sock && sock.readyState === WebSocket.OPEN) {
+                sock.send(JSON.stringify({
+                    type: "run_away_double",
+                    info: {
+                        room_id: doubleBattleState.roomId,
+                        player_id: player1_id
+                    }
+                }));
+            }
+            // クライアント側で即座にタイトルへ戻る処理（サーバー側の切断検知で残りの処理が行われる）
+            backToLobby();
+        }
+    });
+
     // 入力中のタイプチェック (script.jsと同じ)
     ui.input.selector.on('input', () => {
         if (!doubleBattleState.roomId) {

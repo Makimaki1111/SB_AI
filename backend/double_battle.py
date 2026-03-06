@@ -603,3 +603,43 @@ class DoubleBattle_info:
             "owner_id": p.owner_id
         }
 
+    def handle_disconnection(self, disconnected_player_id: str, message: str = "あいてが通信を切断しました。"):
+        """
+        プレイヤーが切断または逃亡した際の処理。
+        切断したプレイヤーが所有するキャラクターを戦闘不能（HP=0）にする。
+        その結果、勝敗が確定した場合は結果のレスポンスを返す。
+        """
+        if self.team1_win is not None:
+            return None # 既に勝負がついている場合は何もしない
+
+        disconnected_chars = []
+        for p in self.team1 + self.team2:
+            if p.owner_id == disconnected_player_id and not p.is_defeated:
+                p.hp = 0
+                p.is_active = False
+                disconnected_chars.append(p)
+
+        if not disconnected_chars:
+            return None
+
+        # イベントの追加
+        for p in disconnected_chars:
+            self.events.append({
+                "type": "message",
+                "message": f"{p.name} は逃げ出した！"
+            })
+
+        self.events.append({
+            "type": "error",
+            "message": message
+        })
+
+        # 勝敗チェック
+        self._check_win_condition()
+        
+        # 進行中のターンのキャラが逃げた場合、次のキャラにターンを回すための処理
+        current_actor = self.get_current_actor()
+
+        ret = self._make_response()
+        self.events = []
+        return ret

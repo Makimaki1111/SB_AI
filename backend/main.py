@@ -625,6 +625,28 @@ async def websocket_double_endpoint(websocket: WebSocket):
                     else:
                         await websocket.send_text(json.dumps({"type": "error", "message": "戦闘は終了しました"}))
 
+                # 逃げる処理
+                elif req.get("type") == "run_away_double":
+                    info = req.get("info", {})
+                    room_id = info.get("room_id")
+                    player_id = info.get("player_id")
+
+                    if room_id in double_battle_rooms:
+                        battle = double_battle_rooms[room_id]
+                        res = battle.handle_disconnection(player_id, message="あいてが逃げ出しました。")
+                        if res:
+                            await manager.broadcast(json.dumps(res), room_id)
+                            # 勝負がついた場合は部屋を削除
+                            if battle.team1_win is not None:
+                                del double_battle_rooms[room_id]
+                                logger.info(f"Double battle room {room_id} was removed because a team won/fled.")
+                        else:
+                            # まだ勝負が続いていれば現状をブロードキャスト
+                            # (誰かが死んだだけの状態)
+                            pass
+                    else:
+                        await websocket.send_text(json.dumps({"type": "error", "message": "戦闘は終了しました"}))
+
                 # タイプチェック（入力中プレビュー）
                 elif req.get("type") == "include_check_double":
                     info = req.get("info", {})
@@ -676,14 +698,32 @@ async def websocket_double_endpoint(websocket: WebSocket):
             del double_private_rooms[room_to_remove]
             logger.info(f"Double private room {room_to_remove} removed.")
 
+        # 実際の切断プレイヤーIDを取得
+        disconnected_player_id = manager.socket_to_player_id.get(websocket)
+
         left_rooms = manager.disconnect(websocket)
         for room_id in left_rooms:
             if room_id in double_battle_rooms:
-                # 誰かが切断したら強制終了メッセージをブロードキャストして部屋を削除
-                abort_msg = json.dumps({"type": "error", "message": "対戦相手との通信が切断されました"})
-                await manager.broadcast(abort_msg, room_id)
-                del double_battle_rooms[room_id]
-                logger.info(f"Double battle room {room_id} was removed due to disconnection.")
+                battle = double_battle_rooms[room_id]
+                
+                # 切断によるキャラ死亡/勝敗決定
+                if disconnected_player_id:
+                    res = battle.handle_disconnection(disconnected_player_id, message="あいてとの通信が切断されました。")
+                    if res:
+                        # まだ接続しているプレイヤーに結果を送信
+                        await manager.broadcast(json.dumps(res), room_id)
+                        
+                        # 勝敗がついた場合は部屋を削除
+                        if battle.team1_win is not None:
+                            del double_battle_rooms[room_id]
+                            logger.info(f"Double battle room {room_id} was removed due to disconnection/team wipe.")
+                else:
+                    # プレイヤーIDが取れない例外的な場合は強制終了
+                    abort_msg = json.dumps({"type": "error", "message": "対戦相手との通信が切断されました"})
+                    await manager.broadcast(abort_msg, room_id)
+                    del double_battle_rooms[room_id]
+                    logger.info(f"Double battle room {room_id} was destroyed exceptionally.")
+
 
 # --- 静的ファイルの配信設定 (必ず最後に追加) ---
 # backendディレクトリの親ディレクトリにあるfrontendディレクトリを取得
