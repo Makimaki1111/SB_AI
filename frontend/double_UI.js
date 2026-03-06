@@ -145,7 +145,7 @@ class DoubleUI {
     }
 
     _adjustWordScale(element) {
-        const maxWidth = 110; // ダブルバトル用に短めに設定
+        const maxWidth = 125; // ダブルバトル用に短めに設定
         const domElement = element.get ? element.get(0) : element;
 
         if (!domElement) return;

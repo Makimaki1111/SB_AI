@@ -31,6 +31,7 @@
 #double-battle-screen .top-image {
     flex: none;
     height: 259.43px;
+    overflow: hidden;
 }
 
 /* キャラクター２体表示用コンテナ */
@@ -44,7 +45,7 @@
 
 /* 自分サイド（左下） */
 .double-char-container.bottom-left {
-    bottom: 35px;
+    bottom: 32px;
     left: 32px;
     display: flex;
     align-items: flex-end;
@@ -53,8 +54,8 @@
 
 /* 敵サイド（右上） */
 .double-char-container.top-right {
-    top: -46px;
-    right: 30px;
+    top: -48px;
+    right: 28px;
     display: flex;
     align-items: flex-end;
     justify-content: space-around;
@@ -83,25 +84,48 @@
     transform: translate(15px, -10px);
 }
 
-/* 奥のキャラを少し小さく／高くする等、Z軸の重なり調整 (オプション) */
 #char-p1a-wrapper {
-    transform: scale(0.9) translate(-10px, -15px);
+    transform: scale(0.9) translate(-20px, -15px);
     z-index: 10;
 }
 
 #char-p1b-wrapper {
-    transform: scale(1.0) translate(20px, 0px);
+    transform: scale(1.0) translate(0px, 0px);
     z-index: 12;
 }
 
 #char-p2a-wrapper {
-    transform: scale(0.9) translate(-14px, -15px);
+    transform: scale(0.9) translate(10px, -20px);
     z-index: 10;
 }
 
 #char-p2b-wrapper {
-    transform: scale(1.0) translate(0px, 0px);
+    transform: scale(1.0) translate(10px, 3px);
     z-index: 12;
+}
+
+/* 足元の白い楕円ベーススタイル */
+.double-ellipse {
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+    z-index: 5;
+    /* キャラの裏側 */
+}
+
+/* チーム足元の楕円初期位置(エディタで調整可能) */
+#ellipse-ally {
+    width: 400px;
+    height: 89px;
+    bottom: -50px;
+    transform: translateX(calc(-50% + 141px));
+}
+
+#ellipse-enemy {
+    width: 323px;
+    height: 71px;
+    bottom: -44px;
+    transform: translateX(calc(-50% + 187px));
 }
 
 /* 単語の表示 */
@@ -145,13 +169,6 @@
 /* 味方の単語 */
 .bottom-left .double-word {
     top: 88%;
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-/* 敵の単語 */
-.top-right .double-word {
-    top: 100%;
     left: 50%;
     transform: translateX(-50%);
 }
