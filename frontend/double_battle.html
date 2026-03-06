@@ -22,12 +22,19 @@
                 <!-- メニューボタン群をコンテナでラップして重なりと間隔を管理 -->
                 <div class="title-buttons-container" style="margin-top: 50px;">
                     <div
-                        style="width: 72%; max-width: 340px; padding: 15px; border: 1px solid #ccc; border-radius: 12px; background: rgba(255,255,255,0.8); box-sizing: border-box;">
-                        <h3 style="margin-top: 0;">モード選択</h3>
-                        <div
-                            style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px; font-weight: bold;">
-                            <label><input type="radio" name="double_mode" value="1v1_double" checked> 1人2役 (計2名)</label>
-                            <label><input type="radio" name="double_mode" value="2v2_double"> 4人協力対戦 (計4名)</label>
+                        style="width: 72%; max-width: 340px; padding: 20px; border: 1px solid #eee; border-radius: 16px; background: rgba(255,255,255,0.9); box-shadow: 0 4px 15px rgba(0,0,0,0.05); box-sizing: border-box;">
+                        <h3 style="margin-top: 0; margin-bottom: 5px; color: #333; text-align: center;">モード選択</h3>
+                        <div class="mode-select-container">
+                            <label class="mode-select-btn active">
+                                <input type="radio" name="double_mode" value="1v1_double" checked
+                                    onchange="updateModeSelection(this)">
+                                1人2役 (計2名)
+                            </label>
+                            <label class="mode-select-btn disabled">
+                                <input type="radio" name="double_mode" value="2v2_double" disabled
+                                    onchange="updateModeSelection(this)">
+                                4人協力対戦 (未開発)
+                            </label>
                         </div>
                     </div>
 
@@ -269,6 +276,14 @@
     <script src="type_to_image.js"></script>
     <!-- UIとベースロジックを流用 -->
     <script src="UIObject.js"></script>
+    <script>
+        function updateModeSelection(radio) {
+            document.querySelectorAll('.mode-select-btn').forEach(lbl => lbl.classList.remove('active'));
+            if (radio.checked) {
+                radio.closest('.mode-select-btn').classList.add('active');
+            }
+        }
+    </script>
     <script src="double_UI.js?v=4"></script>
     <script src="double_script.js?v=3"></script>
 
