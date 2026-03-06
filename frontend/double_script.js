@@ -95,18 +95,18 @@ $(() => {
     $('#target-p2b-btn').on('click', () => selectTarget('p2b'));
 
     // Modal Events
-    ui.situationButton.selector.on('click', () => {
+    ui.situationButton.selector.off('click').on('click', () => {
         ui.updateSituationInfo(doubleBattleState);
         ui.showSituationModal();
         if (typeof playSound === 'function') playSound("resource/pera.mp3");
     });
 
-    ui.closeSituationModalBtn.selector.on('click', () => {
+    ui.closeSituationModalBtn.selector.off('click').on('click', () => {
         ui.hideSituationModal();
         if (typeof playSound === 'function') playSound("resource/pera.mp3");
     });
 
-    ui.abilityInfoContainer.selector.on('click', () => {
+    ui.abilityInfoContainer.selector.off('click').on('click', () => {
         ui.updateAbilityInfo(doubleBattleState.chars, doubleBattleState.allAbilities, (charId, abilityId) => {
             sendChangeAbilityDouble(charId, abilityId);
         });
@@ -114,13 +114,14 @@ $(() => {
         if (typeof playSound === 'function') playSound("resource/pera.mp3");
     });
 
-    ui.closeAbilityModalBtn.selector.on('click', () => {
+    ui.closeAbilityModalBtn.selector.off('click').on('click', () => {
         ui.hideAbilityModal();
         if (typeof playSound === 'function') playSound("resource/pera.mp3");
     });
 
     // 逃げる（降参）ボタン
-    ui.cancelBtn.selector.on('click', () => {
+    ui.cancelBtn.selector.off('click').on('click', (e) => {
+        e.preventDefault();
         if (confirm("本当に逃げますか？\n（チームが全滅扱いになる可能性があります）")) {
             if (sock && sock.readyState === WebSocket.OPEN) {
                 sock.send(JSON.stringify({
@@ -137,7 +138,7 @@ $(() => {
     });
 
     // 入力中のタイプチェック (script.jsと同じ)
-    ui.input.selector.on('input', () => {
+    ui.input.selector.off('input').on('input', () => {
         if (!doubleBattleState.roomId) {
             ui.hidePreImg();
             return;
@@ -266,6 +267,7 @@ async function initDoubleBattle(data) {
     battleState = data; // store room state
     doubleBattleState.roomId = data.room_id;
     doubleBattleState.mode = data.mode;
+    doubleBattleState.isVsCpu = data.is_cpu || false;
     doubleBattleState.lastFoeWord = null; // バトル開始時にリセット
 
     // Determine myTeam based on owner_id
@@ -455,7 +457,11 @@ async function handleTurnResult(data) {
         } else {
             ui.showMessage("相手チーム(右上)の勝利！");
         }
-        ui.showBackBtn();
+        ui.hideTimerContainer();
+        ui.disableInput();
+        ui.hideInput();
+        ui.hideSubmitBtn();
+        ui.showBackToTitleBtn();
         return;
     }
 
@@ -468,6 +474,12 @@ function handleTurnStart(data) {
 
     doubleBattleState.character = data.character;
     ui.hideMessage(); // Ensure #message is hidden
+
+    // タイマーを開始 (対人戦のみ)
+    if (!doubleBattleState.isVsCpu) {
+        const elapsed = (Date.now() - (data._receivedAt || Date.now())) / 1000;
+        ui.startTimer(Math.max(0, TURN_TIME_LIMIT - elapsed), TURN_TIME_LIMIT);
+    }
 
     // Check if it's my turn
     if (data.current_owner_id === player1_id) {
@@ -533,6 +545,7 @@ function sendDoubleSubmitWord(word) {
     if (!doubleBattleState.isMyTurn) return;
     if (!word) {
         ui.setWaitMessage("単語を入力してください", 2000);
+        ui.enableInput();
         return;
     }
 
@@ -544,6 +557,7 @@ function sendDoubleSubmitWord(word) {
 
     if (p2a_alive && p2b_alive && !doubleBattleState.currentTargetId) {
         ui.setWaitMessage("ターゲットを選択してください", 2000);
+        ui.enableInput();
         return;
     }
 

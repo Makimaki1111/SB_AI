@@ -569,6 +569,7 @@ class DoubleBattle_info:
             "type": "turn_result",
             "room_id": self.room_id,
             "mode": self.mode, # 1v1_double or 2v2_double
+            "is_cpu": self.is_cpu,
             "turn": self.turn,
             "current_actor_id": current_actor.id,
             "current_owner_id": current_actor.owner_id, # このユーザーの画面で入力UIを有効にする
@@ -602,6 +603,25 @@ class DoubleBattle_info:
             "is_poison": p.poison_turns > 0,
             "owner_id": p.owner_id
         }
+
+    def get_personalized_response(self, base_res: dict, request_player_id: str) -> dict:
+        import copy
+        new_res = copy.deepcopy(base_res)
+        
+        # Check if requesting player is on team1
+        is_t1 = any(p.owner_id == request_player_id for p in self.team1)
+        
+        if "characters" in new_res:
+            chars = new_res["characters"]
+            for k in ["p1a", "p1b", "p2a", "p2b"]:
+                if k in chars:
+                    char_info = chars[k]
+                    # Hide opponent abilities
+                    if is_t1 and k in ["p2a", "p2b"]:
+                        char_info.pop("ability", None)
+                    elif not is_t1 and k in ["p1a", "p1b"]:
+                        char_info.pop("ability", None)
+        return new_res
 
     def handle_disconnection(self, disconnected_player_id: str, message: str = "あいてが通信を切断しました。"):
         """

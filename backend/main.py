@@ -578,9 +578,11 @@ async def websocket_double_endpoint(websocket: WebSocket):
                     double_battle_rooms[bi.room_id] = bi
 
                     manager.join_room(websocket, bi.room_id)
+                    setattr(websocket, "player_id", player_id)
                     init_res = bi._make_response()
-                    init_res["type"] = "init_double_battle"
-                    await websocket.send_text(json.dumps(init_res))
+                    p_init_res = bi.get_personalized_response(init_res, player_id)
+                    p_init_res["type"] = "init_double_battle"
+                    await websocket.send_text(json.dumps(p_init_res))
 
                 # ルーム参加
                 elif req.get("type") == "join_double_room":
@@ -616,9 +618,11 @@ async def websocket_double_endpoint(websocket: WebSocket):
 
                             for p in players:
                                 manager.join_room(p["socket"], bi.room_id)
+                                setattr(p["socket"], "player_id", p["player_id"])
                                 init_res = bi._make_response()
-                                init_res["type"] = "init_double_battle"
-                                await p["socket"].send_text(json.dumps(init_res))
+                                p_init_res = bi.get_personalized_response(init_res, p["player_id"])
+                                p_init_res["type"] = "init_double_battle"
+                                await p["socket"].send_text(json.dumps(p_init_res))
                             await start_double_turn_timer(bi.room_id)
                             
                             del double_private_rooms[room_id]
@@ -648,7 +652,10 @@ async def websocket_double_endpoint(websocket: WebSocket):
                         if res.get("type") == "error":
                             await websocket.send_text(json.dumps(res))
                         else:
-                            await manager.broadcast(json.dumps(res), room_id)
+                            for p in manager.room_connections.get(room_id, []):
+                                p_id = getattr(p, "player_id", None)
+                                p_res = battle.get_personalized_response(res, p_id) if p_id else res
+                                await p.send_text(json.dumps(p_res))
                             # 行動成功後、タイマーリセット
                             await start_double_turn_timer(room_id)
                             
@@ -664,7 +671,10 @@ async def websocket_double_endpoint(websocket: WebSocket):
                                 await asyncio.sleep(1.0) # CPUの思考時間の演出
                                 cpu_res = battle.execute_cpu_turn()
                                 if cpu_res:
-                                    await manager.broadcast(json.dumps(cpu_res), room_id)
+                                    for p in manager.room_connections.get(room_id, []):
+                                        p_id = getattr(p, "player_id", None)
+                                        p_res = battle.get_personalized_response(cpu_res, p_id) if p_id else cpu_res
+                                        await p.send_text(json.dumps(p_res))
                                     
                                     if battle.team1_win is not None:
                                         stop_double_turn_timer(room_id)
@@ -685,7 +695,10 @@ async def websocket_double_endpoint(websocket: WebSocket):
                         battle = double_battle_rooms[room_id]
                         res = battle.handle_disconnection(player_id, message="あいてが逃げ出しました。")
                         if res:
-                            await manager.broadcast(json.dumps(res), room_id)
+                            for p in manager.room_connections.get(room_id, []):
+                                p_id = getattr(p, "player_id", None)
+                                p_res = battle.get_personalized_response(res, p_id) if p_id else res
+                                await p.send_text(json.dumps(p_res))
                             # 勝負がついた場合は部屋を削除
                             if battle.team1_win is not None:
                                 del double_battle_rooms[room_id]
@@ -723,7 +736,10 @@ async def websocket_double_endpoint(websocket: WebSocket):
                         if res.get("type") == "error":
                             await websocket.send_text(json.dumps(res))
                         else:
-                            await manager.broadcast(json.dumps(res), room_id)
+                            for p in manager.room_connections.get(room_id, []):
+                                p_id = getattr(p, "player_id", None)
+                                p_res = battle.get_personalized_response(res, p_id) if p_id else res
+                                await p.send_text(json.dumps(p_res))
                     else:
                         await websocket.send_text(json.dumps({"type": "error", "message": "戦闘は終了しました"}))
 

@@ -38,12 +38,12 @@ class DoubleUI {
         this.modalMessage = new UIObject($('#double-modal-message'));
 
         // Events binding
-        this.submitButton.selector.on('click', () => {
+        this.submitButton.selector.off('click').on('click', () => {
             const word = this.input.selector.val();
             sendDoubleSubmitWord(word); // Defined in double_script.js
         });
 
-        this.input.selector.on('keypress', (e) => {
+        this.input.selector.off('keydown keypress').on('keypress', (e) => {
             if (e.which === 13) {
                 this.submitButton.selector.click();
             }
@@ -348,6 +348,44 @@ class DoubleUI {
     }
 
     // タイマー関連 (既存ロジック流用)
+    showTimerContainer() {
+        this.timerContainer.show();
+    }
+
+    hideTimerContainer() {
+        this.timerContainer.hide();
+    }
+
+    showInput() {
+        this.input.selector.show();
+    }
+
+    hideInput() {
+        this.input.selector.hide();
+    }
+
+    showSubmitBtn() {
+        this.submitButton.selector.show();
+    }
+
+    hideSubmitBtn() {
+        this.submitButton.selector.hide();
+    }
+
+    showBackToTitleBtn() {
+        this.backToTitleBtn.selector.css('display', 'block');
+        setTimeout(() => {
+            this.backToTitleBtn.selector.addClass('bt-visible');
+        }, 20);
+    }
+
+    hideBackToTitleBtn() {
+        this.backToTitleBtn.selector.removeClass('bt-visible');
+        setTimeout(() => {
+            this.backToTitleBtn.selector.hide();
+        }, 360);
+    }
+
     startTimer(remaining, total = remaining) {
         this.stopTimer();
         const endTime = Date.now() + remaining * 1000;
@@ -466,18 +504,5 @@ class DoubleUI {
             }
         }
 
-        // 相手チーム (p2a, p2b) — 表示のみ
-        for (let id of ['p2a', 'p2b']) {
-            if (!chars[id]) continue;
-            $(`#a-${id}-name`).text(chars[id].name);
-            const abilityObj = allAbilities[chars[id].ability];
-            if (abilityObj) {
-                $(`#a-${id}-ability-name`).text(abilityObj.name);
-                $(`#a-${id}-ability-desc`).text(abilityObj.description);
-            } else {
-                $(`#a-${id}-ability-name`).text(chars[id].ability || "---");
-                $(`#a-${id}-ability-desc`).text("");
-            }
-        }
     }
 }
