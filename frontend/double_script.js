@@ -294,7 +294,7 @@ async function handleTurnResult(data) {
         const uiLastActorId = getUIId(data.last_actor_id);
         ui.setWord(uiLastActorId, data.word);
 
-        let types = ["ノーマル"];
+        let types = [];
         if (data.characters[data.last_actor_id].types && data.characters[data.last_actor_id].types.length > 0) {
             types = data.characters[data.last_actor_id].types;
         }

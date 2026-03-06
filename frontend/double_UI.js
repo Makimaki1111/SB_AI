@@ -156,7 +156,13 @@ class DoubleUI {
     }
 
     setCharImage(id, types) {
-        if (!this.chars[id] || typeof type_to_image === "undefined" || !types || types.length === 0) return;
+        if (!this.chars[id] || typeof type_to_image === "undefined") return;
+
+        if (!types || types.length === 0) {
+            this.chars[id].img1.selector.hide().attr('src', '').css('opacity', '');
+            this.chars[id].img2.selector.hide().attr('src', '').css('opacity', '');
+            return;
+        }
 
         const fadeInImage = (selector, src) => {
             selector.stop(true, false);
