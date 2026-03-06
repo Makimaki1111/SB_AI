@@ -133,22 +133,39 @@ class DoubleBattle_info:
 
     def _calc_damage(self, at1, at2, dt1, dt2, ability_obj, attacker: DoubleBattlePlayer, defender: DoubleBattlePlayer) -> tuple[float, int, bool]:
         effect = self.sb_info.type_effect(at1, at2, dt1, dt2)
-        is_critical = ability_obj.should_force_critical([at1, at2]) if ability_obj else (random.random() < CRITICAL_HIT_CHANCE)
+        
+        # 急所判定 (暴言か人体タイプが含まれる場合、12.5%の確率)
+        is_critical = False
+        if ability_obj and ability_obj.should_force_critical([at1, at2]):
+            is_critical = True
+        elif "暴言" in [at1, at2] or "人体" in [at1, at2]:
+            if random.random() < CRITICAL_HIT_CHANCE:
+                is_critical = True
         
         if effect == 0:
             return 0, 0, False
 
-        base_damage = BASE_DAMAGE_TYPED if at1 or at2 else BASE_DAMAGE_NORMAL
-        damage = base_damage * effect
-
         # ランク補正
         atk_mult = self.sb_info.rank_to_power(attacker.attack_rank)
         def_mult = self.sb_info.rank_to_power(defender.defense_rank)
+        rank_correction = atk_mult / def_mult
         
-        damage = damage * (atk_mult / def_mult)
-        
-        # 乱数 (0.85 ~ 0.99)
-        damage *= random.uniform(DAMAGE_RANDOM_MIN, DAMAGE_RANDOM_MAX)
+        if is_critical:
+            # 急所の場合、自分に不利な補正（< 1.0）を無視する
+            rank_correction = max(1.0, rank_correction)
+
+        damage = 0.0
+        if at1 == "" and at2 == "":
+            # 攻撃がノータイプ
+            damage = BASE_DAMAGE_NORMAL * rank_correction
+        elif dt1 == "" and dt2 == "":
+            # 防御がノータイプ
+            damage = BASE_DAMAGE_TYPED * effect * rank_correction
+        else:
+            # 攻守タイプあり
+            damage = BASE_DAMAGE_TYPED * effect * rank_correction
+            damage *= random.uniform(DAMAGE_RANDOM_MIN, DAMAGE_RANDOM_MAX)
+
         return effect, int(damage), is_critical
 
     def _is_valid_initial(self, word: str):

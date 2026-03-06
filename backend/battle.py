@@ -253,26 +253,39 @@ class RevolutionAbility(Ability):
         return "遊び" in types
 
     def apply_after_effect(self, player: Player, battle: 'Battle_info'):
-        # 自分と相手を取得
-        opponent = battle.player2 if player.id == battle.player1.id else battle.player1
-
-        # ランク反転
-        player.attack_rank *= -1
-        player.defense_rank *= -1
-        opponent.attack_rank *= -1
-        opponent.defense_rank *= -1
-
-        event = {
-            "type": "ability_trigger",
-            "message": f"全ての能力変化がひっくり返った！",
-            "player": "ally" if player.id == battle.player1.id else "foe",
-            "new_ranks": {
-                "ally_atk": battle.player1.attack_rank,
-                "ally_def": battle.player1.defense_rank,
-                "foe_atk": battle.player2.attack_rank,
-                "foe_def": battle.player2.defense_rank
+        if hasattr(battle, 'team1'):
+            # ダブルバトル: すべての生存キャラクターを対象にする
+            new_ranks = {}
+            for p in battle.team1 + battle.team2:
+                if not p.is_defeated:
+                    p.attack_rank *= -1
+                    p.defense_rank *= -1
+                    new_ranks[p.id] = {"attack_rank": p.attack_rank, "defense_rank": p.defense_rank}
+            
+            event = {
+                "type": "ability_trigger",
+                "message": "全ての能力変化がひっくり返った！",
+                "new_ranks": new_ranks
             }
-        }
+        else:
+            # シングルバトル
+            opponent = battle.player2 if player.id == battle.player1.id else battle.player1
+            player.attack_rank *= -1
+            player.defense_rank *= -1
+            opponent.attack_rank *= -1
+            opponent.defense_rank *= -1
+
+            event = {
+                "type": "ability_trigger",
+                "message": "全ての能力変化がひっくり返った！",
+                "player": "ally" if player.id == battle.player1.id else "foe",
+                "new_ranks": {
+                    "ally_atk": battle.player1.attack_rank,
+                    "ally_def": battle.player1.defense_rank,
+                    "foe_atk": battle.player2.attack_rank,
+                    "foe_def": battle.player2.defense_rank
+                }
+            }
         battle.events.append(event)
 
 class TyphoonIkkaAbility(Ability):
@@ -288,26 +301,39 @@ class TyphoonIkkaAbility(Ability):
         return "天気" in types
 
     def apply_after_effect(self, player: Player, battle: 'Battle_info'):
-        # 自分と相手を取得
-        opponent = battle.player2 if player.id == battle.player1.id else battle.player1
+        if hasattr(battle, 'team1'):
+            # ダブルバトル: すべての生存キャラクターを対象にする
+            new_ranks = {}
+            for p in battle.team1 + battle.team2:
+                if not p.is_defeated:
+                    p.attack_rank = 0
+                    p.defense_rank = 0
+                    new_ranks[p.id] = {"attack_rank": 0, "defense_rank": 0}
 
-        # ランクをリセット
-        player.attack_rank = 0
-        player.defense_rank = 0
-        opponent.attack_rank = 0
-        opponent.defense_rank = 0
-
-        event = {
-            "type": "ability_trigger",
-            "message": f"すべての能力変化が元に戻った！",
-            "player": "ally" if player.id == battle.player1.id else "foe",
-            "new_ranks": {
-                "ally_atk": battle.player1.attack_rank,
-                "ally_def": battle.player1.defense_rank,
-                "foe_atk": battle.player2.attack_rank,
-                "foe_def": battle.player2.defense_rank
+            event = {
+                "type": "ability_trigger",
+                "message": "すべての能力変化が元に戻った！",
+                "new_ranks": new_ranks
             }
-        }
+        else:
+            # シングルバトル
+            opponent = battle.player2 if player.id == battle.player1.id else battle.player1
+            player.attack_rank = 0
+            player.defense_rank = 0
+            opponent.attack_rank = 0
+            opponent.defense_rank = 0
+
+            event = {
+                "type": "ability_trigger",
+                "message": "すべての能力変化が元に戻った！",
+                "player": "ally" if player.id == battle.player1.id else "foe",
+                "new_ranks": {
+                    "ally_atk": 0,
+                    "ally_def": 0,
+                    "foe_atk": 0,
+                    "foe_def": 0
+                }
+            }
         battle.events.append(event)
 
 class IkasuiAbility(Ability):
