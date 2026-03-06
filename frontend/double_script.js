@@ -59,6 +59,13 @@ $(() => {
     // UI初期化
     ui = new DoubleUI();
 
+    // 画像のプリロードを開始
+    preloadImages();
+
+    // 画面サイズに合わせてスケーリング
+    window.addEventListener('resize', adjustWindowScale);
+    adjustWindowScale(); // 初期実行
+
     // Wanakana.jsによるローマ字→ひらがな自動変換を設定
     if (typeof wanakana !== 'undefined') {
         wanakana.bind(document.getElementById('input'));
@@ -594,4 +601,40 @@ function onDoublePreCheck(data) {
     } else {
         ui.hidePreImg();
     }
+}
+
+function preloadImages() {
+    const images = [
+        "img/ground.jpg",
+        "img/unaware.gif",
+        "img/god.gif"
+    ];
+    // type_to_image.js で定義されているマッピングを利用
+    if (typeof type_to_image !== 'undefined') {
+        Object.values(type_to_image).forEach(filename => {
+            images.push(`img/${filename}.gif`);
+        });
+    }
+    images.forEach(src => {
+        const img = new Image();
+        img.src = src;
+    });
+}
+
+// 画面サイズに合わせてスケーリングする関数
+function adjustWindowScale() {
+    // タイトル画面とバトル画面の両方の .phone-box を取得
+    const phoneBoxes = document.querySelectorAll('.phone-box');
+    if (phoneBoxes.length === 0) return;
+
+    const originalWidth = 450;
+    const originalHeight = 720; // 450 * 1.6 (aspect-ratio 10/16)
+
+    const scaleX = (window.innerWidth * 0.96) / originalWidth;
+    const scaleY = (window.innerHeight * 0.96) / originalHeight;
+    const scale = Math.min(scaleX, scaleY, 1.0); // 拡大はしない
+
+    phoneBoxes.forEach(box => {
+        box.style.transform = scale < 1 ? `scale(${scale})` : 'none';
+    });
 }
