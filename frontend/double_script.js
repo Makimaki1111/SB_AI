@@ -101,16 +101,38 @@ const websock_double_server = `${protocol}//${host}/ws/double`;
 let sock = null;
 let isReturningToLobby = false;
 
+function setBattleActionButtonsVisible(visible) {
+    const display = visible ? "flex" : "none";
+    const sit = document.getElementById("situation-button");
+    const abi = document.getElementById("ability-info-container");
+    if (sit) sit.style.setProperty("display", display, "important");
+    if (abi) abi.style.setProperty("display", display, "important");
+}
+
 function showDoubleBattleWaitingScreen(message) {
     $('#double-lobby-screen').hide();
     $('#double-battle-screen').show();
 
     ui.resetAll();
-    ui.hideMessage();
-    ui.hideWaitMessage();
+    const myName = (localStorage.getItem("sb_username") || "あなた").trim() || "あなた";
+    ui.setName('p1a', `${myName}(A)`);
+    ui.setName('p1b', `${myName}(B)`);
+    ui.setName('p2a', "相手(A)");
+    ui.setName('p2b', "相手(B)");
+    ['p1a', 'p1b', 'p2a', 'p2b'].forEach((id) => {
+        ui.chars[id].hpBar.selector.stop(true, true).css({ width: '100%', backgroundColor: '#9e9e9e' });
+        ui.chars[id].hpText.selector.text('??/??');
+        ui.setWord(id, "");
+        ui.setCharVisibility(id, true);
+    });
+
+    if (doubleBattleState.roomId) {
+        ui.showMessage(`ルームID: ${doubleBattleState.roomId}`);
+    } else {
+        ui.showMessage("マッチング中...");
+    }
     ui.setTargetSelectionVisible(false);
-    ui.situationButton.hide();
-    ui.abilityInfoContainer.hide();
+    setBattleActionButtonsVisible(false);
     ui.targetSelectionUi.selector.hide();
     ui.setWaitMessage(message || "対戦相手を待っています...");
 }
@@ -282,8 +304,7 @@ function connectDoubleWebSocket(action, mode, roomId) {
     sock = ws; // グローバルに保持しておくが、イベント�Eではローカルのwsを使ぁE
     ws.addEventListener("open", function () {
         console.log("Double WebSocket connected");
-        ui.situationButton.hide();
-        ui.abilityInfoContainer.hide();
+        setBattleActionButtonsVisible(false);
         ui.targetSelectionUi.selector.hide();
 
         const name = localStorage.getItem("sb_username");
@@ -324,12 +345,13 @@ function connectDoubleWebSocket(action, mode, roomId) {
         if (data.type === "double_room_created") {
             $("#double-room-id-input").val(data.room_id);
             doubleBattleState.roomId = data.room_id;
-            ui.setWaitMessage(`ルームID: ${data.room_id} / 参加者待機中...`);
+            ui.showMessage(`ルームID: ${data.room_id}`);
+            ui.setWaitMessage("参加者待機中...");
         } else if (data.type === "waiting_for_players") {
-            let waitText = `待機中... (${data.current}/${data.required} 人)`;
             if (doubleBattleState.roomId) {
-                waitText = `ルームID: ${doubleBattleState.roomId} / ${waitText}`;
+                ui.showMessage(`ルームID: ${doubleBattleState.roomId}`);
             }
+            const waitText = `待機中... (${data.current}/${data.required} 人)`;
             ui.setWaitMessage(waitText);
         }
         else if (data.type === "init_double_battle") {
@@ -389,8 +411,7 @@ async function initDoubleBattle(data) {
     ui.resetAll();
 
     // resetAll()で隠れてしまぁE��め、�E表示する
-    ui.situationButton.show();
-    ui.abilityInfoContainer.show();
+    setBattleActionButtonsVisible(true);
     ui.targetSelectionUi.selector.css('display', 'flex');
 
     updateUIWithCharacters(data.characters);
