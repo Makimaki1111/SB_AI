@@ -593,7 +593,7 @@ class Battle_info:
         self.sb_info = sb_info
 
         p1_name = p1_profile.get("name") if p1_profile and p1_profile.get("name") else "じぶん"
-        p2_name = p2_profile.get("name") if p2_profile and p2_profile.get("name") else "あいて"
+        p2_name = p2_profile.get("name") if p2_profile and p2_profile.get("name") else "プレイヤー2"
 
         self.player1 = Player(player1_id, p1_name)
         self.player2 = Player(player2_id, p2_name)

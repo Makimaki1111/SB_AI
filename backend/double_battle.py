@@ -51,16 +51,16 @@ class DoubleBattle_info:
         profiles = profiles or {}
 
         # チーム1 (Player1サイド: p1a, p1b)
-        self.p1a = self._create_character(team1_players[0], 'p1a', "じぶんA", profiles)
-        self.p1b = self._create_character(team1_players[1] if len(team1_players) > 1 else team1_players[0], 'p1b', "じぶんB", profiles)
+        self.p1a = self._create_character(team1_players[0], 'p1a', "チーム1A", profiles)
+        self.p1b = self._create_character(team1_players[1] if len(team1_players) > 1 else team1_players[0], 'p1b', "チーム1B", profiles)
         
         # チーム2 (Player2サイド: p2a, p2b)
         if self.is_cpu:
             self.p2a = self._create_character(team2_players[0], 'p2a', "CPU_A", profiles)
             self.p2b = self._create_character(team2_players[1] if len(team2_players) > 1 else team2_players[0], 'p2b', "CPU_B", profiles)
         else:
-            self.p2a = self._create_character(team2_players[0], 'p2a', "あいてA", profiles)
-            self.p2b = self._create_character(team2_players[1] if len(team2_players) > 1 else team2_players[0], 'p2b', "あいてB", profiles)
+            self.p2a = self._create_character(team2_players[0], 'p2a', "チーム2A", profiles)
+            self.p2b = self._create_character(team2_players[1] if len(team2_players) > 1 else team2_players[0], 'p2b', "チーム2B", profiles)
 
         self.team1 = [self.p1a, self.p1b]
         self.team2 = [self.p2a, self.p2b]
@@ -83,7 +83,10 @@ class DoubleBattle_info:
         # ダブルバトル用にキャラA,Bで名前を少し区別するかもだが、今回は同じプロファイル名＋A/Bサフィックスなどでもいいかも
         name = prof.get("name", default_name)
         if len(name) > 6: name = name[:6] # UIの都合で気持ち短めにする
-        name = f"{name}({char_id[-1].upper()})" # 'じぶん(A)' などにする
+        # 既に末尾で区別されている場合はサフィックスを付けない
+        suffix = char_id[-1].upper()
+        if not (name.endswith(f"({suffix})") or name.endswith(suffix)):
+            name = f"{name}({suffix})"
 
         char = DoubleBattlePlayer(owner_id, char_id, name)
         
@@ -587,6 +590,8 @@ class DoubleBattle_info:
         self.events.append(event)
 
         res = self._make_response()
+        # 特性変更イベントはこのレスポンスでのみ通知する
+        self.events = []
         return res
 
     def _make_response(self):

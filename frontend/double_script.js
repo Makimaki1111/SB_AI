@@ -127,11 +127,10 @@ function showDoubleBattleWaitingScreen(message) {
     $('#double-battle-screen').show();
 
     ui.resetAll();
-    const myName = (localStorage.getItem("sb_username") || "あなた").trim() || "あなた";
-    ui.setName('p1a', `${myName}(A)`);
-    ui.setName('p1b', `${myName}(B)`);
-    ui.setName('p2a', "相手(A)");
-    ui.setName('p2b', "相手(B)");
+    ui.setName('p1a', "チーム1A");
+    ui.setName('p1b', "チーム1B");
+    ui.setName('p2a', "チーム2A");
+    ui.setName('p2b', "チーム2B");
     ['p1a', 'p1b', 'p2a', 'p2b'].forEach((id) => {
         ui.chars[id].hpBar.selector.stop(true, true).css({ width: '100%', backgroundColor: '#9e9e9e' });
         ui.chars[id].hpText.selector.text('??/??');
@@ -353,6 +352,7 @@ function connectDoubleWebSocket(action, mode, roomId) {
 
     ws.addEventListener("message", async function (e) {
         const data = JSON.parse(e.data);
+        data._receivedAt = Date.now();
         console.log("Double WS received:", data);
 
         if (data.type === "double_room_created") {
@@ -460,8 +460,11 @@ function updateUIWithCharacters(chars) {
 }
 
 async function handleTurnResult(data) {
-    ui.stopTimer();
-    ui.hideInputArea();
+    const onlyAbilityChanged = !!(data.events && data.events.length > 0 && data.events.every(ev => ev.type === "ability_changed"));
+    if (!onlyAbilityChanged) {
+        ui.stopTimer();
+        ui.hideInputArea();
+    }
 
     const isTimeout = data.events && data.events.some(e => e.message && e.message.includes("時間切れ"));
 
@@ -607,16 +610,19 @@ async function handleTurnResult(data) {
     if (data.team1_win !== null) {
         stopBGM();
         playEventSound("end", "");
-        if (data.team1_win) {
-            ui.showMessage("自分チーム(左下)の勝利！");
-        } else {
-            ui.showMessage("相手チーム(右上)の勝利！");
-        }
+        const isMyTeamWin = (doubleBattleState.myTeam === 'team1') ? !!data.team1_win : !data.team1_win;
+        if (isMyTeamWin) ui.showMessage("自分チームの勝利！");
+        else ui.showMessage("相手チームの勝利！");
         ui.hideTimerContainer();
         ui.disableInput();
         ui.hideInput();
         ui.hideSubmitBtn();
         ui.showBackToTitleBtn();
+        return;
+    }
+
+    // 特性変更のみの通知ではターン進行・タイマーをリセットしない
+    if (onlyAbilityChanged) {
         return;
     }
 
@@ -632,8 +638,14 @@ function handleTurnStart(data) {
 
     // タイマ�Eを開姁E(対人戦のみ)
     if (!doubleBattleState.isVsCpu) {
-        const elapsed = (Date.now() - (data._receivedAt || Date.now())) / 1000;
-        ui.startTimer(Math.max(0, TURN_TIME_LIMIT - elapsed), TURN_TIME_LIMIT);
+        let remaining = null;
+        if (typeof data.turn_deadline_ms === "number") {
+            remaining = Math.max(0, (data.turn_deadline_ms - Date.now()) / 1000);
+        } else {
+            const elapsed = (Date.now() - (data._receivedAt || Date.now())) / 1000;
+            remaining = Math.max(0, TURN_TIME_LIMIT - elapsed);
+        }
+        ui.startTimer(remaining, remaining);
     }
 
     // Check if it's my turn
