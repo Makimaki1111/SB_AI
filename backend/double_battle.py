@@ -529,6 +529,34 @@ class DoubleBattle_info:
 
         return ret
 
+    def timeout(self):
+        """
+        タイムアウト処理:
+        現在行動中キャラクターの所属チームを敗北扱いにする。
+        """
+        if self.team1_win is not None:
+            return self._make_response()
+
+        current_actor = self.get_current_actor()
+        timed_out_team = self.team1 if current_actor in self.team1 else self.team2
+
+        for p in timed_out_team:
+            if p.is_defeated:
+                continue
+            dmg = p.hp
+            p.take_damage(dmg)
+            self.events.append({
+                "type": "damage",
+                "message": f"時間切れ！{p.name}は倒れた！",
+                "target": p.id,
+                "damage": dmg
+            })
+
+        self._check_win_condition()
+        ret = self._make_response()
+        self.events = []
+        return ret
+
     def change_ability(self, char_id: str, new_ability_id: str):
         """キャラクターの特性を変更する"""
         char = getattr(self, char_id, None)
@@ -621,6 +649,19 @@ class DoubleBattle_info:
                         char_info.pop("ability", None)
                     elif not is_t1 and k in ["p1a", "p1b"]:
                         char_info.pop("ability", None)
+
+        # Hide enemy-team ability change notifications.
+        if "events" in new_res and isinstance(new_res["events"], list):
+            masked_events = []
+            for e in new_res["events"]:
+                if e.get("type") == "ability_changed":
+                    changed_id = e.get("char_id")
+                    if is_t1 and changed_id in ["p2a", "p2b"]:
+                        continue
+                    if (not is_t1) and changed_id in ["p1a", "p1b"]:
+                        continue
+                masked_events.append(e)
+            new_res["events"] = masked_events
         return new_res
 
     def handle_disconnection(self, disconnected_player_id: str, message: str = "あいてが通信を切断しました。"):

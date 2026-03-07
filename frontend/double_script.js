@@ -38,6 +38,17 @@ function getRealId(uiId) {
     return getUIId(uiId); // The mapping is perfectly symmetric
 }
 
+function getUiCharsState() {
+    const mapped = {};
+    for (const uiId of ['p1a', 'p1b', 'p2a', 'p2b']) {
+        const realId = getRealId(uiId);
+        if (doubleBattleState.chars[realId]) {
+            mapped[uiId] = doubleBattleState.chars[realId];
+        }
+    }
+    return mapped;
+}
+
 let ui;
 
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
@@ -222,7 +233,7 @@ $(() => {
 
     // Modal Events
     ui.situationButton.selector.off('click').on('click', () => {
-        ui.updateSituationInfo(doubleBattleState);
+        ui.updateSituationInfo({ chars: getUiCharsState() });
         ui.showSituationModal();
         if (typeof playSound === 'function') playSound("resource/pera.mp3");
     });
@@ -233,7 +244,7 @@ $(() => {
     });
 
     ui.abilityInfoContainer.selector.off('click').on('click', () => {
-        ui.updateAbilityInfo(doubleBattleState.chars, doubleBattleState.allAbilities, (charId, abilityId) => {
+        ui.updateAbilityInfo(getUiCharsState(), doubleBattleState.allAbilities, (charId, abilityId) => {
             sendChangeAbilityDouble(charId, abilityId);
         });
         ui.showAbilityModal();
@@ -449,6 +460,7 @@ function updateUIWithCharacters(chars) {
 }
 
 async function handleTurnResult(data) {
+    ui.stopTimer();
     ui.hideInputArea();
 
     const isTimeout = data.events && data.events.some(e => e.message && e.message.includes("時間切れ"));
@@ -573,15 +585,18 @@ async function handleTurnResult(data) {
     // 特性変更イベント�E場合、最新の変更を取得するためにreverseしてfindする
     const abilityChangeEvent = data.events && [...data.events].reverse().find(e => e.type === 'ability_changed');
     if (abilityChangeEvent) {
-        // モーダル冁E�E選択肢を�E描画して、E��択状態を更新
-        ui.updateAbilityInfo(doubleBattleState.chars, doubleBattleState.allAbilities, (charId, abilityId) => {
-            sendChangeAbilityDouble(charId, abilityId);
-        });
+        const changedUiId = getUIId(abilityChangeEvent.char_id || "");
+        const isOwnTeamChange = changedUiId === "p1a" || changedUiId === "p1b";
 
-        // 確認メチE��ージを表示 (script.jsと同じ)
-        ui.showModalMessage(abilityChangeEvent.message || 'とくせいを変更した！', 2000);
+        if (isOwnTeamChange) {
+            ui.updateAbilityInfo(getUiCharsState(), doubleBattleState.allAbilities, (charId, abilityId) => {
+                sendChangeAbilityDouble(charId, abilityId);
+            });
 
-        if (shouldPlayAbilityChangeSound(abilityChangeEvent) && typeof playSound === 'function') {
+            ui.showModalMessage(abilityChangeEvent.message || 'とくせいを変更した！', 2000);
+        }
+
+        if (isOwnTeamChange && shouldPlayAbilityChangeSound(abilityChangeEvent) && typeof playSound === 'function') {
             playSound("resource/concent.mp3");
         }
     }
@@ -718,6 +733,7 @@ function sendDoubleSubmitWord(word) {
     }));
     ui.disableInput();
     ui.clearInput();
+    ui.stopTimer();
 }
 
 function backToLobby() {

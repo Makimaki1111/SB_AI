@@ -693,8 +693,6 @@ async def websocket_double_endpoint(websocket: WebSocket):
                                 p_id = getattr(p, "player_id", None)
                                 p_res = battle.get_personalized_response(res, p_id) if p_id else res
                                 await manager.safe_send_text(p, json.dumps(p_res))
-                            # 行動成功後、タイマーリセット
-                            await start_double_turn_timer(room_id)
                             
                             # 勝負がついた場合はタイマー停止と部屋削除
                             if battle.team1_win is not None:
@@ -718,7 +716,8 @@ async def websocket_double_endpoint(websocket: WebSocket):
                                         del double_battle_rooms[room_id]
                                         break
                                     
-                            await start_double_turn_timer(room_id)
+                            if battle.team1_win is None:
+                                await start_double_turn_timer(room_id)
                     else:
                         await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "戦闘は終了しました"}))
 
