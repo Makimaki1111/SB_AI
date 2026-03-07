@@ -69,6 +69,8 @@ class DoubleBattle_info:
         
         # 行動順(ターン管理)。p1a -> p2a -> p1b -> p2b の順を基本とする
         self.turn_order = [self.p1a, self.p2a, self.p1b, self.p2b]
+        if(random.random() < 0.5):
+            self.turn_order = [self.p2a, self.p1a, self.p2b, self.p1b]
         self.current_turn_index = 0
 
         self.START_CHARACTER = "あいうえおかきくけこさしすせそたちつてとなにねのはひふへほまみむめやゆよらりるれろわ"

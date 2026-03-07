@@ -613,7 +613,7 @@ class Battle_info:
             self.player2.ability = random.choice(self.ability_ids)
 
         self.player1_win = None
-        self.player1_turn = True
+        self.player1_turn = random.random() < 0.5
         self.START_CHARACTER = "あいうえおかきくけこさしすせそたちつてとなにねのはひふへほまみむめやゆよらりるれろわ"
         self.character = random.choice(self.START_CHARACTER)
         self.events = []
