@@ -111,6 +111,7 @@ if (window.location.hostname === "localhost" || window.location.hostname === "12
 const websock_double_server = `${protocol}//${host}/ws/double`;
 
 let sock = null;
+let isReturningToLobby = false;
 
 // ロビーUI初期設定
 $(() => {
@@ -700,15 +701,26 @@ function sendDoubleSubmitWord(word) {
 }
 
 function backToLobby() {
+    if (isReturningToLobby) return;
+    isReturningToLobby = true;
+
     if (sock) {
         sock.close();
         sock = null;
     }
-    startBGM("resource/horizon.mp3");
+    if (typeof stopBGM === "function") {
+        stopBGM();
+    }
+
     const moved = navigateToSingleBattle();
     if (!moved) {
         window.location.replace('index.html#single_battle.html');
     }
+
+    // In case navigation is blocked somehow, allow retry.
+    setTimeout(() => {
+        isReturningToLobby = false;
+    }, 1500);
 }
 
 function switchAbilityTab(charId) {

@@ -90,15 +90,38 @@ class ConnectionManager:
         if websocket not in self.room_connections[room_id]:
             self.room_connections[room_id].append(websocket)
 
-    async def broadcast(self, message: str, room_id: str):
-        for connection in self.room_connections[room_id]:
-            await connection.send_text(message)
+    async def safe_send_text(self, websocket: WebSocket, message: str) -> bool:
+        try:
+            await websocket.send_text(message)
+            return True
+        except Exception:
+            # Connection already closed or disconnected.
+            self.disconnect(websocket)
+            return False
 
-    async def broadcast_battle_state(self, room_id: str, p1_response: dict):
+    async def broadcast(self, message: str, room_id: str):
+        for connection in list(self.room_connections.get(room_id, [])):
+            await self.safe_send_text(connection, message)
+
+    async def broadcast_battle_state(self, room_id: str, p1_response: dict, is_double: bool = False):
         """
         ルーム内の全員に戦況を送信する。
         Player2には視点を反転させたデータを送る。
         """
+        if is_double:
+            if room_id not in double_battle_rooms:
+                return
+
+            battle = double_battle_rooms[room_id]
+            for connection in list(self.room_connections.get(room_id, [])):
+                try:
+                    pid = self.socket_to_player_id.get(connection) or getattr(connection, "player_id", None)
+                    p_res = battle.get_personalized_response(p1_response, pid) if pid else p1_response
+                    await self.safe_send_text(connection, json.dumps(p_res))
+                except Exception as e:
+                    logger.error(f"Error broadcasting double state to {pid}: {e}")
+            return
+
         if room_id not in battle_rooms:
             return
 
@@ -109,13 +132,13 @@ class ConnectionManager:
         p1_response = battle.mask_response_for_pvp(p1_response)
         p2_response = battle.mask_response_for_pvp(p2_response)
 
-        for connection in self.room_connections[room_id]:
+        for connection in list(self.room_connections.get(room_id, [])):
             try:
                 pid = self.socket_to_player_id.get(connection)
                 if pid == battle.player2.id:
-                    await connection.send_text(json.dumps(p2_response))
+                    await self.safe_send_text(connection, json.dumps(p2_response))
                 else:
-                    await connection.send_text(json.dumps(p1_response))
+                    await self.safe_send_text(connection, json.dumps(p1_response))
             except Exception as e:
                 logger.error(f"Error broadcasting to {pid}: {e}")
 
@@ -278,6 +301,13 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             try:
                 data = await websocket.receive_text()
+            except WebSocketDisconnect:
+                raise
+            except RuntimeError as e:
+                logger.info(f"WebSocket receive ended: {e}")
+                raise WebSocketDisconnect(code=1006)
+
+            try:
                 req = json.loads(data)
             except json.JSONDecodeError:
                 await websocket.send_text(json.dumps({"type": "error", "message": "Invalid JSON"}))
@@ -523,9 +553,16 @@ async def websocket_double_endpoint(websocket: WebSocket):
         while True:
             try:
                 data = await websocket.receive_text()
+            except WebSocketDisconnect:
+                raise
+            except RuntimeError as e:
+                logger.info(f"Double websocket receive ended: {e}")
+                raise WebSocketDisconnect(code=1006)
+
+            try:
                 req = json.loads(data)
             except json.JSONDecodeError:
-                await websocket.send_text(json.dumps({"type": "error", "message": "Invalid JSON"}))
+                await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "Invalid JSON"}))
                 continue
             try:
                 # ユーザー情報の更新
@@ -538,7 +575,7 @@ async def websocket_double_endpoint(websocket: WebSocket):
                         if not isinstance(name, str): name = "じぶん"
                         if len(name) > 8: name = name[:8]
                         user_profiles[player_id] = {"name": name, "ability": ability}
-                        await websocket.send_text(json.dumps({"type": "user_info_updated", "message": "ユーザー情報を更新しました"}))
+                        await manager.safe_send_text(websocket, json.dumps({"type": "user_info_updated", "message": "ユーザー情報を更新しました"}))
 
                 # ルーム作成
                 elif req.get("type") == "create_double_room":
@@ -559,7 +596,7 @@ async def websocket_double_endpoint(websocket: WebSocket):
                         "players": [{"socket": websocket, "player_id": player_id}]
                     }
                     logger.info("sending double_room_created text")
-                    await websocket.send_text(json.dumps({"type": "double_room_created", "room_id": new_room_id, "mode": mode}))
+                    await manager.safe_send_text(websocket, json.dumps({"type": "double_room_created", "room_id": new_room_id, "mode": mode}))
                     logger.info("success create_double_room")
 
                 # CPU戦ルーム作成＆参加 (デバッグ用)
@@ -582,7 +619,7 @@ async def websocket_double_endpoint(websocket: WebSocket):
                     init_res = bi._make_response()
                     p_init_res = bi.get_personalized_response(init_res, player_id)
                     p_init_res["type"] = "init_double_battle"
-                    await websocket.send_text(json.dumps(p_init_res))
+                    await manager.safe_send_text(websocket, json.dumps(p_init_res))
 
                 # ルーム参加
                 elif req.get("type") == "join_double_room":
@@ -622,20 +659,20 @@ async def websocket_double_endpoint(websocket: WebSocket):
                                 init_res = bi._make_response()
                                 p_init_res = bi.get_personalized_response(init_res, p["player_id"])
                                 p_init_res["type"] = "init_double_battle"
-                                await p["socket"].send_text(json.dumps(p_init_res))
+                                await manager.safe_send_text(p["socket"], json.dumps(p_init_res))
                             await start_double_turn_timer(bi.room_id)
                             
                             del double_private_rooms[room_id]
                         else:
                             # 待機状態を全メンバーに通知
                             for p in players:
-                                await p["socket"].send_text(json.dumps({
+                                await manager.safe_send_text(p["socket"], json.dumps({
                                     "type": "waiting_for_players", 
                                     "current": len(players), 
                                     "required": target_player_count
                                 }))
                     else:
-                        await websocket.send_text(json.dumps({"type": "error", "message": "ルームが見つかりません"}))
+                        await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "ルームが見つかりません"}))
 
                 # 単語送信（攻撃）
                 elif req.get("type") == "submit_word_double":
@@ -650,12 +687,12 @@ async def websocket_double_endpoint(websocket: WebSocket):
                         res = battle.try_attack(player_id, word, target_char_id)
                         
                         if res.get("type") == "error":
-                            await websocket.send_text(json.dumps(res))
+                            await manager.safe_send_text(websocket, json.dumps(res))
                         else:
-                            for p in manager.room_connections.get(room_id, []):
+                            for p in list(manager.room_connections.get(room_id, [])):
                                 p_id = getattr(p, "player_id", None)
                                 p_res = battle.get_personalized_response(res, p_id) if p_id else res
-                                await p.send_text(json.dumps(p_res))
+                                await manager.safe_send_text(p, json.dumps(p_res))
                             # 行動成功後、タイマーリセット
                             await start_double_turn_timer(room_id)
                             
@@ -671,10 +708,10 @@ async def websocket_double_endpoint(websocket: WebSocket):
                                 await asyncio.sleep(1.0) # CPUの思考時間の演出
                                 cpu_res = battle.execute_cpu_turn()
                                 if cpu_res:
-                                    for p in manager.room_connections.get(room_id, []):
+                                    for p in list(manager.room_connections.get(room_id, [])):
                                         p_id = getattr(p, "player_id", None)
                                         p_res = battle.get_personalized_response(cpu_res, p_id) if p_id else cpu_res
-                                        await p.send_text(json.dumps(p_res))
+                                        await manager.safe_send_text(p, json.dumps(p_res))
                                     
                                     if battle.team1_win is not None:
                                         stop_double_turn_timer(room_id)
@@ -683,7 +720,7 @@ async def websocket_double_endpoint(websocket: WebSocket):
                                     
                             await start_double_turn_timer(room_id)
                     else:
-                        await websocket.send_text(json.dumps({"type": "error", "message": "戦闘は終了しました"}))
+                        await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "戦闘は終了しました"}))
 
                 # 逃げる処理
                 elif req.get("type") == "run_away_double":
@@ -695,10 +732,10 @@ async def websocket_double_endpoint(websocket: WebSocket):
                         battle = double_battle_rooms[room_id]
                         res = battle.handle_disconnection(player_id, message="あいてが逃げ出しました。")
                         if res:
-                            for p in manager.room_connections.get(room_id, []):
+                            for p in list(manager.room_connections.get(room_id, [])):
                                 p_id = getattr(p, "player_id", None)
                                 p_res = battle.get_personalized_response(res, p_id) if p_id else res
-                                await p.send_text(json.dumps(p_res))
+                                await manager.safe_send_text(p, json.dumps(p_res))
                             # 勝負がついた場合は部屋を削除
                             if battle.team1_win is not None:
                                 del double_battle_rooms[room_id]
@@ -708,7 +745,7 @@ async def websocket_double_endpoint(websocket: WebSocket):
                             # (誰かが死んだだけの状態)
                             pass
                     else:
-                        await websocket.send_text(json.dumps({"type": "error", "message": "戦闘は終了しました"}))
+                        await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "戦闘は終了しました"}))
 
                 # タイプチェック（入力中プレビュー）
                 elif req.get("type") == "include_check_double":
@@ -719,9 +756,9 @@ async def websocket_double_endpoint(websocket: WebSocket):
                     if room_id in double_battle_rooms:
                         battle = double_battle_rooms[room_id]
                         res = battle.include_check(word)
-                        await websocket.send_text(json.dumps(res))
+                        await manager.safe_send_text(websocket, json.dumps(res))
                     else:
-                        await websocket.send_text(json.dumps({"type": "error", "message": "戦闘は終了しました"}))
+                        await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "戦闘は終了しました"}))
 
                 # 特性変更
                 elif req.get("type") == "change_ability_double":
@@ -734,21 +771,21 @@ async def websocket_double_endpoint(websocket: WebSocket):
                         battle = double_battle_rooms[room_id]
                         res = battle.change_ability(char_id, ability_id)
                         if res.get("type") == "error":
-                            await websocket.send_text(json.dumps(res))
+                            await manager.safe_send_text(websocket, json.dumps(res))
                         else:
-                            for p in manager.room_connections.get(room_id, []):
+                            for p in list(manager.room_connections.get(room_id, [])):
                                 p_id = getattr(p, "player_id", None)
                                 p_res = battle.get_personalized_response(res, p_id) if p_id else res
-                                await p.send_text(json.dumps(p_res))
+                                await manager.safe_send_text(p, json.dumps(p_res))
                     else:
-                        await websocket.send_text(json.dumps({"type": "error", "message": "戦闘は終了しました"}))
+                        await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "戦闘は終了しました"}))
 
                 else:
-                    await websocket.send_text(json.dumps({"type": "error", "message": "Unknown type for double setup"}))
+                    await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "Unknown type for double setup"}))
             except Exception as e:
                 logger.error(f"Unexpected error in /ws/double loop: {e}")
                 logger.error(traceback.format_exc())
-                await websocket.send_text(json.dumps({"type": "error", "message": "サーバー内部エラーが発生しました"}))
+                await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "サーバー内部エラーが発生しました"}))
         
     except WebSocketDisconnect:
         player_id_to_remove = manager.socket_to_player_id.get(websocket)

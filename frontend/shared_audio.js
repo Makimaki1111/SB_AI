@@ -176,7 +176,6 @@
   }
 
   async function startBGM(bgmPath) {
-    const requestId = ++bgmRequestSeq;
     try {
       if (!bgmPath) return false;
 
@@ -192,11 +191,13 @@
       }
 
       if (bgmStartPromise && bgmPendingPath === bgmPath) {
-        return bgmStartPromise;
+        return await bgmStartPromise;
       }
 
+      const requestId = ++bgmRequestSeq;
       bgmPendingPath = bgmPath;
-      bgmStartPromise = (async () => {
+
+      const myPromise = (async () => {
         const buffer = await loadAudio(bgmPath);
         if (!buffer) return false;
         if (requestId !== bgmRequestSeq) return false;
@@ -222,14 +223,17 @@
         return true;
       })();
 
-      return await bgmStartPromise;
+      bgmStartPromise = myPromise;
+      try {
+        return await myPromise;
+      } finally {
+        if (bgmStartPromise === myPromise) {
+          bgmStartPromise = null;
+          bgmPendingPath = null;
+        }
+      }
     } catch (e) {
       return false;
-    } finally {
-      if (requestId === bgmRequestSeq) {
-        bgmStartPromise = null;
-        bgmPendingPath = null;
-      }
     }
   }
 
