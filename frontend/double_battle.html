@@ -304,12 +304,7 @@
         function navigateInShell(page) {
             try {
                 if (window.parent && window.parent !== window) {
-                    const frame = window.parent.document.getElementById('app-frame');
-                    if (frame) {
-                        frame.setAttribute('src', page);
-                    }
                     window.parent.postMessage({ type: 'sb:navigate', page }, '*');
-                    window.parent.location.hash = page;
                     return;
                 }
             } catch (e) {

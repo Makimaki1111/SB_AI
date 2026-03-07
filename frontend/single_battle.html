@@ -362,12 +362,7 @@
     const navigateInShell = (page) => {
       try {
         if (window.parent && window.parent !== window) {
-          const frame = window.parent.document.getElementById('app-frame');
-          if (frame) {
-            frame.setAttribute('src', page);
-          }
           window.parent.postMessage({ type: 'sb:navigate', page }, '*');
-          window.parent.location.hash = page;
           return;
         }
       } catch (e) {
@@ -389,6 +384,16 @@
     const userInteractionHandler = () => {
       if (isAudioUnlocked) return;
       isAudioUnlocked = true;
+
+      try {
+        if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
+          window.parent.SB_AUDIO.unlockAudioContext();
+          window.parent.SB_AUDIO.startBGM('resource/horizon.mp3');
+          return;
+        }
+      } catch (e) {
+        // noop
+      }
 
       if (typeof startBGM === 'function') startBGM('resource/horizon.mp3');
       if (typeof unlockAudioContext === 'function') unlockAudioContext();

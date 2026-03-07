@@ -317,6 +317,33 @@ function stopBGM() {
   }
 }
 
+function getParentAudioManager() {
+  try {
+    if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
+      return window.parent.SB_AUDIO;
+    }
+  } catch (e) {
+    // noop
+  }
+  return null;
+}
+
+function startManagedBGM(path) {
+  const manager = getParentAudioManager();
+  if (manager && typeof manager.startBGM === "function") {
+    return manager.startBGM(path);
+  }
+  return startBGM(path);
+}
+
+function stopManagedBGM() {
+  const manager = getParentAudioManager();
+  if (manager && typeof manager.stopBGM === "function") {
+    return manager.stopBGM();
+  }
+  return stopBGM();
+}
+
 // モバイルブラウザの自動再生制限対策：ユーザー操作時に音声を一瞬再生してアンロックする
 function unlockAudioContext() {
   initAudioContext();
@@ -420,7 +447,7 @@ const onMadeRoom = async (data) => {
 
   ui.showMessage("マッチングした！")
   playEventSound("start", "");
-  startBGM("resource/overflow.mp3");
+  startManagedBGM("resource/overflow.mp3");
   await sleep(1500);
   if (data["state"]["is_my_turn"] === true) {
     onAllyTurnStart(data);
@@ -554,7 +581,7 @@ const onFoeTurnStart = (data) => {
 }
 
 const onAllyWin = () => {
-  stopBGM();
+  stopManagedBGM();
   playEventSound("end", "")
   ui.showMessage("あいてとの勝負に勝った！");
   ui.disableInput();
@@ -563,7 +590,7 @@ const onAllyWin = () => {
 }
 
 const onAllyLose = () => {
-  stopBGM();
+  stopManagedBGM();
   playEventSound("end", "")
   ui.showMessage("あいてとの勝負に負けた…");
   ui.disableInput();
@@ -592,11 +619,11 @@ const backToTitle = () => {
   ui.hideAbilityModal();
   ui.resetSituationInfo();
 
-  startBGM("resource/horizon.mp3");
+  startManagedBGM("resource/horizon.mp3");
 }
 
 const onOpponentDisconnected = (data) => {
-  stopBGM();
+  stopManagedBGM();
   playEventSound("end", "");
   ui.hideMessage();
   ui.setWaitMessage("あいてが切断しました", 0);
@@ -855,7 +882,7 @@ function connectWebSocket(mode, roomId) {
     isDisconnected = true;
 
     // 意図的な切断でない場合のみBGMを停止
-    if (!isManualClose) stopBGM();
+    if (!isManualClose) stopManagedBGM();
 
     // ゲームが終了しておらず、意図しない切断だった場合にメッセージを表示してリダイレクト
     if (!isManualClose && battleState.ally.hp > 0 && battleState.foe.hp > 0) {
@@ -983,7 +1010,7 @@ document.addEventListener("DOMContentLoaded", () => {
   preloadSounds();
 
   // 待機中BGM再生
-  startBGM("resource/horizon.mp3");
+  startManagedBGM("resource/horizon.mp3");
   ui.backToTitleBtn.onClick(() => {
     backToTitle();
   });

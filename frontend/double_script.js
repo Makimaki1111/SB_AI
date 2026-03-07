@@ -66,23 +66,11 @@ function hasParentAudioManager() {
 }
 
 function navigateToSingleBattle() {
-    let navigated = false;
-
-    // 1) If running inside index iframe, switch the frame source directly.
+    // 1) If running inside index iframe, ask parent to navigate.
     try {
         if (window.parent && window.parent !== window) {
             window.parent.postMessage({ type: 'sb:navigate', page: 'single_battle.html' }, '*');
-            const parentDoc = window.parent.document;
-            const frame = parentDoc.getElementById('app-frame');
-            if (frame) {
-                frame.setAttribute('src', 'single_battle.html');
-                navigated = true;
-            }
-            if (window.parent.location.hash !== '#single_battle.html') {
-                window.parent.location.hash = 'single_battle.html';
-                navigated = true;
-            }
-            if (navigated) return true;
+            return true;
         }
     } catch (e) {
         // noop
