@@ -100,6 +100,7 @@ const websock_double_server = `${protocol}//${host}/ws/double`;
 
 let sock = null;
 let isReturningToLobby = false;
+let hasStartedDoubleBattle = false;
 
 function setBattleActionButtonsVisible(visible) {
     const display = visible ? "flex" : "none";
@@ -110,6 +111,7 @@ function setBattleActionButtonsVisible(visible) {
 }
 
 function showDoubleBattleWaitingScreen(message) {
+    hasStartedDoubleBattle = false;
     $('#double-lobby-screen').hide();
     $('#double-battle-screen').show();
 
@@ -390,6 +392,7 @@ function connectDoubleWebSocket(action, mode, roomId) {
 }
 
 async function initDoubleBattle(data) {
+    hasStartedDoubleBattle = true;
     $('#double-lobby-screen').hide();
     $('#double-battle-screen').show();
 
@@ -725,9 +728,10 @@ function backToLobby() {
         sock.close();
         sock = null;
     }
-    if (typeof stopBGM === "function") {
+    if (hasStartedDoubleBattle && typeof stopBGM === "function") {
         stopBGM();
     }
+    hasStartedDoubleBattle = false;
 
     const moved = navigateToSingleBattle();
     if (!moved) {
