@@ -65,6 +65,41 @@ function hasParentAudioManager() {
     }
 }
 
+function navigateToSingleBattle() {
+    let navigated = false;
+
+    // 1) If running inside index iframe, switch the frame source directly.
+    try {
+        if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'sb:navigate', page: 'single_battle.html' }, '*');
+            const parentDoc = window.parent.document;
+            const frame = parentDoc.getElementById('app-frame');
+            if (frame) {
+                frame.setAttribute('src', 'single_battle.html');
+                navigated = true;
+            }
+            if (window.parent.location.hash !== '#single_battle.html') {
+                window.parent.location.hash = 'single_battle.html';
+                navigated = true;
+            }
+            if (navigated) return true;
+        }
+    } catch (e) {
+        // noop
+    }
+
+    // 2) Fallback for non-iframe open.
+    try {
+        window.location.replace('index.html#single_battle.html');
+        return true;
+    } catch (e) {
+        // noop
+    }
+
+    window.location.href = 'index.html#single_battle.html';
+    return true;
+}
+
 let protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
 let host = window.location.host;
 if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
@@ -199,6 +234,12 @@ $(() => {
             // クライアント側で即座にタイトルへ戻る処理（サーバー側の切断検知で残りの処理が行われる）
             backToLobby();
         }
+    });
+
+    // 勝敗後に表示される「タイトルに戻る」ボタン
+    ui.backToTitleBtn.selector.off('click').on('click', (e) => {
+        e.preventDefault();
+        backToLobby();
     });
 
     // 入力中のタイプチェック (script.jsと同じ)
@@ -520,11 +561,12 @@ async function handleTurnResult(data) {
         ui.showModalMessage(abilityChangeEvent.message || 'とくせいを変更した！', 2000);
 
         if (shouldPlayAbilityChangeSound(abilityChangeEvent) && typeof playSound === 'function') {
-            window.__sbExpectConcentUntil = Date.now() + 1000;
             playSound("resource/concent.mp3");
         }
-        window.__sbExpectConcentUntil = 0;
     }
+
+    // Processed one turn_result, so clear the intent flag to prevent replay.
+    window.__sbExpectConcentUntil = 0;
 
     if (data.team1_win !== null) {
         stopBGM();
@@ -663,15 +705,10 @@ function backToLobby() {
         sock = null;
     }
     startBGM("resource/horizon.mp3");
-    try {
-        if (window.parent && window.parent !== window) {
-            window.parent.location.hash = 'single_battle.html';
-            return;
-        }
-    } catch (e) {
-        // noop
+    const moved = navigateToSingleBattle();
+    if (!moved) {
+        window.location.replace('index.html#single_battle.html');
     }
-    window.location.href = 'index.html#single_battle.html';
 }
 
 function switchAbilityTab(charId) {

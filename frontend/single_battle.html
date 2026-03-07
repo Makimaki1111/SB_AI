@@ -7,8 +7,14 @@
   <script>
     (function ensureIframeShellEarly() {
       const page = 'single_battle.html';
+      const toShell = (targetPage) => {
+        window.location.replace(`index.html#${targetPage}`);
+      };
+
       if (window.self === window.top) {
-        window.location.replace(`index.html#${page}`);
+        const hashPage = (window.location.hash || '').replace(/^#/, '');
+        const target = hashPage === 'double_battle.html' ? 'double_battle.html' : page;
+        toShell(target);
         return;
       }
       try {
@@ -356,6 +362,11 @@
     const navigateInShell = (page) => {
       try {
         if (window.parent && window.parent !== window) {
+          const frame = window.parent.document.getElementById('app-frame');
+          if (frame) {
+            frame.setAttribute('src', page);
+          }
+          window.parent.postMessage({ type: 'sb:navigate', page }, '*');
           window.parent.location.hash = page;
           return;
         }

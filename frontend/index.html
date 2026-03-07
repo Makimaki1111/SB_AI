@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Shiritori Battle</title>
+  <title>しりとりの対戦バトル</title>
   <style>
     html,
     body {
@@ -44,6 +44,19 @@
           frame.setAttribute("src", page);
         }
       };
+
+      window.addEventListener("message", (event) => {
+        const data = event && event.data;
+        if (!data || data.type !== "sb:navigate") return;
+        const page = data.page;
+        if (!allowedPages.has(page)) return;
+        if (frame.getAttribute("src") !== page) {
+          frame.setAttribute("src", page);
+        }
+        if (window.location.hash !== `#${page}`) {
+          window.location.hash = page;
+        }
+      });
 
       window.addEventListener("hashchange", applyRoute);
       applyRoute();
