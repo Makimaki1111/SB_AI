@@ -4,6 +4,22 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+        (function ensureIframeShellEarly() {
+            const page = 'double_battle.html';
+            if (window.self === window.top) {
+                window.location.replace(`index.html#${page}`);
+                return;
+            }
+            try {
+                if (window.parent && window.parent.location.hash !== `#${page}`) {
+                    window.parent.location.hash = page;
+                }
+            } catch (e) {
+                // noop
+            }
+        })();
+    </script>
     <title>ダブルバトル (β版)</title>
     <link rel="stylesheet" href="style.css?v=14" />
     <link rel="stylesheet" href="double_style.css?v=8" />
@@ -56,7 +72,7 @@
                     <div id="lobby-message" style="color: #333; font-weight: bold; text-align: center;">
                     </div>
 
-                    <a href="index.html" class="button-lobby"
+                    <a id="lobby-back-btn" href="#single_battle.html" class="button-lobby"
                         style="background: linear-gradient(180deg, #f0f0f0, #d4d4d4); color: #333; margin-bottom: 20px;">タイトルに戻る</a>
                 </div>
             </div>
@@ -189,7 +205,7 @@
                     </div>
                 </div>
 
-                <a id="back-to-title-btn" style="display:none;" href="index.html">タイトルに戻る</a>
+                <a id="back-to-title-btn" style="display:none;" href="#single_battle.html">タイトルに戻る</a>
                 <!-- フッターエリア: ボタン類 -->
                 <div class="footer-area">
                     <button id="cancel-battle-btn" style="position: relative; z-index: 100;">にげる</button>
@@ -274,14 +290,44 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://unpkg.com/wanakana"></script>
     <script src="type_to_image.js"></script>
+    <script src="shared_audio.js"></script>
+    <script src="audio_bridge.js"></script>
     <!-- UIとベースロジックを流用 -->
     <script src="UIObject.js"></script>
     <script>
+        function navigateInShell(page) {
+            try {
+                if (window.parent && window.parent !== window) {
+                    window.parent.location.hash = page;
+                    return;
+                }
+            } catch (e) {
+                // noop
+            }
+            window.location.href = `index.html#${page}`;
+        }
+
         function updateModeSelection(radio) {
             document.querySelectorAll('.mode-select-btn').forEach(lbl => lbl.classList.remove('active'));
             if (radio.checked) {
                 radio.closest('.mode-select-btn').classList.add('active');
             }
+        }
+
+        const lobbyBackBtn = document.getElementById('lobby-back-btn');
+        if (lobbyBackBtn) {
+            lobbyBackBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                navigateInShell('single_battle.html');
+            });
+        }
+
+        const backToTitleBtn = document.getElementById('back-to-title-btn');
+        if (backToTitleBtn) {
+            backToTitleBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                navigateInShell('single_battle.html');
+            });
         }
     </script>
     <script src="double_UI.js?v=4"></script>

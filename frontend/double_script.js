@@ -42,6 +42,29 @@ let ui;
 
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
+function shouldPlayAbilityChangeSound(event) {
+    if (!event) return false;
+
+    const expectedUntil = window.__sbExpectConcentUntil || 0;
+    if (Date.now() <= expectedUntil) {
+        return true;
+    }
+
+    const changedCharId = event.char_id;
+    if (!changedCharId || !doubleBattleState.chars[changedCharId]) {
+        return false;
+    }
+    return doubleBattleState.chars[changedCharId].owner_id === player1_id;
+}
+
+function hasParentAudioManager() {
+    try {
+        return !!(window.parent && window.parent !== window && window.parent.SB_AUDIO);
+    } catch (e) {
+        return false;
+    }
+}
+
 let protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
 let host = window.location.host;
 if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
@@ -58,9 +81,50 @@ let sock = null;
 $(() => {
     // UI初期化
     ui = new DoubleUI();
+    window.__sbSuppressConcentWithoutIntent = true;
 
     // 画像のプリロードを開始
     preloadImages();
+
+    // 音声のプリロード（親iframeの共有Audioに積む）
+    const preloadPaths = [
+        "resource/horizon.mp3",
+        "resource/overflow.mp3",
+        "resource/start.mp3",
+        "resource/end.mp3",
+        "resource/heal.mp3",
+        "resource/down.mp3",
+        "resource/up.mp3",
+        "resource/seed_damage.mp3",
+        "resource/middmg.mp3",
+        "resource/effective.mp3",
+        "resource/noneffective.mp3",
+        "resource/seeded.mp3",
+        "resource/poison.mp3",
+        "resource/pera.mp3",
+        "resource/concent.mp3"
+    ];
+    if (typeof type_to_image !== "undefined") {
+        Object.values(type_to_image).forEach((name) => preloadPaths.push(`resource/${name}.mp3`));
+    }
+    if (typeof preloadSounds === "function") {
+        preloadSounds(preloadPaths);
+    }
+    if (!hasParentAudioManager() && typeof startBGM === "function") {
+        startBGM("resource/horizon.mp3");
+    }
+
+    let isAudioUnlocked = false;
+    const userInteractionHandler = () => {
+        if (isAudioUnlocked) return;
+        isAudioUnlocked = true;
+        if (typeof unlockAudioContext === "function") unlockAudioContext();
+        if (!hasParentAudioManager() && typeof startBGM === "function") {
+            startBGM("resource/horizon.mp3");
+        }
+    };
+    document.body.addEventListener("click", userInteractionHandler, { once: true });
+    document.body.addEventListener("touchstart", userInteractionHandler, { once: true });
 
     // 画面サイズに合わせてスケーリング
     window.addEventListener('resize', adjustWindowScale);
@@ -289,7 +353,8 @@ async function initDoubleBattle(data) {
     updateUIWithCharacters(data.characters);
 
     ui.showMessage("バトルスタート！");
-    // TODO: sound logic can be imported from script.js or abstracted
+    playEventSound("start", "");
+    startBGM("resource/overflow.mp3");
 
     // Ensure all characters are visible initially
     $('.char-wrapper').show();
@@ -339,6 +404,9 @@ async function handleTurnResult(data) {
             types = data.characters[data.last_actor_id].types;
         }
         ui.setCharImage(uiLastActorId, types);
+        if (types.length > 0) {
+            playIconSound(types[0]);
+        }
 
         await sleep(1000); // 1秒「間」を作る
     }
@@ -448,10 +516,16 @@ async function handleTurnResult(data) {
         // 確認メッセージを表示 (script.jsと同じ)
         ui.showModalMessage(abilityChangeEvent.message || 'とくせいを変更した！', 2000);
 
-        if (typeof playSound === 'function') playSound("resource/concent.mp3");
+        if (shouldPlayAbilityChangeSound(abilityChangeEvent) && typeof playSound === 'function') {
+            window.__sbExpectConcentUntil = Date.now() + 1000;
+            playSound("resource/concent.mp3");
+        }
+        window.__sbExpectConcentUntil = 0;
     }
 
     if (data.team1_win !== null) {
+        stopBGM();
+        playEventSound("end", "");
         if (data.team1_win) {
             ui.showMessage("自分チーム(左下)の勝利！");
         } else {
@@ -585,7 +659,16 @@ function backToLobby() {
         sock.close();
         sock = null;
     }
-    window.location.href = 'index.html';
+    startBGM("resource/horizon.mp3");
+    try {
+        if (window.parent && window.parent !== window) {
+            window.parent.location.hash = 'single_battle.html';
+            return;
+        }
+    } catch (e) {
+        // noop
+    }
+    window.location.href = 'index.html#single_battle.html';
 }
 
 function switchAbilityTab(charId) {
@@ -597,6 +680,7 @@ function switchAbilityTab(charId) {
 }
 
 function sendChangeAbilityDouble(charId, abilityId) {
+    window.__sbExpectConcentUntil = Date.now() + 5000;
     if (sock && sock.readyState === WebSocket.OPEN) {
         const realCharId = getRealId(charId);
         sock.send(JSON.stringify({
