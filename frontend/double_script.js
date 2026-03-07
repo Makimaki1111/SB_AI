@@ -13,7 +13,7 @@ const doubleBattleState = {
     roomId: null,
     mode: null, // '1v1_double', '2v2_double'
     character: "",
-    // P1A, P1B, P2A, P2B のステータスを保持
+    // P1A, P1B, P2A, P2B のスチE�Eタスを保持
     chars: {
         p1a: { hp: 0, maxHp: 0, atk: 0, def: 0, ability: '', is_defeated: false },
         p1b: { hp: 0, maxHp: 0, atk: 0, def: 0, ability: '', is_defeated: false },
@@ -101,16 +101,26 @@ const websock_double_server = `${protocol}//${host}/ws/double`;
 let sock = null;
 let isReturningToLobby = false;
 
-// ロビーUI初期設定
+function showDoubleBattleWaitingScreen(message) {
+    $('#double-lobby-screen').hide();
+    $('#double-battle-screen').show();
+
+    ui.resetAll();
+    ui.hideMessage();
+    ui.hideWaitMessage();
+    ui.setTargetSelectionVisible(false);
+    ui.situationButton.hide();
+    ui.abilityInfoContainer.hide();
+    ui.targetSelectionUi.selector.hide();
+    ui.setWaitMessage(message || "対戦相手を待っています...");
+}
+
 $(() => {
-    // UI初期化
     ui = new DoubleUI();
     window.__sbSuppressConcentWithoutIntent = true;
 
-    // 画像のプリロードを開始
     preloadImages();
 
-    // 音声のプリロード（親iframeの共有Audioに積む）
     const preloadPaths = [
         "resource/horizon.mp3",
         "resource/overflow.mp3",
@@ -152,15 +162,15 @@ $(() => {
 
     // 画面サイズに合わせてスケーリング
     window.addEventListener('resize', adjustWindowScale);
-    adjustWindowScale(); // 初期実行
-
-    // Wanakana.jsによるローマ字→ひらがな自動変換を設定
+    adjustWindowScale(); // 初期実衁E
     if (typeof wanakana !== 'undefined') {
         wanakana.bind(document.getElementById('input'));
     }
 
     $('#create-double-room-btn').on('click', () => {
         const mode = $('input[name="double_mode"]:checked').val();
+        doubleBattleState.roomId = null;
+        showDoubleBattleWaitingScreen("ルームを作成中...");
         connectDoubleWebSocket('create', mode);
     });
 
@@ -170,15 +180,19 @@ $(() => {
             alert("ルームIDを入力してください");
             return;
         }
+        doubleBattleState.roomId = roomId;
+        showDoubleBattleWaitingScreen(`ルーム ${roomId} に接続中...`);
         connectDoubleWebSocket('join', null, roomId);
     });
 
     $('#cpu-double-battle-btn').on('click', () => {
+        doubleBattleState.roomId = null;
+        showDoubleBattleWaitingScreen("CPU戦を開始中...");
         connectDoubleWebSocket('cpu');
     });
 
 
-    // ターゲット選択ボタン
+    // ターゲチE��選択�Eタン
     $('#target-p2a-btn').on('click', () => selectTarget('p2a'));
     $('#target-p2b-btn').on('click', () => selectTarget('p2b'));
 
@@ -207,7 +221,7 @@ $(() => {
         if (typeof playSound === 'function') playSound("resource/pera.mp3");
     });
 
-    // 逃げる（降参）ボタン
+    // 送E��る（降参）�Eタン
     ui.cancelBtn.selector.off('click').on('click', (e) => {
         e.preventDefault();
         if (confirm("本当に逃げますか？\n（チームが全滅扱いになる可能性があります）")) {
@@ -220,18 +234,17 @@ $(() => {
                     }
                 }));
             }
-            // クライアント側で即座にタイトルへ戻る処理（サーバー側の切断検知で残りの処理が行われる）
             backToLobby();
         }
     });
 
-    // 勝敗後に表示される「タイトルに戻る」ボタン
+    // 勝敗後に表示される「タイトルに戻る」�Eタン
     ui.backToTitleBtn.selector.off('click').on('click', (e) => {
         e.preventDefault();
         backToLobby();
     });
 
-    // 入力中のタイプチェック (script.jsと同じ)
+    // 入力中のタイプチェチE�� (script.jsと同じ)
     ui.input.selector.off('input').on('input', () => {
         if (!doubleBattleState.roomId) {
             ui.hidePreImg();
@@ -266,15 +279,12 @@ function connectDoubleWebSocket(action, mode, roomId) {
     }
 
     const ws = new WebSocket(websock_double_server);
-    sock = ws; // グローバルに保持しておくが、イベント内ではローカルのwsを使う
-
+    sock = ws; // グローバルに保持しておくが、イベント�Eではローカルのwsを使ぁE
     ws.addEventListener("open", function () {
         console.log("Double WebSocket connected");
-
-        // 即座にボタンを表示（接続完了時）
-        ui.situationButton.show();
-        ui.abilityInfoContainer.show();
-        ui.targetSelectionUi.selector.css('display', 'flex');
+        ui.situationButton.hide();
+        ui.abilityInfoContainer.hide();
+        ui.targetSelectionUi.selector.hide();
 
         const name = localStorage.getItem("sb_username");
         const ability = localStorage.getItem("sb_ability");
@@ -312,23 +322,27 @@ function connectDoubleWebSocket(action, mode, roomId) {
         console.log("Double WS received:", data);
 
         if (data.type === "double_room_created") {
-            $('#double-room-id-input').val(data.room_id);
-            $('#lobby-message').text(`ルームを作成しました: ID ${data.room_id} (待機中...)`);
-            $('#create-double-room-btn').hide();
+            $("#double-room-id-input").val(data.room_id);
+            doubleBattleState.roomId = data.room_id;
+            ui.setWaitMessage(`ルームID: ${data.room_id} / 参加者待機中...`);
         } else if (data.type === "waiting_for_players") {
-            $('#lobby-message').text(`待機中... (${data.current}/${data.required} 人)`);
-        } else if (data.type === "init_double_battle") {
+            let waitText = `待機中... (${data.current}/${data.required} 人)`;
+            if (doubleBattleState.roomId) {
+                waitText = `ルームID: ${doubleBattleState.roomId} / ${waitText}`;
+            }
+            ui.setWaitMessage(waitText);
+        }
+        else if (data.type === "init_double_battle") {
             await initDoubleBattle(data);
         } else if (data.type === "turn_result") {
             if (isProcessingTurnResult) {
-                // 前のターン結果を処理中の場合はキューに入れる
+                // 前�Eターン結果を�E琁E��の場合�Eキューに入れる
                 pendingTurnResults.push(data);
             } else {
                 isProcessingTurnResult = true;
                 await handleTurnResult(data);
                 isProcessingTurnResult = false;
 
-                // キューに溜まったターン結果を順に処理する（script.jsと同じパターン）
                 while (pendingTurnResults.length > 0) {
                     await sleep(500);
                     isProcessingTurnResult = true;
@@ -341,7 +355,6 @@ function connectDoubleWebSocket(action, mode, roomId) {
             // エラー表示をUIに反映
             ui.setWaitMessage(data.message, 2000);
 
-            // 重要：エラーになった場合は入力を再有効化する
             ui.enableInput();
         } else if (data.type === "pre_check") {
             // include_checkの結果
@@ -362,7 +375,7 @@ async function initDoubleBattle(data) {
     doubleBattleState.roomId = data.room_id;
     doubleBattleState.mode = data.mode;
     doubleBattleState.isVsCpu = data.is_cpu || false;
-    doubleBattleState.lastFoeWord = null; // バトル開始時にリセット
+    doubleBattleState.lastFoeWord = null; // バトル開始時にリセチE��
 
     // Determine myTeam based on owner_id
     doubleBattleState.myTeam = 'team1';
@@ -375,7 +388,7 @@ async function initDoubleBattle(data) {
 
     ui.resetAll();
 
-    // resetAll()で隠れてしまうため、再表示する
+    // resetAll()で隠れてしまぁE��め、�E表示する
     ui.situationButton.show();
     ui.abilityInfoContainer.show();
     ui.targetSelectionUi.selector.css('display', 'flex');
@@ -414,7 +427,6 @@ function updateUIWithCharacters(chars) {
 async function handleTurnResult(data) {
     ui.hideInputArea();
 
-    // タイムアウト（時間切れ）かどうか判定
     const isTimeout = data.events && data.events.some(e => e.message && e.message.includes("時間切れ"));
 
     // Show the played word if it was a valid turn AND not a timeout
@@ -447,7 +459,6 @@ async function handleTurnResult(data) {
     // process events sequentially to show animations (script.js の processEvent と同じタイミング)
     if (data.events && data.events.length > 0) {
         for (let e of data.events) {
-            // 特性変更イベントの場合は#messageに文章を表示しない
             if (e.type !== "ability_changed") {
                 ui.showMessage(e.message || "");
             }
@@ -455,14 +466,13 @@ async function handleTurnResult(data) {
                 playEventSound(e.type, e.message);
             }
 
-            // エフェクト処理（メッセージ表示直後に即実行 — script.js と同じ）
             if (e.type === "damage") {
                 if (e.damage !== undefined && doubleBattleState.chars[e.target]) {
                     doubleBattleState.chars[e.target].hp = Math.max(0, doubleBattleState.chars[e.target].hp - e.damage);
                     const targetChar = doubleBattleState.chars[e.target];
                     ui.setHP(getUIId(e.target), targetChar.hp, targetChar.maxHp);
                 }
-                // ダメージ点滅エフェクト (毒ダメージの場合は点滅させない)
+                // ダメージ点滁E��フェクチE(毒ダメージの場合�E点滁E��せなぁE
                 if (e.message !== "毒のダメージを受けた！") {
                     ui.playEffect(getUIId(e.target), e.type);
                 }
@@ -508,12 +518,11 @@ async function handleTurnResult(data) {
                 }
                 ui.playEffect(getUIId(e.attacker), "heal");
             } else if (e.type === "ability_trigger") {
-                // 特性発動イベント — 毒付与やランク変化を処理
                 if (e.poison_target && doubleBattleState.chars[e.poison_target]) {
                     doubleBattleState.chars[e.poison_target].is_poison = true;
                     ui.updatePoisonStatus(e.poison_target, true);
                 }
-                // ランク一括変化 (持っている場合)
+                // ランク一括変化 (持ってぁE��場吁E
                 if (e.new_ranks) {
                     for (const [charId, ranks] of Object.entries(e.new_ranks)) {
                         if (doubleBattleState.chars[charId]) {
@@ -530,7 +539,6 @@ async function handleTurnResult(data) {
                 }
             }
 
-            // 特性変更イベントの場合は待機時間を短くする（script.js と同じ）
             const waitTime = e.type === "ability_changed" ? 100 : 1000;
             await sleep(waitTime);
         }
@@ -538,15 +546,15 @@ async function handleTurnResult(data) {
 
     updateUIWithCharacters(data.characters);
 
-    // 特性変更イベントの場合、最新の変更を取得するためにreverseしてfindする
+    // 特性変更イベント�E場合、最新の変更を取得するためにreverseしてfindする
     const abilityChangeEvent = data.events && [...data.events].reverse().find(e => e.type === 'ability_changed');
     if (abilityChangeEvent) {
-        // モーダル内の選択肢を再描画して、選択状態を更新
+        // モーダル冁E�E選択肢を�E描画して、E��択状態を更新
         ui.updateAbilityInfo(doubleBattleState.chars, doubleBattleState.allAbilities, (charId, abilityId) => {
             sendChangeAbilityDouble(charId, abilityId);
         });
 
-        // 確認メッセージを表示 (script.jsと同じ)
+        // 確認メチE��ージを表示 (script.jsと同じ)
         ui.showModalMessage(abilityChangeEvent.message || 'とくせいを変更した！', 2000);
 
         if (shouldPlayAbilityChangeSound(abilityChangeEvent) && typeof playSound === 'function') {
@@ -583,7 +591,7 @@ function handleTurnStart(data) {
     doubleBattleState.character = data.character;
     ui.hideMessage(); // Ensure #message is hidden
 
-    // タイマーを開始 (対人戦のみ)
+    // タイマ�Eを開姁E(対人戦のみ)
     if (!doubleBattleState.isVsCpu) {
         const elapsed = (Date.now() - (data._receivedAt || Date.now())) / 1000;
         ui.startTimer(Math.max(0, TURN_TIME_LIMIT - elapsed), TURN_TIME_LIMIT);
@@ -669,7 +677,7 @@ function sendDoubleSubmitWord(word) {
         return;
     }
 
-    // どちらかが倒れていた場合、自動的に残っている方をターゲットにする
+    // どちらかが倒れてぁE��場合、�E動的に残ってぁE��方をターゲチE��にする
     if (!doubleBattleState.currentTargetId) {
         if (p2a_alive) doubleBattleState.currentTargetId = 'p2a';
         else if (p2b_alive) doubleBattleState.currentTargetId = 'p2b';
@@ -712,7 +720,6 @@ function backToLobby() {
 }
 
 function switchAbilityTab(charId) {
-    // タブの切り替え
     document.querySelectorAll('.char-tab').forEach(t => t.classList.remove('active'));
     document.getElementById('tab-' + charId).classList.add('active');
     document.querySelectorAll('.ability-tab-content').forEach(c => c.style.display = 'none');
@@ -761,7 +768,7 @@ function preloadImages() {
         "img/unaware.gif",
         "img/god.gif"
     ];
-    // type_to_image.js で定義されているマッピングを利用
+    // type_to_image.js で定義されてぁE��マッピングを利用
     if (typeof type_to_image !== 'undefined') {
         Object.values(type_to_image).forEach(filename => {
             images.push(`img/${filename}.gif`);
@@ -775,7 +782,6 @@ function preloadImages() {
 
 // 画面サイズに合わせてスケーリングする関数
 function adjustWindowScale() {
-    // タイトル画面とバトル画面の両方の .phone-box を取得
     const phoneBoxes = document.querySelectorAll('.phone-box');
     if (phoneBoxes.length === 0) return;
 
@@ -784,8 +790,7 @@ function adjustWindowScale() {
 
     const scaleX = (window.innerWidth * 0.96) / originalWidth;
     const scaleY = (window.innerHeight * 0.96) / originalHeight;
-    const scale = Math.min(scaleX, scaleY, 1.0); // 拡大はしない
-
+    const scale = Math.min(scaleX, scaleY, 1.0); // 拡大はしなぁE
     phoneBoxes.forEach(box => {
         box.style.transform = scale < 1 ? `scale(${scale})` : 'none';
     });
