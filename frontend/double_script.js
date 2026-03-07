@@ -399,13 +399,16 @@ async function handleTurnResult(data) {
             doubleBattleState.lastFoeWord = data.word;
         }
 
-        let types = [];
-        if (data.characters[data.last_actor_id].types && data.characters[data.last_actor_id].types.length > 0) {
-            types = data.characters[data.last_actor_id].types;
-        }
+        const types = data.characters[data.last_actor_id].types || [];
         ui.setCharImage(uiLastActorId, types);
+
+        // Play sound for the first type
         if (types.length > 0) {
-            playIconSound(types[0]);
+            const firstType = types[0];
+            if (firstType && type_to_image[firstType] && window.SB_AUDIO) {
+                const soundName = type_to_image[firstType];
+                window.SB_AUDIO.playSound(`resource/${soundName}.mp3`);
+            }
         }
 
         await sleep(1000); // 1秒「間」を作る
