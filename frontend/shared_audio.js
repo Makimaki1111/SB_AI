@@ -101,7 +101,7 @@
       if (!path) return false;
 
       const now = Date.now();
-      if (lastPlayTime[path] && now - lastPlayTime[path] < 100) {
+      if (lastPlayTime[path] && now - lastPlayTime[path] < 80) {
         return false;
       }
       lastPlayTime[path] = now;
@@ -266,4 +266,3 @@
     unlockAudioContext
   };
 })();
-

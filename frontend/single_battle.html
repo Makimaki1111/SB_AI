@@ -333,6 +333,7 @@
         localStorage.setItem("sb_ability", id);
         renderLobbyAbilities(); // 選択状態更新
         updateLobbyButtonDisplay();
+        if (typeof playSound === 'function') playSound("resource/concent.mp3");
       }
 
       lobbyAbilityBtn.addEventListener('click', () => {
@@ -341,10 +342,12 @@
         // 初期説明文の設定
         const info = allAbilities[currentAbilityId];
         lobbyAbilityDesc.textContent = info ? info.description : "ランダムに決定されます";
+        if (typeof playSound === 'function') playSound("resource/pera.mp3");
       });
 
       closeLobbyAbilityModal.addEventListener('click', () => {
         lobbyAbilityModal.style.display = 'none';
+        if (typeof playSound === 'function') playSound("resource/pera.mp3");
       });
     })();
   </script>

@@ -51,6 +51,12 @@ function getUiCharsState() {
 
 let ui;
 
+function playSound(path) {
+    if (window.SB_AUDIO) {
+        window.SB_AUDIO.playSound(path);
+    }
+}
+
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
 function shouldPlayAbilityChangeSound(event) {
@@ -224,6 +230,7 @@ $(() => {
     ui.abilityInfoContainer.selector.off('click').on('click', () => {
         ui.updateAbilityInfo(getUiCharsState(), doubleBattleState.allAbilities, (charId, abilityId) => {
             sendChangeAbilityDouble(charId, abilityId);
+            if (typeof playSound === 'function') playSound("resource/concent.mp3");
         });
         ui.showAbilityModal();
         if (typeof playSound === 'function') playSound("resource/pera.mp3");
@@ -281,6 +288,7 @@ $(() => {
     
     $('#close-double-lobby-ability-modal').on('click', () => {
         $('#double-lobby-ability-modal').hide();
+        if (typeof playSound === 'function') playSound("resource/pera.mp3");
     });
 
     // Fetch abilities for modals
@@ -872,6 +880,7 @@ function openAbilityModal(slot) {
     const info = doubleBattleState.allAbilities[currentId];
     $('#double-lobby-ability-desc').text(info ? info.description : "ランダムに決定されます");
     $('#double-lobby-ability-modal').css('display', 'flex');
+    if (typeof playSound === 'function') playSound("resource/pera.mp3");
 }
 
 // --- ロビー用 特性選択ロジック ---
@@ -937,4 +946,5 @@ function selectDoubleLobbyAbility(id, name, desc, slot) {
     document.getElementById('double-lobby-ability-desc').textContent = desc;
     renderDoubleLobbyAbilities(slot); // 選択状態更新
     updateDoubleLobbyAbilityDisplay();
+    if (typeof playSound === 'function') playSound("resource/concent.mp3");
 }

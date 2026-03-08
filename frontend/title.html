@@ -99,12 +99,14 @@
 
         settingsBtn.addEventListener('click', () => {
             settingsModal.style.display = 'flex';
+            if (window.SB_AUDIO) window.SB_AUDIO.playSound("resource/pera.mp3");
         });
 
         closeSettingsBtn.addEventListener('click', () => {
             const name = usernameInput.value.trim();
             if (name) localStorage.setItem("sb_username", name);
             settingsModal.style.display = 'none';
+            if (window.SB_AUDIO) window.SB_AUDIO.playSound("resource/pera.mp3");
         });
 
         bgmSlider.addEventListener('input', (e) => {
@@ -112,6 +114,8 @@
         });
         seSlider.addEventListener('input', (e) => {
             if (window.SB_AUDIO) window.SB_AUDIO.setSEVolume(parseFloat(e.target.value));
+            // 音量確認のためにSEを再生
+            if (window.SB_AUDIO) window.SB_AUDIO.playSound("resource/concent.mp3");
         });
 
         let isAudioUnlocked = false;
