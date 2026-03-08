@@ -86,7 +86,6 @@
     <!-- ダブルバトル 対戦画面 (初期非表示) -->
     <div id="double-battle-screen" style="display: none;">
         <div class="phone-box">
-            <a id="back-to-title-btn" class="back-to-title-link" style="display:none;">←もどる</a>
             <div class="top-image" id="double-top-image">
                 <img src="img/ground.jpg" alt="背景画像" />
 
@@ -171,6 +170,9 @@
                 </div>
 
             </div>
+
+            <!-- バトル終了後のボタン -->
+            <a id="back-to-title-btn" style="display:none;">ロビーに戻る</a>
 
             <div class="content">
                 <!-- アクションエリア -->
@@ -321,14 +323,6 @@
         const lobbyBackBtn = document.getElementById('lobby-back-btn');
         if (lobbyBackBtn) {
             lobbyBackBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                navigateInShell('title.html');
-            });
-        }
-
-        const backToTitleBtn = document.getElementById('back-to-title-btn');
-        if (backToTitleBtn) {
-            backToTitleBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 navigateInShell('title.html');
             });

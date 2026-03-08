@@ -438,6 +438,22 @@ function updateUIWithCharacters(chars) {
 
 async function handleTurnResult(data) {
     const onlyAbilityChanged = !!(data.events && data.events.length > 0 && data.events.every(ev => ev.type === "ability_changed"));
+    
+    // ★即時反映: 特性変更のみなら先にステータス更新とモーダル更新を行う
+    if (onlyAbilityChanged) {
+        updateUIWithCharacters(data.characters);
+        const abilityChangeEvent = [...data.events].reverse().find(e => e.type === 'ability_changed');
+        if (abilityChangeEvent) {
+            const changedUiId = getUIId(abilityChangeEvent.char_id || "");
+            const isOwnTeamChange = changedUiId === "p1a" || changedUiId === "p1b";
+            if (isOwnTeamChange) {
+                ui.updateAbilityInfo(getUiCharsState(), doubleBattleState.allAbilities, (charId, abilityId) => {
+                    sendChangeAbilityDouble(charId, abilityId);
+                });
+            }
+        }
+    }
+
     if (!onlyAbilityChanged) {
         ui.stopTimer();
         ui.hideInputArea();
@@ -555,12 +571,16 @@ async function handleTurnResult(data) {
                 }
             }
 
-            const waitTime = e.type === "ability_changed" ? 100 : 1000;
+            // ★変更: 特性変更の場合は waitTime を 0 にして即時完了させる
+            const waitTime = e.type === "ability_changed" ? 0 : 1000;
             await sleep(waitTime);
         }
     }
 
-    updateUIWithCharacters(data.characters);
+    // ★変更: 特性変更のみの場合は既に更新済みなのでスキップ
+    if (!onlyAbilityChanged) {
+        updateUIWithCharacters(data.characters);
+    }
 
     // 特性変更イベント�E場合、最新の変更を取得するためにreverseしてfindする
     const abilityChangeEvent = data.events && [...data.events].reverse().find(e => e.type === 'ability_changed');
@@ -569,10 +589,6 @@ async function handleTurnResult(data) {
         const isOwnTeamChange = changedUiId === "p1a" || changedUiId === "p1b";
 
         if (isOwnTeamChange) {
-            ui.updateAbilityInfo(getUiCharsState(), doubleBattleState.allAbilities, (charId, abilityId) => {
-                sendChangeAbilityDouble(charId, abilityId);
-            });
-
             ui.showModalMessage(abilityChangeEvent.message || 'とくせいを変更した！', 2000);
         }
 

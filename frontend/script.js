@@ -586,6 +586,7 @@ const onAllyWin = () => {
   ui.showMessage("あいてとの勝負に勝った！");
   ui.disableInput();
   ui.showBackToTitleBtn();
+  $('#back-to-title-btn').show(); // 強制表示
   ui.stopTimer();
 }
 
@@ -595,12 +596,15 @@ const onAllyLose = () => {
   ui.showMessage("あいてとの勝負に負けた…");
   ui.disableInput();
   ui.showBackToTitleBtn();
+  $('#back-to-title-btn').show(); // 強制表示
   ui.stopTimer();
 }
 
 const backToTitle = () => {
   // iOS対策: 画面遷移時にAudioContextを確実に有効化する
   unlockAudioContext();
+  // BGMを停止
+  stopManagedBGM();
 
   isManualClose = true;
   if (sock) {
@@ -609,15 +613,9 @@ const backToTitle = () => {
   }
   
   // ページ遷移
-  try {
-    if (window.parent && window.parent !== window) {
-      window.parent.postMessage({ type: 'sb:navigate', page: 'title.html' }, '*');
-    } else {
-      window.location.replace('index.html#title.html');
-    }
-  } catch (e) {
-    window.location.href = 'index.html#title.html';
-  }
+  // シングルバトルのロビー(初期状態)に戻るためリロードする
+  // (ダブルバトルの backToLobby と同様の挙動)
+  window.location.reload();
 }
 
 const onOpponentDisconnected = (data) => {
@@ -627,6 +625,7 @@ const onOpponentDisconnected = (data) => {
   ui.setWaitMessage("あいてが切断しました", 0);
   ui.disableInput();
   ui.showBackToTitleBtn();
+  $('#back-to-title-btn').show(); // 強制表示
   ui.stopTimer();
 }
 
@@ -694,7 +693,7 @@ const onAccepted = async (data) => {
       ui.allyCurrentAbilityName.selector.text(currentAbilityName);
       ui.allyCurrentAbilityDesc.selector.text(battleState.allAbilities[data.state.ally_ability]?.description || '');
       ui.foeCurrentAbilityName.selector.text(foeAbilityName);
-      ui.foeCurrentAbilityDesc.selector.text(battleState.allAbilities[data.state.foe_ability]?.description || '');
+      ui.foeCurrentAbilityDesc.selector.text(battleState.allAbilities[battleState.foe.ability]?.description || '');
 
       // 特性変更メッセージを表示 (自分のみ)
       if (abilityChangeEvent.player === 'ally') {

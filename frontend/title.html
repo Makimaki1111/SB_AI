@@ -129,6 +129,13 @@
         document.body.addEventListener('click', userInteractionHandler, { once: true });
         document.body.addEventListener('touchstart', userInteractionHandler, { once: true });
 
+        // ページロード完了時にBGM再生を試みる
+        window.addEventListener('load', () => {
+            if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
+                window.parent.SB_AUDIO.startBGM('resource/horizon.mp3');
+            }
+        });
+
         // 画面サイズに合わせてスケーリングする関数
         function adjustWindowScale() {
             const phoneBox = document.querySelector('.phone-box');

@@ -81,7 +81,6 @@
   <!-- バトル画面 (初期非表示) -->
   <div id="battle-screen" style="display: none;">
     <div class="phone-box">
-      <a id="back-to-title-btn" class="back-to-title-link" style="display:none;">←もどる</a>
       <div class="top-image">
         <img src="img/ground.jpg" alt="背景画像" />
 
@@ -123,6 +122,9 @@
         <img id="foe-only-type-img" src="" />
         <div class="foe-word"></div>
       </div>
+
+      <!-- バトル終了後のボタン -->
+      <a id="back-to-title-btn" style="display:none;">ロビーに戻る</a>
 
       <div class="content">
         <!-- アクションエリア: タイマー、メッセージ、入力 -->
@@ -294,17 +296,19 @@
 
       function updateLobbyButtonDisplay() {
         const shortDesc = document.getElementById('lobby-ability-short-desc');
-        lobbyAbilityIcon.style.display = 'block';
+        const icon = document.getElementById('lobby-ability-icon');
+        if (icon) icon.style.display = 'block';
+        
         if (currentAbilityId && allAbilities[currentAbilityId]) {
           const info = allAbilities[currentAbilityId];
           lobbyAbilityName.textContent = info.name;
           if (shortDesc) shortDesc.textContent = info.description;
           const iconName = (typeof type_to_image !== 'undefined' && type_to_image[info.icon_type]) ? type_to_image[info.icon_type] : 'normal';
-          lobbyAbilityIcon.src = `img/${iconName}.gif`;
+          if (icon) icon.src = `img/${iconName}.gif`;
         } else {
           lobbyAbilityName.textContent = "ランダム";
           if (shortDesc) shortDesc.textContent = "ランダムに決定されます";
-          lobbyAbilityIcon.src = "img/unaware.gif";
+          if (icon) icon.src = "img/unaware.gif";
         }
       }
 
@@ -315,7 +319,8 @@
         const randomDiv = document.createElement('div');
         randomDiv.className = `skill-item ${currentAbilityId === "" ? "selected" : ""}`;
         randomDiv.innerHTML = `<img class="skill-icon" src="img/unaware.gif"><br><span>ランダム</span>`;
-        randomDiv.onclick = () => selectLobbyAbility("", "ランダム", "ランダムに決定されます");
+        // onclick属性ではなくaddEventListenerを使用し、確実にイベントを発火させる
+        randomDiv.addEventListener('click', () => selectLobbyAbility("", "ランダム", "ランダムに決定されます"));
         lobbyAbilitiesList.appendChild(randomDiv);
 
         for (const [id, info] of Object.entries(allAbilities)) {
@@ -323,7 +328,7 @@
           div.className = `skill-item ${currentAbilityId === id ? "selected" : ""}`;
           const iconName = (typeof type_to_image !== 'undefined' && type_to_image[info.icon_type]) ? type_to_image[info.icon_type] : 'normal';
           div.innerHTML = `<img class="skill-icon" src="img/${iconName}.gif"><br><span>${info.name}</span>`;
-          div.onclick = () => selectLobbyAbility(id, info.name, info.description);
+          div.addEventListener('click', () => selectLobbyAbility(id, info.name, info.description));
           lobbyAbilitiesList.appendChild(div);
         }
       }
