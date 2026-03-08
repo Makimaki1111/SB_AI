@@ -383,34 +383,26 @@ select {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 18px;
+  gap: 0;
   height: 100%;
-  /* タイトル分の余白を上部に確保 */
-  padding-top: 88px;
+  padding-top: 0;
 }
 
-/* タイトルを上部に固定表示 */
+/* タイトル文字を上部に固定配置 */
 #title-screen .phone-box .content p {
   position: absolute;
-  top: 8px;
+  top: 40px;
   left: 50%;
   transform: translateX(-50%);
   margin: 0;
   font-size: 0.95rem;
-}
-
-#title-screen .phone-box .content p {
-  position: absolute;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  margin: 0;
-  font-size: 1.0rem;
+  width: 100%;
+  text-align: center;
 }
 
 #title-screen .phone-box .content h1 {
   position: absolute;
-  top: 56px;
+  top: 70px;
   left: 50%;
   transform: translateX(-50%);
   margin: 0;
@@ -418,6 +410,8 @@ select {
   font-weight: 800;
   color: #222;
   white-space: nowrap;
+  text-align: center;
+  width: 100%;
 }
 
 /* 対人戦 / コンピュータ戦 ボタン共通 */
@@ -459,10 +453,29 @@ select {
   justify-content: center;
   width: 100%;
   gap: 16px;
-  margin-top: 50px;
+  margin-top: 20px;
   position: relative;
   z-index: 10;
   /* タイトル等と被らないよう配慮 */
+}
+
+/* タイトル画面専用のボタン配置（下部固定） */
+#title-screen .title-buttons-container {
+  position: absolute;
+  bottom: 60px;
+  margin-top: 0;
+}
+
+/* タイトル画面のGIF画像（中央配置） */
+.title-gif {
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 140px;
+  height: 140px;
+  object-fit: contain;
+  z-index: 5;
 }
 
 /* スマホ向けにさらに大きく見せる */
