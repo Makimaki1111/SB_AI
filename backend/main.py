@@ -433,6 +433,17 @@ async def websocket_endpoint(websocket: WebSocket):
                     # 部屋作成時は送信元を部屋に登録
                     manager.join_room(websocket, res["room_id"])
                     await websocket.send_text(json.dumps(res)) # 作成者には直接応答
+                    
+                    # CPU戦でCPU先行の場合、初手を実行する
+                    room_id = res["room_id"]
+                    if room_id in battle_rooms:
+                        battle = battle_rooms[room_id]
+                        if battle.is_cpu and not battle.player1_turn:
+                            await asyncio.sleep(1.5) # クライアントの準備待ち
+                            cpu_res = battle.execute_cpu_turn()
+                            if cpu_res:
+                                await manager.broadcast_battle_state(room_id, cpu_res)
+
                     # タイマー開始
                     await start_turn_timer(res["room_id"])
 
@@ -637,6 +648,21 @@ async def websocket_double_endpoint(websocket: WebSocket):
                     p_init_res["type"] = "init_double_battle"
                     await manager.safe_send_text(websocket, json.dumps(p_init_res))
 
+                    # ダブルバトル: CPU先行時の処理
+                    # CPUチーム(team2)のターンであれば実行
+                    current_actor = bi.get_current_actor()
+                    if current_actor in bi.team2:
+                        # 連続行動の可能性も考慮してループ
+                        while bi.is_cpu and bi.get_current_actor().owner_id.startswith("cpu_") and bi.team1_win is None:
+                            await asyncio.sleep(1.5)
+                            cpu_res = bi.execute_cpu_turn()
+                            if cpu_res:
+                                await manager.broadcast_battle_state(bi.room_id, cpu_res, is_double=True)
+                                if bi.team1_win is not None:
+                                    stop_double_turn_timer(bi.room_id)
+                                    del double_battle_rooms[bi.room_id]
+                                    break
+
                 # ルーム参加
                 elif req.get("type") == "join_double_room":
                     info = req.get("info", {})
@@ -723,7 +749,6 @@ async def websocket_double_endpoint(websocket: WebSocket):
                                 
                             # CPUの連続ターンの可能性も考慮してループ (p1bも死んでいて敵2連続行動の場合など)
                             while battle.is_cpu and battle.get_current_actor().owner_id.startswith("cpu_") and not battle.team1_win is not None:
-                                import asyncio
                                 await asyncio.sleep(1.0) # CPUの思考時間の演出
                                 cpu_res = battle.execute_cpu_turn()
                                 if cpu_res:
