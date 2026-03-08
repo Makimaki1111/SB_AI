@@ -48,14 +48,18 @@
         <h1>シングルバトル</h1>
 
         <!-- 特性変更ボタン -->
-        <div id="lobby-ability-btn" style="width: 85%; max-width: 380px; margin-top: 10px; margin-bottom: 15px; padding: 12px; background: #fff; border: 2px solid #eee; border-radius: 16px; cursor: pointer; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.08); box-sizing: border-box; transition: transform 0.1s;">
-          <img id="lobby-ability-icon" src="img/unaware.gif" style="width: 50px; height: 50px; object-fit: contain; flex-shrink: 0;">
-          <div style="flex: 1; text-align: left; overflow: hidden;">
-            <div style="font-size: 0.8rem; color: #888; font-weight: bold; margin-bottom: 2px;">とくせい</div>
-            <div id="lobby-ability-name" style="font-size: 1.1rem; font-weight: 800; color: #333; margin-bottom: 4px;">ランダム</div>
-            <div id="lobby-ability-short-desc" style="font-size: 0.85rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">ランダムに決定されます</div>
+        <div id="lobby-ability-btn" style="width: 90%; max-width: 400px; margin-top: auto; margin-bottom: auto; padding: 0; background: #fff; border: 2px solid #eee; border-radius: 20px; cursor: pointer; display: flex; box-shadow: 0 4px 12px rgba(0,0,0,0.1); box-sizing: border-box; overflow: hidden; min-height: 150px; transition: transform 0.1s;">
+          <!-- 左半分: アイコン -->
+          <div style="width: 40%; background: #f9f9f9; display: flex; justify-content: center; align-items: center;">
+            <img id="lobby-ability-icon" src="" style="width: 80px; height: 80px; object-fit: contain; display: none;">
           </div>
-          <div style="color: #ccc;">▼</div>
+          <!-- 右半分: 情報 -->
+          <div style="width: 60%; padding: 12px; display: flex; flex-direction: column; justify-content: center; text-align: left;">
+            <!-- 右上: 特性名 -->
+            <div id="lobby-ability-name" style="font-size: 1.2rem; font-weight: 800; color: #333; line-height: 1.2; border-bottom: 2px solid #eee; padding-bottom: 6px; margin-bottom: 6px;"></div>
+            <!-- 右下: 説明 -->
+            <div id="lobby-ability-short-desc" style="font-size: 0.8rem; color: #666; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;"></div>
+          </div>
         </div>
 
         <!-- シングルバトルメニュー -->
@@ -252,6 +256,7 @@
 
       function updateLobbyButtonDisplay() {
         const shortDesc = document.getElementById('lobby-ability-short-desc');
+        lobbyAbilityIcon.style.display = 'block';
         if (currentAbilityId && allAbilities[currentAbilityId]) {
           const info = allAbilities[currentAbilityId];
           lobbyAbilityName.textContent = info.name;

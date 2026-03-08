@@ -500,6 +500,7 @@ select {
 /* シングルバトルロビー画面のレイアウト調整（ダブルバトルに合わせる） */
 #title-screen.single-lobby-screen .phone-box .content {
   padding-top: 100px;
+  padding-bottom: 320px;
   gap: 15px;
   justify-content: flex-start;
   align-items: center;
