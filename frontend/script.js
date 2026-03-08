@@ -604,8 +604,6 @@ const onAllyLose = () => {
 const backToTitle = () => {
   // iOS対策: 画面遷移時にAudioContextを確実に有効化する
   unlockAudioContext();
-  // BGMを停止
-  stopManagedBGM();
 
   isManualClose = true;
   if (sock) {

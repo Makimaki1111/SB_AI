@@ -155,7 +155,9 @@ $(() => {
     if (typeof preloadSounds === "function") {
         preloadSounds(preloadPaths);
     }
-    if (!hasParentAudioManager() && typeof startBGM === "function") {
+    if (window.SB_AUDIO) {
+        window.SB_AUDIO.startBGM("resource/horizon.mp3");
+    } else if (typeof startBGM === "function") {
         startBGM("resource/horizon.mp3");
     }
 
@@ -773,9 +775,6 @@ function backToLobby() {
     if (sock) {
         sock.close();
         sock = null;
-    }
-    if (hasStartedDoubleBattle && typeof stopBGM === "function") {
-        stopBGM();
     }
     hasStartedDoubleBattle = false;
 

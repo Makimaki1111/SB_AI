@@ -136,6 +136,15 @@
             }
         });
 
+        // 画面がアクティブになった時（index.htmlからの通知）にもBGM再生を試みる
+        window.addEventListener("message", (event) => {
+            if (event.data && event.data.type === 'sb:activated') {
+                if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
+                    window.parent.SB_AUDIO.startBGM('resource/horizon.mp3');
+                }
+            }
+        });
+
         // 画面サイズに合わせてスケーリングする関数
         function adjustWindowScale() {
             const phoneBox = document.querySelector('.phone-box');
