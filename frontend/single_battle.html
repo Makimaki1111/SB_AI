@@ -58,7 +58,6 @@
 
         <!-- シングルバトルメニュー (初期非表示) -->
         <div id="single-menu-container" class="title-buttons-container" style="display: none;">
-          <a id="vs-player-btn">ランダムマッチ</a>
           <a id="vs-cpu-btn">コンピュータ戦</a>
           <hr style="width: 80%; border-top: 1px solid #ccc; margin: 0;">
           <a id="create-room-btn">ルーム作成</a>
@@ -243,12 +242,6 @@
   </div>
 
   <script>
-    // 本番環境（localhost以外）ではランダムマッチボタンを非表示にする
-    if (window.location.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-      const vsPlayerBtn = document.getElementById('vs-player-btn');
-      if (vsPlayerBtn) vsPlayerBtn.style.display = 'none';
-    }
-
     // メニュー遷移ロジック
     const topMenu = document.getElementById('top-menu-container');
     const singleMenu = document.getElementById('single-menu-container');
@@ -371,7 +364,6 @@
     }
 
     // バトル開始ボタンのイベントリスナー
-    document.getElementById('vs-player-btn').addEventListener('click', () => startBattle('player'));
     document.getElementById('vs-cpu-btn').addEventListener('click', () => startBattle('cpu'));
     document.getElementById('create-room-btn').addEventListener('click', () => startBattle('room', null));
 
