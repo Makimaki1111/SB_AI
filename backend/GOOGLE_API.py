@@ -1,14 +1,10 @@
-import os
 try:
     from SB_info import SB_info
 except ImportError:
     from backend.SB_info import SB_info
 
-# load_dotenv()
 class GOOGLE_AI:
     def __init__(self, sb_info: SB_info):
-        # genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-        # self.model = genai.GenerativeModel("models/gemini-2.5-flash")
         self.sb_info = sb_info
 
     def get_type(self,text:str) -> list:

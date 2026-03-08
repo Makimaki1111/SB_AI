@@ -41,9 +41,11 @@ class Player:
         self.ability = "" # 特性
         self.ability_change_count = ABILITY_CHANGE_COUNT_INIT # 特性変更の残り回数
         self.leech_turns = 0 # やどりぎの残りターン数
+        self.leech_target_id = None # やどりぎを植えられた相手のID
         self.food_count = 0 # 食べ物使用回数
         self.medical_count = 0 # 医療使用回数
         self.poison_turns = 0 # 毒の経過ターン数 (0なら毒ではない)
+        self.poisoner_id = None # 毒を付与したプレイヤーのID
 
     def take_damage(self, damage: int):
         self.hp = max(0, self.hp - damage)
@@ -217,6 +219,8 @@ class LeechSeedAbility(Ability):
 
     def apply_damage_replacement_effect(self, player: Player, battle: 'Battle_info'):
         player.leech_turns = LEECH_SEED_TURNS
+        if hasattr(battle, 'player2') and battle.player2:
+            player.leech_target_id = battle.player2.id
         battle.events.append({"type": "ability_trigger", "message": f"相手に種を植え付けた！", "player": "ally" if player.id == battle.player1.id else "foe"})
 
 class LongWordBonusAbility(Ability):
@@ -249,26 +253,39 @@ class RevolutionAbility(Ability):
         return "遊び" in types
 
     def apply_after_effect(self, player: Player, battle: 'Battle_info'):
-        # 自分と相手を取得
-        opponent = battle.player2 if player.id == battle.player1.id else battle.player1
-
-        # ランク反転
-        player.attack_rank *= -1
-        player.defense_rank *= -1
-        opponent.attack_rank *= -1
-        opponent.defense_rank *= -1
-
-        event = {
-            "type": "ability_trigger",
-            "message": f"全ての能力変化がひっくり返った！",
-            "player": "ally" if player.id == battle.player1.id else "foe",
-            "new_ranks": {
-                "ally_atk": battle.player1.attack_rank,
-                "ally_def": battle.player1.defense_rank,
-                "foe_atk": battle.player2.attack_rank,
-                "foe_def": battle.player2.defense_rank
+        if hasattr(battle, 'team1'):
+            # ダブルバトル: すべての生存キャラクターを対象にする
+            new_ranks = {}
+            for p in battle.team1 + battle.team2:
+                if not p.is_defeated:
+                    p.attack_rank *= -1
+                    p.defense_rank *= -1
+                    new_ranks[p.id] = {"attack_rank": p.attack_rank, "defense_rank": p.defense_rank}
+            
+            event = {
+                "type": "ability_trigger",
+                "message": "全ての能力変化がひっくり返った！",
+                "new_ranks": new_ranks
             }
-        }
+        else:
+            # シングルバトル
+            opponent = battle.player2 if player.id == battle.player1.id else battle.player1
+            player.attack_rank *= -1
+            player.defense_rank *= -1
+            opponent.attack_rank *= -1
+            opponent.defense_rank *= -1
+
+            event = {
+                "type": "ability_trigger",
+                "message": "全ての能力変化がひっくり返った！",
+                "player": "ally" if player.id == battle.player1.id else "foe",
+                "new_ranks": {
+                    "ally_atk": battle.player1.attack_rank,
+                    "ally_def": battle.player1.defense_rank,
+                    "foe_atk": battle.player2.attack_rank,
+                    "foe_def": battle.player2.defense_rank
+                }
+            }
         battle.events.append(event)
 
 class TyphoonIkkaAbility(Ability):
@@ -284,26 +301,39 @@ class TyphoonIkkaAbility(Ability):
         return "天気" in types
 
     def apply_after_effect(self, player: Player, battle: 'Battle_info'):
-        # 自分と相手を取得
-        opponent = battle.player2 if player.id == battle.player1.id else battle.player1
+        if hasattr(battle, 'team1'):
+            # ダブルバトル: すべての生存キャラクターを対象にする
+            new_ranks = {}
+            for p in battle.team1 + battle.team2:
+                if not p.is_defeated:
+                    p.attack_rank = 0
+                    p.defense_rank = 0
+                    new_ranks[p.id] = {"attack_rank": 0, "defense_rank": 0}
 
-        # ランクをリセット
-        player.attack_rank = 0
-        player.defense_rank = 0
-        opponent.attack_rank = 0
-        opponent.defense_rank = 0
-
-        event = {
-            "type": "ability_trigger",
-            "message": f"すべての能力変化が元に戻った！",
-            "player": "ally" if player.id == battle.player1.id else "foe",
-            "new_ranks": {
-                "ally_atk": battle.player1.attack_rank,
-                "ally_def": battle.player1.defense_rank,
-                "foe_atk": battle.player2.attack_rank,
-                "foe_def": battle.player2.defense_rank
+            event = {
+                "type": "ability_trigger",
+                "message": "すべての能力変化が元に戻った！",
+                "new_ranks": new_ranks
             }
-        }
+        else:
+            # シングルバトル
+            opponent = battle.player2 if player.id == battle.player1.id else battle.player1
+            player.attack_rank = 0
+            player.defense_rank = 0
+            opponent.attack_rank = 0
+            opponent.defense_rank = 0
+
+            event = {
+                "type": "ability_trigger",
+                "message": "すべての能力変化が元に戻った！",
+                "player": "ally" if player.id == battle.player1.id else "foe",
+                "new_ranks": {
+                    "ally_atk": 0,
+                    "ally_def": 0,
+                    "foe_atk": 0,
+                    "foe_def": 0
+                }
+            }
         battle.events.append(event)
 
 class IkasuiAbility(Ability):
@@ -405,6 +435,7 @@ class DokubariAbility(Ability):
         opponent = battle.player2 if player.id == battle.player1.id else battle.player1
         if opponent.poison_turns == 0:
             opponent.poison_turns = 1
+            opponent.poisoner_id = player.id
             battle.events.append({
                 "type": "ability_trigger",
                 "message": f"毒を受けた！",
@@ -562,7 +593,7 @@ class Battle_info:
         self.sb_info = sb_info
 
         p1_name = p1_profile.get("name") if p1_profile and p1_profile.get("name") else "じぶん"
-        p2_name = p2_profile.get("name") if p2_profile and p2_profile.get("name") else "あいて"
+        p2_name = p2_profile.get("name") if p2_profile and p2_profile.get("name") else "プレイヤー2"
 
         self.player1 = Player(player1_id, p1_name)
         self.player2 = Player(player2_id, p2_name)
@@ -582,7 +613,7 @@ class Battle_info:
             self.player2.ability = random.choice(self.ability_ids)
 
         self.player1_win = None
-        self.player1_turn = True
+        self.player1_turn = random.random() < 0.5
         self.START_CHARACTER = "あいうえおかきくけこさしすせそたちつてとなにねのはひふへほまみむめやゆよらりるれろわ"
         self.character = random.choice(self.START_CHARACTER)
         self.events = []
@@ -615,6 +646,8 @@ class Battle_info:
         """
         if(self.player1_win != None):
             return {"type" : "error", "message" : "戦闘はすでに終了しています"}
+        elif player_id != self.player1.id and player_id != self.player2.id:
+            return {"type" : "error", "message" : "このルームのプレイヤーではありません"}
         elif(self.player1_turn ^ (player_id == self.player1.id)):
             return {"type" : "error", "message" : "自分のターンではありません"}
         elif(not word):
@@ -687,6 +720,7 @@ class Battle_info:
                     # 毒解除
                     if self.player1.poison_turns > 0:
                         self.player1.poison_turns = 0
+                        self.player1.poisoner_id = None
                         self.events.append({"type" : "cure_poison", "message" : "毒が治った！", "player": "ally"})
 
                     event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : MEDICAL_RECOVERY_AMOUNT, "foe_cure" : 0}
@@ -777,6 +811,7 @@ class Battle_info:
                     # 毒解除
                     if self.player2.poison_turns > 0:
                         self.player2.poison_turns = 0
+                        self.player2.poisoner_id = None
                         self.events.append({"type" : "cure_poison", "message" : "毒が治った！", "player": "foe"})
 
                     event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : 0, "foe_cure" : MEDICAL_RECOVERY_AMOUNT}
@@ -862,43 +897,53 @@ class Battle_info:
         if self.player1_win is not None:
             return
 
-        # 毒ダメージ処理
-        if defender.poison_turns > 0:
-            damage = int(self.MAX_HP * (defender.poison_turns / 16))
-            defender.take_damage(damage)
-            self.events.append({
-                "type": "damage",
-                "message": "毒のダメージを受けた！",
-                "ally_damage": damage if defender.id == self.player1.id else 0,
-                "foe_damage": 0 if defender.id == self.player1.id else damage
-            })
-            defender.poison_turns += 1
-            
-            if defender.is_defeated:
-                self.player1_win = (defender.id != self.player1.id)
-                return
+        # 毒ダメージ処理 (毒を付与したキャラクターの行動終了時に発動)
+        for p in [self.player1, self.player2]:
+            if not p.is_defeated and p.poison_turns > 0 and getattr(p, 'poisoner_id', None) == attacker.id:
+                damage = int(self.MAX_HP * (p.poison_turns / 16))
+                p.take_damage(damage)
+                self.events.append({
+                    "type": "damage",
+                    "message": "毒のダメージを受けた！",
+                    "ally_damage": damage if p.id == self.player1.id else 0,
+                    "foe_damage": 0 if p.id == self.player1.id else damage
+                })
+                p.poison_turns += 1
+                
+                if p.is_defeated:
+                    self.player1_win = (p.id != self.player1.id)
 
         # やどりぎ処理
         if attacker.leech_turns > 0:
-            drain_amount = LEECH_SEED_DRAIN_AMOUNT
-            actual_drain = min(defender.hp, drain_amount)
-            
-            defender.take_damage(actual_drain)
-            attacker.heal(actual_drain)
-            attacker.leech_turns -= 1
+            actual_defender = defender
+            if hasattr(attacker, 'leech_target_id') and attacker.leech_target_id:
+                if attacker.leech_target_id == self.player1.id:
+                    actual_defender = self.player1
+                elif attacker.leech_target_id == self.player2.id:
+                    actual_defender = self.player2
 
-            # 吸収イベント（ダメージと回復を同時に行う）
-            self.events.append({
-                "type": "drain",
-                "message": "やどりぎで体力を奪った！",
-                "ally_damage": 0 if attacker.id == self.player1.id else actual_drain,
-                "foe_damage": actual_drain if attacker.id == self.player1.id else 0,
-                "ally_cure": actual_drain if attacker.id == self.player1.id else 0,
-                "foe_cure": 0 if attacker.id == self.player1.id else actual_drain
-            })
+            if not actual_defender.is_defeated:
+                drain_amount = LEECH_SEED_DRAIN_AMOUNT
+                actual_drain = min(actual_defender.hp, drain_amount)
+                
+                actual_defender.take_damage(actual_drain)
+                attacker.heal(actual_drain)
+                attacker.leech_turns -= 1
 
-            if defender.is_defeated:
-                self.player1_win = (attacker.id == self.player1.id)
+                # 吸収イベント（ダメージと回復を同時に行う）
+                self.events.append({
+                    "type": "drain",
+                    "message": "やどりぎで体力を奪った！",
+                    "ally_damage": 0 if attacker.id == self.player1.id else actual_drain,
+                    "foe_damage": actual_drain if attacker.id == self.player1.id else 0,
+                    "ally_cure": actual_drain if attacker.id == self.player1.id else 0,
+                    "foe_cure": 0 if attacker.id == self.player1.id else actual_drain
+                })
+
+                if actual_defender.is_defeated:
+                    self.player1_win = (attacker.id == self.player1.id)
+            else:
+                attacker.leech_turns = 0
 
     def include_check(self,_input:str):
         ret = {
@@ -1150,7 +1195,12 @@ class Battle_info:
 
     def change_ability(self, player_id: str, new_ability_id: str):
         """プレイヤーの特性を変更する"""
-        player = self.player1 if player_id == self.player1.id else self.player2
+        if player_id == self.player1.id:
+            player = self.player1
+        elif player_id == self.player2.id:
+            player = self.player2
+        else:
+            return {"type": "error", "message": "このルームのプレイヤーではありません"}
         
         if player.ability_change_count <= 0:
             return {"type": "error", "message": "特性はもう変更できません"}

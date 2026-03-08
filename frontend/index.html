@@ -1,331 +1,104 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>しりとりの対戦バトル</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700;800&display=swap" rel="stylesheet">
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="type_to_image.js"></script>
-  <script src="UIObject.js"></script>
-  <script src="UI.js"></script>
-  <script src="script.js"></script>
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: none;
+      background: #fff;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    iframe.active {
+      display: block;
+    }
+  </style>
 </head>
 <body>
-  <!-- タイトル画面 -->
-  <div id="title-screen" style="display: block;">
-    <div class="phone-box">
-      <div class="content">
-        <p>機能を色々追加したい</p>
-        <h1>しりとりの対戦バトル (β版)</h1>
-        <!-- ボタンをbattle.htmlへのリンクに変更 -->
-        <a id="vs-player-btn">ランダムマッチ</a>
-        <a id="vs-cpu-btn">コンピュータ戦</a>
-        <hr style="width: 80%; border-top: 1px solid #ccc; margin: 1rem 0;">
-        <a id="create-room-btn">ルーム作成</a>
-        <div style="display: flex; gap: 8px; align-items: center; width: 72%; max-width: 340px; margin-top: 8px;">
-          <input type="text" id="room-id-input" placeholder="ルームID" style="flex-grow: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem;">
-          <button id="join-room-btn" style="padding: 10px 16px; border-radius: 8px; border: none; background-color: #4CAF50; color: white; font-size: 1rem; cursor: pointer;">参加する</button>
-        </div>
-        <button id="settings-btn" style="width: 72%; max-width: 340px; padding: 14px 22px; font-size: 1.4rem; font-weight: 700; border-radius: 12px; border: none; background: #ddd; color: #222; box-shadow: 0 6px 12px rgba(0,0,0,0.12); cursor: pointer;">設定</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- バトル画面 (初期非表示) -->
-  <div id="battle-screen" style="display: none;">
-    <div class="phone-box">
-      <div class="top-image">
-        <img src="img/ground.jpg" alt="背景画像" />
-
-        <!-- 白い楕円（左下） -->
-        <div class="ellipse ellipse-left"></div>
-
-        <!-- 右下ふきだし -->
-        <div class="balloon right">
-          <div class="ally-name"></div>
-          <div class="bar"><div class="ally-hp-bar"></div></div>
-          <div class="hp"></div>
-        </div>
-
-        <!-- エフェクト用コンテナ (キャラの背後に表示するため z-index を調整) -->
-        <div id="ally-effect-container" class="effect-container"></div>
-        <div id="foe-effect-container" class="effect-container"></div>
-
-        <img id="ally-type1-img" src=""/>
-        <img id="ally-type2-img" src=""/>
-        <img id="ally-only-type-img" src=""/>
-        <div class="ally-word"></div>
-
-        <!-- 白い楕円（右上） -->
-        <div class="ellipse ellipse-right"></div>
-
-        <!-- 左上ふきだし -->
-        <div class="balloon left">
-          <div class="foe-name"></div>
-          <div class="bar"><div class="foe-hp-bar"></div></div>
-          <div class="hp"></div>
-        </div>
-
-        <img id="foe-type1-img" src=""/>
-        <img id="foe-type2-img" src=""/>
-        <img id="foe-only-type-img" src=""/>
-        <div class="foe-word"></div>
-      </div>
-
-      <div class="content">
-        <!-- アクションエリア: タイマー、メッセージ、入力 -->
-        <div class="action-area">
-          <div class="input-wrapper">
-            <div id="timer-container"><div id="timer-bar"></div></div>
-            <div id="text">
-              <input type="text" id="input" autocomplete="off" placeholder="「」からはじまることば" />
-              <button type="submit" id="submit">▶</button>
-              <img id="include-img" src="" alt="動的画像" />
-            </div>
-            <div id="message"></div>
-            <div id="wait-message"></div>
-          </div>
-          <!-- アクションボタンエリア -->
-          <div id="actions-wrapper">
-            <div id="situation-button" class="button">
-              <p>じょうきょう</p>
-            </div>
-            <div id="ability-info-container">
-              <p>とくせい</p>
-            </div>
-          </div>
-        </div>
-        <a id="back-to-title-btn" style="display:none;">タイトルに戻る</a>
-        <!-- フッターエリア: ボタン類 -->
-        <div class="footer-area">
-          <button id="cancel-battle-btn">にげる</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 設定モーダル -->
-  <div id="settings-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center;">
-    <div style="background: white; width: 90%; max-width: 420px; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 15px; max-height: 90vh;">
-      <h2 style="margin: 0; text-align: center;">設定</h2>
-      
-      <div>
-        <label for="username-input" style="display: block; margin-bottom: 5px; font-weight: bold;">名前</label>
-        <input type="text" id="username-input" placeholder="名前を入力(8文字以内)" maxlength="8" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; box-sizing: border-box;">
-      </div>
-
-      <!-- 音量調整スライダー -->
-      <div>
-        <label style="display: block; margin-bottom: 5px; font-weight: bold;">BGM音量</label>
-        <input type="range" id="bgm-slider" min="0" max="1" step="0.05" value="0.3" style="width: 100%;">
-      </div>
-      <div>
-        <label style="display: block; margin-bottom: 5px; font-weight: bold;">SE音量</label>
-        <input type="range" id="se-slider" min="0" max="1" step="0.05" value="0.5" style="width: 100%;">
-      </div>
-
-      <div style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
-        <label style="display: block; margin-bottom: 5px; font-weight: bold;">初期特性</label>
-        <div id="current-ability-display" style="margin-bottom: 10px; padding: 10px; background: #f0f0f0; border-radius: 8px; flex-shrink: 0;">
-            <div style="font-weight: bold;" id="selected-ability-name">ランダム</div>
-            <div style="font-size: 0.9rem; color: #666;" id="selected-ability-desc">ランダムに決定されます</div>
-        </div>
-        <div id="abilities-list" style="display: flex; flex-wrap: wrap; gap: 8px; overflow-y: auto; padding: 5px; flex: 1;">
-            <!-- 特性リストがここに生成されます -->
-            <div class="skill-item selected" data-id="">
-                <img class="skill-icon" src="img/normal.gif"><br>
-                <span>ランダム</span>
-            </div>
-        </div>
-      </div>
-
-      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; flex-shrink: 0;">
-        <button id="close-settings-btn" style="padding: 10px 20px; border-radius: 8px; border: none; background: #4CAF50; color: white; cursor: pointer;">閉じる</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 特性選択モーダル -->
-  <div id="ability-modal" style="display: none;">
-    <!-- 特性変更時などに表示するモーダルメッセージ -->
-    <div id="modal-message"></div>
-    <div id="ally-tokusei">
-        <span>自分</span>
-        <div class="tokusei-name" id="ally-current-ability-name">---</div>
-        <div class="tokusei-desc" id="ally-current-ability-desc"></div>
-    </div>
-    <div id="foe-tokusei">
-        <span>相手</span>
-        <div class="tokusei-name" id="foe-current-ability-name">---</div>
-        <div class="tokusei-desc" id="foe-current-ability-desc"></div>
-    </div>
-    <div id="middle">
-        <span class="tapto">タップしてとくせいを変える<span id="counter">(あと<span id="remain">0</span>回)</span></span>
-        <div id="skills">
-            <!-- ここにJavaScriptで選択可能な特性のリストが生成されます -->
-        </div>
-    </div>
-    <div class="close-modal">とじる</div>
-  </div>
-  <!-- 状況確認モーダル -->
-  <div id="situation-modal" style="display: none;">
-    <div id="s-foe-info">
-        <h3>あいて<span id="foe-rank"></span></h3>
-        <p>こうげき<br><span id="foe-A">1.0倍</span></p>
-        <p>ぼうぎょ<br><span id="foe-B">1.0倍</span></p>
-    </div>
-    <div id="s-ally-info">
-        <h3>じぶん<span id="ally-rank"></span></h3>
-        <p>こうげき<br><span id="ally-A">1.0倍</span></p>
-        <p>ぼうぎょ<br><span id="ally-B">1.0倍</span></p>
-    </div>
-
-    <div id="last-foe-word"></div>
-    <div class="types"></div>
-    <div class="will-damaged"></div>
-    <div class="close-modal">とじる</div>
-  </div>
-
+  <script src="shared_audio.js"></script>
+  <iframe id="title-frame" src="title.html" allow="autoplay" title="Title"></iframe>
+  <iframe id="single-frame" src="single_battle.html" allow="autoplay" title="Single Battle"></iframe>
+  <iframe id="double-frame" src="double_battle.html" allow="autoplay" title="Double Battle"></iframe>
   <script>
-    // 本番環境（localhost以外）ではランダムマッチボタンを非表示にする
-    if (window.location.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        const vsPlayerBtn = document.getElementById('vs-player-btn');
-        if (vsPlayerBtn) vsPlayerBtn.style.display = 'none';
-    }
+    (function bindFrameRoute() {
+      // リロード時にハッシュを削除してタイトルから開始させる
+      if (window.location.hash) {
+        history.replaceState(null, null, window.location.pathname);
+      }
 
-    // 設定モーダル制御
-    const settingsBtn = document.getElementById('settings-btn');
-    const settingsModal = document.getElementById('settings-modal');
-    const closeSettingsBtn = document.getElementById('close-settings-btn');
-    const usernameInput = document.getElementById('username-input');
-    const abilitiesList = document.getElementById('abilities-list');
-    const selectedAbilityName = document.getElementById('selected-ability-name');
-    const selectedAbilityDesc = document.getElementById('selected-ability-desc');
-    const bgmSlider = document.getElementById('bgm-slider');
-    const seSlider = document.getElementById('se-slider');
+      const frames = {
+        "title.html": document.getElementById("title-frame"),
+        "single_battle.html": document.getElementById("single-frame"),
+        "double_battle.html": document.getElementById("double-frame")
+      };
+      const allowedPages = new Set(["title.html", "single_battle.html", "double_battle.html"]);
 
-    let allAbilities = {};
-    let currentSelectedAbilityId = "";
+      const resolvePage = () => {
+        const raw = (window.location.hash || "").replace(/^#/, "");
+        const decoded = raw ? decodeURIComponent(raw) : "";
+        return allowedPages.has(decoded) ? decoded : "title.html";
+      };
 
-    // 初期ロード
-    const savedName = localStorage.getItem("sb_username");
-    const savedAbility = localStorage.getItem("sb_ability");
-    if (savedName) usernameInput.value = savedName;
-    if (savedAbility) currentSelectedAbilityId = savedAbility;
-
-    // ページ読み込み時に特性一覧を取得
-    let baseUrl = '';
-    const hostname = window.location.hostname;
-    if (!hostname || window.location.protocol === 'file:' || hostname === 'localhost' || hostname === '127.0.0.1') {
-        // 開発環境: ポートが8000でない場合（Live Serverなど）はバックエンド(8000)を指定
-        if (window.location.port !== '8000') {
-            baseUrl = 'http://localhost:8000';
-        }
-    }
-
-    fetch(`${baseUrl}/abilities`)
-        .then(res => res.json())
-        .then(data => {
-            allAbilities = data;
-            renderAbilities();
-        })
-        .catch(e => console.error("特性データの取得に失敗しました", e));
-
-    settingsBtn.addEventListener('click', () => {
-        settingsModal.style.display = 'flex';
-        renderAbilities();
-    });
-
-    closeSettingsBtn.addEventListener('click', () => {
-        const name = usernameInput.value.trim();
-        if (name) localStorage.setItem("sb_username", name);
-        localStorage.setItem("sb_ability", currentSelectedAbilityId);
-        settingsModal.style.display = 'none';
-    });
-
-    // 音量スライダーのイベント
-    bgmSlider.addEventListener('input', (e) => {
-        if (window.setBGMVolume) window.setBGMVolume(parseFloat(e.target.value));
-    });
-    seSlider.addEventListener('input', (e) => {
-        if (window.setSEVolume) window.setSEVolume(parseFloat(e.target.value));
-    });
-
-    function renderAbilities() {
-        abilitiesList.innerHTML = '';
+      const applyRoute = () => {
+        const page = resolvePage();
         
-        // ランダム選択肢
-        const randomDiv = document.createElement('div');
-        randomDiv.className = `skill-item ${currentSelectedAbilityId === "" ? "selected" : ""}`;
+        // すべてのフレームを非表示
+        Object.values(frames).forEach(f => f.classList.remove('active'));
         
-        const randomIconSrc = `img/unaware.gif`;
-        randomDiv.innerHTML = `<img class="skill-icon" src="${randomIconSrc}"><br><span>ランダム</span>`;
-        
-        randomDiv.onclick = () => selectAbility("", "ランダム", "ランダムに決定されます");
-        abilitiesList.appendChild(randomDiv);
-
-        for (const [id, info] of Object.entries(allAbilities)) {
-            const div = document.createElement('div');
-            div.className = `skill-item ${currentSelectedAbilityId === id ? "selected" : ""}`;
-            
-            const iconName = (typeof type_to_image !== 'undefined' && type_to_image[info.icon_type]) ? type_to_image[info.icon_type] : 'normal';
-            const iconSrc = `img/${iconName}.gif`;
-            
-            // battle.htmlのモーダルと同じ構造にする
-            const img = `<img class="skill-icon" src="${iconSrc}">`;
-            const span = `<span>${info.name}</span>`;
-            
-            div.innerHTML = `${img}<br>${span}`;
-            div.onclick = () => selectAbility(id, info.name, info.description);
-            abilitiesList.appendChild(div);
+        // 対象のフレームを表示
+        if (frames[page]) {
+          frames[page].classList.add('active');
+          // アクティブになったことを通知
+          frames[page].contentWindow.postMessage({ type: 'sb:activated' }, '*');
         }
-        
-        // 現在の選択状態を反映
-        if (currentSelectedAbilityId && allAbilities[currentSelectedAbilityId]) {
-            selectAbility(currentSelectedAbilityId, allAbilities[currentSelectedAbilityId].name, allAbilities[currentSelectedAbilityId].description, false);
-        } else {
-            selectAbility("", "ランダム", "ランダムに決定されます", false);
+      };
+
+      window.addEventListener("message", (event) => {
+        const data = event && event.data;
+        if (!data || data.type !== "sb:navigate") return;
+        const page = data.page;
+        if (!allowedPages.has(page)) return;
+        if (window.location.hash !== `#${page}`) {
+          window.location.hash = page;
         }
-    }
+      });
 
-    function selectAbility(id, name, desc, reRender = true) {
-        currentSelectedAbilityId = id;
-        selectedAbilityName.textContent = name;
-        selectedAbilityDesc.textContent = desc;
-        if (reRender) renderAbilities();
-    }
+      window.addEventListener("hashchange", applyRoute);
+      applyRoute();
+    })();
 
-    // バトル開始ボタンのイベントリスナー
-    document.getElementById('vs-player-btn').addEventListener('click', () => startBattle('player'));
-    document.getElementById('vs-cpu-btn').addEventListener('click', () => startBattle('cpu'));
-    document.getElementById('create-room-btn').addEventListener('click', () => startBattle('room', null));
+    (function bindAudioUnlock() {
+      let unlocked = false;
 
-    document.getElementById('join-room-btn').addEventListener('click', () => {
-        const roomId = document.getElementById('room-id-input').value;
-        if (roomId && roomId.trim() !== '') {
-            startBattle('room', roomId.trim());
-        } else {
-            alert('ルームIDを入力してください。');
+      const handler = () => {
+        if (unlocked) return;
+        unlocked = true;
+        if (window.SB_AUDIO) {
+          window.SB_AUDIO.unlockAudioContext();
+          window.SB_AUDIO.startBGM("resource/horizon.mp3");
         }
-    });
+      };
 
-    // ユーザー操作時に再生を試みる（ブラウザの自動再生制限対策）
-    let isAudioUnlocked = false;
-    const userInteractionHandler = () => {
-        if (isAudioUnlocked) return;
-        isAudioUnlocked = true;
-
-        // iOS対策: startBGM(非同期)より先に、同期的にAudioContextをアンロックする
-        if (typeof unlockAudioContext === 'function') unlockAudioContext();
-        if (typeof startBGM === 'function') startBGM('resource/horizon.mp3');
-    };
-
-    document.body.addEventListener('click', userInteractionHandler, { once: true });
-    document.body.addEventListener('touchstart', userInteractionHandler, { once: true });
+      document.addEventListener("click", handler, { once: true });
+      document.addEventListener("touchstart", handler, { once: true });
+      document.addEventListener("keydown", handler, { once: true });
+    })();
   </script>
 </body>
 </html>

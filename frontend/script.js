@@ -1,6 +1,6 @@
 const TYPE_SOUND_MAP = {
   "ノーマル": "resource/normal.mp3",
-  "動物":  "resource/animal.mp3",
+  "動物": "resource/animal.mp3",
   "植物": "resource/plant.mp3",
   "地名": "resource/place.mp3",
   "感情": "resource/emote.mp3",
@@ -47,8 +47,8 @@ const DAMAGE_MSG_MAP = {
 // プレイヤーIDをランダム生成して保存（対人戦で識別するため）
 let player1_id = localStorage.getItem("sb_player_id");
 if (!player1_id) {
-    player1_id = "player_" + Math.random().toString(36).substring(2, 9);
-    localStorage.setItem("sb_player_id", player1_id);
+  player1_id = "player_" + Math.random().toString(36).substring(2, 9);
+  localStorage.setItem("sb_player_id", player1_id);
 }
 const cpu_id = "cpu";
 const TURN_TIME_LIMIT = 20; // 秒（バックエンドの設定と合わせる）
@@ -85,71 +85,71 @@ let SE_VOLUME = 0.5;
 
 // Web Audio APIの初期化
 function initAudioContext() {
-    if (!audioCtx) {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        audioCtx = new AudioContext();
-        
-        // BGM用ゲインノード（音量調整）
-        bgmGainNode = audioCtx.createGain();
-        bgmGainNode.gain.value = BGM_VOLUME;
-        bgmGainNode.connect(audioCtx.destination);
+  if (!audioCtx) {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AudioContext();
 
-        // SE用ゲインノード（音量調整）
-        seGainNode = audioCtx.createGain();
-        seGainNode.gain.value = SE_VOLUME;
-        seGainNode.connect(audioCtx.destination);
-    }
+    // BGM用ゲインノード（音量調整）
+    bgmGainNode = audioCtx.createGain();
+    bgmGainNode.gain.value = BGM_VOLUME;
+    bgmGainNode.connect(audioCtx.destination);
+
+    // SE用ゲインノード（音量調整）
+    seGainNode = audioCtx.createGain();
+    seGainNode.gain.value = SE_VOLUME;
+    seGainNode.connect(audioCtx.destination);
+  }
 }
 
-window.setBGMVolume = function(val) {
-    BGM_VOLUME = val;
-    if (bgmGainNode && audioCtx) {
-        // ノイズ防止のため少し時間をかけて滑らかに変更
-        bgmGainNode.gain.setTargetAtTime(val, audioCtx.currentTime, 0.1);
-    }
-    // HTML5 Audio (フォールバック時)
-    if (bgmAudioElement) {
-        bgmAudioElement.volume = val;
-    }
+window.setBGMVolume = function (val) {
+  BGM_VOLUME = val;
+  if (bgmGainNode && audioCtx) {
+    // ノイズ防止のため少し時間をかけて滑らかに変更
+    bgmGainNode.gain.setTargetAtTime(val, audioCtx.currentTime, 0.1);
+  }
+  // HTML5 Audio (フォールバック時)
+  if (bgmAudioElement) {
+    bgmAudioElement.volume = val;
+  }
 };
 
-window.setSEVolume = function(val) {
-    SE_VOLUME = val;
-    if (seGainNode && audioCtx) {
-        seGainNode.gain.setTargetAtTime(val, audioCtx.currentTime, 0.1);
-    }
+window.setSEVolume = function (val) {
+  SE_VOLUME = val;
+  if (seGainNode && audioCtx) {
+    seGainNode.gain.setTargetAtTime(val, audioCtx.currentTime, 0.1);
+  }
 };
 
 // 音声ファイルのロードとデコード
 async function loadAudio(path) {
-    if (audioCache[path]) return audioCache[path];
+  if (audioCache[path]) return audioCache[path];
 
-    // file:// プロトコルでは fetch が CORS エラーになるため、最初から HTML5 Audio を使用する
-    if (window.location.protocol === 'file:') {
-        return new Promise((resolve) => {
-            const audio = new Audio(path);
-            audio.preload = 'auto';
-            audioCache[path] = audio;
-            resolve(audio);
-        });
-    }
+  // file:// プロトコルでは fetch が CORS エラーになるため、最初から HTML5 Audio を使用する
+  if (window.location.protocol === 'file:') {
+    return new Promise((resolve) => {
+      const audio = new Audio(path);
+      audio.preload = 'auto';
+      audioCache[path] = audio;
+      resolve(audio);
+    });
+  }
 
-    try {
-        const response = await fetch(path);
-        const arrayBuffer = await response.arrayBuffer();
-        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-        audioCache[path] = audioBuffer;
-        return audioBuffer;
-    } catch (e) {
-        console.warn(`Web Audio API load failed, falling back to HTML5 Audio: ${path}`, e);
-        // フォールバック: HTML5 Audio オブジェクトを生成して返す
-        // (file:// プロトコルなどで fetch が CORS エラーになる場合の対策)
-        return new Promise((resolve) => {
-            const audio = new Audio(path);
-            audioCache[path] = audio;
-            resolve(audio);
-        });
-    }
+  try {
+    const response = await fetch(path);
+    const arrayBuffer = await response.arrayBuffer();
+    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    audioCache[path] = audioBuffer;
+    return audioBuffer;
+  } catch (e) {
+    console.warn(`Web Audio API load failed, falling back to HTML5 Audio: ${path}`, e);
+    // フォールバック: HTML5 Audio オブジェクトを生成して返す
+    // (file:// プロトコルなどで fetch が CORS エラーになる場合の対策)
+    return new Promise((resolve) => {
+      const audio = new Audio(path);
+      audioCache[path] = audio;
+      resolve(audio);
+    });
+  }
 }
 
 async function preloadSounds() {
@@ -159,7 +159,7 @@ async function preloadSounds() {
   Object.values(TYPE_SOUND_MAP).forEach(p => paths.add(p));
   Object.values(EVENT_SOUND_MAP).forEach(p => paths.add(p));
   Object.values(DAMAGE_MSG_MAP).forEach(p => paths.add(p));
-  
+
   // 個別に指定されているBGMやSE
   paths.add("resource/horizon.mp3");
   paths.add("resource/overflow.mp3");
@@ -171,7 +171,7 @@ async function preloadSounds() {
   await Promise.all(promises);
 }
 
-async function playSound(path){
+async function playSound(path) {
   try {
     if (!path) return false;
 
@@ -179,43 +179,43 @@ async function playSound(path){
     // これにより、クリックイベントの重複発火による音量増大（二重再生）を防ぐ
     const now = Date.now();
     if (lastPlayTime[path] && now - lastPlayTime[path] < 100) {
-        return false;
+      return false;
     }
     lastPlayTime[path] = now;
 
     initAudioContext();
     if (audioCtx.state === 'suspended') await audioCtx.resume();
-    
+
     const buffer = await loadAudio(path);
     if (!buffer) return false;
 
     if (buffer instanceof AudioBuffer) {
-        // Web Audio API
-        const source = audioCtx.createBufferSource();
-        source.buffer = buffer;
+      // Web Audio API
+      const source = audioCtx.createBufferSource();
+      source.buffer = buffer;
 
-        // 個別音量調整: pera.mp3 が大きすぎるため、このファイルだけ音量を下げる
-        let volumeScale = 1.0;
-        if (path.includes("pera.mp3")) {
-            volumeScale = 0.3; // 30%に調整
-        }
+      // 個別音量調整: pera.mp3 が大きすぎるため、このファイルだけ音量を下げる
+      let volumeScale = 1.0;
+      if (path.includes("pera.mp3")) {
+        volumeScale = 0.3; // 30%に調整
+      }
 
-        // ローカルのゲインノードを作成して音量を調整
-        const localGain = audioCtx.createGain();
-        localGain.gain.value = volumeScale;
+      // ローカルのゲインノードを作成して音量を調整
+      const localGain = audioCtx.createGain();
+      localGain.gain.value = volumeScale;
 
-        // 接続: source -> localGain -> seGainNode (全体のSE音量) -> destination
-        source.connect(localGain);
-        localGain.connect(seGainNode);
-        source.start(0);
+      // 接続: source -> localGain -> seGainNode (全体のSE音量) -> destination
+      source.connect(localGain);
+      localGain.connect(seGainNode);
+      source.start(0);
     } else if (buffer instanceof HTMLAudioElement) {
-        // HTML5 Audio (フォールバック)
-        // SEは重ねて再生したいので cloneNode する
-        const audio = buffer.cloneNode();
-        let volumeScale = 1.0;
-        if (path.includes("pera.mp3")) { volumeScale = 0.3; }
-        audio.volume = SE_VOLUME * volumeScale;
-        audio.play().catch(e => console.warn('HTML5 Audio play failed', e));
+      // HTML5 Audio (フォールバック)
+      // SEは重ねて再生したいので cloneNode する
+      const audio = buffer.cloneNode();
+      let volumeScale = 1.0;
+      if (path.includes("pera.mp3")) { volumeScale = 0.3; }
+      audio.volume = SE_VOLUME * volumeScale;
+      audio.play().catch(e => console.warn('HTML5 Audio play failed', e));
     }
 
     return true;
@@ -225,7 +225,7 @@ async function playSound(path){
   }
 }
 
-function playEventSound(type, message){
+function playEventSound(type, message) {
   let path = EVENT_SOUND_MAP[type];
   if (DAMAGE_MSG_MAP[message]) {
     path = DAMAGE_MSG_MAP[message];
@@ -235,100 +235,127 @@ function playEventSound(type, message){
   if (path) playSound(path);
 }
 
-function playIconSound(type){
+function playIconSound(type) {
   // console.log(type);
   let path = TYPE_SOUND_MAP[type];
-  if(path !== undefined) playSound(path);
+  if (path !== undefined) playSound(path);
 }
 
 // --- BGM 制御 (Web Audio API) ---
 
-async function startBGM(bgmPath){
-  try{
+async function startBGM(bgmPath) {
+  try {
     initAudioContext();
     // iOS対策: await audioCtx.resume() をすると、待機中にユーザー操作の権限が切れ、
     // その後の再生がブロックされることがあるため、awaitせずにリクエストだけ投げておく。
     if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
+      audioCtx.resume();
     }
 
     // 同じ曲が既に再生中なら何もしない
-    if(bgmSource && currentBgmPath === bgmPath) return true;
+    if (bgmSource && currentBgmPath === bgmPath) return true;
     // フォールバック時のチェック
-    if(bgmAudioElement && currentBgmPath === bgmPath && !bgmAudioElement.paused) {
-        return true;
+    if (bgmAudioElement && currentBgmPath === bgmPath && !bgmAudioElement.paused) {
+      return true;
     }
 
     const buffer = await loadAudio(bgmPath);
     if (!buffer) return false;
-    
+
     // 再生準備の前に、既存のBGMを確実に停止する
     stopBGM();
 
     if (buffer instanceof AudioBuffer) {
-        // Web Audio API
-        bgmSource = audioCtx.createBufferSource();
-        bgmSource.buffer = buffer;
-        bgmSource.loop = true;
-        bgmSource.connect(bgmGainNode); // BGM用音量ノードに接続
-        
-        bgmSource.start(0);
-    } else if (buffer instanceof HTMLAudioElement) {
-        // HTML5 Audio (フォールバック)
-        bgmAudioElement = buffer;
-        bgmAudioElement.loop = true;
-        bgmAudioElement.volume = BGM_VOLUME;
-        bgmAudioElement.currentTime = 0;
+      // Web Audio API
+      bgmSource = audioCtx.createBufferSource();
+      bgmSource.buffer = buffer;
+      bgmSource.loop = true;
+      bgmSource.connect(bgmGainNode); // BGM用音量ノードに接続
 
-        bgmAudioElement.play().catch(e => console.warn('BGM play failed', e));
+      bgmSource.start(0);
+    } else if (buffer instanceof HTMLAudioElement) {
+      // HTML5 Audio (フォールバック)
+      bgmAudioElement = buffer;
+      bgmAudioElement.loop = true;
+      bgmAudioElement.volume = BGM_VOLUME;
+      bgmAudioElement.currentTime = 0;
+
+      bgmAudioElement.play().catch(e => console.warn('BGM play failed', e));
     }
-    
+
     currentBgmPath = bgmPath;
     return true;
-  } catch(e){
+  } catch (e) {
     console.warn('startBGM error', e);
     return false;
   }
 }
 
-function stopBGM(){
-  try{
-    if(bgmSource){
+function stopBGM() {
+  try {
+    if (bgmSource) {
       try {
         bgmSource.stop();
         bgmSource.disconnect();
-      } catch(e) {
+      } catch (e) {
         // 既に止まっている場合など
       }
       bgmSource = null;
     }
     // HTML5 Audio の停止
-    if(bgmAudioElement){
-        bgmAudioElement.pause();
-        bgmAudioElement.currentTime = 0;
-        bgmAudioElement = null;
+    if (bgmAudioElement) {
+      bgmAudioElement.pause();
+      bgmAudioElement.currentTime = 0;
+      bgmAudioElement = null;
     }
 
     currentBgmPath = null;
     return true;
-  } catch(e){
+  } catch (e) {
     console.warn('stopBGM error', e);
     return false;
   }
 }
 
+function getParentAudioManager() {
+  try {
+    if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
+      return window.parent.SB_AUDIO;
+    }
+  } catch (e) {
+    // noop
+  }
+  return null;
+}
+
+function startManagedBGM(path) {
+  const manager = getParentAudioManager();
+  if (manager && typeof manager.startBGM === "function") {
+    return manager.startBGM(path);
+  }
+  return startBGM(path);
+}
+
+function stopManagedBGM() {
+  const manager = getParentAudioManager();
+  if (manager && typeof manager.stopBGM === "function") {
+    return manager.stopBGM();
+  }
+  return stopBGM();
+}
+
 // モバイルブラウザの自動再生制限対策：ユーザー操作時に音声を一瞬再生してアンロックする
 function unlockAudioContext() {
-    initAudioContext();
-    if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-    }
-    // 無音バッファを生成して再生（ファイルロード不要）
-    const buffer = audioCtx.createBuffer(1, 1, 22050);
-    const source = audioCtx.createBufferSource();
-    source.buffer = buffer;
-    source.connect(audioCtx.destination);
-    source.start(0);
+  initAudioContext();
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  // 無音バッファを生成して再生（ファイルロード不要）
+  const buffer = audioCtx.createBuffer(1, 1, 22050);
+  const source = audioCtx.createBufferSource();
+  source.buffer = buffer;
+  source.connect(audioCtx.destination);
+  source.start(0);
 }
 
 // 現在のURLに基づいてWebSocketの接続先を決定する
@@ -338,13 +365,13 @@ let host = window.location.host;
 // ローカル開発環境の判定 (localhost または 127.0.0.1)
 // フロントエンドとバックエンドのポートが異なる場合 (例: Live Server 5500 -> Backend 8000) への対応
 if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-    if (window.location.port !== "8000") {
-        host = "localhost:8000";
-    }
-} else if (!host || window.location.protocol === 'file:') {
-    // ファイルとして開いている場合など
+  if (window.location.port !== "8000") {
     host = "localhost:8000";
-    protocol = "ws:";
+  }
+} else if (!host || window.location.protocol === 'file:') {
+  // ファイルとして開いている場合など
+  host = "localhost:8000";
+  protocol = "ws:";
 }
 const websock_server = `${protocol}//${host}/ws`;
 
@@ -388,7 +415,7 @@ const onMadeRoom = async (data) => {
   ui.clearInput();
 
   battleState.ally.hp = data["ally"]["max_hp"];
-  battleState.ally.maxHp = data["ally"]["max_hp"];  
+  battleState.ally.maxHp = data["ally"]["max_hp"];
   battleState.foe.hp = data["foe"]["max_hp"];
   battleState.foe.maxHp = data["foe"]["max_hp"];
 
@@ -419,10 +446,11 @@ const onMadeRoom = async (data) => {
   }
 
   ui.showMessage("マッチングした！")
+  stopManagedBGM();
   playEventSound("start", "");
-  startBGM("resource/overflow.mp3");
   await sleep(1500);
-  if(data["state"]["is_my_turn"] === true){
+  startManagedBGM("resource/overflow.mp3");
+  if (data["state"]["is_my_turn"] === true) {
     onAllyTurnStart(data);
   } else {
     onFoeTurnStart(data);
@@ -470,21 +498,21 @@ const processEvent = async (events, is_my_turn) => {
     } else if (e["type"] === "stat_down") {
       const isAlly = e["player"] === "ally";
       if (e["stat_type"] === "defense") {
-         if (isAlly) battleState.ally.def = e["new_rank"];
-         else battleState.foe.def = e["new_rank"];
+        if (isAlly) battleState.ally.def = e["new_rank"];
+        else battleState.foe.def = e["new_rank"];
       } else {
-         if (isAlly) battleState.ally.atk = e["new_rank"];
-         else battleState.foe.atk = e["new_rank"];
+        if (isAlly) battleState.ally.atk = e["new_rank"];
+        else battleState.foe.atk = e["new_rank"];
       }
       ui.playStatDownEffect(isAlly);
     } else if (e["type"] === "stat_up") {
       const isAlly = e["player"] === "ally";
       if (e["stat_type"] === "defense") {
-         if (isAlly) battleState.ally.def = e["new_rank"];
-         else battleState.foe.def = e["new_rank"];
+        if (isAlly) battleState.ally.def = e["new_rank"];
+        else battleState.foe.def = e["new_rank"];
       } else {
-         if (isAlly) battleState.ally.atk = e["new_rank"];
-         else battleState.foe.atk = e["new_rank"];
+        if (isAlly) battleState.ally.atk = e["new_rank"];
+        else battleState.foe.atk = e["new_rank"];
       }
       ui.playStatUpEffect(isAlly);
     } else if (e["type"] === "drain") {
@@ -544,30 +572,32 @@ const onAllyTurnStart = (data) => {
 }
 
 const onFoeTurnStart = (data) => {
-    ui.setWaitMessage("相手のターンです。");
-    if (!battleState.isVsCpu) {
-      // 受信時刻からの経過時間を考慮してタイマーを開始
-      const elapsed = (Date.now() - (data._receivedAt || Date.now())) / 1000;
-      ui.startTimer(Math.max(0, TURN_TIME_LIMIT - elapsed), TURN_TIME_LIMIT);
-    }
-    ui.showMessage();
+  ui.setWaitMessage("相手のターンです。");
+  if (!battleState.isVsCpu) {
+    // 受信時刻からの経過時間を考慮してタイマーを開始
+    const elapsed = (Date.now() - (data._receivedAt || Date.now())) / 1000;
+    ui.startTimer(Math.max(0, TURN_TIME_LIMIT - elapsed), TURN_TIME_LIMIT);
+  }
+  ui.showMessage();
 }
 
 const onAllyWin = () => {
-  stopBGM();
+  stopManagedBGM();
   playEventSound("end", "")
   ui.showMessage("あいてとの勝負に勝った！");
   ui.disableInput();
   ui.showBackToTitleBtn();
+  $('#back-to-title-btn').show(); // 強制表示
   ui.stopTimer();
 }
 
 const onAllyLose = () => {
-  stopBGM();
+  stopManagedBGM();
   playEventSound("end", "")
   ui.showMessage("あいてとの勝負に負けた…");
   ui.disableInput();
   ui.showBackToTitleBtn();
+  $('#back-to-title-btn').show(); // 強制表示
   ui.stopTimer();
 }
 
@@ -580,28 +610,21 @@ const backToTitle = () => {
     sock.close();
     sock = null;
   }
-  ui.showTitleScreen();
-  ui.hideBackToTitleBtn();
   
-  // メッセージ類をリセット
-  ui.hideMessage();
-  ui.hideWaitMessage();
-  ui.hideModalMessage();
-  // モーダルが開いていたら閉じる
-  ui.hideSituationModal();
-  ui.hideAbilityModal();
-  ui.resetSituationInfo();
-
-  startBGM("resource/horizon.mp3");
+  // ページ遷移
+  // シングルバトルのロビー(初期状態)に戻るためリロードする
+  // (ダブルバトルの backToLobby と同様の挙動)
+  window.location.reload();
 }
 
 const onOpponentDisconnected = (data) => {
-  stopBGM();
+  stopManagedBGM();
   playEventSound("end", "");
   ui.hideMessage();
   ui.setWaitMessage("あいてが切断しました", 0);
   ui.disableInput();
   ui.showBackToTitleBtn();
+  $('#back-to-title-btn').show(); // 強制表示
   ui.stopTimer();
 }
 
@@ -619,7 +642,7 @@ const onAccepted = async (data) => {
   battleState.ally.def = data.state.ally_B;
   battleState.foe.atk = data.state.foe_A;
   battleState.foe.def = data.state.foe_B;
-  
+
   // 毒状態の更新（イベント同期のため、新規毒発生時はここでは更新しない）
   battleState.ally.is_poison = data.state.ally_poison;
   battleState.foe.is_poison = data.state.foe_poison;
@@ -643,10 +666,10 @@ const onAccepted = async (data) => {
 
   ui.updatePoisonStatus(showAllyPoison, showFoePoison);
 
-  // --- 特性変更のレスポンスか判定 ---
-  const abilityChangeEvent = data.state.events.find(e => e.type === 'ability_changed');
+  // --- 特性変更のレスポンスか判定 (最新の変更を取得) ---
+  const abilityChangeEvent = [...data.state.events].reverse().find(e => e.type === 'ability_changed');
   const isAbilityChange = !!abilityChangeEvent;
-  
+
   // 特性変更以外（通常の攻撃など）の場合は、結果表示のためにタイマーを止める
   if (!isAbilityChange) {
     ui.stopTimer();
@@ -669,8 +692,8 @@ const onAccepted = async (data) => {
       ui.allyCurrentAbilityName.selector.text(currentAbilityName);
       ui.allyCurrentAbilityDesc.selector.text(battleState.allAbilities[data.state.ally_ability]?.description || '');
       ui.foeCurrentAbilityName.selector.text(foeAbilityName);
-      ui.foeCurrentAbilityDesc.selector.text(battleState.allAbilities[data.state.foe_ability]?.description || '');
-      
+      ui.foeCurrentAbilityDesc.selector.text(battleState.allAbilities[battleState.foe.ability]?.description || '');
+
       // 特性変更メッセージを表示 (自分のみ)
       if (abilityChangeEvent.player === 'ally') {
         playSound("resource/concent.mp3");
@@ -686,7 +709,7 @@ const onAccepted = async (data) => {
         sendChangeAbility(selectedAbilityId);
       }
     );
-    
+
     // 特性変更イベントの処理（メッセージ表示はprocessEvent内で制御）
     await processEvent(data.state.events, data.state.is_my_turn);
 
@@ -753,7 +776,7 @@ const onError = (data) => {
 }
 
 // WebSocket接続とイベントリスナー登録
-window.startBattle = function(mode, roomId = null) {
+window.startBattle = function (mode, roomId = null) {
   // iOS対策: バトル開始のクリックイベント内で確実にAudioContextをアンロックする
   unlockAudioContext();
 
@@ -763,7 +786,7 @@ window.startBattle = function(mode, roomId = null) {
   } else if (mode === 'cpu') {
     battleState.isVsCpu = true;
   }
-  
+
   initializeBattleScreen();
   connectWebSocket(mode, roomId);
 }
@@ -774,7 +797,7 @@ function connectWebSocket(mode, roomId) {
   if (sock && sock.readyState === WebSocket.OPEN) {
     sock.close();
   }
-  
+
   sock = new WebSocket(websock_server);
 
   sock.addEventListener("open", function () {
@@ -784,14 +807,14 @@ function connectWebSocket(mode, roomId) {
     const name = localStorage.getItem("sb_username");
     const ability = localStorage.getItem("sb_ability");
     if (name || ability) {
-        sock.send(JSON.stringify({
-            type: "update_user_info",
-            info: {
-                player_id: player1_id,
-                name: name || "名無し",
-                ability: ability || ""
-            }
-        }));
+      sock.send(JSON.stringify({
+        type: "update_user_info",
+        info: {
+          player_id: player1_id,
+          name: name || "名無し",
+          ability: ability || ""
+        }
+      }));
     }
 
     if (mode === 'player') {
@@ -800,11 +823,11 @@ function connectWebSocket(mode, roomId) {
       sendMakeNewBattle(player1_id, cpu_id);
     } else if (mode === 'room') {
       if (roomId) {
-          sendJoinPrivateRoom(player1_id, roomId);
+        sendJoinPrivateRoom(player1_id, roomId);
       } else {
-          // バックエンドが create_private_room に対応していない可能性があるため、
-          // 以前の仕様に合わせて join_private_room に空のIDを送ることで作成リクエストとする
-          sendJoinPrivateRoom(player1_id, "");
+        // バックエンドが create_private_room に対応していない可能性があるため、
+        // 以前の仕様に合わせて join_private_room に空のIDを送ることで作成リクエストとする
+        sendJoinPrivateRoom(player1_id, "");
       }
     }
   });
@@ -821,7 +844,7 @@ function connectWebSocket(mode, roomId) {
       return;
     }
 
-    switch (data.type){
+    switch (data.type) {
       case "made_room":
         onMadeRoom(data);
         break;
@@ -847,20 +870,20 @@ function connectWebSocket(mode, roomId) {
       default:
         console.warn("未対応のメッセージタイプ:", data.type);
         return;
-    } 
+    }
   });
 
   sock.addEventListener("close", function () {
     console.log("WebSocket接続が閉じられました");
     isDisconnected = true;
-    
+
     // 意図的な切断でない場合のみBGMを停止
-    if (!isManualClose) stopBGM();
-    
+    if (!isManualClose) stopManagedBGM();
+
     // ゲームが終了しておらず、意図しない切断だった場合にメッセージを表示してリダイレクト
     if (!isManualClose && battleState.ally.hp > 0 && battleState.foe.hp > 0) {
-        // alert("サーバーとの接続が切れました。タイトル画面に戻ります。");
-        backToTitle();
+      // alert("サーバーとの接続が切れました。タイトル画面に戻ります。");
+      backToTitle();
     }
     // isManualClose = false; // ここでのリセットを削除（タイトル画面滞在中に遅れてイベントが来てもBGMを止めないため）
   });
@@ -959,13 +982,13 @@ function adjustWindowScale() {
 
   const originalWidth = 450;
   const originalHeight = 720; // 450 * 1.6 (aspect-ratio 10/16)
-  
+
   const scaleX = (window.innerWidth * 0.96) / originalWidth;
   const scaleY = (window.innerHeight * 0.96) / originalHeight;
   const scale = Math.min(scaleX, scaleY, 1.0); // 拡大はしない
 
   phoneBoxes.forEach(box => {
-      box.style.transform = scale < 1 ? `scale(${scale})` : 'none';
+    box.style.transform = scale < 1 ? `scale(${scale})` : 'none';
   });
 }
 
@@ -983,9 +1006,9 @@ document.addEventListener("DOMContentLoaded", () => {
   preloadSounds();
 
   // 待機中BGM再生
-  startBGM("resource/horizon.mp3");
+  startManagedBGM("resource/horizon.mp3");
   ui.backToTitleBtn.onClick(() => {
-      backToTitle();
+    backToTitle();
   });
 
   // エンターで送信
@@ -998,14 +1021,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 入力欄の変化で単語チェック
   ui.input.selector.on("input", () => {
-    if(!battleState.roomId){
+    if (!battleState.roomId) {
       ui.hidePreImg();
       return;
     }
 
     const text = ui.input.selector.val();
-    if(text) {
-      if(text.charAt(0) !== battleState.character){
+    if (text) {
+      if (text.charAt(0) !== battleState.character) {
         // 開始文字不一致（UI表示なし）
         // 「ん」で終わる（UI表示なし）
       } else {
@@ -1059,10 +1082,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- 状況確認モーダルのイベントリスナー ---
   ui.situationButton.onClick(() => {
     ui.updateSituationInfo(
-        battleState.ally.atk, 
-        battleState.ally.def, 
-        battleState.foe.atk, 
-        battleState.foe.def
+      battleState.ally.atk,
+      battleState.ally.def,
+      battleState.foe.atk,
+      battleState.foe.def
     );
     ui.showSituationModal();
     playSound("resource/pera.mp3");
