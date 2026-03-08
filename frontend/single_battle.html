@@ -47,8 +47,17 @@
         <p>機能を色々追加したい</p>
         <h1>しりとりの対戦バトル (β版)</h1>
         <!-- メニューボタン群をコンテナでラップして重なりと間隔を管理 -->
-        <div class="title-buttons-container">
-          <!-- ボタンをbattle.htmlへのリンクに変更 -->
+        <!-- トップメニュー -->
+        <div id="top-menu-container" class="title-buttons-container">
+          <button id="to-single-menu-btn" class="button-lobby">シングルバトル</button>
+          <a href="#double_battle.html" id="go-double-battle-btn" class="button-lobby"
+            style="background: linear-gradient(180deg, #ff9a9e, #fecfef);">ダブルバトル</a>
+          <button id="settings-btn" class="button-lobby"
+            style="background: linear-gradient(180deg, #f0f0f0, #d4d4d4); color: #333;">設定</button>
+        </div>
+
+        <!-- シングルバトルメニュー (初期非表示) -->
+        <div id="single-menu-container" class="title-buttons-container" style="display: none;">
           <a id="vs-player-btn">ランダムマッチ</a>
           <a id="vs-cpu-btn">コンピュータ戦</a>
           <hr style="width: 80%; border-top: 1px solid #ccc; margin: 0;">
@@ -60,10 +69,7 @@
               style="padding: 10px 16px; border-radius: 8px; border: none; background: linear-gradient(180deg, #81c784, #4caf50); color: white; font-weight: 700; font-size: 1rem; cursor: pointer; white-space: nowrap; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">参加する</button>
           </div>
           <hr style="width: 80%; border-top: 1px solid #ccc; margin: 0;">
-          <a href="#double_battle.html" id="go-double-battle-btn" class="button-lobby"
-            style="background: linear-gradient(180deg, #ff9a9e, #fecfef);">ダブルバトルへ</a>
-          <button id="settings-btn" class="button-lobby"
-            style="background: linear-gradient(180deg, #f0f0f0, #d4d4d4); color: #333;">設定</button>
+          <button id="back-to-top-btn" class="button-lobby" style="background: #e0e0e0; color: #333;">戻る</button>
         </div>
       </div>
     </div>
@@ -241,6 +247,25 @@
     if (window.location.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
       const vsPlayerBtn = document.getElementById('vs-player-btn');
       if (vsPlayerBtn) vsPlayerBtn.style.display = 'none';
+    }
+
+    // メニュー遷移ロジック
+    const topMenu = document.getElementById('top-menu-container');
+    const singleMenu = document.getElementById('single-menu-container');
+    const toSingleBtn = document.getElementById('to-single-menu-btn');
+    const backToTopBtn = document.getElementById('back-to-top-btn');
+
+    if (toSingleBtn) {
+      toSingleBtn.addEventListener('click', () => {
+        topMenu.style.display = 'none';
+        singleMenu.style.display = 'flex';
+      });
+    }
+    if (backToTopBtn) {
+      backToTopBtn.addEventListener('click', () => {
+        singleMenu.style.display = 'none';
+        topMenu.style.display = 'flex';
+      });
     }
 
     // 設定モーダル制御
