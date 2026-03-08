@@ -273,6 +273,14 @@ $(() => {
         }
     });
 
+    // --- ロビー用 特性選択イベント ---
+    $('#double-lobby-ability-btn-1').on('click', () => openAbilityModal(1));
+    $('#double-lobby-ability-btn-2').on('click', () => openAbilityModal(2));
+    
+    $('#close-double-lobby-ability-modal').on('click', () => {
+        $('#double-lobby-ability-modal').hide();
+    });
+
     // Fetch abilities for modals
     let baseUrl = '';
     const hostname = window.location.hostname;
@@ -281,6 +289,7 @@ $(() => {
     }
     fetch(`${baseUrl}/abilities`).then(r => r.json()).then(d => {
         doubleBattleState.allAbilities = d;
+        updateDoubleLobbyAbilityDisplay(); // ロビーの表示を更新
     }).catch(e => console.error("Failed to load abilities", e));
 });
 
@@ -298,13 +307,15 @@ function connectDoubleWebSocket(action, mode, roomId) {
 
         const name = localStorage.getItem("sb_username");
         const ability = localStorage.getItem("sb_ability");
-        if (name || ability) {
+        const ability2 = localStorage.getItem("sb_ability_2");
+        if (name || ability || ability2) {
             ws.send(JSON.stringify({
                 type: "update_user_info",
                 info: {
                     player_id: player1_id,
                     name: name || "名無し",
-                    ability: ability || ""
+                    ability: ability || "",
+                    ability_2: ability2 || ""
                 }
             }));
         }
@@ -845,4 +856,80 @@ function adjustWindowScale() {
     phoneBoxes.forEach(box => {
         box.style.transform = scale < 1 ? `scale(${scale})` : 'none';
     });
+}
+
+let currentSelectingSlot = 1;
+
+function openAbilityModal(slot) {
+    currentSelectingSlot = slot;
+    renderDoubleLobbyAbilities(slot);
+    const key = slot === 1 ? "sb_ability" : "sb_ability_2";
+    const currentId = localStorage.getItem(key) || "";
+    const info = doubleBattleState.allAbilities[currentId];
+    $('#double-lobby-ability-desc').text(info ? info.description : "ランダムに決定されます");
+    $('#double-lobby-ability-modal').css('display', 'flex');
+}
+
+// --- ロビー用 特性選択ロジック ---
+function updateDoubleLobbyAbilityDisplay() {
+    const allAbilities = doubleBattleState.allAbilities;
+    
+    for (let slot = 1; slot <= 2; slot++) {
+        const key = slot === 1 ? "sb_ability" : "sb_ability_2";
+        const currentAbilityId = localStorage.getItem(key) || "";
+        
+        const nameEl = document.getElementById(`double-lobby-ability-name-${slot}`);
+        const descEl = document.getElementById(`double-lobby-ability-short-desc-${slot}`);
+        const iconEl = document.getElementById(`double-lobby-ability-icon-${slot}`);
+
+        if (!nameEl) continue;
+
+        if (iconEl) iconEl.style.display = 'block';
+
+        if (currentAbilityId && allAbilities[currentAbilityId]) {
+            const info = allAbilities[currentAbilityId];
+            nameEl.textContent = info.name;
+            if (descEl) descEl.textContent = info.description;
+            const iconName = (typeof type_to_image !== 'undefined' && type_to_image[info.icon_type]) ? type_to_image[info.icon_type] : 'normal';
+            if (iconEl) iconEl.src = `img/${iconName}.gif`;
+        } else {
+            nameEl.textContent = "ランダム";
+            if (descEl) descEl.textContent = "ランダムに決定されます";
+            if (iconEl) iconEl.src = "img/unaware.gif";
+        }
+    }
+}
+
+function renderDoubleLobbyAbilities(slot) {
+    const listEl = document.getElementById('double-lobby-abilities-list');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+    
+    const key = slot === 1 ? "sb_ability" : "sb_ability_2";
+    const currentAbilityId = localStorage.getItem(key) || "";
+    const allAbilities = doubleBattleState.allAbilities;
+
+    // ランダム
+    const randomDiv = document.createElement('div');
+    randomDiv.className = `skill-item ${currentAbilityId === "" ? "selected" : ""}`;
+    randomDiv.innerHTML = `<img class="skill-icon" src="img/unaware.gif"><br><span>ランダム</span>`;
+    randomDiv.addEventListener('click', () => selectDoubleLobbyAbility("", "ランダム", "ランダムに決定されます", slot));
+    listEl.appendChild(randomDiv);
+
+    for (const [id, info] of Object.entries(allAbilities)) {
+        const div = document.createElement('div');
+        div.className = `skill-item ${currentAbilityId === id ? "selected" : ""}`;
+        const iconName = (typeof type_to_image !== 'undefined' && type_to_image[info.icon_type]) ? type_to_image[info.icon_type] : 'normal';
+        div.innerHTML = `<img class="skill-icon" src="img/${iconName}.gif"><br><span>${info.name}</span>`;
+        div.addEventListener('click', () => selectDoubleLobbyAbility(id, info.name, info.description, slot));
+        listEl.appendChild(div);
+    }
+}
+
+function selectDoubleLobbyAbility(id, name, desc, slot) {
+    const key = slot === 1 ? "sb_ability" : "sb_ability_2";
+    localStorage.setItem(key, id);
+    document.getElementById('double-lobby-ability-desc').textContent = desc;
+    renderDoubleLobbyAbilities(slot); // 選択状態更新
+    updateDoubleLobbyAbilityDisplay();
 }

@@ -93,8 +93,13 @@ class DoubleBattle_info:
         char = DoubleBattlePlayer(owner_id, char_id, name)
         
         # 特性
-        if prof.get("ability") in self.abilities:
-            char.ability = prof["ability"]
+        ability_id = prof.get("ability")
+        # 1人2役モードで、2体目(p1b/p2b)の場合は ability_2 を優先使用
+        if self.mode == "1v1_double" and (char_id == 'p1b' or char_id == 'p2b') and prof.get("ability_2"):
+            ability_id = prof.get("ability_2")
+
+        if ability_id in self.abilities:
+            char.ability = ability_id
         else:
             char.ability = random.choice(self.ability_ids)
             

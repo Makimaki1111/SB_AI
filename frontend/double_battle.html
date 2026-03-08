@@ -42,27 +42,55 @@
                 <a id="lobby-back-btn" href="#title.html" class="back-to-title-link">←もどる</a>
                 <h1>ダブルバトル</h1>
 
-                <!-- メニューボタン群をコンテナでラップして重なりと間隔を管理 -->
-                <div class="title-buttons-container" style="margin-top: 50px;">
-                    <div
-                        style="width: 72%; max-width: 340px; padding: 20px; border: 1px solid #eee; border-radius: 16px; background: rgba(255,255,255,0.9); box-shadow: 0 4px 15px rgba(0,0,0,0.05); box-sizing: border-box;">
-                        <h3 style="margin-top: 0; margin-bottom: 5px; color: #333; text-align: center;">モード選択</h3>
-                        <div class="mode-select-container">
-                            <label class="mode-select-btn active">
-                                <input type="radio" name="double_mode" value="1v1_double" checked
-                                    onchange="updateModeSelection(this)">
-                                1人2役 (計2名)
-                            </label>
-                            <label class="mode-select-btn disabled">
-                                <input type="radio" name="double_mode" value="2v2_double" disabled
-                                    onchange="updateModeSelection(this)">
-                                4人対戦 (未開発)
-                            </label>
-                        </div>
+                <div class="mode-select-container">
+                    <label class="mode-select-btn active">
+                        <input type="radio" name="double_mode" value="1v1_double" checked
+                            onchange="updateModeSelection(this)">
+                        1人2役
+                    </label>
+                    <label class="mode-select-btn disabled">
+                        <input type="radio" name="double_mode" value="2v2_double" disabled
+                            onchange="updateModeSelection(this)">
+                        4人対戦 (未開発)
+                    </label>
+                </div>
+
+                <!-- 特性変更ボタン (シングルバトルと同様のデザイン) -->
+                <div id="double-lobby-ability-btn-1" class="lobby-ability-btn">
+                    <!-- 左半分: アイコン -->
+                    <div style="width: 40%; background: #f9f9f9; display: flex; justify-content: center; align-items: center;">
+                        <img id="double-lobby-ability-icon-1" src="" style="width: 80px; height: 80px; object-fit: contain; display: none;">
                     </div>
+                    <!-- 右半分: 情報 -->
+                    <div style="width: 60%; padding: 12px; display: flex; flex-direction: column; justify-content: center; text-align: left;">
+                        <div style="font-size: 0.8rem; color: #888; font-weight: bold; margin-bottom: 2px;">1人目</div>
+                        <!-- 右上: 特性名 -->
+                        <div id="double-lobby-ability-name-1" style="font-size: 1.2rem; font-weight: 800; color: #333; line-height: 1.2; border-bottom: 2px solid #eee; padding-bottom: 6px; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"></div>
+                        <!-- 右下: 説明 -->
+                        <div id="double-lobby-ability-short-desc-1" style="font-size: 0.8rem; color: #666; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;"></div>
+                    </div>
+                </div>
+
+                <div id="double-lobby-ability-btn-2" class="lobby-ability-btn">
+                    <!-- 左半分: アイコン -->
+                    <div style="width: 40%; background: #f9f9f9; display: flex; justify-content: center; align-items: center;">
+                        <img id="double-lobby-ability-icon-2" src="" style="width: 80px; height: 80px; object-fit: contain; display: none;">
+                    </div>
+                    <!-- 右半分: 情報 -->
+                    <div style="width: 60%; padding: 12px; display: flex; flex-direction: column; justify-content: center; text-align: left;">
+                        <div style="font-size: 0.8rem; color: #888; font-weight: bold; margin-bottom: 2px;">2人目</div>
+                        <!-- 右上: 特性名 -->
+                        <div id="double-lobby-ability-name-2" style="font-size: 1.2rem; font-weight: 800; color: #333; line-height: 1.2; border-bottom: 2px solid #eee; padding-bottom: 6px; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"></div>
+                        <!-- 右下: 説明 -->
+                        <div id="double-lobby-ability-short-desc-2" style="font-size: 0.8rem; color: #666; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;"></div>
+                    </div>
+                </div>
+
+                <!-- メニューボタン群をコンテナでラップして重なりと間隔を管理 -->
+                <div class="title-buttons-container">
 
                     <!-- CPU戦(デバッグ用) -->
-                    <button id="cpu-double-battle-btn" class="button-lobby" style="margin-top: 10px;">コンピュータ戦</button>
+                    <button id="cpu-double-battle-btn" class="button-lobby" style="margin-top: 5px;">コンピュータ戦</button>
 
                     <hr style="width: 80%; border-top: 1px solid #ccc; margin: 0;">
 
@@ -293,6 +321,18 @@
         <div class="close-modal" id="close-ability-modal-btn">とじる</div>
     </div>
 
+    <!-- ロビー用 特性選択モーダル (ダブルバトル用) -->
+    <div id="double-lobby-ability-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center;">
+        <div style="background: white; width: 90%; max-width: 420px; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 15px; max-height: 80vh;">
+            <h3 style="margin: 0; text-align: center;">とくせいを選択</h3>
+            <div id="double-lobby-ability-desc" style="font-size: 0.9rem; color: #666; background: #f5f5f5; padding: 10px; border-radius: 8px; min-height: 3em;"></div>
+            <div id="double-lobby-abilities-list" style="display: flex; flex-wrap: wrap; gap: 8px; overflow-y: auto; padding: 5px; flex: 1; justify-content: center;">
+                <!-- JSで生成 -->
+            </div>
+            <button id="close-double-lobby-ability-modal" style="padding: 12px; background: #4CAF50; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">決定</button>
+        </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://unpkg.com/wanakana"></script>
     <script src="type_to_image.js"></script>
@@ -318,7 +358,25 @@
             if (radio.checked) {
                 radio.closest('.mode-select-btn').classList.add('active');
             }
+            
+            const content = document.querySelector('#double-lobby-screen .content');
+            const btn2 = document.getElementById('double-lobby-ability-btn-2');
+            if (btn2) {
+                if (radio.value === '1v1_double') {
+                    btn2.style.display = 'flex';
+                    if (content) content.classList.remove('mode-2v2');
+                } else {
+                    btn2.style.display = 'none';
+                    if (content) content.classList.add('mode-2v2');
+                }
+            }
         }
+        
+        // 初期ロード時にモード選択状態を反映
+        document.addEventListener('DOMContentLoaded', () => {
+            const checked = document.querySelector('input[name="double_mode"]:checked');
+            if (checked) updateModeSelection(checked);
+        });
 
         const lobbyBackBtn = document.getElementById('lobby-back-btn');
         if (lobbyBackBtn) {

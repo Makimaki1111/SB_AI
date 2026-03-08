@@ -8,9 +8,10 @@
     flex-direction: column;
     justify-content: flex-start;
     align-items: center;
-    gap: 15px;
+    gap: 5px;
     height: 100%;
-    padding-top: 100px;
+    padding-top: 80px;
+    overflow-y: auto; /* コンテンツが多い場合はスクロール可能に */
 }
 
 #double-lobby-screen h1 {
@@ -23,22 +24,25 @@
 /* モード選択のモダンスタイル */
 .mode-select-container {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 12px;
-    margin-top: 15px;
+    margin-top: 5px;
+    width: 90%;
+    max-width: 400px;
 }
 
 .mode-select-btn {
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     width: 100%;
-    padding: 16px 20px;
+    padding: 10px 12px;
     border-radius: 14px;
     border: 2px solid transparent;
     background: #fdfdfd;
     color: #555;
-    font-size: 1.05rem;
+    font-size: 0.9rem;
     font-weight: 800;
     text-align: center;
     cursor: pointer;
@@ -68,6 +72,41 @@
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
     transform: none;
     border: none;
+}
+
+/* ロビーの特性ボタン */
+.lobby-ability-btn {
+    width: 90%;
+    max-width: 400px;
+    margin-top: 4px;
+    margin-bottom: 4px;
+    padding: 0;
+    background: #fff;
+    border: 2px solid #eee;
+    border-radius: 20px;
+    cursor: pointer;
+    display: flex;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    box-sizing: border-box;
+    overflow: hidden;
+    min-height: 100px;
+    transition: transform 0.1s;
+}
+
+/* 4人対戦モード時はボタンを中央寄せにする */
+#double-lobby-screen .content.mode-2v2 #double-lobby-ability-btn-1 {
+    margin-top: auto;
+    margin-bottom: auto;
+}
+
+/* ロビーのボタンコンテナを下部固定 */
+#double-lobby-screen .title-buttons-container {
+    position: relative; /* absoluteをやめてフロー配置に */
+    bottom: auto;
+    width: 100%;
+    margin-top: auto; /* コンテンツが少ないときは下に寄せる */
+    z-index: 10;
+    padding-bottom: 20px; /* 下部の余白 */
 }
 
 /* ダブルバトル画面上部領域: 元のbattle-areaに相当 */

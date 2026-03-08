@@ -598,10 +598,11 @@ async def websocket_double_endpoint(websocket: WebSocket):
                     player_id = info.get("player_id")
                     name = info.get("name")
                     ability = info.get("ability")
+                    ability_2 = info.get("ability_2")
                     if player_id:
                         if not isinstance(name, str): name = "じぶん"
                         if len(name) > 8: name = name[:8]
-                        user_profiles[player_id] = {"name": name, "ability": ability}
+                        user_profiles[player_id] = {"name": name, "ability": ability, "ability_2": ability_2}
                         await manager.safe_send_text(websocket, json.dumps({"type": "user_info_updated", "message": "ユーザー情報を更新しました"}))
 
                 # ルーム作成
