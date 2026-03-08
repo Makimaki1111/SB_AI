@@ -70,6 +70,8 @@ class ConnectionManager:
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
         self.active_connections.append(websocket)
+        host = websocket.client.host if websocket.client else "unknown"
+        logger.info(f"New WebSocket connection from {host}")
 
     def disconnect(self, websocket: WebSocket):
         left_rooms = []
@@ -348,6 +350,13 @@ async def websocket_endpoint(websocket: WebSocket):
                     await websocket.send_text(json.dumps({"type": "error", "message": "Invalid player_id"}))
                     continue
             
+            # ログ出力 (include_check系は頻度が高いため除外)
+            msg_type = req.get("type")
+            if msg_type not in ["include_check", "include_check_double"]:
+                info_summary = req.get("info", {}).copy()
+                # ログに見せたくない情報があればここでフィルタリングするが、現状は特になし
+                logger.info(f"WS Recv: type={msg_type}, info={info_summary}")
+
             # --- ユーザー情報更新 ---
             try:
                 if req.get("type") == "update_user_info":
@@ -398,6 +407,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
                         bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=sb_info_instance, p1_profile=p1_profile, p2_profile=p2_profile)
                         battle_rooms[bi.room_id] = bi
+                        logger.info(f"Match found: room={bi.room_id}, p1={p1_data['player_id']}, p2={p2_data['player_id']}")
 
                         manager.join_room(p1_data["socket"], bi.room_id)
                         manager.join_room(p2_data["socket"], bi.room_id)
@@ -437,6 +447,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
                             bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=sb_info_instance, room_id=room_id, p1_profile=p1_profile, p2_profile=p2_profile)
                             battle_rooms[bi.room_id] = bi
+                            logger.info(f"Private match started: room={bi.room_id}, p1={p1_data['player_id']}, p2={p2_data['player_id']}")
 
                             manager.join_room(p1_data["socket"], bi.room_id)
                             manager.join_room(p2_data["socket"], bi.room_id)
@@ -458,6 +469,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             if new_room_id not in private_rooms: break
                         private_rooms[new_room_id] = {"socket": websocket, "player_id": player_id}
                         await websocket.send_text(json.dumps({"type": "private_room_created", "room_id": new_room_id}))
+                        logger.info(f"Private room created: room={new_room_id}, player={player_id}")
 
             # typeで分岐し、既存の関数を利用
                 elif req.get("type") == "make_new_battle":
@@ -474,6 +486,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     res = make_new_battle(model, p1_profile, p2_profile)
                     # 部屋作成時は送信元を部屋に登録
                     manager.join_room(websocket, res["room_id"])
+                    logger.info(f"New battle created (make_new_battle): room={res['room_id']}")
                     await websocket.send_text(json.dumps(res)) # 作成者には直接応答
                     
                     # CPU戦でCPU先行の場合、初手を実行する
@@ -518,6 +531,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     # エラーの場合はタイマーをリセットせず、送信元にのみ返す
                     if res.get("type") == "error":
                         await websocket.send_text(json.dumps(res))
+                        logger.warning(f"Submit word error: room={model.room_id}, player={model.player_id}, msg={res.get('message')}")
                     else:
                         # 正常な手番の場合はタイマー停止
                         stop_turn_timer(model.room_id)
@@ -526,6 +540,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         
                         # 勝敗が決まったらルームを削除
                         if battle_rooms[model.room_id].player1_win is not None:
+                            logger.info(f"Battle finished: room={model.room_id}, p1_win={battle_rooms[model.room_id].player1_win}")
                             del battle_rooms[model.room_id]
 
                         # --- CPU自動攻撃処理 ---
@@ -543,6 +558,7 @@ async def websocket_endpoint(websocket: WebSocket):
                                     
                                     # CPUのターンで決着がついた場合
                                     if battle.player1_win is not None:
+                                        logger.info(f"Battle finished (CPU turn): room={room_id}, p1_win={battle.player1_win}")
                                         del battle_rooms[room_id]
                                 
                                 # まだ勝敗が決まっていなければ次のターンのタイマー開始
@@ -566,6 +582,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         if res:
                             await manager.broadcast_battle_state(model.room_id, res)
 
+                        logger.info(f"Player ran away: room={model.room_id}, player={model.player_id}")
                         del battle_rooms[model.room_id]
                         logger.info(f"Battle room {model.room_id} was removed because a player ran away.")
 
@@ -589,6 +606,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
                         if res.get("type") == "error":
                             await websocket.send_text(json.dumps(res))
+                            logger.warning(f"Change ability error: room={room_id}, player={player_id}, msg={res.get('message')}")
                         else:
                             # ターンは消費しないのでタイマーは操作しない
                             await manager.broadcast_battle_state(room_id, res)
@@ -637,7 +655,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 if res:
                     # 残っているプレイヤーに結果を送信
                     await manager.broadcast_battle_state(room_id, res)
-
+                
                 # バトルルームを削除
                 del battle_rooms[room_id]
                 logger.info(f"Battle room {room_id} was removed due to disconnection.")
@@ -672,6 +690,12 @@ async def websocket_double_endpoint(websocket: WebSocket):
                     await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "Invalid player_id"}))
                     continue
 
+            # ログ出力 (include_check系は頻度が高いため除外)
+            msg_type = req.get("type")
+            if msg_type not in ["include_check", "include_check_double"]:
+                info_summary = req.get("info", {}).copy()
+                logger.info(f"WS Double Recv: type={msg_type}, info={info_summary}")
+
             try:
                 # ユーザー情報の更新
                 if req.get("type") == "update_user_info":
@@ -688,7 +712,6 @@ async def websocket_double_endpoint(websocket: WebSocket):
 
                 # ルーム作成
                 elif req.get("type") == "create_double_room":
-                    logger.info("hit create_double_room")
                     info = req.get("info", {})
                     player_id = info.get("player_id")
                     mode = info.get("mode", "1v1_double")  # 1v1_double or 2v2_double
@@ -697,7 +720,6 @@ async def websocket_double_endpoint(websocket: WebSocket):
                         await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "Invalid mode"}))
                         continue
 
-                    logger.info(f"registering player_id: {player_id}")
                     manager.register_player(websocket, player_id)
 
                     # ルーム数制限
@@ -709,14 +731,12 @@ async def websocket_double_endpoint(websocket: WebSocket):
                         new_room_id = f"{secrets.randbelow(1000000):06d}"
                         if new_room_id not in double_private_rooms: break
                     
-                    logger.info(f"created room id: {new_room_id}")
                     double_private_rooms[new_room_id] = {
                         "mode": mode,
                         "players": [{"socket": websocket, "player_id": player_id}]
                     }
-                    logger.info("sending double_room_created text")
                     await manager.safe_send_text(websocket, json.dumps({"type": "double_room_created", "room_id": new_room_id, "mode": mode}))
-                    logger.info("success create_double_room")
+                    logger.info(f"Double room created: room={new_room_id}, mode={mode}, player={player_id}")
 
                 # CPU戦ルーム作成＆参加 (デバッグ用)
                 elif req.get("type") == "join_double_cpu_room":
@@ -737,6 +757,7 @@ async def websocket_double_endpoint(websocket: WebSocket):
 
                     bi = DoubleBattle_info(mode, team1_ids, team2_ids, sb_info=sb_info_instance, room_id=room_id, profiles=user_profiles, is_cpu=True)
                     double_battle_rooms[bi.room_id] = bi
+                    logger.info(f"Double CPU battle started: room={room_id}, player={player_id}")
 
                     manager.join_room(websocket, bi.room_id)
                     setattr(websocket, "player_id", player_id)
@@ -756,6 +777,7 @@ async def websocket_double_endpoint(websocket: WebSocket):
                             if cpu_res:
                                 await manager.broadcast_battle_state(bi.room_id, cpu_res, is_double=True)
                                 if bi.team1_win is not None:
+                                    logger.info(f"Double CPU battle finished: room={bi.room_id}, team1_win={bi.team1_win}")
                                     stop_double_turn_timer(bi.room_id)
                                     del double_battle_rooms[bi.room_id]
                                     break
@@ -803,6 +825,7 @@ async def websocket_double_endpoint(websocket: WebSocket):
 
                             bi = DoubleBattle_info(mode, team1_ids, team2_ids, sb_info=sb_info_instance, room_id=room_id, profiles=user_profiles)
                             double_battle_rooms[bi.room_id] = bi
+                            logger.info(f"Double battle started: room={bi.room_id}, mode={mode}")
 
                             await start_double_turn_timer(bi.room_id)
                             for p in players:
@@ -847,6 +870,7 @@ async def websocket_double_endpoint(websocket: WebSocket):
                         
                         if res.get("type") == "error":
                             await manager.safe_send_text(websocket, json.dumps(res))
+                            logger.warning(f"Submit word double error: room={room_id}, player={player_id}, msg={res.get('message')}")
                         else:
                             if battle.team1_win is None:
                                 await start_double_turn_timer(room_id)
@@ -860,6 +884,7 @@ async def websocket_double_endpoint(websocket: WebSocket):
                             # 勝負がついた場合はタイマー停止と部屋削除
                             if battle.team1_win is not None:
                                 stop_double_turn_timer(room_id)
+                                logger.info(f"Double battle finished: room={room_id}, team1_win={battle.team1_win}")
                                 del double_battle_rooms[room_id]
                                 logger.info(f"Double battle room {room_id} was removed because a team won.")
                                 
@@ -875,6 +900,7 @@ async def websocket_double_endpoint(websocket: WebSocket):
                                         await manager.safe_send_text(p, json.dumps(p_res))
                                     
                                     if battle.team1_win is not None:
+                                        logger.info(f"Double battle finished (CPU turn): room={room_id}, team1_win={battle.team1_win}")
                                         stop_double_turn_timer(room_id)
                                         del double_battle_rooms[room_id]
                                         break
@@ -902,6 +928,7 @@ async def websocket_double_endpoint(websocket: WebSocket):
                                 await manager.safe_send_text(p, json.dumps(p_res))
                             # 勝負がついた場合は部屋を削除
                             if battle.team1_win is not None:
+                                logger.info(f"Double battle finished (run away): room={room_id}, team1_win={battle.team1_win}")
                                 del double_battle_rooms[room_id]
                                 logger.info(f"Double battle room {room_id} was removed because a team won/fled.")
                         else:
@@ -946,6 +973,7 @@ async def websocket_double_endpoint(websocket: WebSocket):
                         res = battle.change_ability(player_id, char_id, ability_id)
                         if res.get("type") == "error":
                             await manager.safe_send_text(websocket, json.dumps(res))
+                            logger.warning(f"Change ability double error: room={room_id}, player={player_id}, msg={res.get('message')}")
                         else:
                             for p in list(manager.room_connections.get(room_id, [])):
                                 p_id = getattr(p, "player_id", None)
@@ -997,6 +1025,7 @@ async def websocket_double_endpoint(websocket: WebSocket):
                         
                         # 勝敗がついた場合は部屋を削除
                         if battle.team1_win is not None:
+                            logger.info(f"Double battle finished (disconnect): room={room_id}, team1_win={battle.team1_win}")
                             del double_battle_rooms[room_id]
                             logger.info(f"Double battle room {room_id} was removed due to disconnection/team wipe.")
                 else:
