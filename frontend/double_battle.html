@@ -17,13 +17,6 @@
                 toShell(target);
                 return;
             }
-            try {
-                if (window.parent && window.parent.location.hash !== `#${page}`) {
-                    window.parent.location.hash = page;
-                }
-            } catch (e) {
-                // noop
-            }
         })();
     </script>
     <title>ダブルバトル (β版)</title>

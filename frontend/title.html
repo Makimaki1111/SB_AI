@@ -15,15 +15,10 @@
                 toShell(target);
                 return;
             }
-            try {
-                if (window.parent && window.parent.location.hash !== `#${page}`) {
-                    window.parent.location.hash = page;
-                }
-            } catch (e) {}
         })();
     </script>
     <title>しりとりの対戦バトル</title>
-    <link rel="stylesheet" href="style.css?v=10" />
+    <link rel="stylesheet" href="style.css?v=15" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700;800&display=swap" rel="stylesheet">
@@ -39,8 +34,12 @@
                 <p>機能を色々追加したい</p>
                 <h1>しりとりの対戦バトル (β版)</h1>
                 
-                <!-- タイトル画面のGIF画像 -->
-                <img src="img/animal.gif" alt="title animation" class="title-gif">
+                <!-- タイトル画面の回転カルーセル -->
+                <div id="title-carousel-container">
+                    <div class="carousel-row" id="carousel-row-1"></div>
+                    <div class="carousel-row" id="carousel-row-2"></div>
+                    <div class="carousel-row" id="carousel-row-3"></div>
+                </div>
 
                 <!-- トップメニュー -->
                 <div id="top-menu-container" class="title-buttons-container">
@@ -162,6 +161,48 @@
 
         window.addEventListener('resize', adjustWindowScale);
         adjustWindowScale();
+
+        // カルーセルアニメーションの初期化
+        window.addEventListener('load', () => {
+            let images = [];
+            if (typeof type_to_image !== 'undefined') {
+                images = Object.values(type_to_image);
+            } else {
+                // フォールバック: type_to_imageが読み込めなかった場合のデフォルトリスト
+                images = ["animal", "plant", "place", "emote", "art", "food", "violence", "health", "body", "mech", "science", "time", "person", "work", "cloth", "society", "play", "bug", "math", "insult", "religion", "sports", "weather", "tale", "normal"];
+            }
+
+            const rows = [
+                document.getElementById('carousel-row-1'),
+                document.getElementById('carousel-row-2'),
+                document.getElementById('carousel-row-3')
+            ];
+            
+            rows.forEach((row, index) => {
+                if (!row) return;
+                
+                // 画像リストをシャッフルしてランダムな並びにする
+                const rowImages = [...images].sort(() => Math.random() - 0.5);
+                
+                // 1セット分のフラグメントを作成
+                const fragment = document.createDocumentFragment();
+                rowImages.forEach(imgName => {
+                    const img = document.createElement('img');
+                    img.src = `img/${imgName}.gif`;
+                    img.className = 'carousel-item';
+                    fragment.appendChild(img);
+                });
+                
+                // シームレスなループのために複数セット配置する (最低2セット、念のため4セット配置して途切れを防ぐ)
+                row.appendChild(fragment.cloneNode(true));
+                row.appendChild(fragment.cloneNode(true));
+                row.appendChild(fragment.cloneNode(true));
+                row.appendChild(fragment.cloneNode(true));
+                
+                // 偶数段と奇数段で方向を変える
+                row.style.animation = `${index % 2 === 0 ? 'scrollLeft' : 'scrollRight'} ${40 + index * 10}s linear infinite`;
+            });
+        });
     </script>
 </body>
 </html>
