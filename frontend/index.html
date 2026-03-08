@@ -26,7 +26,7 @@
 </head>
 <body>
   <script src="shared_audio.js"></script>
-  <iframe id="app-frame" src="single_battle.html" allow="autoplay" title="Shiritori Battle"></iframe>
+  <iframe id="app-frame" src="title.html" allow="autoplay" title="Shiritori Battle"></iframe>
   <script>
     (function bindFrameRoute() {
       // リロード時にハッシュを削除してタイトルから開始させる
@@ -35,12 +35,12 @@
       }
 
       const frame = document.getElementById("app-frame");
-      const allowedPages = new Set(["single_battle.html", "double_battle.html"]);
+      const allowedPages = new Set(["title.html", "single_battle.html", "double_battle.html"]);
 
       const resolvePage = () => {
         const raw = (window.location.hash || "").replace(/^#/, "");
         const decoded = raw ? decodeURIComponent(raw) : "";
-        return allowedPages.has(decoded) ? decoded : "single_battle.html";
+        return allowedPages.has(decoded) ? decoded : "title.html";
       };
 
       const applyRoute = () => {

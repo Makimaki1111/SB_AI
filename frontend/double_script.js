@@ -76,29 +76,6 @@ function hasParentAudioManager() {
     }
 }
 
-function navigateToSingleBattle() {
-    // 1) If running inside index iframe, ask parent to navigate.
-    try {
-        if (window.parent && window.parent !== window) {
-            window.parent.postMessage({ type: 'sb:navigate', page: 'single_battle.html' }, '*');
-            return true;
-        }
-    } catch (e) {
-        // noop
-    }
-
-    // 2) Fallback for non-iframe open.
-    try {
-        window.location.replace('index.html#single_battle.html');
-        return true;
-    } catch (e) {
-        // noop
-    }
-
-    window.location.href = 'index.html#single_battle.html';
-    return true;
-}
-
 let protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
 let host = window.location.host;
 if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
@@ -761,15 +738,10 @@ function backToLobby() {
     }
     hasStartedDoubleBattle = false;
 
-    const moved = navigateToSingleBattle();
-    if (!moved) {
-        window.location.replace('index.html#single_battle.html');
-    }
-
-    // In case navigation is blocked somehow, allow retry.
-    setTimeout(() => {
-        isReturningToLobby = false;
-    }, 1500);
+    // 遷移処理
+    // index.htmlの仕様上、同じページへの遷移(src変更)は無視されるため、
+    // 強制的にリロードして初期状態(ロビー)に戻す
+    window.location.reload();
 }
 
 function switchAbilityTab(charId) {

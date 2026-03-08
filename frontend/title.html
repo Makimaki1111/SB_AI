@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+        (function ensureIframeShellEarly() {
+            const page = 'title.html';
+            const toShell = (targetPage) => {
+                window.location.replace(`index.html#${targetPage}`);
+            };
+            if (window.self === window.top) {
+                const hashPage = (window.location.hash || '').replace(/^#/, '');
+                const target = hashPage || page;
+                toShell(target);
+                return;
+            }
+            try {
+                if (window.parent && window.parent.location.hash !== `#${page}`) {
+                    window.parent.location.hash = page;
+                }
+            } catch (e) {}
+        })();
+    </script>
+    <title>しりとりの対戦バトル</title>
+    <link rel="stylesheet" href="style.css?v=10" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700;800&display=swap" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="type_to_image.js"></script>
+    <script src="shared_audio.js"></script>
+</head>
+<body>
+    <!-- タイトル画面 -->
+    <div id="title-screen" style="display: block;">
+        <div class="phone-box">
+            <div class="content">
+                <p>機能を色々追加したい</p>
+                <h1>しりとりの対戦バトル (β版)</h1>
+                
+                <!-- タイトル画面のGIF画像 -->
+                <img src="img/animal.gif" alt="title animation" class="title-gif">
+
+                <!-- トップメニュー -->
+                <div id="top-menu-container" class="title-buttons-container">
+                    <button id="go-single-battle-btn" class="button-lobby">シングルバトル</button>
+                    <button id="go-double-battle-btn" class="button-lobby" style="background: linear-gradient(180deg, #ff9a9e, #fecfef);">ダブルバトル</button>
+                    <button id="settings-btn" class="button-lobby" style="background: linear-gradient(180deg, #f0f0f0, #d4d4d4); color: #333;">設定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 設定モーダル -->
+    <div id="settings-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center;">
+        <div style="background: white; width: 90%; max-width: 420px; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 15px; max-height: 90vh;">
+            <h2 style="margin: 0; text-align: center;">設定</h2>
+            <div>
+                <label for="username-input" style="display: block; margin-bottom: 5px; font-weight: bold;">名前</label>
+                <input type="text" id="username-input" placeholder="名前を入力(8文字以内)" maxlength="8" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; box-sizing: border-box;">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">BGM音量</label>
+                <input type="range" id="bgm-slider" min="0" max="1" step="0.05" value="0.3" style="width: 100%;">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">SE音量</label>
+                <input type="range" id="se-slider" min="0" max="1" step="0.05" value="0.5" style="width: 100%;">
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; flex-shrink: 0;">
+                <button id="close-settings-btn" style="padding: 10px 20px; border-radius: 8px; border: none; background: #4CAF50; color: white; cursor: pointer;">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function navigateInShell(page) {
+            try {
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'sb:navigate', page }, '*');
+                    return;
+                }
+            } catch (e) {}
+            window.location.href = `index.html#${page}`;
+        }
+
+        document.getElementById('go-single-battle-btn').addEventListener('click', () => navigateInShell('single_battle.html'));
+        document.getElementById('go-double-battle-btn').addEventListener('click', () => navigateInShell('double_battle.html'));
+
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsModal = document.getElementById('settings-modal');
+        const closeSettingsBtn = document.getElementById('close-settings-btn');
+        const usernameInput = document.getElementById('username-input');
+        const bgmSlider = document.getElementById('bgm-slider');
+        const seSlider = document.getElementById('se-slider');
+
+        const savedName = localStorage.getItem("sb_username");
+        if (savedName) usernameInput.value = savedName;
+
+        settingsBtn.addEventListener('click', () => {
+            settingsModal.style.display = 'flex';
+        });
+
+        closeSettingsBtn.addEventListener('click', () => {
+            const name = usernameInput.value.trim();
+            if (name) localStorage.setItem("sb_username", name);
+            settingsModal.style.display = 'none';
+        });
+
+        bgmSlider.addEventListener('input', (e) => {
+            if (window.SB_AUDIO) window.SB_AUDIO.setBGMVolume(parseFloat(e.target.value));
+        });
+        seSlider.addEventListener('input', (e) => {
+            if (window.SB_AUDIO) window.SB_AUDIO.setSEVolume(parseFloat(e.target.value));
+        });
+
+        let isAudioUnlocked = false;
+        const userInteractionHandler = () => {
+            if (isAudioUnlocked) return;
+            isAudioUnlocked = true;
+            try {
+                if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
+                    window.parent.SB_AUDIO.unlockAudioContext();
+                    window.parent.SB_AUDIO.startBGM('resource/horizon.mp3');
+                }
+            } catch (e) { }
+        };
+        document.body.addEventListener('click', userInteractionHandler, { once: true });
+        document.body.addEventListener('touchstart', userInteractionHandler, { once: true });
+
+        // 画面サイズに合わせてスケーリングする関数
+        function adjustWindowScale() {
+            const phoneBox = document.querySelector('.phone-box');
+            if (!phoneBox) return;
+
+            const originalWidth = 450;
+            const originalHeight = 720; // 450 * 1.6 (aspect-ratio 10/16)
+
+            const scaleX = (window.innerWidth * 0.96) / originalWidth;
+            const scaleY = (window.innerHeight * 0.96) / originalHeight;
+            const scale = Math.min(scaleX, scaleY, 1.0); // 拡大はしない
+
+            phoneBox.style.transform = scale < 1 ? `scale(${scale})` : 'none';
+        }
+
+        window.addEventListener('resize', adjustWindowScale);
+        adjustWindowScale();
+    </script>
+</body>
+</html>

@@ -13,7 +13,7 @@
 
             if (window.self === window.top) {
                 const hashPage = (window.location.hash || '').replace(/^#/, '');
-                const target = hashPage === 'single_battle.html' ? 'single_battle.html' : page;
+                const target = hashPage === 'title.html' ? 'title.html' : page;
                 toShell(target);
                 return;
             }
@@ -78,7 +78,7 @@
                     <div id="lobby-message" style="color: #333; font-weight: bold; text-align: center;">
                     </div>
 
-                    <a id="lobby-back-btn" href="#single_battle.html" class="button-lobby"
+                    <a id="lobby-back-btn" href="#title.html" class="button-lobby"
                         style="background: linear-gradient(180deg, #f0f0f0, #d4d4d4); color: #333; margin-bottom: 20px;">タイトルに戻る</a>
                 </div>
             </div>
@@ -211,7 +211,7 @@
                     </div>
                 </div>
 
-                <a id="back-to-title-btn" style="display:none;" href="#single_battle.html">タイトルに戻る</a>
+                <a id="back-to-title-btn" style="display:none;" href="#double_battle.html">ロビーに戻る</a>
                 <!-- フッターエリア: ボタン類 -->
                 <div class="footer-area">
                     <button id="cancel-battle-btn" style="position: relative; z-index: 100;">にげる</button>
@@ -324,7 +324,7 @@
         if (lobbyBackBtn) {
             lobbyBackBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                navigateInShell('single_battle.html');
+                navigateInShell('title.html');
             });
         }
 
@@ -332,14 +332,13 @@
         if (backToTitleBtn) {
             backToTitleBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                navigateInShell('single_battle.html');
+                navigateInShell('title.html');
             });
         }
     </script>
-    <script src="double_UI.js?v=4"></script>
-    <script src="double_script.js?v=11"></script>
+    <script src="double_UI.js?v=5"></script>
+    <script src="double_script.js?v=12"></script>
 
 </body>
 
 </html>
-

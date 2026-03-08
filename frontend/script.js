@@ -607,19 +607,17 @@ const backToTitle = () => {
     sock.close();
     sock = null;
   }
-  ui.showTitleScreen();
-  ui.hideBackToTitleBtn();
-
-  // メッセージ類をリセット
-  ui.hideMessage();
-  ui.hideWaitMessage();
-  ui.hideModalMessage();
-  // モーダルが開いていたら閉じる
-  ui.hideSituationModal();
-  ui.hideAbilityModal();
-  ui.resetSituationInfo();
-
-  startManagedBGM("resource/horizon.mp3");
+  
+  // ページ遷移
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'sb:navigate', page: 'title.html' }, '*');
+    } else {
+      window.location.replace('index.html#title.html');
+    }
+  } catch (e) {
+    window.location.href = 'index.html#title.html';
+  }
 }
 
 const onOpponentDisconnected = (data) => {
