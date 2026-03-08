@@ -137,12 +137,27 @@
             }
         });
 
+        // カルーセルアニメーションを再始動させる関数
+        function restartCarouselAnimations() {
+            const rows = document.querySelectorAll('.carousel-row');
+            rows.forEach(row => {
+                // CSSアニメーションをリセットして再適用する
+                const animation = row.style.animation;
+                row.style.animation = 'none';
+                requestAnimationFrame(() => {
+                    row.style.animation = animation;
+                });
+            });
+        }
+
         // 画面がアクティブになった時（index.htmlからの通知）にもBGM再生を試みる
         window.addEventListener("message", (event) => {
             if (event.data && event.data.type === 'sb:activated') {
                 if (window.SB_AUDIO) {
                     window.SB_AUDIO.startBGM('resource/horizon.mp3');
                 }
+                // カルーセルアニメーションを再始動
+                restartCarouselAnimations();
             }
         });
 
