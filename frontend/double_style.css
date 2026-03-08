@@ -384,6 +384,10 @@
     flex-wrap: wrap;
     gap: 6px;
     margin-top: 8px;
+    max-height: 50vh;
+    overflow-y: auto;
+    justify-content: center;
+    padding: 2px;
 }
 
 #double-modal-message {

@@ -450,6 +450,13 @@ async function handleTurnResult(data) {
                 ui.updateAbilityInfo(getUiCharsState(), doubleBattleState.allAbilities, (charId, abilityId) => {
                     sendChangeAbilityDouble(charId, abilityId);
                 });
+                
+                // メッセージと効果音も即時再生
+                ui.showModalMessage(abilityChangeEvent.message || 'とくせいを変更した！', 2000);
+                
+                if (shouldPlayAbilityChangeSound(abilityChangeEvent) && typeof playSound === 'function') {
+                    playSound("resource/concent.mp3");
+                }
             }
         }
     }
@@ -582,18 +589,21 @@ async function handleTurnResult(data) {
         updateUIWithCharacters(data.characters);
     }
 
-    // 特性変更イベント�E場合、最新の変更を取得するためにreverseしてfindする
-    const abilityChangeEvent = data.events && [...data.events].reverse().find(e => e.type === 'ability_changed');
-    if (abilityChangeEvent) {
-        const changedUiId = getUIId(abilityChangeEvent.char_id || "");
-        const isOwnTeamChange = changedUiId === "p1a" || changedUiId === "p1b";
+    // 特性変更のみの場合は既に処理済みなのでスキップ
+    if (!onlyAbilityChanged) {
+        // 特性変更イベントE場合、最新の変更を取得するためにreverseしてfindする
+        const abilityChangeEvent = data.events && [...data.events].reverse().find(e => e.type === 'ability_changed');
+        if (abilityChangeEvent) {
+            const changedUiId = getUIId(abilityChangeEvent.char_id || "");
+            const isOwnTeamChange = changedUiId === "p1a" || changedUiId === "p1b";
 
-        if (isOwnTeamChange) {
-            ui.showModalMessage(abilityChangeEvent.message || 'とくせいを変更した！', 2000);
-        }
+            if (isOwnTeamChange) {
+                ui.showModalMessage(abilityChangeEvent.message || 'とくせいを変更した！', 2000);
+            }
 
-        if (isOwnTeamChange && shouldPlayAbilityChangeSound(abilityChangeEvent) && typeof playSound === 'function') {
-            playSound("resource/concent.mp3");
+            if (isOwnTeamChange && shouldPlayAbilityChangeSound(abilityChangeEvent) && typeof playSound === 'function') {
+                playSound("resource/concent.mp3");
+            }
         }
     }
 

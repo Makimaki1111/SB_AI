@@ -446,9 +446,10 @@ const onMadeRoom = async (data) => {
   }
 
   ui.showMessage("マッチングした！")
+  stopManagedBGM();
   playEventSound("start", "");
-  startManagedBGM("resource/overflow.mp3");
   await sleep(1500);
+  startManagedBGM("resource/overflow.mp3");
   if (data["state"]["is_my_turn"] === true) {
     onAllyTurnStart(data);
   } else {
