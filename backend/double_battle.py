@@ -567,11 +567,18 @@ class DoubleBattle_info:
         self.events = []
         return ret
 
-    def change_ability(self, char_id: str, new_ability_id: str):
+    def change_ability(self, player_id: str, char_id: str, new_ability_id: str):
         """キャラクターの特性を変更する"""
+        # 不正なchar_idのチェック
+        if char_id not in ["p1a", "p1b", "p2a", "p2b"]:
+            return {"type": "error", "message": "不正なキャラクターIDです"}
+
         char = getattr(self, char_id, None)
         if not char:
             return {"type": "error", "message": "存在しないキャラクターです"}
+
+        if char.owner_id != player_id:
+            return {"type": "error", "message": "自分のキャラクターではありません"}
 
         if char.ability_change_count <= 0:
             return {"type": "error", "message": "特性はもう変更できません"}

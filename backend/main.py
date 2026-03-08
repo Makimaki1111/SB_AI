@@ -329,6 +329,12 @@ async def websocket_endpoint(websocket: WebSocket):
                 await websocket.send_text(json.dumps({"type": "error", "message": "Invalid JSON"}))
                 continue
             
+            # player_id の長さチェック (DoS対策)
+            if "info" in req and "player_id" in req["info"]:
+                if len(str(req["info"]["player_id"])) > 64:
+                    await websocket.send_text(json.dumps({"type": "error", "message": "Invalid player_id"}))
+                    continue
+            
             # --- ユーザー情報更新 ---
             try:
                 if req.get("type") == "update_user_info":
@@ -363,7 +369,10 @@ async def websocket_endpoint(websocket: WebSocket):
                         if waiting_player["player_id"] == player_id:
                             continue
                         
+                        # 競合対策: 待機プレイヤーを即座に取り出す
                         p1_data = waiting_player
+                        waiting_player = None
+                        
                         p2_data = {"socket": websocket, "player_id": player_id}
                         
                         p1_profile = user_profiles.get(p1_data["player_id"])
@@ -380,7 +389,6 @@ async def websocket_endpoint(websocket: WebSocket):
                         
                         await start_turn_timer(bi.room_id)
 
-                        waiting_player = None
                     else:
                         waiting_player = {"socket": websocket, "player_id": player_id}
                         await websocket.send_text(json.dumps({"type": "waiting", "message": "対戦相手を探しています..."}))
@@ -393,7 +401,9 @@ async def websocket_endpoint(websocket: WebSocket):
 
                     if room_id: # Join existing room
                         if room_id in private_rooms:
-                            p1_data = private_rooms[room_id]
+                            # 競合対策: ルームを即座に取り出す
+                            p1_data = private_rooms.pop(room_id)
+                            
                             if p1_data["player_id"] == player_id:
                                 continue
 
@@ -412,10 +422,14 @@ async def websocket_endpoint(websocket: WebSocket):
                             await p2_data["socket"].send_text(json.dumps(bi.make_init_response(p2_data["player_id"])))
                             
                             await start_turn_timer(bi.room_id)
-                            del private_rooms[room_id]
                         else:
                             await websocket.send_text(json.dumps({"type": "error", "message": "ルームが見つかりません"}))
                     else: # Create new room
+                        # ルーム数制限 (DoS対策)
+                        if len(private_rooms) >= 10000:
+                            await websocket.send_text(json.dumps({"type": "error", "message": "サーバーが混雑しています"}))
+                            continue
+
                         while True:
                             new_room_id = f"{secrets.randbelow(1000000):06d}"
                             if new_room_id not in private_rooms: break
@@ -451,6 +465,11 @@ async def websocket_endpoint(websocket: WebSocket):
                     info = req.get("info", {})
                     model = include_check_info(**info)
                     res = include_check(model)
+                    
+                    # 単語長チェック
+                    if len(model.word) > 200:
+                        res = {"type": "pre_check", "include": False, "used": False}
+
                     await websocket.send_text(json.dumps(res)) # チェック結果は本人だけでOK
 
                 elif req.get("type") == "submit_word":
@@ -459,6 +478,11 @@ async def websocket_endpoint(websocket: WebSocket):
                     
                     # セキュリティチェック: 送信元ソケットとplayer_idの一致確認
                     if manager.socket_to_player_id.get(websocket) != model.player_id:
+                        continue
+
+                    # 単語長チェック
+                    if len(model.word) > 200:
+                        await websocket.send_text(json.dumps({"type": "error", "message": "単語が長すぎます"}))
                         continue
 
                     res = turn_process(model)
@@ -492,6 +516,11 @@ async def websocket_endpoint(websocket: WebSocket):
                 elif req.get("type") == "run_away":
                     info = req.get("info", {})
                     model = run_away_info(**info)
+                    
+                    # セキュリティチェック
+                    if manager.socket_to_player_id.get(websocket) != model.player_id:
+                        continue
+
                     if model.room_id in battle_rooms:
                         stop_turn_timer(model.room_id)
                         
@@ -509,6 +538,10 @@ async def websocket_endpoint(websocket: WebSocket):
                     room_id = info.get("room_id")
                     player_id = info.get("player_id")
                     new_ability_id = info.get("ability_id")
+
+                    # セキュリティチェック
+                    if manager.socket_to_player_id.get(websocket) != player_id:
+                        continue
 
                     if not new_ability_id:
                         await websocket.send_text(json.dumps({"type": "error", "message": "変更先の特性が指定されていません"}))
@@ -596,6 +629,13 @@ async def websocket_double_endpoint(websocket: WebSocket):
             except json.JSONDecodeError:
                 await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "Invalid JSON"}))
                 continue
+            
+            # player_id の長さチェック
+            if "info" in req and "player_id" in req["info"]:
+                if len(str(req["info"]["player_id"])) > 64:
+                    await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "Invalid player_id"}))
+                    continue
+
             try:
                 # ユーザー情報の更新
                 if req.get("type") == "update_user_info":
@@ -616,8 +656,18 @@ async def websocket_double_endpoint(websocket: WebSocket):
                     info = req.get("info", {})
                     player_id = info.get("player_id")
                     mode = info.get("mode", "1v1_double")  # 1v1_double or 2v2_double
+
+                    if mode not in ["1v1_double", "2v2_double"]:
+                        await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "Invalid mode"}))
+                        continue
+
                     logger.info(f"registering player_id: {player_id}")
                     manager.register_player(websocket, player_id)
+
+                    # ルーム数制限
+                    if len(double_private_rooms) >= 10000:
+                        await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "サーバーが混雑しています"}))
+                        continue
 
                     while True:
                         new_room_id = f"{secrets.randbelow(1000000):06d}"
@@ -680,17 +730,24 @@ async def websocket_double_endpoint(websocket: WebSocket):
                         room_data = double_private_rooms[room_id]
                         mode = room_data["mode"]
                         players = room_data["players"]
+                        target_player_count = 2 if mode == "1v1_double" else 4
+
+                        # 競合対策: 定員チェック
+                        if len(players) >= target_player_count:
+                            await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "ルームは満員です"}))
+                            continue
 
                         # 既に参加済みの場合は無視
                         if any(p["player_id"] == player_id for p in players):
                             continue
 
                         players.append({"socket": websocket, "player_id": player_id})
-                        
-                        target_player_count = 2 if mode == "1v1_double" else 4
 
                         # メンバーが揃った場合、バトル開始
                         if len(players) == target_player_count:
+                            # 競合対策: 即座にルームリストから削除
+                            del double_private_rooms[room_id]
+
                             if mode == "1v1_double":
                                 team1_ids = [players[0]["player_id"]]
                                 team2_ids = [players[1]["player_id"]]
@@ -710,8 +767,6 @@ async def websocket_double_endpoint(websocket: WebSocket):
                                 p_init_res["type"] = "init_double_battle"
                                 attach_double_timer_info(bi.room_id, p_init_res)
                                 await manager.safe_send_text(p["socket"], json.dumps(p_init_res))
-                            
-                            del double_private_rooms[room_id]
                         else:
                             # 待機状態を全メンバーに通知
                             for p in players:
@@ -733,6 +788,11 @@ async def websocket_double_endpoint(websocket: WebSocket):
 
                     # セキュリティチェック
                     if manager.socket_to_player_id.get(websocket) != player_id:
+                        continue
+
+                    # 単語長チェック
+                    if len(word) > 200:
+                        await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "単語が長すぎます"}))
                         continue
 
                     if room_id in double_battle_rooms:
@@ -781,6 +841,10 @@ async def websocket_double_endpoint(websocket: WebSocket):
                     room_id = info.get("room_id")
                     player_id = info.get("player_id")
 
+                    # セキュリティチェック
+                    if manager.socket_to_player_id.get(websocket) != player_id:
+                        continue
+
                     if room_id in double_battle_rooms:
                         battle = double_battle_rooms[room_id]
                         res = battle.handle_disconnection(player_id, message="あいてが逃げ出しました。")
@@ -807,6 +871,11 @@ async def websocket_double_endpoint(websocket: WebSocket):
                     room_id = info.get("room_id")
                     word = info.get("word", "")
 
+                    # 単語長チェック
+                    if len(word) > 200:
+                        await manager.safe_send_text(websocket, json.dumps({"type": "pre_check", "include": False, "used": False}))
+                        continue
+
                     if room_id in double_battle_rooms:
                         battle = double_battle_rooms[room_id]
                         res = battle.include_check(word)
@@ -818,12 +887,17 @@ async def websocket_double_endpoint(websocket: WebSocket):
                 elif req.get("type") == "change_ability_double":
                     info = req.get("info", {})
                     room_id = info.get("room_id")
+                    player_id = info.get("player_id")
                     char_id = info.get("char_id")
                     ability_id = info.get("ability_id")
 
+                    # セキュリティチェック
+                    if manager.socket_to_player_id.get(websocket) != player_id:
+                        continue
+
                     if room_id in double_battle_rooms:
                         battle = double_battle_rooms[room_id]
-                        res = battle.change_ability(char_id, ability_id)
+                        res = battle.change_ability(player_id, char_id, ability_id)
                         if res.get("type") == "error":
                             await manager.safe_send_text(websocket, json.dumps(res))
                         else:
@@ -858,6 +932,10 @@ async def websocket_double_endpoint(websocket: WebSocket):
 
         # 実際の切断プレイヤーIDを取得
         disconnected_player_id = manager.socket_to_player_id.get(websocket)
+
+        # メモリリーク防止: 切断したユーザーのプロフィールを削除
+        if disconnected_player_id and disconnected_player_id in user_profiles:
+            del user_profiles[disconnected_player_id]
 
         left_rooms = manager.disconnect(websocket)
         for room_id in left_rooms:

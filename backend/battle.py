@@ -646,6 +646,8 @@ class Battle_info:
         """
         if(self.player1_win != None):
             return {"type" : "error", "message" : "戦闘はすでに終了しています"}
+        elif player_id != self.player1.id and player_id != self.player2.id:
+            return {"type" : "error", "message" : "このルームのプレイヤーではありません"}
         elif(self.player1_turn ^ (player_id == self.player1.id)):
             return {"type" : "error", "message" : "自分のターンではありません"}
         elif(not word):
@@ -1193,7 +1195,12 @@ class Battle_info:
 
     def change_ability(self, player_id: str, new_ability_id: str):
         """プレイヤーの特性を変更する"""
-        player = self.player1 if player_id == self.player1.id else self.player2
+        if player_id == self.player1.id:
+            player = self.player1
+        elif player_id == self.player2.id:
+            player = self.player2
+        else:
+            return {"type": "error", "message": "このルームのプレイヤーではありません"}
         
         if player.ability_change_count <= 0:
             return {"type": "error", "message": "特性はもう変更できません"}

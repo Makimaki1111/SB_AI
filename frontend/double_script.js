@@ -800,6 +800,7 @@ function sendChangeAbilityDouble(charId, abilityId) {
             type: "change_ability_double",
             info: {
                 room_id: doubleBattleState.roomId,
+                player_id: player1_id,
                 char_id: realCharId,
                 ability_id: abilityId
             }
