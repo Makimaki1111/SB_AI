@@ -6,11 +6,11 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     gap: 15px;
     height: 100%;
-    padding-top: 50px;
+    padding-top: 100px;
 }
 
 #double-lobby-screen h1 {

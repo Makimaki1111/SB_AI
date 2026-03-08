@@ -39,6 +39,7 @@
     <div id="double-lobby-screen" style="display: block;">
         <div class="phone-box">
             <div class="content">
+                <a id="lobby-back-btn" href="#title.html" class="back-to-title-link">←もどる</a>
                 <h1>ダブルバトル</h1>
 
                 <!-- メニューボタン群をコンテナでラップして重なりと間隔を管理 -->
@@ -77,9 +78,6 @@
 
                     <div id="lobby-message" style="color: #333; font-weight: bold; text-align: center;">
                     </div>
-
-                    <a id="lobby-back-btn" href="#title.html" class="button-lobby"
-                        style="background: linear-gradient(180deg, #f0f0f0, #d4d4d4); color: #333; margin-bottom: 20px;">タイトルに戻る</a>
                 </div>
             </div>
         </div>
@@ -88,6 +86,7 @@
     <!-- ダブルバトル 対戦画面 (初期非表示) -->
     <div id="double-battle-screen" style="display: none;">
         <div class="phone-box">
+            <a id="back-to-title-btn" class="back-to-title-link" style="display:none;">←もどる</a>
             <div class="top-image" id="double-top-image">
                 <img src="img/ground.jpg" alt="背景画像" />
 
@@ -211,7 +210,6 @@
                     </div>
                 </div>
 
-                <a id="back-to-title-btn" style="display:none;" href="#double_battle.html">ロビーに戻る</a>
                 <!-- フッターエリア: ボタン類 -->
                 <div class="footer-area">
                     <button id="cancel-battle-btn" style="position: relative; z-index: 100;">にげる</button>
