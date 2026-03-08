@@ -169,6 +169,44 @@
     </div>
   </div>
 
+  <!-- バトル用 特性選択モーダル -->
+  <div id="ability-modal" style="display: none;">
+    <!-- 特性変更時などに表示するモーダルメッセージ -->
+    <div id="modal-message"></div>
+    <div id="ally-tokusei">
+      <span>自分</span>
+      <div class="tokusei-name" id="ally-current-ability-name">---</div>
+      <div class="tokusei-desc" id="ally-current-ability-desc"></div>
+    </div>
+    <div id="foe-tokusei">
+      <span>相手</span>
+      <div class="tokusei-name" id="foe-current-ability-name">---</div>
+      <div class="tokusei-desc" id="foe-current-ability-desc"></div>
+    </div>
+    <div id="middle">
+      <span class="tapto">タップしてとくせいを変える<span id="counter">(あと<span id="remain">0</span>回)</span></span>
+      <div id="skills">
+        <!-- ここにJavaScriptで選択可能な特性のリストが生成されます -->
+      </div>
+    </div>
+    <div class="close-modal" id="close-ability-modal-btn">とじる</div>
+  </div>
+
+  <!-- バトル用 状況確認モーダル -->
+  <div id="situation-modal" style="display: none;">
+    <div id="s-foe-info">
+      <h3>あいて<span id="foe-rank"></span></h3>
+      <p>こうげき<br><span id="foe-A">1.0倍</span></p>
+      <p>ぼうぎょ<br><span id="foe-B">1.0倍</span></p>
+    </div>
+    <div id="s-ally-info">
+      <h3>じぶん<span id="ally-rank"></span></h3>
+      <p>こうげき<br><span id="ally-A">1.0倍</span></p>
+      <p>ぼうぎょ<br><span id="ally-B">1.0倍</span></p>
+    </div>
+    <div class="close-modal" id="close-situation-modal-btn">とじる</div>
+  </div>
+
   <script>
     // バトル開始ボタンのイベントリスナー
     document.getElementById('vs-cpu-btn').addEventListener('click', () => startBattle('cpu'));
