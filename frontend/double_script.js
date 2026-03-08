@@ -230,7 +230,6 @@ $(() => {
     ui.abilityInfoContainer.selector.off('click').on('click', () => {
         ui.updateAbilityInfo(getUiCharsState(), doubleBattleState.allAbilities, (charId, abilityId) => {
             sendChangeAbilityDouble(charId, abilityId);
-            if (typeof playSound === 'function') playSound("resource/concent.mp3");
         });
         ui.showAbilityModal();
         if (typeof playSound === 'function') playSound("resource/pera.mp3");
@@ -372,20 +371,28 @@ function connectDoubleWebSocket(action, mode, roomId) {
         else if (data.type === "init_double_battle") {
             await initDoubleBattle(data);
         } else if (data.type === "turn_result") {
-            if (isProcessingTurnResult) {
-                // 前�Eターン結果を�E琁E��の場合�Eキューに入れる
-                pendingTurnResults.push(data);
-            } else {
-                isProcessingTurnResult = true;
-                await handleTurnResult(data);
-                isProcessingTurnResult = false;
+            // 特性変更のみかどうか判定
+            const isOnlyAbilityChange = data.events && data.events.length > 0 && data.events.every(ev => ev.type === "ability_changed");
 
-                while (pendingTurnResults.length > 0) {
-                    await sleep(500);
+            if (isOnlyAbilityChange) {
+                // 特性変更のみの場合は即時反映（キューに入れない）
+                handleTurnResult(data);
+            } else {
+                if (isProcessingTurnResult) {
+                    // 前のターン結果を処理中の場合はキューに入れる
+                    pendingTurnResults.push(data);
+                } else {
                     isProcessingTurnResult = true;
-                    const next = pendingTurnResults.shift();
-                    await handleTurnResult(next);
+                    await handleTurnResult(data);
                     isProcessingTurnResult = false;
+
+                    while (pendingTurnResults.length > 0) {
+                        await sleep(500);
+                        isProcessingTurnResult = true;
+                        const next = pendingTurnResults.shift();
+                        await handleTurnResult(next);
+                        isProcessingTurnResult = false;
+                    }
                 }
             }
         } else if (data.type === "error") {
@@ -466,7 +473,15 @@ async function handleTurnResult(data) {
     
     // ★即時反映: 特性変更のみなら先にステータス更新とモーダル更新を行う
     if (onlyAbilityChanged) {
-        updateUIWithCharacters(data.characters);
+        // updateUIWithCharacters(data.characters); // 全更新だとHPバーなどが干渉するため、特性のみ更新する
+        const ids = ['p1a', 'p1b', 'p2a', 'p2b'];
+        for (let id of ids) {
+            if (data.characters[id] && doubleBattleState.chars[id]) {
+                doubleBattleState.chars[id].ability = data.characters[id].ability;
+                doubleBattleState.chars[id].ability_change_count = data.characters[id].ability_change_count;
+            }
+        }
+
         const abilityChangeEvent = [...data.events].reverse().find(e => e.type === 'ability_changed');
         if (abilityChangeEvent) {
             const changedUiId = getUIId(abilityChangeEvent.char_id || "");
@@ -526,7 +541,7 @@ async function handleTurnResult(data) {
             if (e.type !== "ability_changed") {
                 ui.showMessage(e.message || "");
             }
-            if (typeof playEventSound === 'function') {
+            if (typeof playEventSound === 'function' && e.type !== "ability_changed") {
                 playEventSound(e.type, e.message);
             }
 
