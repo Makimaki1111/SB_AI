@@ -656,11 +656,23 @@ class DoubleBattle_info:
             for k in ["p1a", "p1b", "p2a", "p2b"]:
                 if k in chars:
                     char_info = chars[k]
+                    
+                    # セキュリティ対策: 自分以外のプレイヤーID（owner_id）を隠蔽する
+                    # これにより、他人のIDを使ったなりすましを防ぐ
+                    if char_info.get("owner_id") != request_player_id:
+                        char_info["owner_id"] = "opponent"
+
                     # Hide opponent abilities
                     if is_t1 and k in ["p2a", "p2b"]:
-                        char_info.pop("ability", None)
+                        char_info["ability"] = "secret"
+                        char_info["ability_change_count"] = ABILITY_CHANGE_COUNT_INIT
                     elif not is_t1 and k in ["p1a", "p1b"]:
-                        char_info.pop("ability", None)
+                        char_info["ability"] = "secret"
+                        char_info["ability_change_count"] = ABILITY_CHANGE_COUNT_INIT
+
+        # 現在のターンプレイヤーIDも、自分以外なら隠蔽する
+        if "current_owner_id" in new_res and new_res["current_owner_id"] != request_player_id:
+            new_res["current_owner_id"] = "opponent"
 
         # Hide enemy-team ability change notifications.
         if "events" in new_res and isinstance(new_res["events"], list):

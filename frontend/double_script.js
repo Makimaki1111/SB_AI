@@ -289,6 +289,11 @@ $(() => {
     }
     fetch(`${baseUrl}/abilities`).then(r => r.json()).then(d => {
         doubleBattleState.allAbilities = d;
+        doubleBattleState.allAbilities["secret"] = {
+            name: "ひみつ",
+            description: "相手もきみのとくせいを知らないぞ",
+            icon_type: "ノーマル"
+        };
         updateDoubleLobbyAbilityDisplay(); // ロビーの表示を更新
     }).catch(e => console.error("Failed to load abilities", e));
 });
@@ -341,7 +346,6 @@ function connectDoubleWebSocket(action, mode, roomId) {
     ws.addEventListener("message", async function (e) {
         const data = JSON.parse(e.data);
         data._receivedAt = Date.now();
-        console.log("Double WS received:", data);
 
         if (data.type === "double_room_created") {
             $("#double-room-id-input").val(data.room_id);
@@ -917,6 +921,7 @@ function renderDoubleLobbyAbilities(slot) {
     listEl.appendChild(randomDiv);
 
     for (const [id, info] of Object.entries(allAbilities)) {
+        if (id === "secret") continue;
         const div = document.createElement('div');
         div.className = `skill-item ${currentAbilityId === id ? "selected" : ""}`;
         const iconName = (typeof type_to_image !== 'undefined' && type_to_image[info.icon_type]) ? type_to_image[info.icon_type] : 'normal';

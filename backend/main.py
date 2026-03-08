@@ -456,6 +456,11 @@ async def websocket_endpoint(websocket: WebSocket):
                 elif req.get("type") == "submit_word":
                     info = req.get("info", {})
                     model = turn_info(**info)
+                    
+                    # セキュリティチェック: 送信元ソケットとplayer_idの一致確認
+                    if manager.socket_to_player_id.get(websocket) != model.player_id:
+                        continue
+
                     res = turn_process(model)
                     
                     # エラーの場合はタイマーをリセットせず、送信元にのみ返す
@@ -725,6 +730,10 @@ async def websocket_double_endpoint(websocket: WebSocket):
                     player_id = info.get("player_id")
                     word = info.get("word")
                     target_char_id = info.get("target_char_id")
+
+                    # セキュリティチェック
+                    if manager.socket_to_player_id.get(websocket) != player_id:
+                        continue
 
                     if room_id in double_battle_rooms:
                         battle = double_battle_rooms[room_id]

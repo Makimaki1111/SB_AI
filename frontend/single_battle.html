@@ -324,6 +324,7 @@
         lobbyAbilitiesList.appendChild(randomDiv);
 
         for (const [id, info] of Object.entries(allAbilities)) {
+          if (id === "secret") continue;
           const div = document.createElement('div');
           div.className = `skill-item ${currentAbilityId === id ? "selected" : ""}`;
           const iconName = (typeof type_to_image !== 'undefined' && type_to_image[info.icon_type]) ? type_to_image[info.icon_type] : 'normal';
