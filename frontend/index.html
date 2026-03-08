@@ -29,6 +29,11 @@
   <iframe id="app-frame" src="single_battle.html" allow="autoplay" title="Shiritori Battle"></iframe>
   <script>
     (function bindFrameRoute() {
+      // リロード時にハッシュを削除してタイトルから開始させる
+      if (window.location.hash) {
+        history.replaceState(null, null, window.location.pathname);
+      }
+
       const frame = document.getElementById("app-frame");
       const allowedPages = new Set(["single_battle.html", "double_battle.html"]);
 
