@@ -216,6 +216,7 @@ double_private_rooms: Dict[str, Dict] = {} # {room_id: {"mode": str, "players": 
 
 # --- タイマー管理 ---
 TIME_LIMIT = 20 # 秒
+MAX_ROOMS = 10000 # ルーム数の上限
 timer_tasks: Dict[str, asyncio.Task] = {}
 double_turn_deadlines: Dict[str, float] = {}
 
@@ -243,6 +244,8 @@ async def timeout_handler(room_id: str):
             # ゲーム終了判定
             if battle.player1_win is not None:
                 stop_turn_timer(room_id)
+                if room_id in battle_rooms:
+                    del battle_rooms[room_id]
             else:
                 # CPU戦でプレイヤーがタイムアウトした場合、CPUのターンを即座に処理
                 if battle.is_cpu and not battle.player1_turn:
@@ -250,6 +253,10 @@ async def timeout_handler(room_id: str):
                     cpu_res = battle.execute_cpu_turn()
                     if cpu_res:
                         await manager.broadcast_battle_state(room_id, cpu_res)
+                        # CPUのターンで決着がついた場合
+                        if battle.player1_win is not None:
+                            if room_id in battle_rooms:
+                                del battle_rooms[room_id]
                 
                 # 次のターンのタイマー開始（ゲームが続いていれば）
                 if battle.player1_win is None:
@@ -281,12 +288,18 @@ async def double_timeout_handler(room_id: str):
 
             if battle.team1_win is not None:
                 stop_double_turn_timer(room_id)
+                if room_id in double_battle_rooms:
+                    del double_battle_rooms[room_id]
             else:
                 if battle.is_cpu and battle.current_turn_team != "team1":
                     await asyncio.sleep(1)
                     cpu_res = battle.execute_cpu_turn()
                     if cpu_res:
                         await manager.broadcast_battle_state(room_id, cpu_res, is_double=True)
+                
+                if battle.team1_win is not None:
+                    if room_id in double_battle_rooms:
+                        del double_battle_rooms[room_id]
                 
                 if battle.team1_win is None:
                     await start_double_turn_timer(room_id)
@@ -369,6 +382,11 @@ async def websocket_endpoint(websocket: WebSocket):
                         if waiting_player["player_id"] == player_id:
                             continue
                         
+                        # ルーム数制限
+                        if len(battle_rooms) >= MAX_ROOMS:
+                            await websocket.send_text(json.dumps({"type": "error", "message": "サーバーが混雑しています"}))
+                            continue
+
                         # 競合対策: 待機プレイヤーを即座に取り出す
                         p1_data = waiting_player
                         waiting_player = None
@@ -401,6 +419,11 @@ async def websocket_endpoint(websocket: WebSocket):
 
                     if room_id: # Join existing room
                         if room_id in private_rooms:
+                            # ルーム数制限
+                            if len(battle_rooms) >= MAX_ROOMS:
+                                await websocket.send_text(json.dumps({"type": "error", "message": "サーバーが混雑しています"}))
+                                continue
+
                             # 競合対策: ルームを即座に取り出す
                             p1_data = private_rooms.pop(room_id)
                             
@@ -426,7 +449,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             await websocket.send_text(json.dumps({"type": "error", "message": "ルームが見つかりません"}))
                     else: # Create new room
                         # ルーム数制限 (DoS対策)
-                        if len(private_rooms) >= 10000:
+                        if len(private_rooms) >= MAX_ROOMS:
                             await websocket.send_text(json.dumps({"type": "error", "message": "サーバーが混雑しています"}))
                             continue
 
@@ -438,6 +461,11 @@ async def websocket_endpoint(websocket: WebSocket):
 
             # typeで分岐し、既存の関数を利用
                 elif req.get("type") == "make_new_battle":
+                    # ルーム数制限
+                    if len(battle_rooms) >= MAX_ROOMS:
+                        await websocket.send_text(json.dumps({"type": "error", "message": "サーバーが混雑しています"}))
+                        continue
+
                     info = req.get("info", {})
                     model = make_new_battle_info(**info)
                     manager.register_player(websocket, model.player1_id)
@@ -495,6 +523,10 @@ async def websocket_endpoint(websocket: WebSocket):
                         stop_turn_timer(model.room_id)
                         # 結果を部屋全員に送信
                         await manager.broadcast_battle_state(model.room_id, res)
+                        
+                        # 勝敗が決まったらルームを削除
+                        if battle_rooms[model.room_id].player1_win is not None:
+                            del battle_rooms[model.room_id]
 
                         # --- CPU自動攻撃処理 ---
                         # バトルルーム取得
@@ -508,6 +540,10 @@ async def websocket_endpoint(websocket: WebSocket):
                                 if battle.is_cpu and not battle.player1_turn:
                                     cpu_res = battle.execute_cpu_turn()
                                     if cpu_res: await manager.broadcast_battle_state(room_id, cpu_res)
+                                    
+                                    # CPUのターンで決着がついた場合
+                                    if battle.player1_win is not None:
+                                        del battle_rooms[room_id]
                                 
                                 # まだ勝敗が決まっていなければ次のターンのタイマー開始
                                 if battle.player1_win is None:
@@ -665,7 +701,7 @@ async def websocket_double_endpoint(websocket: WebSocket):
                     manager.register_player(websocket, player_id)
 
                     # ルーム数制限
-                    if len(double_private_rooms) >= 10000:
+                    if len(double_private_rooms) >= MAX_ROOMS:
                         await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "サーバーが混雑しています"}))
                         continue
 
@@ -684,6 +720,11 @@ async def websocket_double_endpoint(websocket: WebSocket):
 
                 # CPU戦ルーム作成＆参加 (デバッグ用)
                 elif req.get("type") == "join_double_cpu_room":
+                    # ルーム数制限
+                    if len(double_battle_rooms) >= MAX_ROOMS:
+                        await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "サーバーが混雑しています"}))
+                        continue
+
                     info = req.get("info", {})
                     player_id = info.get("player_id")
                     manager.register_player(websocket, player_id)
@@ -745,6 +786,11 @@ async def websocket_double_endpoint(websocket: WebSocket):
 
                         # メンバーが揃った場合、バトル開始
                         if len(players) == target_player_count:
+                            # ルーム数制限
+                            if len(double_battle_rooms) >= MAX_ROOMS:
+                                await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "サーバーが混雑しています"}))
+                                continue
+
                             # 競合対策: 即座にルームリストから削除
                             del double_private_rooms[room_id]
 
