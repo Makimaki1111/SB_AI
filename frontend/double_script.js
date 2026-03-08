@@ -51,12 +51,6 @@ function getUiCharsState() {
 
 let ui;
 
-function playSound(path) {
-    if (window.SB_AUDIO) {
-        window.SB_AUDIO.playSound(path);
-    }
-}
-
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
 function shouldPlayAbilityChangeSound(event) {
@@ -171,9 +165,9 @@ $(() => {
     const userInteractionHandler = () => {
         if (isAudioUnlocked) return;
         isAudioUnlocked = true;
-        if (typeof unlockAudioContext === "function") unlockAudioContext();
-        if (!hasParentAudioManager() && typeof startBGM === "function") {
-            startBGM("resource/horizon.mp3");
+        if (window.SB_AUDIO) window.SB_AUDIO.unlockAudioContext();
+        if (window.SB_AUDIO) {
+            window.SB_AUDIO.startBGM("resource/horizon.mp3");
         }
     };
     document.body.addEventListener("click", userInteractionHandler, { once: true });

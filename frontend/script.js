@@ -153,6 +153,19 @@ async function loadAudio(path) {
 }
 
 async function preloadSounds() {
+  // 親のオーディオマネージャーがある場合はそちらに任せる（二重ロード防止）
+  if (window.SB_AUDIO && typeof window.SB_AUDIO.preloadSounds === "function") {
+    const paths = new Set();
+    Object.values(TYPE_SOUND_MAP).forEach(p => paths.add(p));
+    Object.values(EVENT_SOUND_MAP).forEach(p => paths.add(p));
+    Object.values(DAMAGE_MSG_MAP).forEach(p => paths.add(p));
+    paths.add("resource/horizon.mp3");
+    paths.add("resource/overflow.mp3");
+    paths.add("resource/concent.mp3");
+    paths.add("resource/pera.mp3");
+    return window.SB_AUDIO.preloadSounds(Array.from(paths));
+  }
+
   initAudioContext();
   const paths = new Set();
   // マップからパスを収集
@@ -173,6 +186,10 @@ async function preloadSounds() {
 
 async function playSound(path) {
   try {
+    if (window.SB_AUDIO && typeof window.SB_AUDIO.playSound === "function") {
+      return window.SB_AUDIO.playSound(path);
+    }
+
     if (!path) return false;
 
     // 短時間の重複再生防止 (100ms以内の連打は無視)
@@ -329,6 +346,10 @@ function getParentAudioManager() {
 }
 
 function startManagedBGM(path) {
+  if (window.SB_AUDIO && typeof window.SB_AUDIO.startBGM === "function") {
+    return window.SB_AUDIO.startBGM(path);
+  }
+
   const manager = getParentAudioManager();
   if (manager && typeof manager.startBGM === "function") {
     return manager.startBGM(path);
@@ -337,6 +358,10 @@ function startManagedBGM(path) {
 }
 
 function stopManagedBGM() {
+  if (window.SB_AUDIO && typeof window.SB_AUDIO.stopBGM === "function") {
+    return window.SB_AUDIO.stopBGM();
+  }
+
   const manager = getParentAudioManager();
   if (manager && typeof manager.stopBGM === "function") {
     return manager.stopBGM();

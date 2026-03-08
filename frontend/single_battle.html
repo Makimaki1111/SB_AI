@@ -243,6 +243,12 @@
       isAudioUnlocked = true;
 
       try {
+        if (window.SB_AUDIO) {
+          window.SB_AUDIO.unlockAudioContext();
+          window.SB_AUDIO.startBGM('resource/horizon.mp3');
+          return;
+        }
+
         if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
           window.parent.SB_AUDIO.unlockAudioContext();
           window.parent.SB_AUDIO.startBGM('resource/horizon.mp3');

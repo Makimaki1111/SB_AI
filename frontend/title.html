@@ -122,28 +122,26 @@
         const userInteractionHandler = () => {
             if (isAudioUnlocked) return;
             isAudioUnlocked = true;
-            try {
-                if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
-                    window.parent.SB_AUDIO.unlockAudioContext();
-                    window.parent.SB_AUDIO.startBGM('resource/horizon.mp3');
-                }
-            } catch (e) { }
+            if (window.SB_AUDIO) {
+                window.SB_AUDIO.unlockAudioContext();
+                window.SB_AUDIO.startBGM('resource/horizon.mp3');
+            }
         };
         document.body.addEventListener('click', userInteractionHandler, { once: true });
         document.body.addEventListener('touchstart', userInteractionHandler, { once: true });
 
         // ページロード完了時にBGM再生を試みる
         window.addEventListener('load', () => {
-            if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
-                window.parent.SB_AUDIO.startBGM('resource/horizon.mp3');
+            if (window.SB_AUDIO) {
+                window.SB_AUDIO.startBGM('resource/horizon.mp3');
             }
         });
 
         // 画面がアクティブになった時（index.htmlからの通知）にもBGM再生を試みる
         window.addEventListener("message", (event) => {
             if (event.data && event.data.type === 'sb:activated') {
-                if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
-                    window.parent.SB_AUDIO.startBGM('resource/horizon.mp3');
+                if (window.SB_AUDIO) {
+                    window.SB_AUDIO.startBGM('resource/horizon.mp3');
                 }
             }
         });
