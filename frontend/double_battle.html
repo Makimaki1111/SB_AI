@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="ja">
 
 <head>
@@ -20,7 +20,7 @@
         })();
     </script>
     <title>ダブルバトル (β版)</title>
-    <link rel="stylesheet" href="style.css?v=14" />
+    <link rel="stylesheet" href="style.css?v=18" />
     <link rel="stylesheet" href="double_style.css?v=8" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -205,7 +205,14 @@
                         <div id="text">
                             <input type="text" id="input" autocomplete="off" placeholder="「」からはじまることば" />
                             <button type="submit" id="submit">▶</button>
-                            <img id="include-img" src="" alt="動的画像" />
+                            <div id="prediction-container">
+                                <div id="prediction-images">
+                                    <img id="include-img" class="include-img" src="" alt="" style="display: none;" />
+                                    <img id="include-img-1" class="include-img" src="" alt="" style="display: none;" />
+                                    <img id="include-img-2" class="include-img" src="" alt="" style="display: none;" />
+                                </div>
+                                <div id="prediction-message" class="prediction-message"></div>
+                            </div>
                         </div>
                         <div id="message"></div>
                         <div id="wait-message"></div>
@@ -379,7 +386,7 @@
             });
         }
     </script>
-    <script src="double_UI.js?v=5"></script>
+    <script src="double_UI.js?v=9"></script>
     <script src="double_script.js?v=12"></script>
 
 </body>

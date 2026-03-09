@@ -446,7 +446,7 @@ let pendingAcceptedQueue = [];
 const initializeBattleScreen = () => {
   ui.showBattleScreen();
   ui.showMessage();
-  ui.hidePreImg();
+  ui.hideCheckResult();
   ui.hideAllyImage();
   ui.hideFoeImage();
   ui.showAllyWord("");
@@ -518,15 +518,7 @@ const onMadeRoom = async (data) => {
 }
 
 const onPreCheck = (data) => {
-  if (data["include"] === true) {
-    if (data["used"] === true) {
-      ui.showUsedWord(data);
-    } else {
-      ui.showPreImg();
-    }
-  } else {
-    ui.hidePreImg();
-  }
+  ui.showCheckResult(data);
 }
 
 const processEvent = async (events, is_my_turn) => {
@@ -1034,6 +1026,8 @@ function preloadImages() {
   });
 }
 
+let initialInnerHeight = window.innerHeight;
+
 // 画面サイズに合わせてスケーリングする関数
 function adjustWindowScale() {
   // タイトル画面とバトル画面の両方の .phone-box を取得
@@ -1043,8 +1037,12 @@ function adjustWindowScale() {
   const originalWidth = 450;
   const originalHeight = 720; // 450 * 1.6 (aspect-ratio 10/16)
 
+  // 入力中は高さを変更しない（キーボード対策）
+  const isInputFocused = document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA');
+  const heightToUse = isInputFocused ? initialInnerHeight : window.innerHeight;
+
   const scaleX = (window.innerWidth * 0.96) / originalWidth;
-  const scaleY = (window.innerHeight * 0.96) / originalHeight;
+  const scaleY = (heightToUse * 0.96) / originalHeight;
   const scale = Math.min(scaleX, scaleY, 1.0); // 拡大はしない
 
   phoneBoxes.forEach(box => {
@@ -1082,7 +1080,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 入力欄の変化で単語チェック
   ui.input.selector.on("input", () => {
     if (!battleState.roomId) {
-      ui.hidePreImg();
+      ui.hideCheckResult();
       return;
     }
 
@@ -1095,7 +1093,7 @@ document.addEventListener("DOMContentLoaded", () => {
         sendIncludeCheck(battleState.roomId, text);
       }
     } else {
-      ui.hidePreImg();
+      ui.hideCheckResult();
     }
   });
 
@@ -1104,7 +1102,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const text = ui.input.selector.val();
     if (!text.trim() || !battleState.roomId) return;
     ui.clearInput();
-    ui.hidePreImg();
+    ui.hideCheckResult();
     // playSound("resource/pera.mp3"); // 送信時の決定音は不要なためコメントアウト
     sendSubmitWord(battleState.roomId, player1_id, text);
   });
@@ -1157,6 +1155,17 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // 画面リサイズ対応
-  window.addEventListener('resize', adjustWindowScale);
+  // 初期高さを固定して、キーボード表示時にFlexboxレイアウトが崩れるのを防ぐ
+  initialInnerHeight = window.innerHeight;
+  document.body.style.height = `${initialInnerHeight}px`;
+
+  window.addEventListener('resize', () => {
+    const isInputFocused = document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA');
+    if (!isInputFocused) {
+      initialInnerHeight = window.innerHeight;
+      document.body.style.height = `${initialInnerHeight}px`;
+    }
+    adjustWindowScale();
+  });
   adjustWindowScale(); // 初期実行
 });

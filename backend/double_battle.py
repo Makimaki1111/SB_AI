@@ -4,9 +4,9 @@ except ImportError:
     from backend.SB_info import SB_info
 
 try:
-    from battle import Player, get_default_abilities, MAX_HP, FOOD_LIMIT, MEDICAL_LIMIT, MIN_RANK, MAX_RANK, FOOD_RECOVERY_AMOUNT, MEDICAL_RECOVERY_AMOUNT, CRITICAL_HIT_CHANCE, CRITICAL_HIT_MULTIPLIER, BASE_DAMAGE_NORMAL, BASE_DAMAGE_TYPED, DAMAGE_RANDOM_MIN, DAMAGE_RANDOM_MAX, VIOLENCE_ATTACK_DROP, LEECH_SEED_TURNS, LEECH_SEED_DRAIN_AMOUNT
+    from battle import Player, get_default_abilities, MAX_HP, FOOD_LIMIT, MEDICAL_LIMIT, MIN_RANK, MAX_RANK, FOOD_RECOVERY_AMOUNT, MEDICAL_RECOVERY_AMOUNT, CRITICAL_HIT_CHANCE, CRITICAL_HIT_MULTIPLIER, BASE_DAMAGE_NORMAL, BASE_DAMAGE_TYPED, DAMAGE_RANDOM_MIN, DAMAGE_RANDOM_MAX, VIOLENCE_ATTACK_DROP, LEECH_SEED_TURNS, LEECH_SEED_DRAIN_AMOUNT, IshokudogenAbility
 except ImportError:
-    from backend.battle import Player, get_default_abilities, MAX_HP, FOOD_LIMIT, MEDICAL_LIMIT, MIN_RANK, MAX_RANK, FOOD_RECOVERY_AMOUNT, MEDICAL_RECOVERY_AMOUNT, CRITICAL_HIT_CHANCE, CRITICAL_HIT_MULTIPLIER, BASE_DAMAGE_NORMAL, BASE_DAMAGE_TYPED, DAMAGE_RANDOM_MIN, DAMAGE_RANDOM_MAX, VIOLENCE_ATTACK_DROP, LEECH_SEED_TURNS, LEECH_SEED_DRAIN_AMOUNT
+    from backend.battle import Player, get_default_abilities, MAX_HP, FOOD_LIMIT, MEDICAL_LIMIT, MIN_RANK, MAX_RANK, FOOD_RECOVERY_AMOUNT, MEDICAL_RECOVERY_AMOUNT, CRITICAL_HIT_CHANCE, CRITICAL_HIT_MULTIPLIER, BASE_DAMAGE_NORMAL, BASE_DAMAGE_TYPED, DAMAGE_RANDOM_MIN, DAMAGE_RANDOM_MAX, VIOLENCE_ATTACK_DROP, LEECH_SEED_TURNS, LEECH_SEED_DRAIN_AMOUNT, IshokudogenAbility
 
 from collections import defaultdict
 from pydantic import BaseModel
@@ -313,9 +313,17 @@ class DoubleBattle_info:
 
         self.word = word
         types = self._type_check(word)
-        current_actor.types = types[:]
+        original_types = types[:]
+        current_actor.types = original_types[:]
         
         ability_obj = self.abilities.get(current_actor.ability)
+
+        # 「いしょくどうげん」の場合、食べ物を医療として扱う
+        if ability_obj and isinstance(ability_obj, IshokudogenAbility) and "食べ物" in types:
+            # 食べ物タイプを削除し、医療タイプを追加して処理を移譲する
+            types.remove("食べ物")
+            if "医療" not in types:
+                types.append("医療")
 
         # === 特性互換レイヤー ===
         # 特性クラスは battle.player1 / battle.player2 を参照するため、
@@ -527,15 +535,32 @@ class DoubleBattle_info:
         if not word:
             return ret
 
-        if word in self.used:
-            ret["include"] = True
-            ret["used"] = True
-            # usedはdefaultdict(list)なので、タイプを取得
-            types = self.sb_info.get_types(word) if self.sb_info.inclue_in_typed_words(word) else [""]
+        is_included = self.sb_info.include_in_all_words(word)
+        ret["include"] = is_included
+
+        if is_included:
+            # タイプを取得
+            types = [t for t in self.sb_info.get_types(word) if t]
             ret["type1"] = types[0] if len(types) >= 1 else ""
             ret["type2"] = types[1] if len(types) >= 2 else ""
-        else:
-            ret["include"] = self.sb_info.include_in_all_words(word)
+            
+            # --- 相性予測 (敵チーム全員分) ---
+            current_actor = self.get_current_actor()
+            enemies = self.team2 if current_actor in self.team1 else self.team1
+            at1 = types[0] if len(types) >= 1 else ""
+            at2 = types[1] if len(types) >= 2 else ""
+            
+            predictions = {}
+            for enemy in enemies:
+                if not enemy.is_defeated:
+                    dt1 = enemy.types[0] if len(enemy.types) >= 1 else ""
+                    dt2 = enemy.types[1] if len(enemy.types) >= 2 else ""
+                    effect = self.sb_info.type_effect(at1, at2, dt1, dt2)
+                    predictions[enemy.id] = "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…" if effect > 0 else "効果はないようだ…"
+            ret["predictions"] = predictions
+
+        if word in self.used:
+            ret["used"] = True
 
         return ret
 
