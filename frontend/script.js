@@ -376,25 +376,25 @@ function getParentAudioManager() {
 }
 
 function startManagedBGM(path) {
-  if (window.SB_AUDIO && typeof window.SB_AUDIO.startBGM === "function") {
-    return window.SB_AUDIO.startBGM(path);
-  }
-
   const manager = getParentAudioManager();
   if (manager && typeof manager.startBGM === "function") {
     return manager.startBGM(path);
+  }
+
+  if (window.SB_AUDIO && typeof window.SB_AUDIO.startBGM === "function") {
+    return window.SB_AUDIO.startBGM(path);
   }
   return startBGM(path);
 }
 
 function stopManagedBGM() {
-  if (window.SB_AUDIO && typeof window.SB_AUDIO.stopBGM === "function") {
-    return window.SB_AUDIO.stopBGM();
-  }
-
   const manager = getParentAudioManager();
   if (manager && typeof manager.stopBGM === "function") {
     return manager.stopBGM();
+  }
+
+  if (window.SB_AUDIO && typeof window.SB_AUDIO.stopBGM === "function") {
+    return window.SB_AUDIO.stopBGM();
   }
   return stopBGM();
 }

@@ -75,6 +75,12 @@ async def protect_assets_middleware(request: Request, call_next):
                 return Response(status_code=403, content="Access Denied")
 
     response = await call_next(request)
+
+    # 静的リソースのキャッシュ制御 (1日キャッシュ)
+    # エラー(404/403/500等)はキャッシュしないように、ステータスコードが400未満の時のみ適用
+    if (path.startswith("/img/") or path.startswith("/resource/")) and response.status_code < 400:
+        response.headers["Cache-Control"] = "public, max-age=86400"
+
     return response
 
 # --- Connection Manager: WebSocket接続を管理するクラス ---
@@ -714,6 +720,12 @@ async def websocket_double_endpoint(websocket: WebSocket):
             msg_type = req.get("type")
             if msg_type not in ["include_check", "include_check_double"]:
                 info_summary = req.get("info", {}).copy()
+                
+                # プレイヤー名を追加してログに出力
+                p_id = info_summary.get("player_id")
+                if p_id and p_id in user_profiles:
+                    info_summary["player_name"] = user_profiles[p_id].get("name")
+
                 logger.info(f"WS Double Recv: type={msg_type}, info={info_summary}")
 
             try:
