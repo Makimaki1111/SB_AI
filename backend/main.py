@@ -1,4 +1,5 @@
 import uvicorn
+import re
 import json
 import secrets
 import uuid
@@ -26,6 +27,25 @@ app = FastAPI()
 # --- ログ設定 ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# --- 静的アセットへのアクセスログを無効化するフィルタ ---
+class StaticAssetFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        # uvicornのアクセスログのメッセージ形式は "GET /path HTTP/1.1" 200
+        message = record.getMessage()
+        # "GET /img/... や "GET /resource/... を含むログを対象
+        if '"GET /img/' in message or '"GET /resource/' in message:
+            # ステータスコードを抽出して判定 (例: ... HTTP/1.1" 200 ...)
+            match = re.search(r'HTTP/\d\.\d" (\d{3})', message)
+            if match:
+                status_code = int(match.group(1))
+                # 400未満（成功・リダイレクト）はログに出さない
+                if status_code < 400:
+                    return False
+        return True
+
+# uvicornのアクセスロガーにフィルタを適用
+logging.getLogger("uvicorn.access").addFilter(StaticAssetFilter())
 
 app.add_middleware(
     CORSMiddleware,
@@ -55,6 +75,12 @@ async def protect_assets_middleware(request: Request, call_next):
                 return Response(status_code=403, content="Access Denied")
 
     response = await call_next(request)
+
+    # 静的リソースのキャッシュ制御 (1日キャッシュ)
+    # エラー(404/403/500等)はキャッシュしないように、ステータスコードが400未満の時のみ適用
+    if (path.startswith("/img/") or path.startswith("/resource/")) and response.status_code < 400:
+        response.headers["Cache-Control"] = "public, max-age=86400"
+
     return response
 
 # --- Connection Manager: WebSocket接続を管理するクラス ---
@@ -694,6 +720,12 @@ async def websocket_double_endpoint(websocket: WebSocket):
             msg_type = req.get("type")
             if msg_type not in ["include_check", "include_check_double"]:
                 info_summary = req.get("info", {}).copy()
+                
+                # プレイヤー名を追加してログに出力
+                p_id = info_summary.get("player_id")
+                if p_id and p_id in user_profiles:
+                    info_summary["player_name"] = user_profiles[p_id].get("name")
+
                 logger.info(f"WS Double Recv: type={msg_type}, info={info_summary}")
 
             try:
