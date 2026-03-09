@@ -5,7 +5,7 @@ if (!player1_id) {
     localStorage.setItem("sb_player_id", player1_id);
 }
 
-const TURN_TIME_LIMIT = 20;
+const TURN_TIME_LIMIT = 30;
 let isProcessingTurnResult = false;
 const pendingTurnResults = [];
 
@@ -783,7 +783,6 @@ function sendDoubleSubmitWord(word) {
     }));
     ui.disableInput();
     ui.clearInput();
-    ui.stopTimer();
 }
 
 function backToLobby() {

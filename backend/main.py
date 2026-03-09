@@ -244,6 +244,7 @@ double_private_rooms: Dict[str, Dict] = {} # {room_id: {"mode": str, "players": 
 
 # --- タイマー管理 ---
 TIME_LIMIT = 20 # 秒
+DOUBLE_TIME_LIMIT = 30 # 秒
 MAX_ROOMS = 10000 # ルーム数の上限
 timer_tasks: Dict[str, asyncio.Task] = {}
 double_turn_deadlines: Dict[str, float] = {}
@@ -308,7 +309,7 @@ def stop_turn_timer(room_id: str):
 
 async def double_timeout_handler(room_id: str):
     try:
-        await asyncio.sleep(TIME_LIMIT)
+        await asyncio.sleep(DOUBLE_TIME_LIMIT)
         if room_id in double_battle_rooms:
             battle = double_battle_rooms[room_id]
             res = battle.timeout()
@@ -339,7 +340,7 @@ async def start_double_turn_timer(room_id: str):
         double_turn_deadlines.pop(room_id, None)
         return
     stop_double_turn_timer(room_id)
-    double_turn_deadlines[room_id] = time.time() + TIME_LIMIT
+    double_turn_deadlines[room_id] = time.time() + DOUBLE_TIME_LIMIT
     timer_tasks[room_id] = asyncio.create_task(double_timeout_handler(room_id))
 
 def stop_double_turn_timer(room_id: str):
