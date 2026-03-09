@@ -133,8 +133,8 @@ select {
 #input,
 #double-input {
   width: 80%;
-  height: 30px;
-  border-radius: 20px;
+  height: 42px;
+  border-radius: 21px;
   font-size: 1.4em;
   /* border: 2px solid #646464; */
   border: none;
@@ -303,18 +303,31 @@ select {
   z-index: 1;
 }
 
-#include-img {
+.include-img {
   position: absolute;
   top: 0;
-  right: 4rem;
   transform: translateY(-75%);
-  /* タイマーバーの上に配置 */
-  /* 他の要素と被らないようサイズを調整 */
-  height: 100px;
+  height: 80px;
   opacity: 0.5;
+  opacity: 0.7;
   z-index: 10;
   display: none;
   pointer-events: none;
+}
+
+#include-img-only {
+  right: 4rem;
+  right: 5rem;
+}
+
+#include-img-1 {
+  right: 5.5rem;
+  right: 7rem;
+}
+
+#include-img-2 {
+  right: 2.5rem;
+  right: 3rem;
 }
 
 #wait-message {

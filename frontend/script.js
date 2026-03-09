@@ -446,7 +446,7 @@ let pendingAcceptedQueue = [];
 const initializeBattleScreen = () => {
   ui.showBattleScreen();
   ui.showMessage();
-  ui.hidePreImg();
+  ui.hideCheckResult();
   ui.hideAllyImage();
   ui.hideFoeImage();
   ui.showAllyWord("");
@@ -518,15 +518,7 @@ const onMadeRoom = async (data) => {
 }
 
 const onPreCheck = (data) => {
-  if (data["include"] === true) {
-    if (data["used"] === true) {
-      ui.showUsedWord(data);
-    } else {
-      ui.showPreImg();
-    }
-  } else {
-    ui.hidePreImg();
-  }
+  ui.showCheckResult(data);
 }
 
 const processEvent = async (events, is_my_turn) => {
@@ -1082,7 +1074,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 入力欄の変化で単語チェック
   ui.input.selector.on("input", () => {
     if (!battleState.roomId) {
-      ui.hidePreImg();
+      ui.hideCheckResult();
       return;
     }
 
@@ -1095,7 +1087,7 @@ document.addEventListener("DOMContentLoaded", () => {
         sendIncludeCheck(battleState.roomId, text);
       }
     } else {
-      ui.hidePreImg();
+      ui.hideCheckResult();
     }
   });
 
@@ -1104,7 +1096,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const text = ui.input.selector.val();
     if (!text.trim() || !battleState.roomId) return;
     ui.clearInput();
-    ui.hidePreImg();
+    ui.hideCheckResult();
     // playSound("resource/pera.mp3"); // 送信時の決定音は不要なためコメントアウト
     sendSubmitWord(battleState.roomId, player1_id, text);
   });

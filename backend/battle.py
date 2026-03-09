@@ -966,14 +966,17 @@ class Battle_info:
         if not _input:
             return ret
 
-        if(_input in self.used):
-            ret["include"] = True
-            ret["used"] = True
-            types = self.used[_input]
+        is_included = self.sb_info.include_in_all_words(_input)
+        ret["include"] = is_included
+
+        if is_included:
+            # タイプを取得
+            types = [t for t in self.sb_info.get_types(_input) if t]
             ret["type1"] = types[0] if len(types) >= 1 else ""
             ret["type2"] = types[1] if len(types) >= 2 else ""
-        else:
-            ret["include"] = self.sb_info.include_in_all_words(_input)
+
+        if _input in self.used:
+            ret["used"] = True
 
         return ret
 

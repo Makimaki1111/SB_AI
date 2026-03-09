@@ -261,7 +261,7 @@ $(() => {
     // 入力中のタイプチェチE�� (script.jsと同じ)
     ui.input.selector.off('input').on('input', () => {
         if (!doubleBattleState.roomId) {
-            ui.hidePreImg();
+            ui.hideCheckResult();
             return;
         }
         const text = ui.input.selector.val();
@@ -272,7 +272,7 @@ $(() => {
                 sendIncludeCheckDouble(doubleBattleState.roomId, text);
             }
         } else {
-            ui.hidePreImg();
+            ui.hideCheckResult();
         }
     });
 
@@ -783,6 +783,7 @@ function sendDoubleSubmitWord(word) {
     }));
     ui.disableInput();
     ui.clearInput();
+    ui.hideCheckResult();
 }
 
 function backToLobby() {
@@ -834,15 +835,7 @@ function sendIncludeCheckDouble(roomId, word) {
 }
 
 function onDoublePreCheck(data) {
-    if (data.include === true) {
-        if (data.used === true) {
-            ui.showUsedWord(data);
-        } else {
-            ui.showPreImg();
-        }
-    } else {
-        ui.hidePreImg();
-    }
+    ui.showCheckResult(data);
 }
 
 function preloadImages() {

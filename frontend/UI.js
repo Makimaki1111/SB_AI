@@ -21,7 +21,9 @@ class UI{
         this.message = new UIObject($('#message'));
         this.waitMessage = new UIObject($('#wait-message'));
         this.modalMessage = new UIObject($('#modal-message'));
-        this.includeImg = new UIObject($('#include-img'));
+        this.includeImgOnly = new UIObject($('#include-img-only'));
+        this.includeImg1 = new UIObject($('#include-img-1'));
+        this.includeImg2 = new UIObject($('#include-img-2'));
 
         this.backToTitleBtn = new UIObject($('#back-to-title-btn'));
         this.cancelBtn = new UIObject($('#cancel-battle-btn'));
@@ -134,21 +136,47 @@ class UI{
         this.input.selector.val('');
     }
 
-    showPreImg(){
-        this.includeImg.selector.attr('src', "img/unaware.gif");
-        this.includeImg.selector.css('display', 'block');
+    showCheckResult(data) {
+        const imgOnly = this.includeImgOnly.selector;
+        const img1 = this.includeImg1.selector;
+        const img2 = this.includeImg2.selector;
+
+        imgOnly.hide().attr('src', '');
+        img1.hide().attr('src', '');
+        img2.hide().attr('src', '');
+
+        if (!data.include) {
+            return;
+        }
+
+        if (data.used) {
+            imgOnly.attr('src', 'img/god.gif').show();
+            return;
+        }
+
+        const types = [];
+        if (data.type1) types.push(data.type1);
+        if (data.type2) types.push(data.type2);
+
+        if (types.length === 0) {
+            imgOnly.attr('src', 'img/unaware.gif').show();
+        } else if (types.length === 1) {
+            const src = `img/${type_to_image[types[0]]}.gif`;
+            imgOnly.attr('src', src).show();
+        } else { // length is 2
+            const src1 = `img/${type_to_image[types[0]]}.gif`;
+            const src2 = `img/${type_to_image[types[1]]}.gif`;
+            img1.attr('src', src1).show();
+            img2.attr('src', src2).show();
+        }
     }
 
-    hidePreImg(){
-        this.includeImg.selector.css('display', 'none');
-        this.includeImg.selector.attr('src', "");
+    hideCheckResult() {
+        this.includeImgOnly.selector.hide().attr('src', '');
+        this.includeImg1.selector.hide().attr('src', '');
+        this.includeImg2.selector.hide().attr('src', '');
     }
-
-    showUsedWord(data){
-        this.includeImg.selector.attr('src', "img/god.gif");
-        this.includeImg.selector.css('display', 'block');
-    }
-
+    
     enableSubmitBtn(){
         this.submitButton.selector.prop('disabled', false);
     }

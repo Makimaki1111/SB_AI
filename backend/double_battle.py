@@ -535,15 +535,17 @@ class DoubleBattle_info:
         if not word:
             return ret
 
-        if word in self.used:
-            ret["include"] = True
-            ret["used"] = True
-            # usedはdefaultdict(list)なので、タイプを取得
-            types = self.sb_info.get_types(word) if self.sb_info.inclue_in_typed_words(word) else [""]
+        is_included = self.sb_info.include_in_all_words(word)
+        ret["include"] = is_included
+
+        if is_included:
+            # タイプを取得
+            types = [t for t in self.sb_info.get_types(word) if t]
             ret["type1"] = types[0] if len(types) >= 1 else ""
             ret["type2"] = types[1] if len(types) >= 2 else ""
-        else:
-            ret["include"] = self.sb_info.include_in_all_words(word)
+
+        if word in self.used:
+            ret["used"] = True
 
         return ret
 
