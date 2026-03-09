@@ -175,8 +175,19 @@ $(() => {
     document.body.addEventListener("touchstart", userInteractionHandler, { once: true });
 
     // 画面サイズに合わせてスケーリング
-    window.addEventListener('resize', adjustWindowScale);
-    adjustWindowScale(); // 初期実衁E
+    // 初期高さを固定して、キーボード表示時にFlexboxレイアウトが崩れるのを防ぐ
+    initialInnerHeight = window.innerHeight;
+    document.body.style.height = `${initialInnerHeight}px`;
+
+    window.addEventListener('resize', () => {
+        const isInputFocused = document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA');
+        if (!isInputFocused) {
+            initialInnerHeight = window.innerHeight;
+            document.body.style.height = `${initialInnerHeight}px`;
+        }
+        adjustWindowScale();
+    });
+    adjustWindowScale(); // 初期実行
     if (typeof wanakana !== 'undefined') {
         wanakana.bind(document.getElementById('input'));
     }
@@ -860,6 +871,8 @@ function preloadImages() {
     });
 }
 
+let initialInnerHeight = window.innerHeight;
+
 // 画面サイズに合わせてスケーリングする関数
 function adjustWindowScale() {
     const phoneBoxes = document.querySelectorAll('.phone-box');
@@ -868,8 +881,12 @@ function adjustWindowScale() {
     const originalWidth = 450;
     const originalHeight = 720; // 450 * 1.6 (aspect-ratio 10/16)
 
+    // 入力中は高さを変更しない（キーボード対策）
+    const isInputFocused = document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA');
+    const heightToUse = isInputFocused ? initialInnerHeight : window.innerHeight;
+
     const scaleX = (window.innerWidth * 0.96) / originalWidth;
-    const scaleY = (window.innerHeight * 0.96) / originalHeight;
+    const scaleY = (heightToUse * 0.96) / originalHeight;
     const scale = Math.min(scaleX, scaleY, 1.0); // 拡大はしなぁE
     phoneBoxes.forEach(box => {
         box.style.transform = scale < 1 ? `scale(${scale})` : 'none';

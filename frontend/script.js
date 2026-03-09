@@ -1026,6 +1026,8 @@ function preloadImages() {
   });
 }
 
+let initialInnerHeight = window.innerHeight;
+
 // 画面サイズに合わせてスケーリングする関数
 function adjustWindowScale() {
   // タイトル画面とバトル画面の両方の .phone-box を取得
@@ -1035,8 +1037,12 @@ function adjustWindowScale() {
   const originalWidth = 450;
   const originalHeight = 720; // 450 * 1.6 (aspect-ratio 10/16)
 
+  // 入力中は高さを変更しない（キーボード対策）
+  const isInputFocused = document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA');
+  const heightToUse = isInputFocused ? initialInnerHeight : window.innerHeight;
+
   const scaleX = (window.innerWidth * 0.96) / originalWidth;
-  const scaleY = (window.innerHeight * 0.96) / originalHeight;
+  const scaleY = (heightToUse * 0.96) / originalHeight;
   const scale = Math.min(scaleX, scaleY, 1.0); // 拡大はしない
 
   phoneBoxes.forEach(box => {
@@ -1149,6 +1155,17 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // 画面リサイズ対応
-  window.addEventListener('resize', adjustWindowScale);
+  // 初期高さを固定して、キーボード表示時にFlexboxレイアウトが崩れるのを防ぐ
+  initialInnerHeight = window.innerHeight;
+  document.body.style.height = `${initialInnerHeight}px`;
+
+  window.addEventListener('resize', () => {
+    const isInputFocused = document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA');
+    if (!isInputFocused) {
+      initialInnerHeight = window.innerHeight;
+      document.body.style.height = `${initialInnerHeight}px`;
+    }
+    adjustWindowScale();
+  });
   adjustWindowScale(); // 初期実行
 });
