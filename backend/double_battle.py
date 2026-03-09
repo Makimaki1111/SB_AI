@@ -543,6 +543,21 @@ class DoubleBattle_info:
             types = [t for t in self.sb_info.get_types(word) if t]
             ret["type1"] = types[0] if len(types) >= 1 else ""
             ret["type2"] = types[1] if len(types) >= 2 else ""
+            
+            # --- 相性予測 (敵チーム全員分) ---
+            current_actor = self.get_current_actor()
+            enemies = self.team2 if current_actor in self.team1 else self.team1
+            at1 = types[0] if len(types) >= 1 else ""
+            at2 = types[1] if len(types) >= 2 else ""
+            
+            predictions = {}
+            for enemy in enemies:
+                if not enemy.is_defeated:
+                    dt1 = enemy.types[0] if len(enemy.types) >= 1 else ""
+                    dt2 = enemy.types[1] if len(enemy.types) >= 2 else ""
+                    effect = self.sb_info.type_effect(at1, at2, dt1, dt2)
+                    predictions[enemy.id] = "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…" if effect > 0 else "効果はないようだ…"
+            ret["predictions"] = predictions
 
         if word in self.used:
             ret["used"] = True

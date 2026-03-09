@@ -24,6 +24,7 @@ class UI{
         this.includeImg = new UIObject($('#include-img'));
         this.includeImg1 = new UIObject($('#include-img-1'));
         this.includeImg2 = new UIObject($('#include-img-2'));
+        this.predictionMessage = new UIObject($('#prediction-message'));
 
         this.backToTitleBtn = new UIObject($('#back-to-title-btn'));
         this.cancelBtn = new UIObject($('#cancel-battle-btn'));
@@ -140,10 +141,12 @@ class UI{
         const imgOnly = this.includeImg.selector;
         const img1 = this.includeImg1.selector;
         const img2 = this.includeImg2.selector;
+        const msg = this.predictionMessage.selector;
 
         imgOnly.hide().attr('src', '');
         img1.hide().attr('src', '');
         img2.hide().attr('src', '');
+        msg.hide().text('');
 
         if (!data.include) {
             return;
@@ -169,12 +172,17 @@ class UI{
             img1.attr('src', src1).show();
             img2.attr('src', src2).show();
         }
+
+        if (data.prediction) {
+            msg.text(data.prediction).show();
+        }
     }
 
     hideCheckResult() {
         this.includeImg.selector.hide().attr('src', '');
         this.includeImg1.selector.hide().attr('src', '');
         this.includeImg2.selector.hide().attr('src', '');
+        this.predictionMessage.selector.hide().text('');
     }
     
     enableSubmitBtn(){

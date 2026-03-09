@@ -20,7 +20,7 @@
     })();
   </script>
   <title>しりとりの対戦バトル</title>
-  <link rel="stylesheet" href="style.css?v=15" />
+  <link rel="stylesheet" href="style.css?v=18" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700;800&display=swap" rel="stylesheet">
@@ -130,9 +130,14 @@
             <div id="text">
               <input type="text" id="input" autocomplete="off" placeholder="「」からはじまることば" />
               <button type="submit" id="submit">▶</button>
-              <img id="include-img" class="include-img" src="" alt="" style="display: none;" />
-              <img id="include-img-1" class="include-img" src="" alt="" style="display: none;" />
-              <img id="include-img-2" class="include-img" src="" alt="" style="display: none;" />
+              <div id="prediction-container">
+                <div id="prediction-images">
+                  <img id="include-img" class="include-img" src="" alt="" style="display: none;" />
+                  <img id="include-img-1" class="include-img" src="" alt="" style="display: none;" />
+                  <img id="include-img-2" class="include-img" src="" alt="" style="display: none;" />
+                </div>
+                <div id="prediction-message" class="prediction-message"></div>
+              </div>
             </div>
             <div id="message"></div>
             <div id="wait-message"></div>

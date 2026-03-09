@@ -10,6 +10,7 @@ class DoubleUI {
         this.includeImg = new UIObject($('#include-img'));
         this.includeImg1 = new UIObject($('#include-img-1'));
         this.includeImg2 = new UIObject($('#include-img-2'));
+        this.predictionMessage = new UIObject($('#prediction-message'));
 
         this.message = new UIObject($('#message'));
         this.waitMessage = new UIObject($('#wait-message'));
@@ -38,6 +39,8 @@ class DoubleUI {
         this.abilityModal = new UIObject($('#ability-modal'));
         this.closeAbilityModalBtn = new UIObject($('#close-ability-modal-btn'));
         this.modalMessage = new UIObject($('#double-modal-message'));
+
+        this.lastPredictions = {}; // ターゲットごとの予測メッセージを保持
 
         // Events binding
         this.submitButton.selector.off('click').on('click', () => {
@@ -104,10 +107,13 @@ class DoubleUI {
         const imgOnly = this.includeImg.selector;
         const img1 = this.includeImg1.selector;
         const img2 = this.includeImg2.selector;
+        const msg = this.predictionMessage.selector;
 
         imgOnly.hide().attr('src', '');
         img1.hide().attr('src', '');
         img2.hide().attr('src', '');
+        msg.hide().text('');
+        this.lastPredictions = {};
 
         if (!data.include) {
             return;
@@ -133,12 +139,28 @@ class DoubleUI {
             img1.attr('src', src1).show();
             img2.attr('src', src2).show();
         }
+
+        if (data.predictions) {
+            this.lastPredictions = data.predictions;
+        }
+    }
+
+    updatePredictionMessage(targetId) {
+        // targetId: p2a, p2b などのUI上のID (サーバーIDと一致している前提)
+        const msg = this.lastPredictions[targetId];
+        if (msg) {
+            this.predictionMessage.selector.text(msg).show();
+        } else {
+            this.predictionMessage.selector.hide();
+        }
     }
 
     hideCheckResult() {
         this.includeImg.selector.hide().attr('src', '');
         this.includeImg1.selector.hide().attr('src', '');
         this.includeImg2.selector.hide().attr('src', '');
+        this.predictionMessage.selector.hide().text('');
+        this.lastPredictions = {};
     }
     
     updatePoisonStatus(charId, isPoison) {

@@ -743,6 +743,7 @@ function selectTarget(uiTargetId) {
     doubleBattleState.currentTargetId = realTargetId;
     $('.target-btn').removeClass('target-selected');
     $(`#target-${uiTargetId}-btn`).addClass('target-selected');
+    ui.updatePredictionMessage(realTargetId);
 }
 
 // double_UI.js から呼ばれる関数
@@ -836,6 +837,9 @@ function sendIncludeCheckDouble(roomId, word) {
 
 function onDoublePreCheck(data) {
     ui.showCheckResult(data);
+    if (doubleBattleState.currentTargetId) {
+        ui.updatePredictionMessage(doubleBattleState.currentTargetId);
+    }
 }
 
 function preloadImages() {

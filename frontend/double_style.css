@@ -510,3 +510,10 @@
     float: right;
     line-height: 100%;
 }
+
+/* ダブルバトルでは入力欄を大きくする */
+#input,
+#double-input {
+    height: 42px;
+    border-radius: 21px;
+}

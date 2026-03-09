@@ -974,6 +974,15 @@ class Battle_info:
             types = [t for t in self.sb_info.get_types(_input) if t]
             ret["type1"] = types[0] if len(types) >= 1 else ""
             ret["type2"] = types[1] if len(types) >= 2 else ""
+            
+            # --- 相性予測 ---
+            defender = self.player2 if self.player1_turn else self.player1
+            at1 = types[0] if len(types) >= 1 else ""
+            at2 = types[1] if len(types) >= 2 else ""
+            dt1 = defender.types[0] if len(defender.types) >= 1 else ""
+            dt2 = defender.types[1] if len(defender.types) >= 2 else ""
+            effect = self.sb_info.type_effect(at1, at2, dt1, dt2)
+            ret["prediction"] = "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…" if effect > 0 else "効果はないようだ…"
 
         if _input in self.used:
             ret["used"] = True
