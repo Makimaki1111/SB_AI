@@ -665,14 +665,22 @@ class Battle_info:
 
         self.word = word
         types = self._type_check(word)
+        original_types = types[:] # 元のタイプを保持（防御相性用）
 
         # --- 特性処理 ---
         current_player = self.player1 if self.player1_turn else self.player2
         ability_obj = self.abilities.get(current_player.ability)
 
+        # 「いしょくどうげん」の場合、食べ物を医療として扱う
+        if ability_obj and isinstance(ability_obj, IshokudogenAbility) and "食べ物" in types:
+            # 食べ物タイプを削除し、医療タイプを追加して処理を移譲する
+            types.remove("食べ物")
+            if "医療" not in types:
+                types.append("医療")
+
         # ダメージ計算を代替する特性の処理
         if ability_obj and ability_obj.replaces_damage and ability_obj.check_condition(current_player, types, word):
-            current_player.types = types[:] # フロントエンド表示用にタイプを更新
+            current_player.types = original_types[:] # フロントエンド表示用にタイプを更新
             ability_obj.apply_damage_replacement_effect(current_player, self)
             
             # やどりぎ等のターン終了時効果処理
@@ -692,7 +700,7 @@ class Battle_info:
 
         if(player_id == self.player1.id):
             # タイプ特定
-            self.player1.types = types[:]
+            self.player1.types = original_types[:]
             at1 = types[0] if len(types) >= 1 else ""
             at2 = types[1] if len(types) >= 2 else ""
             dt1 = self.player2.types[0] if len(self.player2.types) >= 1 else ""
@@ -782,7 +790,7 @@ class Battle_info:
 
         else:
             # タイプ特定
-            self.player2.types = types[:]
+            self.player2.types = original_types[:]
             at1 = types[0] if len(types) >= 1 else ""
             at2 = types[1] if len(types) >= 2 else ""
             dt1 = self.player1.types[0] if len(self.player1.types) >= 1 else ""

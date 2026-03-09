@@ -4,9 +4,9 @@ except ImportError:
     from backend.SB_info import SB_info
 
 try:
-    from battle import Player, get_default_abilities, MAX_HP, FOOD_LIMIT, MEDICAL_LIMIT, MIN_RANK, MAX_RANK, FOOD_RECOVERY_AMOUNT, MEDICAL_RECOVERY_AMOUNT, CRITICAL_HIT_CHANCE, CRITICAL_HIT_MULTIPLIER, BASE_DAMAGE_NORMAL, BASE_DAMAGE_TYPED, DAMAGE_RANDOM_MIN, DAMAGE_RANDOM_MAX, VIOLENCE_ATTACK_DROP, LEECH_SEED_TURNS, LEECH_SEED_DRAIN_AMOUNT
+    from battle import Player, get_default_abilities, MAX_HP, FOOD_LIMIT, MEDICAL_LIMIT, MIN_RANK, MAX_RANK, FOOD_RECOVERY_AMOUNT, MEDICAL_RECOVERY_AMOUNT, CRITICAL_HIT_CHANCE, CRITICAL_HIT_MULTIPLIER, BASE_DAMAGE_NORMAL, BASE_DAMAGE_TYPED, DAMAGE_RANDOM_MIN, DAMAGE_RANDOM_MAX, VIOLENCE_ATTACK_DROP, LEECH_SEED_TURNS, LEECH_SEED_DRAIN_AMOUNT, IshokudogenAbility
 except ImportError:
-    from backend.battle import Player, get_default_abilities, MAX_HP, FOOD_LIMIT, MEDICAL_LIMIT, MIN_RANK, MAX_RANK, FOOD_RECOVERY_AMOUNT, MEDICAL_RECOVERY_AMOUNT, CRITICAL_HIT_CHANCE, CRITICAL_HIT_MULTIPLIER, BASE_DAMAGE_NORMAL, BASE_DAMAGE_TYPED, DAMAGE_RANDOM_MIN, DAMAGE_RANDOM_MAX, VIOLENCE_ATTACK_DROP, LEECH_SEED_TURNS, LEECH_SEED_DRAIN_AMOUNT
+    from backend.battle import Player, get_default_abilities, MAX_HP, FOOD_LIMIT, MEDICAL_LIMIT, MIN_RANK, MAX_RANK, FOOD_RECOVERY_AMOUNT, MEDICAL_RECOVERY_AMOUNT, CRITICAL_HIT_CHANCE, CRITICAL_HIT_MULTIPLIER, BASE_DAMAGE_NORMAL, BASE_DAMAGE_TYPED, DAMAGE_RANDOM_MIN, DAMAGE_RANDOM_MAX, VIOLENCE_ATTACK_DROP, LEECH_SEED_TURNS, LEECH_SEED_DRAIN_AMOUNT, IshokudogenAbility
 
 from collections import defaultdict
 from pydantic import BaseModel
@@ -313,9 +313,17 @@ class DoubleBattle_info:
 
         self.word = word
         types = self._type_check(word)
-        current_actor.types = types[:]
+        original_types = types[:]
+        current_actor.types = original_types[:]
         
         ability_obj = self.abilities.get(current_actor.ability)
+
+        # 「いしょくどうげん」の場合、食べ物を医療として扱う
+        if ability_obj and isinstance(ability_obj, IshokudogenAbility) and "食べ物" in types:
+            # 食べ物タイプを削除し、医療タイプを追加して処理を移譲する
+            types.remove("食べ物")
+            if "医療" not in types:
+                types.append("医療")
 
         # === 特性互換レイヤー ===
         # 特性クラスは battle.player1 / battle.player2 を参照するため、
