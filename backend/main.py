@@ -1,4 +1,5 @@
 import uvicorn
+import re
 import json
 import secrets
 import uuid
@@ -26,6 +27,25 @@ app = FastAPI()
 # --- ログ設定 ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# --- 静的アセットへのアクセスログを無効化するフィルタ ---
+class StaticAssetFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        # uvicornのアクセスログのメッセージ形式は "GET /path HTTP/1.1" 200
+        message = record.getMessage()
+        # "GET /img/... や "GET /resource/... を含むログを対象
+        if '"GET /img/' in message or '"GET /resource/' in message:
+            # ステータスコードを抽出して判定 (例: ... HTTP/1.1" 200 ...)
+            match = re.search(r'HTTP/\d\.\d" (\d{3})', message)
+            if match:
+                status_code = int(match.group(1))
+                # 400未満（成功・リダイレクト）はログに出さない
+                if status_code < 400:
+                    return False
+        return True
+
+# uvicornのアクセスロガーにフィルタを適用
+logging.getLogger("uvicorn.access").addFilter(StaticAssetFilter())
 
 app.add_middleware(
     CORSMiddleware,
