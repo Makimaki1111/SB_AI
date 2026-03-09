@@ -859,7 +859,7 @@ function preloadImages() {
         "img/unaware.gif",
         "img/god.gif"
     ];
-    // type_to_image.js で定義されてぁE��マッピングを利用
+    // type_to_image.js で定義されているマッピングを利用
     if (typeof type_to_image !== 'undefined') {
         Object.values(type_to_image).forEach(filename => {
             images.push(`img/${filename}.gif`);
