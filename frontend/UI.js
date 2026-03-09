@@ -21,7 +21,7 @@ class UI{
         this.message = new UIObject($('#message'));
         this.waitMessage = new UIObject($('#wait-message'));
         this.modalMessage = new UIObject($('#modal-message'));
-        this.includeImgOnly = new UIObject($('#include-img-only'));
+        this.includeImg = new UIObject($('#include-img'));
         this.includeImg1 = new UIObject($('#include-img-1'));
         this.includeImg2 = new UIObject($('#include-img-2'));
 
@@ -137,7 +137,7 @@ class UI{
     }
 
     showCheckResult(data) {
-        const imgOnly = this.includeImgOnly.selector;
+        const imgOnly = this.includeImg.selector;
         const img1 = this.includeImg1.selector;
         const img2 = this.includeImg2.selector;
 
@@ -172,7 +172,7 @@ class UI{
     }
 
     hideCheckResult() {
-        this.includeImgOnly.selector.hide().attr('src', '');
+        this.includeImg.selector.hide().attr('src', '');
         this.includeImg1.selector.hide().attr('src', '');
         this.includeImg2.selector.hide().attr('src', '');
     }

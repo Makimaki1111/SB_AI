@@ -7,7 +7,7 @@ class DoubleUI {
 
         this.input = new UIObject($('#input'));
         this.submitButton = new UIObject($('#submit'));
-        this.includeImgOnly = new UIObject($('#include-img-only'));
+        this.includeImg = new UIObject($('#include-img'));
         this.includeImg1 = new UIObject($('#include-img-1'));
         this.includeImg2 = new UIObject($('#include-img-2'));
 
@@ -101,7 +101,7 @@ class DoubleUI {
     }
 
     showCheckResult(data) {
-        const imgOnly = this.includeImgOnly.selector;
+        const imgOnly = this.includeImg.selector;
         const img1 = this.includeImg1.selector;
         const img2 = this.includeImg2.selector;
 
@@ -136,7 +136,7 @@ class DoubleUI {
     }
 
     hideCheckResult() {
-        this.includeImgOnly.selector.hide().attr('src', '');
+        this.includeImg.selector.hide().attr('src', '');
         this.includeImg1.selector.hide().attr('src', '');
         this.includeImg2.selector.hide().attr('src', '');
     }
