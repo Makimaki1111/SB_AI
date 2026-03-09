@@ -1168,4 +1168,13 @@ document.addEventListener("DOMContentLoaded", () => {
     adjustWindowScale();
   });
   adjustWindowScale(); // 初期実行
+
+  // スマホでキーボードを開いたときに画面が上にずれるのを防ぐ
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+      // キーボード表示などでビューポートのサイズが変わったときに、
+      // ページのスクロール位置を強制的に一番上に戻す
+      window.scrollTo(0, 0);
+    });
+  }
 });
