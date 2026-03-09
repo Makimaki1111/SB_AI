@@ -13,7 +13,7 @@ const doubleBattleState = {
     roomId: null,
     mode: null, // '1v1_double', '2v2_double'
     character: "",
-    // P1A, P1B, P2A, P2B のスチE�Eタスを保持
+    // P1A, P1B, P2A, P2B のステータスを保持
     chars: {
         p1a: { hp: 0, maxHp: 0, atk: 0, def: 0, ability: '', is_defeated: false },
         p1b: { hp: 0, maxHp: 0, atk: 0, def: 0, ability: '', is_defeated: false },
@@ -217,7 +217,7 @@ $(() => {
     });
 
 
-    // ターゲチE��選択�Eタン
+    // ターゲット選択ボタン
     $('#target-p2a-btn').on('click', () => selectTarget('p2a'));
     $('#target-p2b-btn').on('click', () => selectTarget('p2b'));
 
@@ -246,7 +246,7 @@ $(() => {
         if (typeof playSound === 'function') playSound("resource/pera.mp3");
     });
 
-    // 送E��る（降参）�Eタン
+    // 逃げる（降参）ボタン
     ui.cancelBtn.selector.off('click').on('click', (e) => {
         e.preventDefault();
         if (confirm("本当に逃げますか？\n（チームが全滅扱いになる可能性があります）")) {
@@ -263,13 +263,13 @@ $(() => {
         }
     });
 
-    // 勝敗後に表示される「タイトルに戻る」�Eタン
+    // 勝敗後に表示される「タイトルに戻る」ボタン
     ui.backToTitleBtn.selector.off('click').on('click', (e) => {
         e.preventDefault();
         backToLobby();
     });
 
-    // 入力中のタイプチェチE�� (script.jsと同じ)
+    // 入力中のタイプチェック (script.jsと同じ)
     ui.input.selector.off('input').on('input', () => {
         if (!doubleBattleState.roomId) {
             ui.hideCheckResult();
@@ -319,7 +319,7 @@ function connectDoubleWebSocket(action, mode, roomId) {
     }
 
     const ws = new WebSocket(websock_double_server);
-    sock = ws; // グローバルに保持しておくが、イベント�Eではローカルのwsを使ぁE
+    sock = ws; // グローバルに保持しておくが、イベント内ではローカルのwsを使う
     ws.addEventListener("open", function () {
         console.log("Double WebSocket connected");
         setBattleActionButtonsVisible(false);
@@ -426,7 +426,7 @@ async function initDoubleBattle(data) {
     doubleBattleState.roomId = data.room_id;
     doubleBattleState.mode = data.mode;
     doubleBattleState.isVsCpu = data.is_cpu || false;
-    doubleBattleState.lastFoeWord = null; // バトル開始時にリセチE��
+    doubleBattleState.lastFoeWord = null; // バトル開始時にリセット
 
     // Determine myTeam based on owner_id
     doubleBattleState.myTeam = 'team1';
@@ -439,7 +439,7 @@ async function initDoubleBattle(data) {
 
     ui.resetAll();
 
-    // resetAll()で隠れてしまぁE��め、�E表示する
+    // resetAll()で隠れてしまうため、再表示する
     setBattleActionButtonsVisible(true);
     ui.targetSelectionUi.selector.css('display', 'flex');
 
@@ -557,7 +557,7 @@ async function handleTurnResult(data) {
                     const targetChar = doubleBattleState.chars[e.target];
                     ui.setHP(getUIId(e.target), targetChar.hp, targetChar.maxHp);
                 }
-                // ダメージ点滁E��フェクチE(毒ダメージの場合�E点滁E��せなぁE
+                // ダメージ点滅エフェクト(毒ダメージの場合は点滅させない)
                 if (e.message !== "毒のダメージを受けた！") {
                     ui.playEffect(getUIId(e.target), e.type);
                 }
@@ -607,7 +607,7 @@ async function handleTurnResult(data) {
                     doubleBattleState.chars[e.poison_target].is_poison = true;
                     ui.updatePoisonStatus(e.poison_target, true);
                 }
-                // ランク一括変化 (持ってぁE��場吁E
+                // ランク一括変化 (持っている場合)
                 if (e.new_ranks) {
                     for (const [charId, ranks] of Object.entries(e.new_ranks)) {
                         if (doubleBattleState.chars[charId]) {
@@ -637,7 +637,7 @@ async function handleTurnResult(data) {
 
     // 特性変更のみの場合は既に処理済みなのでスキップ
     if (!onlyAbilityChanged) {
-        // 特性変更イベントE場合、最新の変更を取得するためにreverseしてfindする
+        // 特性変更イベントの場合、最新の変更を取得するためにreverseしてfindする
         const abilityChangeEvent = data.events && [...data.events].reverse().find(e => e.type === 'ability_changed');
         if (abilityChangeEvent) {
             const changedUiId = getUIId(abilityChangeEvent.char_id || "");
@@ -685,7 +685,7 @@ function handleTurnStart(data) {
     doubleBattleState.character = data.character;
     ui.hideMessage(); // Ensure #message is hidden
 
-    // タイマ�Eを開姁E(対人戦のみ)
+    // タイマーを開始(対人戦のみ)
     if (!doubleBattleState.isVsCpu) {
         let remaining = null;
         if (typeof data.turn_deadline_ms === "number") {
@@ -778,7 +778,7 @@ function sendDoubleSubmitWord(word) {
         return;
     }
 
-    // どちらかが倒れてぁE��場合、�E動的に残ってぁE��方をターゲチE��にする
+    // どちらかが倒れている場合、自動的に残っている方をターゲットにする
     if (!doubleBattleState.currentTargetId) {
         if (p2a_alive) doubleBattleState.currentTargetId = 'p2a';
         else if (p2b_alive) doubleBattleState.currentTargetId = 'p2b';
@@ -887,7 +887,7 @@ function adjustWindowScale() {
 
     const scaleX = (window.innerWidth * 0.96) / originalWidth;
     const scaleY = (heightToUse * 0.96) / originalHeight;
-    const scale = Math.min(scaleX, scaleY, 1.0); // 拡大はしなぁE
+    const scale = Math.min(scaleX, scaleY, 1.0); // 拡大はしない
     phoneBoxes.forEach(box => {
         box.style.transform = scale < 1 ? `scale(${scale})` : 'none';
     });
