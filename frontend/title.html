@@ -25,6 +25,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="type_to_image.js"></script>
     <script src="shared_audio.js"></script>
+    <script src="audio_bridge.js"></script>
 </head>
 <body>
     <!-- タイトル画面 -->
@@ -99,32 +100,35 @@
 
         settingsBtn.addEventListener('click', () => {
             settingsModal.style.display = 'flex';
-            if (window.SB_AUDIO) window.SB_AUDIO.playSound("resource/pera.mp3");
+            if (typeof playSound === 'function') playSound("resource/pera.mp3");
         });
 
         closeSettingsBtn.addEventListener('click', () => {
             const name = usernameInput.value.trim();
             if (name) localStorage.setItem("sb_username", name);
             settingsModal.style.display = 'none';
-            if (window.SB_AUDIO) window.SB_AUDIO.playSound("resource/pera.mp3");
+            if (typeof playSound === 'function') playSound("resource/pera.mp3");
         });
 
         bgmSlider.addEventListener('input', (e) => {
-            if (window.SB_AUDIO) window.SB_AUDIO.setBGMVolume(parseFloat(e.target.value));
+            if (typeof setBGMVolume === 'function') setBGMVolume(parseFloat(e.target.value));
         });
         seSlider.addEventListener('input', (e) => {
-            if (window.SB_AUDIO) window.SB_AUDIO.setSEVolume(parseFloat(e.target.value));
+            if (typeof setSEVolume === 'function') setSEVolume(parseFloat(e.target.value));
             // 音量確認のためにSEを再生
-            if (window.SB_AUDIO) window.SB_AUDIO.playSound("resource/concent.mp3");
+            if (typeof playSound === 'function') playSound("resource/concent.mp3");
         });
 
         let isAudioUnlocked = false;
         const userInteractionHandler = () => {
             if (isAudioUnlocked) return;
             isAudioUnlocked = true;
-            if (window.SB_AUDIO) {
-                window.SB_AUDIO.unlockAudioContext();
-                window.SB_AUDIO.startBGM('resource/horizon.mp3');
+            // audio_bridge.js経由で呼び出すことで、親フレームのオーディオマネージャーを優先利用する
+            if (typeof window.unlockAudioContext === 'function') {
+                window.unlockAudioContext();
+            }
+            if (typeof window.startBGM === 'function') {
+                window.startBGM('resource/horizon.mp3');
             }
         };
         document.body.addEventListener('click', userInteractionHandler, { once: true });
@@ -132,8 +136,8 @@
 
         // ページロード完了時にBGM再生を試みる
         window.addEventListener('load', () => {
-            if (window.SB_AUDIO) {
-                window.SB_AUDIO.startBGM('resource/horizon.mp3');
+            if (typeof window.startBGM === 'function') {
+                window.startBGM('resource/horizon.mp3');
             }
         });
 
@@ -153,8 +157,8 @@
         // 画面がアクティブになった時（index.htmlからの通知）にもBGM再生を試みる
         window.addEventListener("message", (event) => {
             if (event.data && event.data.type === 'sb:activated') {
-                if (window.SB_AUDIO) {
-                    window.SB_AUDIO.startBGM('resource/horizon.mp3');
+                if (typeof window.startBGM === 'function') {
+                    window.startBGM('resource/horizon.mp3');
                 }
                 // カルーセルアニメーションを再始動
                 restartCarouselAnimations();

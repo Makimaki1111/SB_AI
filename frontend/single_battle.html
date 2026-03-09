@@ -29,6 +29,7 @@
   <script src="UIObject.js"></script>
   <script src="UI.js"></script>
   <script src="shared_audio.js"></script>
+  <script src="audio_bridge.js"></script>
   <script src="script.js"></script>
 </head>
 
@@ -243,23 +244,16 @@
       isAudioUnlocked = true;
 
       try {
-        if (window.SB_AUDIO) {
-          window.SB_AUDIO.unlockAudioContext();
-          window.SB_AUDIO.startBGM('resource/horizon.mp3');
-          return;
+        // audio_bridge.js経由で呼び出すことで、親フレームのオーディオマネージャーを優先利用する
+        if (typeof window.unlockAudioContext === 'function') {
+          window.unlockAudioContext();
         }
-
-        if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
-          window.parent.SB_AUDIO.unlockAudioContext();
-          window.parent.SB_AUDIO.startBGM('resource/horizon.mp3');
-          return;
+        if (typeof window.startBGM === 'function') {
+          window.startBGM('resource/horizon.mp3');
         }
       } catch (e) {
         // noop
       }
-
-      if (typeof startBGM === 'function') startBGM('resource/horizon.mp3');
-      if (typeof unlockAudioContext === 'function') unlockAudioContext();
     };
 
     document.body.addEventListener('click', userInteractionHandler, { once: true });

@@ -85,6 +85,11 @@ let SE_VOLUME = 0.5;
 
 // Web Audio APIの初期化
 function initAudioContext() {
+  // 親フレームがある場合は、ローカルのAudioContextを作らないようにする
+  if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
+    return;
+  }
+
   if (!audioCtx) {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     audioCtx = new AudioContext();
@@ -102,6 +107,11 @@ function initAudioContext() {
 }
 
 window.setBGMVolume = function (val) {
+  // 親フレームのSB_AUDIOを優先利用
+  if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
+    return window.parent.SB_AUDIO.setBGMVolume(val);
+  }
+
   BGM_VOLUME = val;
   if (bgmGainNode && audioCtx) {
     // ノイズ防止のため少し時間をかけて滑らかに変更
@@ -114,6 +124,11 @@ window.setBGMVolume = function (val) {
 };
 
 window.setSEVolume = function (val) {
+  // 親フレームのSB_AUDIOを優先利用
+  if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
+    return window.parent.SB_AUDIO.setSEVolume(val);
+  }
+
   SE_VOLUME = val;
   if (seGainNode && audioCtx) {
     seGainNode.gain.setTargetAtTime(val, audioCtx.currentTime, 0.1);
@@ -153,8 +168,11 @@ async function loadAudio(path) {
 }
 
 async function preloadSounds() {
-  // 親のオーディオマネージャーがある場合はそちらに任せる（二重ロード防止）
-  if (window.SB_AUDIO && typeof window.SB_AUDIO.preloadSounds === "function") {
+  // 親フレームのオーディオマネージャーがある場合はそちらに任せる（二重ロード防止）
+  try {
+    if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
+      // パスリストの作成は省略し、親側で必要なものをロードしてもらうか、
+      // ここでリストを作って渡す。audio_bridge経由なら渡す必要がある。
     const paths = new Set();
     Object.values(TYPE_SOUND_MAP).forEach(p => paths.add(p));
     Object.values(EVENT_SOUND_MAP).forEach(p => paths.add(p));
@@ -163,8 +181,9 @@ async function preloadSounds() {
     paths.add("resource/overflow.mp3");
     paths.add("resource/concent.mp3");
     paths.add("resource/pera.mp3");
-    return window.SB_AUDIO.preloadSounds(Array.from(paths));
-  }
+    return window.parent.SB_AUDIO.preloadSounds(Array.from(paths));
+    }
+  } catch(e) {}
 
   initAudioContext();
   const paths = new Set();
@@ -186,8 +205,9 @@ async function preloadSounds() {
 
 async function playSound(path) {
   try {
-    if (window.SB_AUDIO && typeof window.SB_AUDIO.playSound === "function") {
-      return window.SB_AUDIO.playSound(path);
+    // 親フレームのSB_AUDIOを優先利用
+    if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
+      return window.parent.SB_AUDIO.playSound(path);
     }
 
     if (!path) return false;
@@ -262,6 +282,11 @@ function playIconSound(type) {
 
 async function startBGM(bgmPath) {
   try {
+    // 親フレームのSB_AUDIOを優先利用
+    if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
+      return window.parent.SB_AUDIO.startBGM(bgmPath);
+    }
+
     initAudioContext();
     // iOS対策: await audioCtx.resume() をすると、待機中にユーザー操作の権限が切れ、
     // その後の再生がブロックされることがあるため、awaitせずにリクエストだけ投げておく。
@@ -310,6 +335,11 @@ async function startBGM(bgmPath) {
 
 function stopBGM() {
   try {
+    // 親フレームのSB_AUDIOを優先利用
+    if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
+      return window.parent.SB_AUDIO.stopBGM();
+    }
+
     if (bgmSource) {
       try {
         bgmSource.stop();
@@ -371,6 +401,11 @@ function stopManagedBGM() {
 
 // モバイルブラウザの自動再生制限対策：ユーザー操作時に音声を一瞬再生してアンロックする
 function unlockAudioContext() {
+  // 親フレームのSB_AUDIOを優先利用
+  if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
+    return window.parent.SB_AUDIO.unlockAudioContext();
+  }
+
   initAudioContext();
   if (audioCtx.state === 'suspended') {
     audioCtx.resume();

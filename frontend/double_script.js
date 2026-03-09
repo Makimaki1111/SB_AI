@@ -155,9 +155,7 @@ $(() => {
     if (typeof preloadSounds === "function") {
         preloadSounds(preloadPaths);
     }
-    if (window.SB_AUDIO) {
-        window.SB_AUDIO.startBGM("resource/horizon.mp3");
-    } else if (typeof startBGM === "function") {
+    if (typeof startBGM === "function") {
         startBGM("resource/horizon.mp3");
     }
 
@@ -165,9 +163,12 @@ $(() => {
     const userInteractionHandler = () => {
         if (isAudioUnlocked) return;
         isAudioUnlocked = true;
-        if (window.SB_AUDIO) window.SB_AUDIO.unlockAudioContext();
-        if (window.SB_AUDIO) {
-            window.SB_AUDIO.startBGM("resource/horizon.mp3");
+        // audio_bridge.js経由で呼び出すことで、親フレームのオーディオマネージャーを優先利用する
+        if (typeof window.unlockAudioContext === 'function') {
+            window.unlockAudioContext();
+        }
+        if (typeof window.startBGM === 'function') {
+            window.startBGM("resource/horizon.mp3");
         }
     };
     document.body.addEventListener("click", userInteractionHandler, { once: true });
@@ -520,9 +521,9 @@ async function handleTurnResult(data) {
         // Play sound for the first type
         if (types.length > 0) {
             const firstType = types[0];
-            if (firstType && type_to_image[firstType] && window.SB_AUDIO) {
+            if (firstType && type_to_image[firstType] && typeof playSound === 'function') {
                 const soundName = type_to_image[firstType];
-                window.SB_AUDIO.playSound(`resource/${soundName}.mp3`);
+                playSound(`resource/${soundName}.mp3`);
             }
         }
 
