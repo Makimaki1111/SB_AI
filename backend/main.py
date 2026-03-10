@@ -28,24 +28,26 @@ app = FastAPI()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# --- 静的アセットへのアクセスログを無効化するフィルタ ---
-class StaticAssetFilter(logging.Filter):
+# --- アクセスログのフィルタリング ---
+class AccessLogFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
-        # uvicornのアクセスログのメッセージ形式は "GET /path HTTP/1.1" 200
         message = record.getMessage()
-        # "GET /img/... や "GET /resource/... を含むログを対象
-        if '"GET /img/' in message or '"GET /resource/' in message:
-            # ステータスコードを抽出して判定 (例: ... HTTP/1.1" 200 ...)
-            match = re.search(r'HTTP/\d\.\d" (\d{3})', message)
-            if match:
-                status_code = int(match.group(1))
-                # 400未満（成功・リダイレクト）はログに出さない
-                if status_code < 400:
-                    return False
+        
+        # favicon.ico の 404 エラーは無視
+        if "GET /favicon.ico" in message and "404" in message:
+            return False
+
+        # ステータスコードを抽出して判定 (例: ... HTTP/1.1" 200 ...)
+        match = re.search(r'HTTP/\d\.\d" (\d{3})', message)
+        if match:
+            status_code = int(match.group(1))
+            # 400未満（成功・リダイレクト・304 Not Modifiedなど）はログに出さない
+            if status_code < 400:
+                return False
         return True
 
 # uvicornのアクセスロガーにフィルタを適用
-logging.getLogger("uvicorn.access").addFilter(StaticAssetFilter())
+logging.getLogger("uvicorn.access").addFilter(AccessLogFilter())
 
 app.add_middleware(
     CORSMiddleware,
@@ -401,6 +403,8 @@ async def websocket_endpoint(websocket: WebSocket):
                             name = name[:8]
 
                         user_profiles[player_id] = {"name": name, "ability": ability}
+                        # メモリリーク防止: ここで登録しておかないと、マッチング前に切断した場合にプロフィールが削除されない
+                        manager.register_player(websocket, player_id)
                         await websocket.send_text(json.dumps({"type": "user_info_updated", "message": "ユーザー情報を更新しました"}))
 
             # --- マッチメイキング処理 ---
@@ -434,7 +438,9 @@ async def websocket_endpoint(websocket: WebSocket):
 
                         bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=sb_info_instance, p1_profile=p1_profile, p2_profile=p2_profile)
                         battle_rooms[bi.room_id] = bi
-                        logger.info(f"Match found: room={bi.room_id}, p1={p1_data['player_id']}, p2={p2_data['player_id']}")
+                        p1_name = p1_profile.get("name", "Unknown") if p1_profile else "Unknown"
+                        p2_name = p2_profile.get("name", "Unknown") if p2_profile else "Unknown"
+                        logger.info(f"Match found: room={bi.room_id}, p1={p1_name} ({p1_data['player_id']}), p2={p2_name} ({p2_data['player_id']})")
 
                         manager.join_room(p1_data["socket"], bi.room_id)
                         manager.join_room(p2_data["socket"], bi.room_id)
@@ -741,6 +747,8 @@ async def websocket_double_endpoint(websocket: WebSocket):
                         if not isinstance(name, str): name = "じぶん"
                         if len(name) > 8: name = name[:8]
                         user_profiles[player_id] = {"name": name, "ability": ability, "ability_2": ability_2}
+                        # メモリリーク防止: ここで登録しておかないと、マッチング前に切断した場合にプロフィールが削除されない
+                        manager.register_player(websocket, player_id)
                         await manager.safe_send_text(websocket, json.dumps({"type": "user_info_updated", "message": "ユーザー情報を更新しました"}))
 
                 # ルーム作成
