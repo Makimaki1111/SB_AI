@@ -165,6 +165,13 @@ select {
   box-sizing: border-box;
 }
 
+/* 3Dシーン導入時、canvasは背景画像の上に表示 */
+.top-image canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 10; /* 2Dキャラ(11)のすぐ後ろ、背景(0)より手前 */
+}
 
 /* ふきだし共通 */
 .balloon {
@@ -176,7 +183,7 @@ select {
   width: 180px;
   height: 55px;
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
-  z-index: 2;
+  z-index: 21;
 }
 
 .balloon .bar {
@@ -249,13 +256,14 @@ select {
   left: 25%;
   transform: translateX(-50%);
   font-weight: bold;
-  color: #2A2A2A;
+  color: #FFFFFF;
   font-family: "M PLUS 1p", sans-serif;
   white-space: nowrap;
   letter-spacing: -2px;
   font-size: 32px;
   text-align: center;
-  z-index: 1;
+  z-index: 20;
+  transform-origin: center; /* スケール変更時の基準点を中心に */
 }
 
 #foe-only-type-img {
@@ -294,13 +302,14 @@ select {
   right: 29%;
   transform: translateX(50%);
   font-weight: bold;
-  color: #2A2A2A;
+  color: #FFFFFF;
   font-family: "M PLUS 1p", sans-serif;
   white-space: nowrap;
   letter-spacing: -2px;
   font-size: 32px;
   text-align: center;
-  z-index: 1;
+  z-index: 20;
+  transform-origin: center;
 }
 
 

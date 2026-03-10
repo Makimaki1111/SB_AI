@@ -509,7 +509,12 @@ const onMadeRoom = async (data) => {
   stopManagedBGM();
   playEventSound("start", "");
   await sleep(1500);
-  startManagedBGM("resource/overflow.mp3");
+  // 3Dシーンが有効な場合はBGMを変更する
+  if (ui.battleScene) {
+    startManagedBGM("resource/cosmo.mp3");
+  } else {
+    startManagedBGM("resource/overflow.mp3");
+  }
   if (data["state"]["is_my_turn"] === true) {
     onAllyTurnStart(data);
   } else {
@@ -634,7 +639,9 @@ const onFoeTurnStart = (data) => {
 }
 
 const onAllyWin = () => {
-  stopManagedBGM();
+  if (!ui.battleScene) {
+    stopManagedBGM();
+  }
   playEventSound("end", "")
   ui.showMessage("あいてとの勝負に勝った！");
   ui.disableInput();
@@ -644,7 +651,9 @@ const onAllyWin = () => {
 }
 
 const onAllyLose = () => {
-  stopManagedBGM();
+  if (!ui.battleScene) {
+    stopManagedBGM();
+  }
   playEventSound("end", "")
   ui.showMessage("あいてとの勝負に負けた…");
   ui.disableInput();
@@ -670,7 +679,9 @@ const backToTitle = () => {
 }
 
 const onOpponentDisconnected = (data) => {
-  stopManagedBGM();
+  if (!ui.battleScene) {
+    stopManagedBGM();
+  }
   playEventSound("end", "");
   ui.hideMessage();
   ui.setWaitMessage("あいてが切断しました", 0);

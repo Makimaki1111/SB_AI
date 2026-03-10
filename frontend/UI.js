@@ -62,6 +62,9 @@ class UI{
         this.foeNameText = "";
         this.isAllyPoison = false;
         this.isFoePoison = false;
+
+        // 3Dシーン管理クラスのインスタンス化
+        this.battleScene = typeof BattleScene !== 'undefined' ? new BattleScene() : null;
     }
 
     showTitleScreen() {
@@ -72,6 +75,18 @@ class UI{
     showBattleScreen() {
         this.titleScreen.hide();
         this.battleScreen.selector.css('display', 'flex'); // Flexboxレイアウトを維持
+
+        // 3Dシーンの初期化 (まだ初期化されていなければ)
+        if (this.battleScene && !this.battleScene.renderer) {
+            const container = this.battleScreen.selector.find('.top-image')[0];
+            this.battleScene.init(container);
+            
+            // 3Dシーンに文字表示用のDOM要素を渡す
+            this.battleScene.setWordElements(
+                this.allyWord.selector[0],
+                this.foeWord.selector[0]
+            );
+        }
     }
 
     _setImageWithReplaceAndFade(selector, src, duration = 300) {
@@ -203,6 +218,14 @@ class UI{
     // ---------- 置換: showAllyImage ----------
     showAllyImage(data){
         if (!data || !data.state) return;
+
+        // 3Dシーンのテクスチャ更新
+        if (this.battleScene) {
+            this.battleScene.updateTexture(true, data.state.ally_type);
+            this.battleScene.playAttackAnimation(true); // 画像更新＝攻撃時とみなしてアクション
+            return; // 3D表示中は2D画像を表示しない
+        }
+
         const d = data.state;
 
         // 未設定（[""]）
@@ -245,6 +268,10 @@ class UI{
         this._setImageWithReplaceAndFade(this.allyType1Img.selector, '');
         this._setImageWithReplaceAndFade(this.allyType2Img.selector, '');
         this._setImageWithReplaceAndFade(this.allyOnlyTypeImg.selector, '');
+        
+        if (this.battleScene) {
+            this.battleScene.updateTexture(true, "");
+        }
     }
 
     showFoeWord(word){
@@ -257,6 +284,14 @@ class UI{
     // ---------- 置換: showFoeImage ----------
     showFoeImage(data){
         if (!data || !data.state) return;
+
+        // 3Dシーンのテクスチャ更新
+        if (this.battleScene) {
+            this.battleScene.updateTexture(false, data.state.foe_type);
+            this.battleScene.playAttackAnimation(false);
+            return; // 3D表示中は2D画像を表示しない
+        }
+
         const d = data.state;
 
         if (d.foe_type.length === 2) {
@@ -288,6 +323,9 @@ class UI{
         this._setImageWithReplaceAndFade(this.foeType1Img.selector, '');
         this._setImageWithReplaceAndFade(this.foeType2Img.selector, '');
         this._setImageWithReplaceAndFade(this.foeOnlyTypeImg.selector, '');
+        if (this.battleScene) {
+            this.battleScene.updateTexture(false, "");
+        }
     }
 
     setWaitMessage(message, time=Infinity) {
@@ -484,16 +522,18 @@ class UI{
     _adjustWordScale(element) {
         const maxWidth = 180;
         const domElement = element.get ? element.get(0) : element;
+        // 3Dシーンがある場合は、敵味方ともに中央揃え(-50%)にする（3D座標が中心になるため）
+        const is3D = !!this.battleScene;
 
         if (domElement && domElement.scrollWidth > maxWidth) {
             const scale = maxWidth / domElement.scrollWidth;
-            if (domElement.classList.contains('foe-word')) {
+            if (!is3D && domElement.classList.contains('foe-word')) {
                 domElement.style.transform = `translateX(50%) scaleX(${scale})`;
             } else {
                 domElement.style.transform = `translateX(-50%) scaleX(${scale})`;
             }
         } else if (domElement) {
-            if (domElement.classList.contains('foe-word')) {
+            if (!is3D && domElement.classList.contains('foe-word')) {
                 domElement.style.transform = `translateX(50%) scaleX(1)`;
             } else {
                 domElement.style.transform = `translateX(-50%) scaleX(1)`;
@@ -719,6 +759,11 @@ class UI{
         elements.forEach(el => {
             el.selector.addClass('damage-blink');
         });
+
+        // 3Dダメージ演出
+        if (this.battleScene) {
+            this.battleScene.playDamageAnimation(isAlly);
+        }
 
         // 1秒後にクラスを削除（次のアニメーションのため）
         setTimeout(() => {

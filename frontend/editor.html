@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D Battle Editor</title>
+  <link rel="stylesheet" href="style.css?v=21" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19"></script>
+  
+  <script src="BattleScene.js"></script>
+  <script src="type_to_image.js"></script>
+</head>
+
+<body>
+  <div class="phone-box">
+    <div class="top-image" id="scene-container">
+      <!-- 3D Canvas -->
+      
+      <!-- Dummy UI Elements -->
+      <div class="balloon right">
+        <div class="ally-name">自分</div>
+        <div class="bar"><div class="ally-hp-bar" style="width: 100%;"></div></div>
+        <div class="hp">60/60</div>
+      </div>
+      
+      <div class="ally-word" style="display:block; opacity:1;">味方の単語</div>
+
+      <div class="balloon left">
+        <div class="foe-name">相手</div>
+        <div class="bar"><div class="foe-hp-bar" style="width:100%;"></div></div>
+        <div class="hp">60/60</div>
+      </div>
+      
+      <div class="foe-word" style="display:block; opacity:1;">相手の単語</div>
+    </div>
+
+    <div class="content">
+      <div style="padding: 20px; text-align: center; color: #333;">
+        <h2>3D Scene Editor</h2>
+        <p>右上のパネルで3Dシーンを調整できます。</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const container = document.getElementById('scene-container');
+    const scene = new BattleScene();
+    scene.init(container);
+
+    // Dummy textures
+    scene.updateTexture(true, 'ノーマル');
+    scene.updateTexture(false, 'ノーマル');
+
+    // Link words
+    const allyWord = document.querySelector('.ally-word');
+    const foeWord = document.querySelector('.foe-word');
+    scene.setWordElements(allyWord, foeWord);
+
+    // Start Editor
+    // scene.createEditor(); // This is now called inside scene.init()
+  </script>
+</body>
+</html>
