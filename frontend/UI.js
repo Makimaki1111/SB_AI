@@ -1,5 +1,166 @@
+const modalStyles = `
+<style id="ability-modal-styles">
+#ability-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 2000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+.ability-modal-wrapper {
+    width: 95%;
+    max-width: 400px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 15px 10px; /* パディングを少し減らす */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    color: #333;
+    font-family: "M PLUS Rounded 1c", sans-serif;
+    position: relative;
+    height: auto;
+    max-height: 100vh;
+    /* overflow-y: auto; */ /* スクロールさせない */
+}
+.current-ability-section {
+    width: 100%;
+    margin-bottom: 8px; /* マージン短縮 */
+    padding-bottom: 8px; /* パディング短縮 */
+    border-bottom: 2px dashed #ddd;
+    flex-shrink: 0; /* 縮小しない */
+    max-height: 30%; /* 高さを制限 */
+    display: flex;
+    flex-direction: column;
+}
+.section-label {
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 4px;
+    display: block;
+}
+.ability-name-display {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #333;
+    margin: 0;
+    height: 2.6rem; /* 高さを詰める */
+    line-height: 1.2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.ability-desc-display {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 4px;
+    line-height: 1.4;
+    height: 3.6rem; /* 高さを詰める */
+    overflow-y: auto; /* 長い場合はスクロール */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.carousel-container {
+    position: relative;
+    width: 100%;
+    height: 110px; /* カルーセル領域をコンパクトに */
+    margin: 5px 0;
+    /* perspective: 1000px; */
+    touch-action: pan-y; /* 横スクロール操作をブラウザに任せない */
+    user-select: none;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.carousel-track {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 0;
+    height: 100%;
+}
+.carousel-item {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #fff;
+    border: 4px solid #ddd;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    top: 50%;
+    left: 50%;
+    transform-origin: center center;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), border-color 0.3s, background-color 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    z-index: 1;
+}
+.carousel-item.selected {
+    border-color: #ff9800;
+    background: #fff8e1;
+    z-index: 10;
+    box-shadow: 0 0 20px rgba(255, 152, 0, 0.6);
+}
+.carousel-item img {
+    width: 60%;
+    height: 60%;
+    object-fit: contain;
+}
+.modal-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px; /* マージン短縮 */
+    width: 100%;
+    justify-content: center;
+    flex-shrink: 0;
+    padding-bottom: 10px; /* 余白調整 */
+}
+.modal-btn {
+    padding: 12px 24px;
+    border-radius: 30px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 1rem;
+    min-width: 110px;
+    transition: transform 0.1s, opacity 0.2s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.modal-btn:active {
+    transform: scale(0.95);
+}
+.btn-decide {
+    background: linear-gradient(135deg, #ff9800, #ff5722);
+    color: white;
+}
+.btn-decide:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+.btn-close {
+    background: #f0f0f0;
+    color: #555;
+}
+</style>
+`;
+
 class UI{
     constructor() {
+        // スタイルを注入
+        if (!$('#ability-modal-styles').length) {
+            $('head').append(modalStyles);
+        }
+
         this.titleScreen = new UIObject($('#title-screen'));
         this.battleScreen = new UIObject($('#battle-screen'));
         this.vsPlayerBtn = new UIObject($('#vs-player-btn'));
@@ -42,9 +203,12 @@ class UI{
         this.foeCurrentAbilityDesc = new UIObject($('#foe-current-ability-desc'));
         this.abilityChangeCounterDisplay = new UIObject($('#counter'));
         this.abilityChangeRemainDisplay = new UIObject($('#remain'));
+        
         this.abilityModal = new UIObject($('#ability-modal'));
-        this.closeAbilityModalBtn = new UIObject($('#ability-modal .close-modal')); // "とじる" ボタン
-        this.skillsList = new UIObject($('#skills')); // 選択可能な特性アイコンのコンテナ
+        // DOM再構築のため、初期のセレクタは使わず動的にバインドするが、
+        // 既存コードとの互換性のため残す（ただしイベントは script.js で削除する）
+        this.closeAbilityModalBtn = new UIObject($()); 
+        this.skillsList = new UIObject($()); 
 
         // --- 状況モーダル関連 ---
         this.situationModal = new UIObject($('#situation-modal'));
@@ -62,6 +226,9 @@ class UI{
         this.foeNameText = "";
         this.isAllyPoison = false;
         this.isFoePoison = false;
+
+        // モーダルのイベントリスナー解除用関数を保持する変数
+        this.abilityModalCleanup = null;
     }
 
     showTitleScreen() {
@@ -557,44 +724,280 @@ class UI{
     }
 
     hideAbilityModal() {
+        // モーダルを閉じるときに確実にイベントリスナーを解除する
+        if (this.abilityModalCleanup) {
+            this.abilityModalCleanup();
+            this.abilityModalCleanup = null;
+        }
         this.abilityModal.selector.fadeOut('fast');
     }
 
-    populateAbilityModal(allAbilities, currentAbilityId, onSelectCallback) {
-        const listElement = this.skillsList.selector;
-        listElement.empty(); // 以前のリストをクリア
-
-        const canChange = battleState.ally.abilityChangeCount > 0;
-
-        for (const [id, abilityInfo] of Object.entries(allAbilities)) {
-            if (id === 'secret') continue;
-
-            const container = $('<div>').attr('id', id).addClass('skill-item'); // 各特性のコンテナ
-
-            // アイコン画像
-            const iconType = abilityInfo.icon_type || 'ノーマル'; // Default to 'ノーマル'
-            const iconName = type_to_image[iconType] || 'normal'; // Default to 'normal' image
-            const iconSrc = `img/${iconName}.gif`;
-            const iconImg = $('<img>').addClass('skill-icon').attr('src', iconSrc);
-            iconImg.attr('alt', abilityInfo.name); // アクセシビリティのためalt属性を追加
-
-            // 特性名
-            const abilityNameSpan = $('<span>').text(abilityInfo.name);
-
-            container.append(iconImg, $('<br>'), abilityNameSpan); // <br>を追加して改行
-
-            // 現在の特性、または変更回数が0の場合は選択不可
-            if (id === currentAbilityId) {
-                container.addClass('selected');
-            }
-
-            if (id !== currentAbilityId && canChange) {
-                container.on('click', () => onSelectCallback(id));
-            } else {
-                container.addClass('disabled');
-            }
-            listElement.append(container);
+    populateAbilityModal(allAbilities, currentAbilityId, canChange, onDecideCallback, onCloseCallback) {
+        // 再描画の前に、既存のイベントリスナーがあれば解除する（重複防止）
+        if (this.abilityModalCleanup) {
+            this.abilityModalCleanup();
+            this.abilityModalCleanup = null;
         }
+
+        const modal = this.abilityModal.selector;
+        modal.empty();
+
+        // データ準備
+        const abilities = [];
+        let initialIndex = 0;
+        let index = 0;
+        
+        for (const [id, info] of Object.entries(allAbilities)) {
+            if (id === 'secret') continue;
+            abilities.push({ id, ...info });
+            if (id === currentAbilityId) initialIndex = index;
+            index++;
+        }
+
+        // 構造作成
+        const wrapper = $('<div class="ability-modal-wrapper"></div>');
+
+        // 1. 現在の特性
+        const currentInfo = allAbilities[currentAbilityId] || { name: '---', description: '' };
+        const currentSection = $(`
+            <div class="current-ability-section">
+                <span class="section-label">現在のとくせい</span>
+                <h3 class="ability-name-display">${currentInfo.name}</h3>
+                <p class="ability-desc-display">${currentInfo.description}</p>
+            </div>
+        `);
+        wrapper.append(currentSection);
+
+        // 2. カルーセル (特性変更欄)
+        const carouselContainer = $('<div class="carousel-container"></div>');
+        const carouselTrack = $('<div class="carousel-track"></div>');
+        const items = [];
+
+        abilities.forEach((ab, i) => {
+            const iconType = ab.icon_type || 'ノーマル';
+            const iconName = type_to_image[iconType] || 'normal';
+            const item = $(`
+                <div class="carousel-item" data-index="${i}">
+                    <img src="img/${iconName}.gif" alt="${ab.name}">
+                </div>
+            `);
+
+            items.push(item);
+            carouselTrack.append(item);
+        });
+        carouselContainer.append(carouselTrack);
+        wrapper.append(carouselContainer);
+
+        // 3. 新しい特性の情報
+        const newInfoSection = $(`
+            <div class="current-ability-section" style="border-bottom: none; margin-bottom: 0;">
+                <span class="section-label" style="color: #ff9800;">変更後のとくせい</span>
+                <h3 class="ability-name-display" id="new-ability-name"></h3>
+                <p class="ability-desc-display" id="new-ability-desc"></p>
+            </div>
+        `);
+        wrapper.append(newInfoSection);
+
+        // 4. アクションボタン
+        const actions = $('<div class="modal-actions"></div>');
+        const decideBtn = $('<button class="modal-btn btn-decide">決定</button>');
+        const closeBtn = $('<button class="modal-btn btn-close">とじる</button>');
+
+        if (!canChange) {
+            decideBtn.prop('disabled', true).text('変更不可');
+        }
+
+        decideBtn.on('click', () => {
+            const selectedId = abilities[currentIndex].id;
+            // 同じ特性なら何もしないか閉じる
+            if (selectedId === currentAbilityId) {
+                onCloseCallback();
+            } else {
+                onDecideCallback(selectedId);
+                onCloseCallback();
+            }
+        });
+
+        closeBtn.on('click', () => {
+            onCloseCallback();
+        });
+
+        actions.append(closeBtn, decideBtn);
+        wrapper.append(actions);
+        modal.append(wrapper);
+
+        // --- カルーセル制御ロジック ---
+        // 滑らかな動きのために浮動小数点でインデックスを管理
+        let currentFloatIndex = initialIndex;
+        let currentIndex = initialIndex; // 決定ボタンなどで使う整数値
+        const N = abilities.length;
+        let animationFrameId = null;
+        
+        // 画面描画更新関数
+        const updateCarousel = (floatIdx) => {
+            // 表示用の正規化インデックス（浮動小数点）は計算上使わないが、
+            // UI更新用の整数インデックスを計算する
+            const roundedIndex = Math.round(floatIdx);
+            // ループ対応の正規化（0 ～ N-1）
+            currentIndex = ((roundedIndex % N) + N) % N;
+            
+            const ab = abilities[currentIndex];
+
+            // 情報更新
+            $('#new-ability-name').text(ab.name);
+            $('#new-ability-desc').text(ab.description);
+
+            // 決定ボタン状態更新
+            if (canChange) {
+                if (ab.id === currentAbilityId) {
+                    decideBtn.text('そのまま').css('background', '#aaa');
+                } else {
+                    decideBtn.text('決定').css('background', '');
+                }
+            }
+
+            // 配置計算 (アーチ状)
+            const spacing = 80; // アイコン間の横幅を少し広げる
+
+            items.forEach((item, i) => {
+                // 現在位置からの最短距離を計算（ループ対応）
+                // floatIdx と i の差分を取る
+                let diff = i - floatIdx;
+                // diff を -N/2 ～ N/2 の範囲に正規化（計算式で一発変換）
+                diff = diff - Math.round(diff / N) * N;
+
+                const absDiff = Math.abs(diff);
+                
+                // 横位置
+                const x = diff * spacing; 
+                // 縦位置 (放物線: y = a * x^2) - 中央が一番上(0)、端が下がる(+) 
+                // 係数を5->2に減らして、下から湧き上がる感を軽減
+                const y = absDiff * absDiff * 2; 
+                
+                // スケール
+                const scale = Math.max(0.6, 1 - absDiff * 0.15);
+                
+                // z-index
+                const z = 100 - Math.round(absDiff);
+                
+                // 透明度（もっと端まで表示するように減衰を緩やかにし、表示範囲を広げる）
+                let opacity = Math.max(0, 1 - absDiff * 0.2); 
+                if (absDiff > 4.5) opacity = 0; // 閾値を広げる
+                
+                // スタイル適用
+                item.css({
+                    transform: `translate(-50%, -50%) translate(${x}px, ${y}px) scale(${scale})`,
+                    zIndex: z,
+                    opacity: opacity,
+                    pointerEvents: opacity > 0.1 ? 'auto' : 'none' // 可視範囲ならクリック可能にする
+                });
+
+                if (absDiff < 0.5) {
+                    item.addClass('selected');
+                } else {
+                    item.removeClass('selected');
+                }
+            });
+        };
+
+        // 目標位置へアニメーションする関数
+        const animateTo = (target) => {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            
+            const animate = () => {
+                // 現在地と目標の差分
+                const diff = target - currentFloatIndex;
+                
+                // 十分近ければ終了
+                if (Math.abs(diff) < 0.005) {
+                    currentFloatIndex = target;
+                    updateCarousel(currentFloatIndex);
+                    return;
+                }
+                
+                // 慣性スクロール（係数を上げてキビキビ動かす）
+                currentFloatIndex += diff * 0.35; 
+                updateCarousel(currentFloatIndex);
+                animationFrameId = requestAnimationFrame(animate);
+            };
+            animate();
+        };
+
+        // 初回反映
+        // レイアウト確定後に計算するため少し待つ
+        setTimeout(() => updateCarousel(initialIndex), 0);
+
+        // タップ選択時の挙動上書き（updateCarouselを使う形に）
+        items.forEach((item, i) => {
+            item.off('click').on('click', () => {
+                if (isDragMove) return; // ドラッグ移動していたらクリック処理しない
+                
+                // 最短距離で移動するためのターゲット計算
+                let diff = i - currentFloatIndex;
+                diff = diff - Math.round(diff / N) * N;
+                
+                animateTo(currentFloatIndex + diff);
+            });
+        });
+
+        // ドラッグ/スワイプ操作
+        let startX = 0;
+        let lastX = 0;
+        let isDragging = false;
+        let isDragMove = false; // クリックとドラッグを区別するためのフラグ
+
+        const onDragStart = (e) => {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            isDragging = true;
+            isDragMove = false;
+            const pageX = e.pageX || (e.originalEvent.touches ? e.originalEvent.touches[0].pageX : 0);
+            startX = pageX;
+            lastX = pageX;
+        };
+        
+        const onDragMove = (e) => {
+            if (!isDragging) return;
+            e.preventDefault(); // スクロール防止
+            
+            const pageX = e.pageX || (e.originalEvent.touches ? e.originalEvent.touches[0].pageX : 0);
+            const deltaX = pageX - lastX;
+            lastX = pageX;
+
+            // 微小な動きはクリックとみなすために無視するが、一定以上動いたらドラッグとする
+            if (Math.abs(pageX - startX) > 5) {
+                isDragMove = true;
+            }
+
+            // 移動量に応じてインデックスを動かす（感度調整: 動きをダイレクトにするため値を小さく）
+            currentFloatIndex -= deltaX / 65; 
+            updateCarousel(currentFloatIndex);
+        };
+
+        const onDragEnd = (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            
+            // ドラッグ操作だった場合のみスナップさせる（クリックの場合はクリックハンドラに任せる）
+            if (isDragMove) {
+                // 最寄りの整数インデックスへ吸着させる
+                const target = Math.round(currentFloatIndex);
+                animateTo(target);
+            }
+            
+            // クリック判定のために isDragMove のリセットは遅延させる
+            setTimeout(() => { isDragMove = false; }, 0);
+        };
+
+        carouselContainer.on('mousedown touchstart', onDragStart);
+        $(document).on('mousemove touchmove', onDragMove); // 画面外に出ても追従するようにdocumentで受ける
+        $(document).on('mouseup touchend', onDragEnd);
+
+        // 解除用関数をクラスプロパティに保存
+        this.abilityModalCleanup = () => {
+            $(document).off('mousemove touchmove', onDragMove);
+            $(document).off('mouseup touchend', onDragEnd);
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        };
     }
 
     // --- 状況モーダル関連メソッド ---

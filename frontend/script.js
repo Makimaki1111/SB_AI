@@ -757,8 +757,13 @@ const onAccepted = async (data) => {
     ui.populateAbilityModal(
       battleState.allAbilities,
       battleState.ally.ability,
+      battleState.ally.abilityChangeCount > 0,
       (selectedAbilityId) => {
         sendChangeAbility(selectedAbilityId);
+      },
+      () => { // 閉じるボタンのコールバック
+        ui.hideAbilityModal();
+        playSound("resource/pera.mp3");
       }
     );
 
@@ -1123,17 +1128,17 @@ document.addEventListener("DOMContentLoaded", () => {
     ui.populateAbilityModal(
       battleState.allAbilities,
       battleState.ally.ability,
+      battleState.ally.abilityChangeCount > 0,
       (selectedAbilityId) => {
-        sendChangeAbility(selectedAbilityId);
+        sendChangeAbility(selectedAbilityId); // 決定時の処理
+      },
+      () => {
+        ui.hideAbilityModal(); // 閉じる時の処理
+        playSound("resource/pera.mp3");
       }
     );
 
     ui.showAbilityModal();
-    playSound("resource/pera.mp3");
-  });
-
-  ui.closeAbilityModalBtn.onClick(() => {
-    ui.hideAbilityModal();
     playSound("resource/pera.mp3");
   });
 
