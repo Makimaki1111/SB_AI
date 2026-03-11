@@ -887,6 +887,16 @@ class Battle_info:
         if ability_obj and not ability_obj.replaces_damage and ability_obj.check_condition(current_player, types, word):
             ability_obj.apply_after_effect(current_player, self)
 
+        # AI用推理情報の保存
+        self.last_turn_word_length = len(word)
+        # HP回復の要素しかなかった場合はダメージ0とする
+        if ability_obj and ability_obj.replaces_damage:
+            self.last_turn_damage = 0
+        elif "食べ物" in types or "医療" in types:
+            self.last_turn_damage = 0
+        else:
+             self.last_turn_damage = damage
+
         # やどりぎ等のターン終了時効果処理
         self._process_end_of_turn_effects(current_player, self.player2 if self.player1_turn else self.player1)
 
@@ -1258,9 +1268,17 @@ class Battle_info:
 
     def execute_cpu_turn(self):
         """
-        CPUのターンを実行し、行動結果を返します。
+        CPUのターンを実行し、行動結果を返します。（ディープラーニングAI）
         """
-        cpu_word = self.get_cpu_word()
+        try:
+            from ai_production_wrapper import ProductionAIAgent
+            # サーバー起動後、最初の呼び出しでモデルがロードされる（以降はキャッシュ）
+            ai_agent = ProductionAIAgent.get_instance(self.sb_info, self.abilities)
+            cpu_word = ai_agent.get_best_word(self)
+        except ImportError as e:
+            print(f"[Warning] Failed to load Deep Learning AI: {e}. Falling back to random AI.")
+            cpu_word = self.get_cpu_word()
+
         if cpu_word:
             # CPUが選んだ単語で攻撃
             return self.try_attack(self.player2.id, cpu_word)

@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 
 <head>
@@ -20,8 +20,8 @@
         })();
     </script>
     <title>ダブルバトル (β版)</title>
-    <link rel="stylesheet" href="style.css?v=19" />
-    <link rel="stylesheet" href="double_style.css?v=8" />
+    <link rel="stylesheet" href="style.css?v=18" />
+    <link rel="stylesheet" href="double_style.css?v=9" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700;800&display=swap" rel="stylesheet">
@@ -51,31 +51,45 @@
                 <!-- 特性変更ボタン (シングルバトルと同様のデザイン) -->
                 <div id="double-lobby-ability-btn-1" class="lobby-ability-btn">
                     <!-- 左半分: アイコン -->
-                    <div style="width: 40%; background: #f9f9f9; display: flex; justify-content: center; align-items: center;">
-                        <img id="double-lobby-ability-icon-1" src="" style="width: 80px; height: 80px; object-fit: contain; display: none;">
+                    <div
+                        style="width: 40%; background: #f9f9f9; display: flex; justify-content: center; align-items: center;">
+                        <img id="double-lobby-ability-icon-1" src=""
+                            style="width: 80px; height: 80px; object-fit: contain; display: none;">
                     </div>
                     <!-- 右半分: 情報 -->
-                    <div style="width: 60%; padding: 12px; display: flex; flex-direction: column; justify-content: center; text-align: left;">
+                    <div
+                        style="width: 60%; padding: 12px; display: flex; flex-direction: column; justify-content: center; text-align: left;">
                         <div style="font-size: 0.8rem; color: #888; font-weight: bold; margin-bottom: 2px;">1人目</div>
                         <!-- 右上: 特性名 -->
-                        <div id="double-lobby-ability-name-1" style="font-size: 1.2rem; font-weight: 800; color: #333; line-height: 1.2; border-bottom: 2px solid #eee; padding-bottom: 6px; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"></div>
+                        <div id="double-lobby-ability-name-1"
+                            style="font-size: 1.2rem; font-weight: 800; color: #333; line-height: 1.2; border-bottom: 2px solid #eee; padding-bottom: 6px; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        </div>
                         <!-- 右下: 説明 -->
-                        <div id="double-lobby-ability-short-desc-1" style="font-size: 0.8rem; color: #666; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;"></div>
+                        <div id="double-lobby-ability-short-desc-1"
+                            style="font-size: 0.8rem; color: #666; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                        </div>
                     </div>
                 </div>
 
                 <div id="double-lobby-ability-btn-2" class="lobby-ability-btn">
                     <!-- 左半分: アイコン -->
-                    <div style="width: 40%; background: #f9f9f9; display: flex; justify-content: center; align-items: center;">
-                        <img id="double-lobby-ability-icon-2" src="" style="width: 80px; height: 80px; object-fit: contain; display: none;">
+                    <div
+                        style="width: 40%; background: #f9f9f9; display: flex; justify-content: center; align-items: center;">
+                        <img id="double-lobby-ability-icon-2" src=""
+                            style="width: 80px; height: 80px; object-fit: contain; display: none;">
                     </div>
                     <!-- 右半分: 情報 -->
-                    <div style="width: 60%; padding: 12px; display: flex; flex-direction: column; justify-content: center; text-align: left;">
+                    <div
+                        style="width: 60%; padding: 12px; display: flex; flex-direction: column; justify-content: center; text-align: left;">
                         <div style="font-size: 0.8rem; color: #888; font-weight: bold; margin-bottom: 2px;">2人目</div>
                         <!-- 右上: 特性名 -->
-                        <div id="double-lobby-ability-name-2" style="font-size: 1.2rem; font-weight: 800; color: #333; line-height: 1.2; border-bottom: 2px solid #eee; padding-bottom: 6px; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"></div>
+                        <div id="double-lobby-ability-name-2"
+                            style="font-size: 1.2rem; font-weight: 800; color: #333; line-height: 1.2; border-bottom: 2px solid #eee; padding-bottom: 6px; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        </div>
                         <!-- 右下: 説明 -->
-                        <div id="double-lobby-ability-short-desc-2" style="font-size: 0.8rem; color: #666; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;"></div>
+                        <div id="double-lobby-ability-short-desc-2"
+                            style="font-size: 0.8rem; color: #666; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                        </div>
                     </div>
                 </div>
 
@@ -322,14 +336,20 @@
     </div>
 
     <!-- ロビー用 特性選択モーダル (ダブルバトル用) -->
-    <div id="double-lobby-ability-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center;">
-        <div style="background: white; width: 90%; max-width: 420px; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 15px; max-height: 80vh;">
+    <div id="double-lobby-ability-modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center;">
+        <div
+            style="background: white; width: 90%; max-width: 420px; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 15px; max-height: 80vh;">
             <h3 style="margin: 0; text-align: center;">とくせいを選択</h3>
-            <div id="double-lobby-ability-desc" style="font-size: 0.9rem; color: #666; background: #f5f5f5; padding: 10px; border-radius: 8px; min-height: 3em;"></div>
-            <div id="double-lobby-abilities-list" style="display: flex; flex-wrap: wrap; gap: 8px; overflow-y: auto; padding: 5px; flex: 1; justify-content: center;">
+            <div id="double-lobby-ability-desc"
+                style="font-size: 0.9rem; color: #666; background: #f5f5f5; padding: 10px; border-radius: 8px; min-height: 3em;">
+            </div>
+            <div id="double-lobby-abilities-list"
+                style="display: flex; flex-wrap: wrap; gap: 8px; overflow-y: auto; padding: 5px; flex: 1; justify-content: center;">
                 <!-- JSで生成 -->
             </div>
-            <button id="close-double-lobby-ability-modal" style="padding: 12px; background: #4CAF50; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">決定</button>
+            <button id="close-double-lobby-ability-modal"
+                style="padding: 12px; background: #4CAF50; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">決定</button>
         </div>
     </div>
 
@@ -358,7 +378,7 @@
             if (radio.checked) {
                 radio.closest('.mode-select-btn').classList.add('active');
             }
-            
+
             const content = document.querySelector('#double-lobby-screen .content');
             const btn2 = document.getElementById('double-lobby-ability-btn-2');
             if (btn2) {
@@ -371,7 +391,7 @@
                 }
             }
         }
-        
+
         // 初期ロード時にモード選択状態を反映
         document.addEventListener('DOMContentLoaded', () => {
             const checked = document.querySelector('input[name="double_mode"]:checked');
@@ -386,8 +406,8 @@
             });
         }
     </script>
-    <script src="double_UI.js?v=9"></script>
-    <script src="double_script.js?v=12"></script>
+    <script src="double_UI.js?v=20"></script>
+    <script src="double_script.js?v=13"></script>
 
 </body>
 
