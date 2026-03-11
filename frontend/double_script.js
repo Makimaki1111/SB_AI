@@ -244,9 +244,21 @@ $(() => {
     });
 
     ui.abilityInfoContainer.selector.off('click').on('click', () => {
-        ui.updateAbilityInfo(getUiCharsState(), doubleBattleState.allAbilities, (charId, abilityId) => {
-            sendChangeAbilityDouble(charId, abilityId);
-        });
+        if (doubleBattleState.isMyTurn && doubleBattleState.currentActorUiId) {
+            ui.activeCharTab = doubleBattleState.currentActorUiId;
+        }
+        // モーダルを生成して表示
+        ui.populateAbilityModal(
+            getUiCharsState(),
+            doubleBattleState.allAbilities,
+            (charId, abilityId) => { // 決定時
+                sendChangeAbilityDouble(charId, abilityId);
+            },
+            () => { // 閉じる時
+                ui.hideAbilityModal();
+                if (typeof playSound === 'function') playSound("resource/pera.mp3");
+            }
+        );
         ui.showAbilityModal();
         if (typeof playSound === 'function') playSound("resource/pera.mp3");
     });
@@ -503,9 +515,18 @@ async function handleTurnResult(data) {
             const changedUiId = getUIId(abilityChangeEvent.char_id || "");
             const isOwnTeamChange = changedUiId === "p1a" || changedUiId === "p1b";
             if (isOwnTeamChange) {
-                ui.updateAbilityInfo(getUiCharsState(), doubleBattleState.allAbilities, (charId, abilityId) => {
-                    sendChangeAbilityDouble(charId, abilityId);
-                });
+                // 画面上の表示更新
+                ui.updateAbilityInfo(getUiCharsState(), doubleBattleState.allAbilities);
+                
+                // モーダルが開いていれば更新
+                if (ui.abilityModal.selector.is(':visible')) {
+                    ui.populateAbilityModal(getUiCharsState(), doubleBattleState.allAbilities, (charId, abilityId) => {
+                        sendChangeAbilityDouble(charId, abilityId);
+                    }, () => {
+                        ui.hideAbilityModal();
+                        if (typeof playSound === 'function') playSound("resource/pera.mp3");
+                    });
+                }
                 
                 // メッセージと効果音も即時再生
                 ui.showModalMessage(abilityChangeEvent.message || 'とくせいを変更した！', 2000);
@@ -710,6 +731,7 @@ function handleTurnStart(data) {
     // Check if it's my turn
     if (data.current_owner_id === player1_id) {
         doubleBattleState.isMyTurn = true;
+        doubleBattleState.currentActorUiId = getUIId(data.current_actor_id);
         ui.setWaitMessage(`あなたのターンです (${doubleBattleState.chars[data.current_actor_id].name})`);
         ui.setInputText(`「${data.character}」からはじまることば`);
 

@@ -1,20 +1,24 @@
 const modalStyles = `
 <style id="ability-modal-styles">
 #ability-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.6);
-    z-index: 2000;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: rgba(0, 0, 0, 0.6) !important;
+    z-index: 2000 !important;
     display: none;
-    justify-content: center;
-    align-items: center;
+    justify-content: center !important;
+    align-items: center !important;
+    flex-direction: column !important;
+    padding: 0 !important;
+    margin: 0 !important;
 }
 .ability-modal-wrapper {
-    width: 95%;
-    max-width: 400px;
+    width: 90% !important;
+    max-width: 400px !important;
+    box-sizing: border-box !important;
     background: rgba(255, 255, 255, 0.95);
     border-radius: 20px;
     padding: 15px 10px; /* パディングを少し減らす */
@@ -32,11 +36,10 @@ const modalStyles = `
 }
 .current-ability-section {
     width: 100%;
-    margin-bottom: 8px; /* マージン短縮 */
-    padding-bottom: 8px; /* パディング短縮 */
+    margin-bottom: 8px;
+    padding-bottom: 8px;
     border-bottom: 2px dashed #ddd;
-    flex-shrink: 0; /* 縮小しない */
-    max-height: 30%; /* 高さを制限 */
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
 }
@@ -47,26 +50,27 @@ const modalStyles = `
     display: block;
 }
 .ability-name-display {
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     font-weight: bold;
     color: #333;
     margin: 0;
-    height: 2.6rem; /* 高さを詰める */
+    height: 4.5rem;
     line-height: 1.2;
     display: flex;
     align-items: center;
     justify-content: center;
+    text-align: center;
+    overflow: hidden;
 }
 .ability-desc-display {
     font-size: 0.85rem;
     color: #666;
     margin-top: 4px;
     line-height: 1.4;
-    height: 3.6rem; /* 高さを詰める */
-    overflow-y: auto; /* 長い場合はスクロール */
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    height: 4.2rem;
+    overflow-y: auto;
+    display: block;
+    word-break: break-word;
 }
 .carousel-container {
     position: relative;
@@ -111,9 +115,9 @@ const modalStyles = `
     box-shadow: 0 0 20px rgba(255, 152, 0, 0.6);
 }
 .carousel-item img {
-    width: 60%;
-    height: 60%;
-    object-fit: contain;
+    width: 85% !important;
+    height: 85% !important;
+    object-fit: contain !important;
 }
 .modal-actions {
     display: flex;
