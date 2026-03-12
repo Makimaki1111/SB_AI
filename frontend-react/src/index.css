@@ -1,0 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700;800&display=swap');
+
+:root {
+  --bg-color: #fce5cd;
+  --text-color: #333;
+  --primary-color: #ffb84d;
+  --primary-dark: #f57c00;
+  --secondary-color: #2196f3;
+  --accent-color: #81c784;
+  --danger-color: #f44336;
+  --hp-green: #00FF00;
+  --hp-yellow: #FFFF00;
+  --hp-red: #FF0000;
+  --font-main: "M PLUS 1p", sans-serif;
+  --action-bg: #333333;
+  --ability-bg: #416F27;
+  --ability-border: #54A836;
+  --situation-bg: #9A5252;
+  --situation-border: #C44041;
+}
+
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #2c3e50;
+  font-family: var(--font-main);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.phone-box {
+  width: 450px;
+  height: 720px;
+  aspect-ratio: 10 / 16;
+  background-color: #fce5cd;
+  border-radius: 16px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transform-origin: center center;
+}
+
+.footer-bg {
+  background-color: var(--bg-color-footer);
+}
+
+
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}

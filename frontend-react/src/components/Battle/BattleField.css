@@ -1,0 +1,40 @@
+.battle-field {
+  position: relative;
+  width: 100%;
+  height: calc(100% - 250px); /* Adjust based on action controller height */
+  overflow: hidden;
+  background-image: url('/src/assets/img/bg.png');
+  background-size: cover;
+  background-position: center;
+}
+
+.ellipse {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.ellipse-ally {
+  width: 320px;
+  height: 80px;
+  bottom: -40px;
+  left: 20%;
+  transform: translateX(-50%);
+}
+
+.ellipse-foe {
+  width: 180px;
+  height: 40px;
+  top: 100px;
+  right: 10%;
+  transform: translateX(50%);
+}
+
+.team-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+

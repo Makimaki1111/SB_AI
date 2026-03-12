@@ -1077,6 +1077,10 @@ async def websocket_double_endpoint(websocket: WebSocket):
                     logger.info(f"Double battle room {room_id} was destroyed exceptionally.")
 
 
+@app.websocket("/{path:path}")
+async def websocket_catchall(websocket: WebSocket, path: str):
+    await websocket.close(code=1008)
+
 # --- 静的ファイルの配信設定 (必ず最後に追加) ---
 # backendディレクトリの親ディレクトリにあるfrontendディレクトリを取得
 current_dir = os.path.dirname(os.path.abspath(__file__))
