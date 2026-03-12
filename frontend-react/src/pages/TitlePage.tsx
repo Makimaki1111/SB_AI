@@ -11,9 +11,13 @@ const TYPES = [
 
 export const TitlePage: React.FC = () => {
   const navigate = useNavigate();
-  const { unlockAudio, playSound, setBGMVolume, setSEVolume } = useAudio();
+  const { unlockAudio, playSound, startBGM, setBGMVolume, setSEVolume } = useAudio();
   const [showSettings, setShowSettings] = React.useState(false);
   const [username, setUsername] = React.useState(localStorage.getItem('sb_username') || '');
+
+  React.useEffect(() => {
+    startBGM('/src/assets/resource/horizon.mp3');
+  }, []);
 
   const handleStart = (path: string) => {
     unlockAudio();

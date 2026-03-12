@@ -63,10 +63,11 @@
 }
 
 .mode-select-btn.active {
-  border-color: #ffb84d;
-  background: #fff;
-  color: #222;
-  box-shadow: 0 4px 12px rgba(255, 184, 77, 0.2);
+  border-color: #81c784;
+  background: linear-gradient(145deg, #ffffff, #e8f5e9);
+  color: #2e7d32;
+  box-shadow: 0 6px 16px rgba(76, 175, 80, 0.25);
+  transform: translateY(-2px);
 }
 
 .mode-select-btn.disabled {
@@ -110,8 +111,14 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
   overflow: hidden;
-  height: 110px; /* 固定高さに変更 */
+  height: 110px; /* 固定高さ */
   transition: transform 0.1s;
+}
+
+/* シングルバトル時は中央付近に配置 */
+.single-lobby .lobby-ability-btn {
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 .lobby-ability-btn:hover {
@@ -181,7 +188,8 @@
   align-items: center;
   gap: 16px;
   width: 100%;
-  margin-top: 20px;
+  margin-top: auto; /* オリジナル同様、空きスペースを埋めて下寄せ */
+  padding-bottom: 20px;
 }
 
 .button-lobby {

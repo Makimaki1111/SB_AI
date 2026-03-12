@@ -148,7 +148,7 @@ export const LobbyPage: React.FC = () => {
           <button className="back-to-title-link" onClick={handleBack}>←もどる</button>
           <h1>{mode === 'single' ? 'シングルバトル' : 'ダブルバトル'}</h1>
 
-          <div class="lobby-main-content">
+          <div className="lobby-main-content">
             {mode === 'double' && (
               <div className="mode-select-container">
                 <label className="mode-select-btn active">
