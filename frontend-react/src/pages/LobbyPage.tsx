@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useBattle } from '../context/BattleContext';
 import { useAudio } from '../context/AudioContext';
@@ -24,9 +24,43 @@ export const LobbyPage: React.FC = () => {
   const [selectedAbility2, setSelectedAbility2] = useState(localStorage.getItem('sb_ability2') || '');
   const [showAbilityModal, setShowAbilityModal] = useState<{ target: 1 | 2 } | null>(null);
 
+  const ICON_MAPPING: Record<string, string> = {
+    "ノーマル": "normal",
+    "動物": "animal",
+    "植物": "plant",
+    "地名": "place",
+    "感情": "emote",
+    "芸術": "art",
+    "食べ物": "food",
+    "暴力": "violence",
+    "医療": "health",
+    "人体": "body",
+    "機械": "mech",
+    "理科": "science",
+    "時間": "time",
+    "人物": "person",
+    "工作": "work",
+    "服飾": "cloth",
+    "社会": "society",
+    "遊び": "play",
+    "虫": "bug",
+    "数学": "math",
+    "暴言": "insult",
+    "宗教": "religion",
+    "スポーツ": "sports",
+    "天気": "weather",
+    "物語": "tale"
+  };
+
+  // Pre-import all icons for dynamic resolution
+  const icons = useMemo(() => import.meta.glob('../assets/img/*.{gif,jpg,png,svg}', { eager: true, import: 'default' }), []);
+
   const getIconUrl = (iconType: string) => {
-    const fileName = (iconType && iconType.includes('.')) ? iconType : `${iconType || 'normal'}.gif`;
-    return `/src/assets/img/${fileName}`;
+    // Map Japanese type to English filename if exists
+    const mappedType = ICON_MAPPING[iconType] || iconType;
+    const fileName = (mappedType && mappedType.includes('.')) ? mappedType : `${mappedType || 'unaware'}.gif`;
+    const path = `../assets/img/${fileName}`;
+    return (icons[path] as string) || (icons['../assets/img/unaware.gif'] as string);
   };
 
   useEffect(() => {
@@ -91,9 +125,9 @@ export const LobbyPage: React.FC = () => {
       <div className="lobby-ability-btn" onClick={() => openAbilityModal(target)}>
         <div className="ability-icon-container">
           <img 
-            src={getIconUrl(ability?.icon_type || 'normal')} 
+            src={getIconUrl(ability?.icon_type || 'unaware')} 
             alt="icon" 
-            style={{ opacity: ability ? 1 : 0.5 }}
+            style={{ opacity: 1 }}
           />
         </div>
         <div className="ability-info-container">
@@ -114,7 +148,19 @@ export const LobbyPage: React.FC = () => {
           <button className="back-to-title-link" onClick={handleBack}>←もどる</button>
           <h1>{mode === 'single' ? 'シングルバトル' : 'ダブルバトル'}</h1>
 
-          <div className="lobby-main-content">
+          <div class="lobby-main-content">
+            {mode === 'double' && (
+              <div className="mode-select-container">
+                <label className="mode-select-btn active">
+                  <input type="radio" name="double_mode" value="1v1_double" defaultChecked />
+                  1人2役
+                </label>
+                <label className="mode-select-btn disabled">
+                  <input type="radio" name="double_mode" value="2v2_double" disabled />
+                  4人対戦 (未開発)
+                </label>
+              </div>
+            )}
             {renderAbilityButton(1)}
             {mode === 'double' && renderAbilityButton(2)}
 
@@ -165,9 +211,9 @@ export const LobbyPage: React.FC = () => {
                 onClick={() => selectAbility('')}
               >
                 <img 
-                  src={getIconUrl('normal')} 
+                  src={getIconUrl('unaware')} 
                   alt="random" 
-                  style={{ opacity: 0.5 }} 
+                  style={{ opacity: 1 }} 
                 />
                 <span>ランダム</span>
               </div>

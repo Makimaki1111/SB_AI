@@ -6,13 +6,13 @@
 }
 
 .lobby-screen .content {
-  padding-top: 100px;
-  padding-bottom: 60px;
+  padding-top: 80px;
+  padding-bottom: 40px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  gap: 15px;
+  gap: 5px;
   height: 100%;
 }
 
@@ -30,8 +30,53 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex: 1;
+}
+
+/* モード選択 (オリジナル準拠) */
+.mode-select-container {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  margin-top: 2px;
+  width: 90%;
+  max-width: 400px;
+}
+
+.mode-select-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 2px solid transparent;
+  background: #fdfdfd;
+  color: #555;
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-sizing: border-box;
+}
+
+.mode-select-btn.active {
+  border-color: #ffb84d;
+  background: #fff;
+  color: #222;
+  box-shadow: 0 4px 12px rgba(255, 184, 77, 0.2);
+}
+
+.mode-select-btn.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f5f5f5;
+}
+
+.mode-select-btn input {
+  display: none;
 }
 
 /* 戻るボタン */
@@ -62,10 +107,10 @@
   border-radius: 20px;
   cursor: pointer;
   display: flex;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
   overflow: hidden;
-  min-height: 120px;
+  height: 110px; /* 固定高さに変更 */
   transition: transform 0.1s;
 }
 
@@ -112,6 +157,10 @@
   border-bottom: 2px solid #eee;
   padding-bottom: 6px;
   margin-bottom: 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .ability-desc {
@@ -188,7 +237,7 @@
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* マッチング待機 */
@@ -217,8 +266,13 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* 特性選択モーダル */
@@ -228,7 +282,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -237,15 +291,16 @@
 
 .lobby-modal-content {
   background: white;
-  width: 90%;
+  width: 95%;
+  min-width: 320px; /* 画面が小さくなっても極端に縮まないように */
   max-width: 420px;
   border-radius: 20px;
   padding: 24px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
   gap: 15px;
-  max-height: 80vh;
+  max-height: 85vh;
 }
 
 .lobby-modal-content h3 {
@@ -276,21 +331,23 @@
 }
 
 .ability-item {
+  text-align: center;
+  line-height: 60%;
   width: 64px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 4px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.2s;
-  background-color: #efe8e8;
+  padding: 2px;
   border: 1px solid white;
-  margin: 4px;
   box-sizing: border-box;
+  background-color: #efe8e8;
+  border-radius: 10px;
+  z-index: 2;
+  overflow: hidden;
+  cursor: pointer;
+  margin: 4px;
+  margin: 4px;
+  transition: all 0.2s;
 }
 
-.ability-item:hover {
+.ability-item:not(.disabled):hover {
   border-color: #448ec6;
   background-color: #e0f0ff;
 }
@@ -301,29 +358,23 @@
 }
 
 .ability-item img {
-  width: 40px;
-  height: 40px;
+  width: 52px;
+  height: 52px;
   object-fit: contain;
-  margin-bottom: 5px;
 }
 
 .ability-item span {
   font-size: 10px;
-  font-weight: 700;
-  color: #333;
-  text-align: center;
   word-break: keep-all;
   white-space: nowrap;
-  background-color: white;
+  padding-left: 5px;
+  padding-right: 5px;
   border-radius: 10px;
-  padding: 2px 6px;
-  margin-top: 4px;
-  display: inline-block;
+  background-color: white;
   letter-spacing: -1px;
-  width: calc(100% - 4px);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  box-sizing: border-box;
+  display: inline-block;
+  margin-top: 4px;
+  color: #333;
 }
 
 .modal-close-btn {
