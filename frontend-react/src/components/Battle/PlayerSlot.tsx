@@ -34,13 +34,13 @@ export const PlayerSlot: React.FC<PlayerSlotProps> = ({ data, isAlly, activeEffe
   };
 
   return (
-    <div className={`player-slot ${isAlly ? 'ally' : 'foe'} ${data.hp <= 0 ? 'defeated' : ''} ${data.animation || ''}`}>
+    <div className={`player-slot slot-${data.id} ${isAlly ? 'ally' : 'foe'} ${data.hp <= 0 ? 'defeated' : ''} ${data.animation || ''}`}>
       {data.currentWord && (
         <div 
           className="word-balloon"
-          style={{ transform: `translateX(-50%) scaleX(${wordScale})` }}
+          style={{ transform: `translateX(-50%) scale(${wordScale})` }}
         >
-          <div ref={wordRef}>{data.currentWord}</div>
+          <div ref={wordRef} className="word-text">{data.currentWord}</div>
         </div>
       )}
 

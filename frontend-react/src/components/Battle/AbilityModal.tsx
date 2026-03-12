@@ -19,7 +19,7 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({ isOpen, onClose }) =
 
   const handleSelectAbility = (abilityId: string) => {
     playSound('/src/assets/resource/pera.mp3');
-    changeAbility(abilityId);
+    changeAbility(abilityId, selectedCharId);
   };
 
   return (

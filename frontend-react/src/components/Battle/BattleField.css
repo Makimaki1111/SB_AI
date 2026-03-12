@@ -1,7 +1,7 @@
 .battle-field {
   position: relative;
   width: 100%;
-  height: calc(100% - 250px); /* Adjust based on action controller height */
+  height: calc(100% - 250px);
   overflow: hidden;
   background-image: url('/src/assets/img/bg.png');
   background-size: cover;
@@ -13,6 +13,7 @@
   background: white;
   border-radius: 50%;
   z-index: 1;
+  box-shadow: 0 0 10px rgba(255,255,255,0.8);
 }
 
 .ellipse-ally {
@@ -31,10 +32,55 @@
   transform: translateX(50%);
 }
 
+/* Double Battle Ellipse Overrides */
+.battle-field.double .ellipse-ally {
+  width: 400px;
+  height: 90px;
+  bottom: -45px;
+  left: 35%;
+}
+
+.battle-field.double .ellipse-foe {
+  width: 320px;
+  height: 70px;
+  top: 110px;
+  right: 15%;
+}
+
 .team-container {
   position: absolute;
-  width: 100%;
-  height: 100%;
   pointer-events: none;
+  z-index: 10;
+}
+
+.team-container.foe-team {
+  top: 50px;
+  right: 30px;
+  width: 210px;
+  height: 150px;
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+}
+
+.team-container.ally-team {
+  bottom: 80px;
+  left: 30px;
+  width: 240px;
+  height: 150px;
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+}
+
+/* Single Battle Positioning */
+.battle-field.single .team-container.foe-team {
+  top: 80px;
+  right: 60px;
+}
+
+.battle-field.single .team-container.ally-team {
+  bottom: 100px;
+  left: 60px;
 }
 

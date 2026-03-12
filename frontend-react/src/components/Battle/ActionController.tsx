@@ -10,7 +10,7 @@ interface ActionControllerProps {
 }
 
 export const ActionController: React.FC<ActionControllerProps> = ({ onOpenAbility, onOpenSituation }) => {
-  const { state, sendWord } = useBattle();
+  const { state, sendWord, sendIncludeCheck, setCurrentTargetId } = useBattle();
   const { playSound } = useAudio();
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -37,8 +37,16 @@ export const ActionController: React.FC<ActionControllerProps> = ({ onOpenAbilit
     if (!state.isMyTurn || !inputValue.trim()) return;
 
     playSound(new URL('../../assets/resource/pera.mp3', import.meta.url).href);
-    sendWord(inputValue.trim());
+    sendWord(inputValue.trim(), state.currentTargetId || undefined);
     setInputValue('');
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setInputValue(val);
+    if (val) {
+      sendIncludeCheck(val);
+    }
   };
 
 
@@ -46,7 +54,16 @@ export const ActionController: React.FC<ActionControllerProps> = ({ onOpenAbilit
     <div className={`action-controller ${!state.isMyTurn ? 'disabled' : ''}`}>
       <div className="status-display">
         {state.isMyTurn ? (
-          <div className="message">「{state.characterToStartWith}」から始まる言葉を<br />入力してください。</div>
+          <>
+            <div className="message">「{state.characterToStartWith}」から始まる言葉を<br />入力してください。</div>
+            {state.preCheckResult && (
+              <div className="prediction-box">
+                <span className="pred-type">[{state.preCheckResult.type}]</span>
+                <span className="pred-damage">{state.preCheckResult.damage} dmg</span>
+                <div className="pred-message">{state.preCheckResult.message}</div>
+              </div>
+            )}
+          </>
         ) : (
           <div className="message">相手の入力を待っています...</div>
         )}
@@ -58,7 +75,7 @@ export const ActionController: React.FC<ActionControllerProps> = ({ onOpenAbilit
             ref={inputRef}
             type="text" 
             value={inputValue} 
-            onChange={(e) => setInputValue(e.target.value)}
+            onChange={handleInputChange}
             placeholder={state.isMyTurn ? 'ことばを にゅうりょく...' : ''}
             disabled={!state.isMyTurn}
           />
@@ -71,8 +88,22 @@ export const ActionController: React.FC<ActionControllerProps> = ({ onOpenAbilit
         <div className="command-buttons">
           <button className="cmd-btn ability" onClick={onOpenAbility}>とくせい</button>
           <button className="cmd-btn situation" onClick={onOpenSituation}>じょうきょう</button>
-          <button className="cmd-btn glass disabled">（未実装）</button>
-          <button className="cmd-btn glass disabled">（未実装）</button>
+          {state.mode === 'double' && (
+            <div className="target-selection">
+              <button 
+                className={`target-btn ${state.currentTargetId === (state.myTeam === 'p1' ? 'p2a' : 'p1a') ? 'selected' : ''}`}
+                onClick={() => setCurrentTargetId(state.myTeam === 'p1' ? 'p2a' : 'p1a')}
+              >
+                Aをねらう
+              </button>
+              <button 
+                className={`target-btn ${state.currentTargetId === (state.myTeam === 'p1' ? 'p2b' : 'p1b') ? 'selected' : ''}`}
+                onClick={() => setCurrentTargetId(state.myTeam === 'p1' ? 'p2b' : 'p1b')}
+              >
+                Bをねらう
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

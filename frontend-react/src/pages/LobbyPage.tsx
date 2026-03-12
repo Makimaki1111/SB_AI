@@ -93,7 +93,7 @@ export const LobbyPage: React.FC = () => {
     } else if (subMode === 'room') {
        connect(mode!, 'create');
     } else {
-       startBattle(mode!, subMode, username);
+       startBattle(mode!, subMode);
     }
   };
 

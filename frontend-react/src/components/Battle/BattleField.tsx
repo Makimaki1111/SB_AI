@@ -18,16 +18,16 @@ export const BattleField: React.FC<BattleFieldProps> = ({ mode, team1, team2, my
 
   return (
     <div className={`battle-field ${mode}`}>
-      <div className="ellipse ellipse-foe" />
-      <div className="ellipse ellipse-ally" />
+      <div className="ellipse ellipse-foe" id="ellipse-enemy" />
+      <div className="ellipse ellipse-ally" id="ellipse-ally" />
 
-      <div className="team-container foe-team">
+      <div className={`team-container foe-team top-right ${mode}`}>
         {foeTeam.map(char => (
           <PlayerSlot key={char.id} data={char} isAlly={false} />
         ))}
       </div>
       
-      <div className="team-container ally-team">
+      <div className={`team-container ally-team bottom-left ${mode}`}>
         {allyTeam.map(char => (
           <PlayerSlot key={char.id} data={char} isAlly={true} />
         ))}

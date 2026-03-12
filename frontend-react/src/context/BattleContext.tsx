@@ -61,8 +61,10 @@ interface BattleContextType {
   state: BattleState;
   connect: (type: 'single' | 'double', action: 'create' | 'join' | 'cpu', roomId?: string, mode?: string) => void;
   sendWord: (word: string, targetId?: string) => void;
-  startBattle: (mode: BattleMode, subMode: 'player' | 'cpu' | 'room', name: string) => void;
-  changeAbility: (abilityId: string) => void;
+  sendIncludeCheck: (word: string) => void;
+  startBattle: (mode: BattleMode, subMode: 'player' | 'cpu' | 'room') => void;
+  changeAbility: (abilityId: string, charId: string) => void;
+  setCurrentTargetId: (targetId: string) => void;
 }
 
 const BattleContext = createContext<BattleContextType | null>(null);
@@ -82,7 +84,8 @@ const INITIAL_STATE: BattleState = {
   isMyTurn: false,
   characterToStartWith: '',
   allAbilities: {},
-  currentTargetId: null
+  currentTargetId: null,
+  preCheckResult: null
 };
 
 
@@ -92,7 +95,7 @@ export const BattleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [state, setState] = useState<BattleState>(INITIAL_STATE);
   const socketRef = useRef<WebSocket | null>(null);
 
-  const connect = useCallback((type: BattleMode, action: 'create' | 'join' | 'cpu', roomId?: string, subMode?: string) => {
+  const connect = useCallback((type: BattleMode, action: 'create' | 'join' | 'cpu', roomId?: string) => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
     
@@ -113,20 +116,41 @@ export const BattleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       const name = localStorage.getItem('sb_username') || '名無し';
       const ability = localStorage.getItem('sb_ability') || '';
+      const ability_2 = localStorage.getItem('sb_ability_2') || '';
       
+      // Update user info
       socket.send(JSON.stringify({
         type: 'update_user_info',
-        info: { player_id, name, ability }
+        info: { 
+          player_id, 
+          name, 
+          ability,
+          ...(type === 'double' ? { ability_2 } : {})
+        }
       }));
 
-      const msgType = type === 'single' 
-        ? (action === 'create' ? 'create_room' : action === 'join' ? 'join_room' : 'join_cpu_room')
-        : (action === 'create' ? 'create_double_room' : action === 'join' ? 'join_double_room' : 'join_double_cpu_room');
-
-      socket.send(JSON.stringify({
-        type: msgType,
-        info: { player_id, room_id: roomId, mode: subMode }
-      }));
+      // Single Battle Messages
+      if (type === 'single') {
+        if (action === 'create') {
+          socket.send(JSON.stringify({ type: 'join_private_room', info: { player_id, room_id: '' } }));
+        } else if (action === 'join') {
+          socket.send(JSON.stringify({ type: 'join_private_room', info: { player_id, room_id: roomId } }));
+        } else if (action === 'cpu') {
+          socket.send(JSON.stringify({ type: 'make_new_battle', info: { player1_id: player_id, player2_id: 'cpu' } }));
+        } else if ((action as string) === 'find_match') {
+          socket.send(JSON.stringify({ type: 'find_match', info: { player_id } }));
+        }
+      } 
+      // Double Battle Messages
+      else {
+        if (action === 'create') {
+          socket.send(JSON.stringify({ type: 'create_double_room', info: { player_id, mode: '1v1_double' } }));
+        } else if (action === 'join') {
+          socket.send(JSON.stringify({ type: 'join_double_room', info: { player_id, room_id: roomId } }));
+        } else if (action === 'cpu') {
+          socket.send(JSON.stringify({ type: 'join_double_cpu_room', info: { player_id } }));
+        }
+      }
     };
 
     socket.onmessage = (event) => {
@@ -154,11 +178,7 @@ export const BattleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     console.log('Received:', data);
     
     switch (data.type) {
-      case 'room_created':
-      case 'double_room_created':
-        setState(prev => ({ ...prev, roomId: data.room_id }));
-        break;
-
+      case 'made_room':
       case 'init_battle':
         const initialCharacters: Record<string, CharacterData> = {
           p1a: {
@@ -198,40 +218,65 @@ export const BattleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           isMyTurn: data.state.is_my_turn,
           characterToStartWith: data.state.character,
           myTeam: 'p1',
-          isVsCpu: true,
+          isVsCpu: data.is_cpu || (data.foe && data.foe.name === 'CPU') || true,
           allAbilities: data.all_abilities
         }));
         navigate('/battle');
         break;
 
+      case 'pre_check':
+        setState(prev => ({
+          ...prev,
+          preCheckResult: {
+            isPossible: data.is_possible,
+            word: data.word,
+            damage: data.damage,
+            type: data.type,
+            message: data.message,
+          }
+        }));
+        break;
+
       case 'init_double_battle':
         const doubleChars: Record<string, CharacterData> = {};
-        Object.entries(data.characters).forEach(([id, char]: [string, any]) => {
+        const charsData = data.characters || data.chars || {};
+        Object.entries(charsData).forEach(([id, char]: [string, any]) => {
           doubleChars[id] = {
             id,
             name: char.name,
             hp: char.hp,
-            maxHp: char.maxHp,
+            maxHp: char.max_hp,
             atkRank: char.attack_rank || 0,
             defRank: char.defense_rank || 0,
             ability: char.ability,
-            abilityChangeCount: char.ability_change_count,
+            abilityChangeCount: char.ability_change_count ?? 3,
             isPoison: char.is_poison,
             isDefeated: char.is_defeated,
             types: char.types || [],
             currentWord: ''
           };
         });
+        const playerId = localStorage.getItem('player_id');
+        let myTeam: 'p1' | 'p2' = 'p1';
+        Object.entries(charsData).forEach(([id, char]: [string, any]) => {
+          if (char.owner_id === playerId) {
+            myTeam = id.startsWith('p1') ? 'p1' : 'p2';
+          }
+        });
+
         setState(prev => ({
           ...prev,
           mode: 'double',
           roomId: data.room_id,
           isVsCpu: data.is_cpu,
           characters: doubleChars,
-          characterToStartWith: data.character,
-          isMyTurn: data.current_owner_id === localStorage.getItem('sb_player_id'),
-          currentTurnActorId: data.current_actor_id
+          characterToStartWith: data.state?.character || data.character,
+          myTeam: myTeam,
+          isMyTurn: data.state?.is_my_turn ?? (data.current_owner_id === playerId),
+          allAbilities: data.all_abilities || {},
+          currentTargetId: myTeam === 'p1' ? 'p2a' : 'p1a'
         }));
+        navigate('/battle');
         break;
       
       case 'turn_result':
@@ -254,13 +299,70 @@ export const BattleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }));
       
       const char = state.characters[data.charId];
-      if (char && char.types[0]) {
+      if (char && char.types && char.types[0]) {
         playSound(TYPE_SOUND_MAP[char.types[0]]);
       }
       await new Promise(r => setTimeout(r, 1000));
     }
 
-    for (const event of data.sequence) {
+    // Update character stats if provided (Double Battle style)
+    if (data.characters) {
+      const updatedChars: Record<string, CharacterData> = { ...state.characters };
+      Object.entries(data.characters).forEach(([id, char]: [string, any]) => {
+        if (updatedChars[id]) {
+          updatedChars[id] = {
+            ...updatedChars[id],
+            hp: char.hp,
+            maxHp: char.maxHp,
+            atkRank: char.attack_rank || 0,
+            defRank: char.defense_rank || 0,
+            ability: char.ability,
+            abilityChangeCount: char.ability_change_count,
+            isPoison: char.is_poison,
+            isDefeated: char.is_defeated,
+            types: char.types || updatedChars[id].types
+          };
+        }
+      });
+      setState(prev => ({ ...prev, characters: updatedChars }));
+    }
+
+    // Single battle style updates
+    if (data.ally || data.foe) {
+      setState(prev => {
+        const newCharacters = { ...prev.characters };
+        if (data.ally && newCharacters['p1a']) {
+          newCharacters['p1a'] = {
+            ...newCharacters['p1a'],
+            hp: data.ally.hp,
+            maxHp: data.ally.max_hp,
+            atkRank: data.ally.atk_rank || 0,
+            defRank: data.ally.def_rank || 0,
+            ability: data.ally.ability,
+            abilityChangeCount: data.ally.ability_change_count,
+            isPoison: data.ally.is_poison,
+            isDefeated: data.ally.hp <= 0
+          };
+        }
+        if (data.foe && newCharacters['p2a']) {
+          newCharacters['p2a'] = {
+            ...newCharacters['p2a'],
+            hp: data.foe.hp,
+            maxHp: data.foe.max_hp,
+            atkRank: data.foe.atk_rank || 0,
+            defRank: data.foe.def_rank || 0,
+            ability: data.foe.ability,
+            abilityChangeCount: data.foe.ability_change_count,
+            isPoison: data.foe.is_poison,
+            isDefeated: data.foe.hp <= 0
+          };
+        }
+        return { ...prev, characters: newCharacters };
+      });
+    }
+
+    // Sequence processing
+    for (const event of data.sequence || []) {
       if (event.message) {
         // TODO: Update a global battle log if we add one
       }
@@ -360,14 +462,30 @@ export const BattleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
-  const startBattle = (mode: BattleMode, subMode: 'player' | 'cpu' | 'room') => {
-    // This will trigger the socket connection and room creation
-    // For now, let's call connect with appropriate params
-    const action = subMode === 'cpu' ? 'cpu' : 'create';
-    connect(mode, action, undefined, subMode === 'cpu' ? 'cpu' : undefined);
+  const sendIncludeCheck = (word: string) => {
+    if (socketRef.current && state.roomId) {
+      socketRef.current.send(JSON.stringify({
+        type: state.mode === 'single' ? 'include_check' : 'include_check_double',
+        info: {
+          room_id: state.roomId,
+          player_id: localStorage.getItem('sb_player_id'),
+          word: word
+        }
+      }));
+    }
   };
 
-  const changeAbility = (abilityId: string) => {
+  const startBattle = (mode: BattleMode, subMode: 'player' | 'cpu' | 'room', roomId?: string) => {
+    let action: 'create' | 'join' | 'cpu' | 'find_match' = 'create';
+    if (subMode === 'cpu') action = 'cpu';
+    else if (subMode === 'player') action = 'find_match';
+    else if (subMode === 'room' && roomId) action = 'join';
+    else if (subMode === 'room') action = 'create';
+
+    connect(mode, action as any, roomId);
+  };
+
+  const changeAbility = (abilityId: string, charId: string) => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify({
         type: state.mode === 'single' ? 'change_ability' : 'change_ability_double',
@@ -375,7 +493,7 @@ export const BattleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           room_id: state.roomId,
           player_id: localStorage.getItem('sb_player_id'),
           ability: abilityId,
-          char_id: state.characterToStartWith // Assuming characterToStartWith is the current active character
+          char_id: charId
         }
       }));
     }
@@ -386,8 +504,10 @@ export const BattleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       state, 
       connect,    
       sendWord,
+      sendIncludeCheck,
       startBattle,
-      changeAbility
+      changeAbility,
+      setCurrentTargetId: (targetId: string) => setState(prev => ({ ...prev, currentTargetId: targetId }))
     }}>
       {children}
     </BattleContext.Provider>

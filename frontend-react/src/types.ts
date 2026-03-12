@@ -26,5 +26,12 @@ export interface BattleState {
   characterToStartWith: string;
   allAbilities: Record<string, { name: string; description: string }>;
   currentTargetId: string | null;
+  preCheckResult: {
+    isPossible: boolean;
+    word: string;
+    damage: number;
+    type: string;
+    message: string;
+  } | null;
 }
 
