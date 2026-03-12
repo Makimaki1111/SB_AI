@@ -36,7 +36,7 @@ export const ActionController: React.FC<ActionControllerProps> = ({ onOpenAbilit
     e.preventDefault();
     if (!state.isMyTurn || !inputValue.trim()) return;
 
-    playSound('/src/assets/resource/pera.mp3');
+    playSound(new URL('../../assets/resource/pera.mp3', import.meta.url).href);
     sendWord(inputValue.trim());
     setInputValue('');
   };

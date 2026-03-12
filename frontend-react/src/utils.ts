@@ -28,5 +28,7 @@ export const TYPE_IMAGE_MAP: Record<string, string> = {
 
 export const getTypeImagePath = (type: string) => {
   const name = TYPE_IMAGE_MAP[type] || 'normal';
-  return `/src/assets/img/${name}.gif`;
+  // 開発環境でも本番ビルドでも正しく解像されるように相対パスで返す
+  // (Viteなどのビルドツールがアセットを適切に処理できるように)
+  return new URL(`./assets/img/${name}.gif`, import.meta.url).href;
 };

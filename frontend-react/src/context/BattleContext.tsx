@@ -4,46 +4,58 @@ import type { BattleState, CharacterData, BattleMode } from '../types';
 import { useAudio } from './AudioContext';
 
 
-const TYPE_SOUND_MAP: Record<string, string> = {
-  "ノーマル": "/src/assets/resource/normal.mp3",
-  "動物": "/src/assets/resource/animal.mp3",
-  "植物": "/src/assets/resource/plant.mp3",
-  "地名": "/src/assets/resource/place.mp3",
-  "感情": "/src/assets/resource/emote.mp3",
-  "芸術": "/src/assets/resource/art.mp3",
-  "食べ物": "/src/assets/resource/food.mp3",
-  "暴力": "/src/assets/resource/violence.mp3",
-  "医療": "/src/assets/resource/health.mp3",
-  "人体": "/src/assets/resource/body.mp3",
-  "機械": "/src/assets/resource/mech.mp3",
-  "理科": "/src/assets/resource/science.mp3",
-  "時間": "/src/assets/resource/time.mp3",
-  "人物": "/src/assets/resource/person.mp3",
-  "工作": "/src/assets/resource/work.mp3",
-  "服飾": "/src/assets/resource/cloth.mp3",
-  "社会": "/src/assets/resource/society.mp3",
-  "遊び": "/src/assets/resource/play.mp3",
-  "虫": "/src/assets/resource/bug.mp3",
-  "数学": "/src/assets/resource/math.mp3",
-  "暴言": "/src/assets/resource/insult.mp3",
-  "宗教": "/src/assets/resource/religion.mp3",
-  "スポーツ": "/src/assets/resource/sports.mp3",
-  "天気": "/src/assets/resource/weather.mp3",
-  "物語": "/src/assets/resource/tale.mp3"
+const getAssetUrl = (path: string) => {
+  // src/assets/ からの相対パスを受け取って動的に解決する
+  const cleanPath = path.replace('/src/assets/', './assets/');
+  return new URL(cleanPath, import.meta.url).href;
 };
 
-const EVENT_SOUND_MAP: Record<string, string> = {
-  "cure": "/src/assets/resource/heal.mp3",
-  "stat_down": "/src/assets/resource/down.mp3",
-  "drain": "/src/assets/resource/seed_damage.mp3",
-  "stat_up": "/src/assets/resource/up.mp3"
-};
+const TYPE_SOUND_MAP: Record<string, string> = Object.fromEntries(
+  Object.entries({
+    "ノーマル": "/src/assets/resource/normal.mp3",
+    "動物": "/src/assets/resource/animal.mp3",
+    "植物": "/src/assets/resource/plant.mp3",
+    "地名": "/src/assets/resource/place.mp3",
+    "感情": "/src/assets/resource/emote.mp3",
+    "芸術": "/src/assets/resource/art.mp3",
+    "食べ物": "/src/assets/resource/food.mp3",
+    "暴力": "/src/assets/resource/violence.mp3",
+    "医療": "/src/assets/resource/health.mp3",
+    "人体": "/src/assets/resource/body.mp3",
+    "機械": "/src/assets/resource/mech.mp3",
+    "理科": "/src/assets/resource/science.mp3",
+    "時間": "/src/assets/resource/time.mp3",
+    "人物": "/src/assets/resource/person.mp3",
+    "工作": "/src/assets/resource/work.mp3",
+    "服飾": "/src/assets/resource/cloth.mp3",
+    "社会": "/src/assets/resource/society.mp3",
+    "遊び": "/src/assets/resource/play.mp3",
+    "虫": "/src/assets/resource/bug.mp3",
+    "数学": "/src/assets/resource/math.mp3",
+    "暴言": "/src/assets/resource/insult.mp3",
+    "宗教": "/src/assets/resource/religion.mp3",
+    "スポーツ": "/src/assets/resource/sports.mp3",
+    "天気": "/src/assets/resource/weather.mp3",
+    "物語": "/src/assets/resource/tale.mp3"
+  }).map(([k, v]) => [k, getAssetUrl(v)])
+);
 
-const DAMAGE_MSG_MAP: Record<string, string> = {
-  "効果はばつぐんだ！": "/src/assets/resource/effective.mp3",
-  "ふつうのダメージだ": "/src/assets/resource/middmg.mp3",
-  "効果はいまひとつのようだ…": "/src/assets/resource/noneffective.mp3"
-};
+const EVENT_SOUND_MAP: Record<string, string> = Object.fromEntries(
+  Object.entries({
+    "cure": "/src/assets/resource/heal.mp3",
+    "stat_down": "/src/assets/resource/down.mp3",
+    "drain": "/src/assets/resource/seed_damage.mp3",
+    "stat_up": "/src/assets/resource/up.mp3"
+  }).map(([k, v]) => [k, getAssetUrl(v)])
+);
+
+const DAMAGE_MSG_MAP: Record<string, string> = Object.fromEntries(
+  Object.entries({
+    "効果はばつぐんだ！": "/src/assets/resource/effective.mp3",
+    "ふつうのダメージだ": "/src/assets/resource/middmg.mp3",
+    "効果はいまひとつのようだ…": "/src/assets/resource/noneffective.mp3"
+  }).map(([k, v]) => [k, getAssetUrl(v)])
+);
 
 interface BattleContextType {
   state: BattleState;
@@ -85,6 +97,13 @@ export const BattleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const host = window.location.host;
     
     const endpoint = type === 'single' ? '/ws' : '/ws/double';
+    
+    // 既存の接続があれば閉じる
+    if (socketRef.current) {
+      console.log('Closing existing socket connection...');
+      socketRef.current.close();
+    }
+
     const socket = new WebSocket(`${protocol}//${host}${endpoint}`);
     socketRef.current = socket;
 
@@ -121,7 +140,14 @@ export const BattleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, []);
 
   useEffect(() => {
-    // Initial state setup or other effects
+    return () => {
+      // コンポーネントのアンマウント時にソケットを確実に閉じる
+      if (socketRef.current) {
+        console.log('Cleaning up BattleContext: Closing socket');
+        socketRef.current.close();
+        socketRef.current = null;
+      }
+    };
   }, []);
 
   const handleSocketMessage = (data: any) => {
@@ -334,13 +360,11 @@ export const BattleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
-  const startBattle = (mode: BattleMode, subMode: 'player' | 'cpu' | 'room', name: string) => {
+  const startBattle = (mode: BattleMode, subMode: 'player' | 'cpu' | 'room') => {
     // This will trigger the socket connection and room creation
     // For now, let's call connect with appropriate params
     const action = subMode === 'cpu' ? 'cpu' : 'create';
     connect(mode, action, undefined, subMode === 'cpu' ? 'cpu' : undefined);
-    
-    // In a real implementation, we would send the trainer name as well
   };
 
   const changeAbility = (abilityId: string) => {
