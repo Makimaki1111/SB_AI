@@ -108,7 +108,7 @@ class SB_info:
         cursor = self.conn.execute("SELECT 1 FROM words WHERE word = ?", (word,))
         return cursor.fetchone() is not None
     
-    def inclue_in_typed_words(self,word):
+    def include_in_typed_words(self,word):
         """入力した単語がタイプ付き単語として登録されているか判定します"""
         # type1が空文字でないものをタイプ付きとみなす
         cursor = self.conn.execute("SELECT 1 FROM words WHERE word = ? AND type1 != ''", (word,))

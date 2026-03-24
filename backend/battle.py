@@ -659,7 +659,7 @@ class Battle_info:
             return {"type" : "error", "message" : "自分のターンではありません"}
         elif(not word):
             return {"type" : "error", "message" : "単語を入力してください"}
-        elif(not self.sb_info.include_in_all_words(word) and not self.sb_info.inclue_in_typed_words(word)):
+        elif(not self.sb_info.include_in_all_words(word) and not self.sb_info.include_in_typed_words(word)):
             return {"type" : "error", "message" : "辞書にない単語です"}
         elif(word in self.used):
             return {"type" : "error", "message" : "使用済みの単語です"}
