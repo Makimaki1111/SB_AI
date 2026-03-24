@@ -21,7 +21,7 @@ const modalStyles = `
     box-sizing: border-box !important;
     background: rgba(255, 255, 255, 0.95);
     border-radius: 20px;
-    padding: 15px 10px; /* パディングを少し減らす */
+    padding: 12px 10px; /* パディング削減 */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -31,13 +31,13 @@ const modalStyles = `
     font-family: "M PLUS Rounded 1c", sans-serif;
     position: relative;
     height: auto;
-    max-height: 100vh;
-    /* overflow-y: auto; */ /* スクロールさせない */
+    max-height: 85vh; /* 画面に収まるように制限 */
+    overflow-y: auto; /* 内容が多い場合はスクロールを許可 */
 }
 .current-ability-section {
     width: 100%;
-    margin-bottom: 8px;
-    padding-bottom: 8px;
+    margin-bottom: 5px; /* 削減 */
+    padding-bottom: 5px;
     border-bottom: 2px dashed #ddd;
     flex-shrink: 0;
     display: flex;
@@ -50,11 +50,11 @@ const modalStyles = `
     display: block;
 }
 .ability-name-display {
-    font-size: 1.2rem;
+    font-size: 1.15rem; /* 縮小 */
     font-weight: bold;
     color: #333;
     margin: 0;
-    height: 4.5rem;
+    height: 3.2rem; /* 短縮 */
     line-height: 1.2;
     display: flex;
     align-items: center;
@@ -65,9 +65,9 @@ const modalStyles = `
 .ability-desc-display {
     font-size: 0.85rem;
     color: #666;
-    margin-top: 4px;
-    line-height: 1.4;
-    height: 4.2rem;
+    margin-top: 2px;
+    line-height: 1.3;
+    height: 3.2rem; /* 短縮 */
     overflow-y: auto;
     display: block;
     word-break: break-word;
@@ -75,7 +75,7 @@ const modalStyles = `
 .carousel-container {
     position: relative;
     width: 100%;
-    height: 220px; /* スワイプ判定領域をさらに拡大 */
+    height: 180px; /* 短縮 */
     margin: 0;
     touch-action: pan-y;
     user-select: none;
@@ -121,11 +121,11 @@ const modalStyles = `
 .modal-actions {
     display: flex;
     gap: 15px;
-    margin-top: 10px; /* マージン短縮 */
+    margin-top: 10px;
     width: 100%;
     justify-content: center;
     flex-shrink: 0;
-    padding-bottom: 10px; /* 余白調整 */
+    padding-bottom: 5px; /* 削減 */
 }
 .modal-btn {
     padding: 12px 24px;
