@@ -31,7 +31,7 @@ const modalStyles = `
     font-family: "M PLUS Rounded 1c", sans-serif;
     position: relative;
     height: auto;
-    max-height: 98vh;
+    max-height: 94vh;
     overflow-y: hidden; /* スクロールを禁止 */
 }
 .current-ability-section {
@@ -54,7 +54,7 @@ const modalStyles = `
     font-weight: bold;
     color: #333;
     margin: 0;
-    height: 2.6rem; /* 短縮 */
+    height: 2.4rem; /* さらに短縮 */
     line-height: 1.1;
     display: flex;
     align-items: center;
@@ -67,7 +67,7 @@ const modalStyles = `
     color: #666;
     margin-top: 1px;
     line-height: 1.25;
-    height: 2.8rem; /* 短縮 */
+    height: 2.6rem; /* さらに短縮 */
     overflow-y: auto;
     display: block;
     word-break: break-word;

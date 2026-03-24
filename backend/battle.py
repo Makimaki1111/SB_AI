@@ -1019,7 +1019,7 @@ class Battle_info:
             タイプ (list)
         """
         # 辞書にあればそのタイプ、なければノーマル
-        if self.sb_info.inclue_in_typed_words(_input):
+        if self.sb_info.include_in_typed_words(_input):
             types = [t for t in self.sb_info.get_types(_input) if t]
         else:
             types = [""]

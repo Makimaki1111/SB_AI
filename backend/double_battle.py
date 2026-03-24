@@ -363,7 +363,8 @@ class DoubleBattle_info:
         if ability_obj and not ability_obj.replaces_damage and ability_obj.check_condition(current_actor, types, word):
             try:
                 ability_activated = ability_obj.apply_effect(current_actor, self)
-            except (AttributeError, TypeError):
+            except (AttributeError, TypeError) as e:
+                print(f"DEBUG: ability_obj.apply_effect Error: {e}")
                 pass
 
 
@@ -440,7 +441,8 @@ class DoubleBattle_info:
             if defender_ability:
                 try:
                     defender_ability.on_receive_damage(target_actor, current_actor, damage, effect, self)
-                except (AttributeError, TypeError):
+                except (AttributeError, TypeError) as e:
+                    print(f"DEBUG: defender_ability.on_receive_damage Error: {e}")
                     pass
 
             # 暴力で攻撃ダウン
@@ -474,7 +476,8 @@ class DoubleBattle_info:
         if ability_obj and not ability_obj.replaces_damage and ability_obj.check_condition(current_actor, types, word):
             try:
                 ability_obj.apply_after_effect(current_actor, self)
-            except (AttributeError, TypeError):
+            except (AttributeError, TypeError) as e:
+                print(f"DEBUG: ability_obj.apply_after_effect Error: {e}")
                 pass
 
         # ターン終了時効果（毒、やどりぎ等）
@@ -521,9 +524,9 @@ class DoubleBattle_info:
         else:
             # 降参扱い
             actor.hp = 0
-            self.events.append({"text": f"{actor.name}は ことばを思いつかなかった！", "character_id": actor.id})
+            self.events.append({"message": f"{actor.name}は ことばを思いつかなかった！", "target": actor.id})
             if self._check_win_condition():
-                self.events.append({"text": "チーム1の勝利！" if self.team1_win else "チーム2の勝利！", "character_id": "system"})
+                self.events.append({"message": "チーム1の勝利！" if self.team1_win else "チーム2の勝利！", "target": "system"})
             else:
                 self._advance_turn_index()
             return self._make_response()

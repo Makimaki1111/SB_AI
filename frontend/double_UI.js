@@ -34,8 +34,8 @@ const modalStyles = `
     font-family: "M PLUS Rounded 1c", sans-serif;
     position: relative;
     height: auto;
-    max-height: 98vh; /* 余裕を持たせた最大高さ */
-    overflow-y: hidden; /* スクロールを禁止 */
+    max-height: 92vh; /* 少し余裕を持たせる */
+    overflow-y: auto; /* 万が一入り切らない場合はスクロールを許可 */
 }
 .current-ability-section {
     width: 100%;
@@ -57,7 +57,7 @@ const modalStyles = `
     font-weight: bold;
     color: #333;
     margin: 0;
-    height: 2.6rem; /* 最小化 */
+    height: 2.4rem; /* さらに短縮 */
     line-height: 1.1;
     display: flex;
     align-items: center;
@@ -70,7 +70,7 @@ const modalStyles = `
     color: #666;
     margin-top: 1px;
     line-height: 1.25;
-    height: 2.8rem; /* 最小化 */
+    height: 2.4rem; /* さらに短縮 */
     overflow-y: auto;
     display: block;
     word-break: break-word;
@@ -128,7 +128,7 @@ const modalStyles = `
     width: 100%;
     justify-content: center;
     flex-shrink: 0;
-    padding-bottom: 5px;
+    padding-bottom: 2px;
 }
 .modal-btn {
     padding: 12px 24px;
@@ -786,6 +786,7 @@ class DoubleUI {
             });
             tabsContainer.append(tabBtn);
         });
+        tabsContainer.css({ 'margin-bottom': '2px', 'gap': '10px' });
         wrapper.append(tabsContainer);
 
         if (!charData) {
