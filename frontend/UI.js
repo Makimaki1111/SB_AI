@@ -21,7 +21,7 @@ const modalStyles = `
     box-sizing: border-box !important;
     background: rgba(255, 255, 255, 0.95);
     border-radius: 20px;
-    padding: 12px 10px; /* パディング削減 */
+    padding: 10px; /* さらに削減 */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -31,14 +31,14 @@ const modalStyles = `
     font-family: "M PLUS Rounded 1c", sans-serif;
     position: relative;
     height: auto;
-    max-height: 85vh; /* 画面に収まるように制限 */
-    overflow-y: auto; /* 内容が多い場合はスクロールを許可 */
+    max-height: 98vh;
+    overflow-y: hidden; /* スクロールを禁止 */
 }
 .current-ability-section {
     width: 100%;
-    margin-bottom: 5px; /* 削減 */
-    padding-bottom: 5px;
-    border-bottom: 2px dashed #ddd;
+    margin-bottom: 4px; /* 削減 */
+    padding-bottom: 4px;
+    border-bottom: 1px dashed #ddd;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
@@ -50,12 +50,12 @@ const modalStyles = `
     display: block;
 }
 .ability-name-display {
-    font-size: 1.15rem; /* 縮小 */
+    font-size: 1.1rem; /* 縮小 */
     font-weight: bold;
     color: #333;
     margin: 0;
-    height: 3.2rem; /* 短縮 */
-    line-height: 1.2;
+    height: 2.6rem; /* 短縮 */
+    line-height: 1.1;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -63,11 +63,11 @@ const modalStyles = `
     overflow: hidden;
 }
 .ability-desc-display {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #666;
-    margin-top: 2px;
-    line-height: 1.3;
-    height: 3.2rem; /* 短縮 */
+    margin-top: 1px;
+    line-height: 1.25;
+    height: 2.8rem; /* 短縮 */
     overflow-y: auto;
     display: block;
     word-break: break-word;
@@ -75,7 +75,7 @@ const modalStyles = `
 .carousel-container {
     position: relative;
     width: 100%;
-    height: 180px; /* 短縮 */
+    height: 160px; /* 短縮 */
     margin: 0;
     touch-action: pan-y;
     user-select: none;
@@ -121,11 +121,11 @@ const modalStyles = `
 .modal-actions {
     display: flex;
     gap: 15px;
-    margin-top: 10px;
+    margin-top: 5px; /* 短縮 */
     width: 100%;
     justify-content: center;
     flex-shrink: 0;
-    padding-bottom: 5px; /* 削減 */
+    padding-bottom: 5px;
 }
 .modal-btn {
     padding: 12px 24px;

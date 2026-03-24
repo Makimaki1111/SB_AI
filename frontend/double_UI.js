@@ -24,7 +24,7 @@ const modalStyles = `
     background: rgba(255, 255, 255, 0.95);
     transition: background 0.5s ease !important;
     border-radius: 20px;
-    padding: 12px 10px; /* パディング削減 */
+    padding: 10px; /* さらに削減 */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -34,14 +34,14 @@ const modalStyles = `
     font-family: "M PLUS Rounded 1c", sans-serif;
     position: relative;
     height: auto;
-    max-height: 85vh; /* 画面に収まるように制限 */
-    overflow-y: auto; /* 内容が多い場合はスクロールを許可 */
+    max-height: 98vh; /* 余裕を持たせた最大高さ */
+    overflow-y: hidden; /* スクロールを禁止 */
 }
 .current-ability-section {
     width: 100%;
-    margin-bottom: 5px; /* マージン削減 */
-    padding-bottom: 5px;
-    border-bottom: 2px dashed #ddd;
+    margin-bottom: 4px;
+    padding-bottom: 4px;
+    border-bottom: 1px dashed #ddd; /* 線を細く */
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
@@ -53,12 +53,12 @@ const modalStyles = `
     display: block;
 }
 .ability-name-display {
-    font-size: 1.15rem; /* わずかに縮小 */
+    font-size: 1.1rem;
     font-weight: bold;
     color: #333;
     margin: 0;
-    height: 3.2rem; /* 大幅に短縮 */
-    line-height: 1.2;
+    height: 2.6rem; /* 最小化 */
+    line-height: 1.1;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -66,11 +66,11 @@ const modalStyles = `
     overflow: hidden;
 }
 .ability-desc-display {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #666;
-    margin-top: 2px;
-    line-height: 1.3;
-    height: 3.2rem; /* 短縮 */
+    margin-top: 1px;
+    line-height: 1.25;
+    height: 2.8rem; /* 最小化 */
     overflow-y: auto;
     display: block;
     word-break: break-word;
@@ -78,7 +78,7 @@ const modalStyles = `
 .carousel-container {
     position: relative;
     width: 100%;
-    height: 180px; /* 高さを抑える */
+    height: 160px; /* 極限まで短縮 */
     margin: 0;
     touch-action: pan-y;
     user-select: none;
@@ -124,11 +124,11 @@ const modalStyles = `
 .modal-actions {
     display: flex;
     gap: 15px;
-    margin-top: 10px;
+    margin-top: 5px; /* 短縮 */
     width: 100%;
     justify-content: center;
     flex-shrink: 0;
-    padding-bottom: 5px; /* 余白を調整してスクロール末尾で見やすく */
+    padding-bottom: 5px;
 }
 .modal-btn {
     padding: 12px 24px;

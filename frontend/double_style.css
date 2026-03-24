@@ -113,23 +113,6 @@
     gap: 16px;
 }
 
-/* ルームID入力欄のコンテナを .button-lobby と同期させる */
-.room-input-group {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    width: 72%;
-    max-width: 340px;
-    margin: 0 auto;
-    box-sizing: border-box;
-    flex-shrink: 0;
-}
-
-@media (max-width: 420px) {
-    .room-input-group {
-        width: 86%;
-    }
-}
 
 /* ダブルバトル画面上部領域: 元のbattle-areaに相当 */
 .double-battle-area {

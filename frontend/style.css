@@ -494,6 +494,18 @@ select {
   /* タイトル等と被らないよう配慮 */
 }
 
+/* ルームID入力欄のコンテナを .button-lobby と同期させる */
+.room-input-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 72%;
+    max-width: 340px;
+    margin: 0 auto;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
 /* タイトル画面専用のボタン配置（下部固定） */
 #title-screen .title-buttons-container {
   position: absolute;
@@ -613,6 +625,11 @@ select {
     width: 86%;
     font-size: 1.6rem;
     padding: 16px 20px;
+  }
+
+  /* モバイルでの幅を同期 */
+  .room-input-group {
+    width: 86%;
   }
 }
 
