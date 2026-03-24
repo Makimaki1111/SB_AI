@@ -634,6 +634,10 @@ class Battle_info:
         }
         return serializable_abilities
 
+    def katakana_to_hiragana(self, text: str) -> str:
+        """全角カタカナをひらがなに変換する"""
+        return "".join(chr(ord(c) - 96) if 0x30A1 <= ord(c) <= 0x30F6 else c for c in text)
+
     def try_attack(self, player_id, word: str):
         """player1に返す用のメッセージ
 
@@ -644,6 +648,9 @@ class Battle_info:
         Returns:
             _type_: _description_
         """
+        # 入力をひらがなに正規化
+        word = self.katakana_to_hiragana(word)
+
         if(self.player1_win != None):
             return {"type" : "error", "message" : "戦闘はすでに終了しています"}
         elif player_id != self.player1.id and player_id != self.player2.id:
@@ -964,6 +971,9 @@ class Battle_info:
                 attacker.leech_turns = 0
 
     def include_check(self,_input:str):
+        # 入力をひらがなに正規化
+        _input = self.katakana_to_hiragana(_input)
+
         ret = {
             "type" : "pre_check",
             "name" : _input,

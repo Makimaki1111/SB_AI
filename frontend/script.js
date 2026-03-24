@@ -1091,7 +1091,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const text = ui.input.selector.val();
     if (text) {
-      if (text.charAt(0) !== battleState.character) {
+      const normalizedChar = (typeof wanakana !== 'undefined') ? wanakana.toHiragana(text.charAt(0)) : text.charAt(0);
+      if (normalizedChar !== battleState.character) {
         // 開始文字不一致（UI表示なし）
         // 「ん」で終わる（UI表示なし）
       } else {

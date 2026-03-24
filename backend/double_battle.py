@@ -181,6 +181,10 @@ class DoubleBattle_info:
     def _is_valid_initial(self, word: str):
         return word.startswith(self.character)
 
+    def katakana_to_hiragana(self, text: str) -> str:
+        """全角カタカナをひらがなに変換する"""
+        return "".join(chr(ord(c) - 96) if 0x30A1 <= ord(c) <= 0x30F6 else c for c in text)
+
     def _is_used(self, word: str):
         return word in self.used
 
@@ -278,6 +282,9 @@ class DoubleBattle_info:
                 attacker.leech_turns = 0
 
     def try_attack(self, player_id: str, word: str, target_char_id: str = None):
+        # 入力をひらがなに正規化
+        word = self.katakana_to_hiragana(word)
+
         if self.team1_win is not None:
             return {"type": "error", "message": "戦闘はすでに終了しています"}
             
@@ -523,6 +530,9 @@ class DoubleBattle_info:
 
     def include_check(self, word: str):
         """入力中の単語のタイプチェック（ダブルバトル用）"""
+        # 入力をひらがなに正規化
+        word = self.katakana_to_hiragana(word)
+
         ret = {
             "type": "pre_check",
             "name": word,

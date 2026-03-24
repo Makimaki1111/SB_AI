@@ -198,9 +198,6 @@ $(() => {
         });
     }
 
-    if (typeof wanakana !== 'undefined') {
-        wanakana.bind(document.getElementById('input'));
-    }
 
     $('#create-double-room-btn').on('click', () => {
         const mode = $('input[name="double_mode"]:checked').val();
@@ -299,7 +296,8 @@ $(() => {
         }
         const text = ui.input.selector.val();
         if (text) {
-            if (text.charAt(0) !== doubleBattleState.character) {
+            const normalizedChar = (typeof wanakana !== 'undefined') ? wanakana.toHiragana(text.charAt(0)) : text.charAt(0);
+            if (normalizedChar !== doubleBattleState.character) {
                 // 開始文字不一致
             } else {
                 sendIncludeCheckDouble(doubleBattleState.roomId, text);
