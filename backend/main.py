@@ -357,7 +357,7 @@ def stop_double_turn_timer(room_id: str):
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
-    global waiting_player
+    global waiting_player, waiting_double_player
     try:
         while True:
             try:
