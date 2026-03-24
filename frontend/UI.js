@@ -75,10 +75,9 @@ const modalStyles = `
 .carousel-container {
     position: relative;
     width: 100%;
-    height: 110px; /* カルーセル領域をコンパクトに */
-    margin: 5px 0;
-    /* perspective: 1000px; */
-    touch-action: pan-y; /* 横スクロール操作をブラウザに任せない */
+    height: 220px; /* スワイプ判定領域をさらに拡大 */
+    margin: 0;
+    touch-action: pan-y;
     user-select: none;
     overflow: hidden;
     flex-shrink: 0;
@@ -92,7 +91,7 @@ const modalStyles = `
 }
 .carousel-item {
     position: absolute;
-    width: 80px;
+    width: 80px; /* サイズを元に戻す */
     height: 80px;
     border-radius: 50%;
     background: #fff;
@@ -861,7 +860,7 @@ class UI{
             }
 
             // 配置計算 (アーチ状)
-            const spacing = 80; // アイコン間の横幅を少し広げる
+            const spacing = 85; // 間隔も元に近い値へ
 
             items.forEach((item, i) => {
                 // 現在位置からの最短距離を計算（ループ対応）
@@ -973,7 +972,7 @@ class UI{
             }
 
             // 移動量に応じてインデックスを動かす（感度調整: 動きをダイレクトにするため値を小さく）
-            currentFloatIndex -= deltaX / 65; 
+            currentFloatIndex -= deltaX / 70; 
             updateCarousel(currentFloatIndex);
         };
 

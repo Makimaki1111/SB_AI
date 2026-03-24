@@ -78,8 +78,8 @@ const modalStyles = `
 .carousel-container {
     position: relative;
     width: 100%;
-    height: 110px;
-    margin: 5px 0;
+    height: 220px; /* スワイプ判定領域を拡大 */
+    margin: 0;
     touch-action: pan-y;
     user-select: none;
     overflow: hidden;
@@ -899,7 +899,7 @@ class DoubleUI {
                 }
             }
 
-            const spacing = 80;
+            const spacing = 85;
             items.forEach((item, i) => {
                 let diff = i - floatIdx;
                 diff = diff - Math.round(diff / N) * N;
@@ -979,7 +979,7 @@ class DoubleUI {
             }
 
             // 移動量に応じてインデックスを動かす（感度調整: 動きをダイレクトにするため値を小さく）
-            currentFloatIndex -= deltaX / 65; 
+            currentFloatIndex -= deltaX / 70; 
             updateCarousel(currentFloatIndex);
         };
 
