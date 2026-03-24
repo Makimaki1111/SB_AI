@@ -222,6 +222,12 @@ $(() => {
         showDoubleBattleWaitingScreen("CPU戦を開始中...");
         connectDoubleWebSocket('cpu');
     });
+    
+    $('#find-match-double-btn').on('click', () => {
+        doubleBattleState.roomId = null;
+        showDoubleBattleWaitingScreen("対戦相手を探しています...");
+        connectDoubleWebSocket('match');
+    });
 
 
     // ターゲット選択ボタン
@@ -375,6 +381,11 @@ function connectDoubleWebSocket(action, mode, roomId) {
                 type: "join_double_cpu_room",
                 info: { player_id: player1_id }
             }));
+        } else if (action === 'match') {
+            ws.send(JSON.stringify({
+                type: "find_match_double",
+                info: { player_id: player1_id }
+            }));
         }
     });
 
@@ -393,6 +404,8 @@ function connectDoubleWebSocket(action, mode, roomId) {
             }
             const waitText = `待機中... (${data.current}/${data.required} 人)`;
             ui.setWaitMessage(waitText);
+        } else if (data.type === "waiting") {
+            ui.setWaitMessage(data.message || "対戦相手を待っています...");
         }
         else if (data.type === "init_double_battle") {
             await initDoubleBattle(data);

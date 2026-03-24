@@ -237,6 +237,7 @@ def turn_process(info: turn_info):
 manager = ConnectionManager()
 
 waiting_player = None # {"socket": WebSocket, "player_id": str}
+waiting_double_player = None # {"socket": WebSocket, "player_id": str}
 private_rooms: Dict[str, Dict] = {} # {room_id: {"socket": WebSocket, "player_id": str}}
 
 # Double Battle Global Stores
@@ -658,6 +659,8 @@ async def websocket_endpoint(websocket: WebSocket):
         # 待機中のプレイヤーが切断した場合
         if waiting_player and waiting_player["socket"] == websocket:
             waiting_player = None
+        if waiting_double_player and waiting_double_player["socket"] == websocket:
+            waiting_double_player = None
         
         # プライベートルームにいたら削除
         player_id_to_remove = manager.socket_to_player_id.get(websocket)
@@ -700,6 +703,7 @@ async def websocket_endpoint(websocket: WebSocket):
 # --- ダブルバトル用 WebSocket対応部分 ---
 @app.websocket("/ws/double")
 async def websocket_double_endpoint(websocket: WebSocket):
+    global waiting_double_player
     await manager.connect(websocket)
     try:
         while True:
@@ -822,6 +826,52 @@ async def websocket_double_endpoint(websocket: WebSocket):
                                     stop_double_turn_timer(bi.room_id)
                                     del double_battle_rooms[bi.room_id]
                                     break
+
+                # ランダムマッチ
+                elif req.get("type") == "find_match_double":
+                    info = req.get("info", {})
+                    player_id = info.get("player_id")
+                    manager.register_player(websocket, player_id)
+                    if waiting_double_player is not None:
+                        if waiting_double_player["player_id"] == player_id:
+                            # 同じプレイヤーが再度リクエストを送った場合、ソケットを更新して待機継続
+                            waiting_double_player = {"socket": websocket, "player_id": player_id}
+                            await manager.safe_send_text(websocket, json.dumps({"type": "waiting", "message": "対戦相手を待っています..."}))
+                            continue
+                        
+                        # ルーム数制限
+                        if len(double_battle_rooms) >= MAX_ROOMS:
+                            await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "サーバーが混雑しています"}))
+                            continue
+
+                        # マッチング成立
+                        p1_data = waiting_double_player
+                        waiting_double_player = None
+                        p2_data = {"socket": websocket, "player_id": player_id}
+                        
+                        # ランダムマッチ用のID生成
+                        room_id = f"rnd_db_{uuid.uuid4().hex[:6]}"
+                        mode = "1v1_double"
+                        team1_ids = [p1_data["player_id"]]
+                        team2_ids = [p2_data["player_id"]]
+
+                        bi = DoubleBattle_info(mode, team1_ids, team2_ids, sb_info=sb_info_instance, room_id=room_id, profiles=user_profiles)
+                        double_battle_rooms[bi.room_id] = bi
+                        logger.info(f"Random double match found: room={bi.room_id}, p1={p1_data['player_id']}, p2={p2_data['player_id']}")
+
+                        await start_double_turn_timer(bi.room_id)
+                        
+                        for p_data in [p1_data, p2_data]:
+                            manager.join_room(p_data["socket"], bi.room_id)
+                            setattr(p_data["socket"], "player_id", p_data["player_id"])
+                            init_res = bi._make_response()
+                            p_init_res = bi.get_personalized_response(init_res, p_data["player_id"])
+                            p_init_res["type"] = "init_double_battle"
+                            attach_double_timer_info(bi.room_id, p_init_res)
+                            await manager.safe_send_text(p_data["socket"], json.dumps(p_init_res))
+                    else:
+                        waiting_double_player = {"socket": websocket, "player_id": player_id}
+                        await manager.safe_send_text(websocket, json.dumps({"type": "waiting", "message": "対戦相手を探しています..."}))
 
                 # ルーム参加
                 elif req.get("type") == "join_double_room":
@@ -1032,6 +1082,10 @@ async def websocket_double_endpoint(websocket: WebSocket):
                 await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "サーバー内部エラーが発生しました"}))
         
     except WebSocketDisconnect:
+        # 待機中のプレイヤーが切断した場合
+        if waiting_double_player and waiting_double_player["socket"] == websocket:
+            waiting_double_player = None
+            
         player_id_to_remove = manager.socket_to_player_id.get(websocket)
         room_to_remove = None
         for room_id, data in double_private_rooms.items():

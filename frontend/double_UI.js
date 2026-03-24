@@ -899,7 +899,7 @@ class DoubleUI {
                 }
             }
 
-            const spacing = 85;
+            const spacing = 85; 
             items.forEach((item, i) => {
                 let diff = i - floatIdx;
                 diff = diff - Math.round(diff / N) * N;

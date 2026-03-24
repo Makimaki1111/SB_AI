@@ -860,7 +860,7 @@ class UI{
             }
 
             // 配置計算 (アーチ状)
-            const spacing = 85; // 間隔も元に近い値へ
+            const spacing = 85; // 間隔を元に戻す
 
             items.forEach((item, i) => {
                 // 現在位置からの最短距離を計算（ループ対応）
