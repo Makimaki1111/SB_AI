@@ -10,6 +10,7 @@ body {
   overflow: hidden;
   position: fixed;
   font-family: "M PLUS 1p", sans-serif;
+  overscroll-behavior: none;
 }
 
 input,
