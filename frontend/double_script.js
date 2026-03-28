@@ -189,12 +189,33 @@ $(() => {
     });
     adjustWindowScale(); // 初期実行
 
-    // スマホでキーボードを開いたときに画面が上にずれるのを防ぐ
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', () => {
-            // キーボード表示などでビューポートのサイズが変わったときに、
-            // ページのスクロール位置を強制的に一番上に戻す
+    // スマホでキーボードを開いたときに画面がずれるのを防ぐ、より強力な対策
+    const inputElement = document.getElementById('input');
+    let scrollInterval;
+
+    if (inputElement) {
+        const forceScrollTop = () => {
             window.scrollTo(0, 0);
+            document.body.scrollTop = 0; // 旧Safari向け
+            document.documentElement.scrollTop = 0; // 旧Chrome/Firefox向け
+        };
+
+        inputElement.addEventListener('focus', () => {
+            // フォーカスされたら、ブラウザの自動スクロールに対抗するために
+            // 短時間、繰り返しスクロールをトップに戻し続ける。
+            forceScrollTop();
+            let counter = 0;
+            scrollInterval = setInterval(() => {
+                forceScrollTop();
+                if (++counter > 25) { // 約0.5秒間実行 (25 * 20ms)
+                    clearInterval(scrollInterval);
+                }
+            }, 20);
+        });
+
+        inputElement.addEventListener('blur', () => {
+            // フォーカスが外れたら、繰り返し処理を停止する。
+            clearInterval(scrollInterval);
         });
     }
 
