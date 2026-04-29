@@ -673,8 +673,9 @@ select {
 /* アクションボタンのラッパー */
 #actions-wrapper {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
+  gap: 15px;
   width: 100%;
   margin-top: 20px;
   padding: 0 10px;
@@ -695,53 +696,74 @@ select {
   border-radius: 10px;
 }
 
-#situation-button {
-  display: none;
-  width: 43%;
-  height: 150px;
-  background-color: #9A5252;
-  border: 5px solid #C44041;
-  line-height: 150px;
+#situation-button, #ability-info-container {
+  display: flex;
+  width: 45%;
+  height: 100px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
   position: relative;
-  /* .buttonのabsoluteを上書き */
-  margin: 0;
-  border-radius: 15px;
-}
-
-#situation-button p {
-  margin: 0;
-}
-
-/* 特性情報コンテナ */
-#ability-info-container {
-  /* ユーザー指定のスタイルを適用 */
-  background-color: #416F27;
-  border: 5px solid #54A836;
-  border-radius: 15px;
-  width: 43%;
-  height: 150px;
-  margin: 0;
-  /* ラッパーで配置するためマージンリセット */
-
-  /* テキストの色を白に */
-  color: white;
-  text-align: center;
-
-  /* flexboxで中央揃え */
-  display: none;
+  cursor: pointer;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  font-family: "M PLUS 1p", sans-serif;
-  font-weight: 700;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  text-decoration: none;
+  user-select: none;
+  overflow: hidden;
 }
 
-#ability-info-container p {
+#situation-button {
+  background: rgba(255, 242, 242, 0.9); /* ごく薄い赤 */
+  border-bottom: 4px solid #ff4757;
+}
+
+#ability-info-container {
+  background: rgba(242, 255, 242, 0.9); /* ごく薄い緑 */
+  border-bottom: 4px solid #2ed573;
+}
+
+#situation-button:hover, #ability-info-container:hover {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+}
+
+#situation-button:active, #ability-info-container:active {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* アイコンとテキストのスタイル */
+.action-btn-icon {
+  width: 30px;
+  height: 30px;
+  margin-bottom: 6px;
+  transition: transform 0.3s ease;
+}
+
+#situation-button .action-btn-icon {
+  fill: #ff4757;
+}
+
+#ability-info-container .action-btn-icon {
+  fill: #2ed573;
+}
+
+#situation-button:hover .action-btn-icon, 
+#ability-info-container:hover .action-btn-icon {
+  transform: scale(1.1);
+}
+
+.action-btn-text {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #333;
+  letter-spacing: 0.15em;
   margin: 0;
-  font-size: 1.1em;
-  color: white;
 }
 
 /* --- 特性選択モーダル --- */

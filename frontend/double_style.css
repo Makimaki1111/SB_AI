@@ -325,45 +325,6 @@
     text-decoration: line-through;
 }
 
-/* じょうきょうボタン（ダブルバトル画面専用）
-   style.css の #situation-button は display:none のため、ここで上書きする。
-   class="button" は position:absolute を持つため使わず、必要なスタイルをここで定義する。 */
-#situation-button {
-    display: flex !important;
-    justify-content: center;
-    align-items: center;
-    /* .button から継承していた分を自前で指定 */
-    position: relative;
-    cursor: pointer;
-    color: white;
-    font-family: "M PLUS 1p", sans-serif;
-    font-weight: 700;
-    font-size: 18px;
-}
-
-#situation-button p {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    text-align: center;
-    line-height: 150px;
-}
-
-/* とくせいボタン（じょうきょうボタンと全く同じ表示方式） */
-#ability-info-container {
-    display: flex !important;
-    justify-content: center;
-    align-items: center;
-}
-
-#ability-info-container p {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    text-align: center;
-    line-height: 150px;
-    text-shadow: none;
-}
 
 /* とくせいモーダル タブ */
 .char-tab {
