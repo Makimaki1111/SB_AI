@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8" />
@@ -45,6 +45,7 @@
                 <!-- トップメニュー -->
                 <div id="top-menu-container" class="title-buttons-container">
                     <button id="go-single-battle-btn" class="button-lobby">シングルバトル</button>
+                    <button id="go-stock-battle-btn" class="button-lobby" style="background: linear-gradient(180deg, #ffca28, #ff8f00);">残基バトル</button>
                     <button id="go-double-battle-btn" class="button-lobby" style="background: linear-gradient(180deg, #ff9a9e, #fecfef);">ダブルバトル</button>
                     <button id="settings-btn" class="button-lobby" style="background: linear-gradient(180deg, #f0f0f0, #d4d4d4); color: #333;">設定</button>
                 </div>
@@ -86,6 +87,7 @@
         }
 
         document.getElementById('go-single-battle-btn').addEventListener('click', () => navigateInShell('single_battle.html'));
+        document.getElementById('go-stock-battle-btn').addEventListener('click', () => navigateInShell('single_battle.html?mode=stock'));
         document.getElementById('go-double-battle-btn').addEventListener('click', () => navigateInShell('double_battle.html'));
 
         const settingsBtn = document.getElementById('settings-btn');

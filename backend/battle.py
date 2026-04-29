@@ -1,4 +1,4 @@
-﻿try:
+try:
     from SB_info import SB_info
 except ImportError:
     from backend.SB_info import SB_info
@@ -585,10 +585,11 @@ class Battle_info:
     """
     ブラウザ対戦時のマッチ情報を保持するクラス
     """
-    def __init__(self, player1_id, player2_id, sb_info: SB_info, room_id: str | None = None, p1_profile: dict = None, p2_profile: dict = None):
+    def __init__(self, player1_id, player2_id, sb_info: SB_info, room_id: str | None = None, p1_profile: dict = None, p2_profile: dict = None, max_lives: int = 1):
         self.room_id = room_id or str(uuid.uuid4())
         self.used = defaultdict(list)
         self.MAX_HP = MAX_HP
+        self.max_lives = max_lives
         self.is_cpu = (player2_id == "cpu")
 
         self.sb_info = sb_info
@@ -598,8 +599,8 @@ class Battle_info:
 
         self.player1 = Player(player1_id, p1_name)
         self.player2 = Player(player2_id, p2_name)
-        self.player1_lives = STOCK_LIVES
-        self.player2_lives = STOCK_LIVES
+        self.player1_lives = max_lives
+        self.player2_lives = max_lives
 
         # 特性関連
         self.abilities = get_default_abilities()
@@ -665,8 +666,11 @@ class Battle_info:
         defeated.leech_turns = 0
         defeated.leech_target_id = None
         self.events.append({
-            "type": "message",
-            "message": f"{defeated.name}は復帰した！（残機{lives_left}）"
+            "type": "revive",
+            "player": "ally" if defeated.id == self.player1.id else "foe",
+            "message": f"{defeated.name}は復帰した！（残機{lives_left}）",
+            "lives": lives_left,
+            "hp": self.MAX_HP
         })
 
     def try_attack(self, player_id, word: str):
@@ -1141,6 +1145,7 @@ class Battle_info:
                 "room_id" : self.room_id,
                 "is_cpu" : self.is_cpu,
                 "is_my_turn" : self.player1_turn,
+                "max_lives" : self.max_lives,
                 "turn" : self.turn,
                 "word" : self.word
             }
@@ -1165,11 +1170,14 @@ class Battle_info:
             "all_abilities": self._get_serializable_abilities(),
             "state" : {
                 "is_my_turn" : self.player1_turn if is_p1 else not self.player1_turn,
-                "character" : self.character
+                "character" : self.character,
+                "ally_lives" : self.player1_lives if is_p1 else self.player2_lives,
+                "foe_lives" : self.player2_lives if is_p1 else self.player1_lives,
+                "max_lives" : self.max_lives
             },
             "ally" : {
                 "max_hp" : self.MAX_HP,
-                "lives" : self.player1_lives,
+                "lives" : self.player1_lives if is_p1 else self.player2_lives,
                 "name" : ally.name,
                 "ability": ally.ability,
                 "ability_change_count": ally.ability_change_count,
@@ -1177,7 +1185,7 @@ class Battle_info:
             },
             "foe" : {
                 "max_hp" : self.MAX_HP,
-                "lives" : self.player2_lives,
+                "lives" : self.player2_lives if is_p1 else self.player1_lives,
                 "name" : foe.name,
                 "is_poison": foe.poison_turns > 0
             }

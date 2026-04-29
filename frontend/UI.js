@@ -154,6 +154,20 @@ const modalStyles = `
     background: #f0f0f0;
     color: #555;
 }
+.lives-display-item {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background-color: #ff9800;
+    box-shadow: 0 0 4px rgba(255, 152, 0, 0.9);
+    border: 2px solid #fff;
+    flex-shrink: 0;
+}
+.lives-display-item.lost {
+    background-color: #555;
+    box-shadow: none;
+    border-color: #777;
+}
 </style>
 `;
 
@@ -217,8 +231,12 @@ class UI{
         this.situationModal = new UIObject($('#situation-modal'));
         this.situationFoeA = new UIObject($('#foe-A'));
         this.situationFoeB = new UIObject($('#foe-B'));
+        this.situationFoeLives = new UIObject($('#foe-lives'));
+        this.situationFoeLivesRow = new UIObject($('#s-foe-lives-row'));
         this.situationAllyA = new UIObject($('#ally-A'));
         this.situationAllyB = new UIObject($('#ally-B'));
+        this.situationAllyLives = new UIObject($('#ally-lives'));
+        this.situationAllyLivesRow = new UIObject($('#s-ally-lives-row'));
         this.closeSituationModalBtn = new UIObject($('#situation-modal .close-modal'));
 
         // --- エフェクト関連 ---
@@ -229,6 +247,10 @@ class UI{
         this.foeNameText = "";
         this.isAllyPoison = false;
         this.isFoePoison = false;
+
+        // --- 残基表示関連 ---
+        this.allyLivesContainer = new UIObject($('.ally-lives-container'));
+        this.foeLivesContainer = new UIObject($('.foe-lives-container'));
 
         // モーダルのイベントリスナー解除用関数を保持する変数
         this.abilityModalCleanup = null;
@@ -520,12 +542,10 @@ class UI{
     }
 
     setAllyHP(hp, max_hp) {
-        this.updateHPBar(hp, max_hp, $('.ally-hp-bar'));
         $('.balloon.right .hp').text(hp + '/' + max_hp);
     }
 
     setFoeHP(hp, max_hp) {
-        this.updateHPBar(hp, max_hp, $('.foe-hp-bar'));
         $('.balloon.left .hp').text(hp + '/' + max_hp);
     }
 
@@ -539,25 +559,46 @@ class UI{
         }
     }
 
-    updateHPBar(hp, max_hp, dom) {
-        const new_bar_vw = hp / max_hp * 100;
-        dom.animate({
-            width: `${new_bar_vw}%`
-        }, {
-            duration: "slow",
-            complete: () => {
-                dom.css({
-                    backgroundColor: this.getHPBarColor(hp / max_hp)
-                });
+    updateLives(isAlly, current, max) {
+        const container = isAlly ? this.allyLivesContainer.selector : this.foeLivesContainer.selector;
+        if (!container.length) return;
+        
+        container.empty();
+        if (max <= 1) return; // 通常バトルでは表示しない
+
+        for (let i = 0; i < max; i++) {
+            const item = $('<div class="lives-display-item"></div>');
+            if (i >= current) {
+                item.addClass('lost');
             }
+            container.append(item);
+        }
+    }
+
+    updateHPBar(hp, max_hp, dom) {
+        if (!dom || dom.length === 0) return Promise.resolve();
+        const new_bar_vw = hp / max_hp * 100;
+        return new Promise(resolve => {
+            dom.stop(true, true).animate({
+                width: `${new_bar_vw}%`
+            }, {
+                duration: "slow",
+                complete: () => {
+                    dom.css({
+                        backgroundColor: this.getHPBarColor(hp / max_hp)
+                    });
+                    resolve();
+                }
+            });
         });
     }
 
-    updateHPs(ally_HP, ally_max_HP, foe_HP, foe_max_HP) {
+    async updateHPs(ally_HP, ally_max_HP, foe_HP, foe_max_HP) {
         this.setAllyHP(ally_HP, ally_max_HP);
-        this.updateHPBar(ally_HP, ally_max_HP, $('#ally-hp-bar'));
+        const p1 = this.updateHPBar(ally_HP, ally_max_HP, $('.ally-hp-bar'));
         this.setFoeHP(foe_HP, foe_max_HP);
-        this.updateHPBar(foe_HP, foe_max_HP, $('#foe-hp-bar'));
+        const p2 = this.updateHPBar(foe_HP, foe_max_HP, $('.foe-hp-bar'));
+        await Promise.all([p1, p2]);
     }
 
     resetHP() {
@@ -565,6 +606,8 @@ class UI{
         $('.foe-hp-bar').stop(true, true).css({ width: '100%', backgroundColor: '#00FF00' });
         $('.balloon.right .hp').text('');
         $('.balloon.left .hp').text('');
+        this.allyLivesContainer.selector.empty();
+        this.foeLivesContainer.selector.empty();
     }
 
     showMessage(text) {
@@ -1019,7 +1062,7 @@ class UI{
         this.situationFoeB.selector.text("1.0倍");
     }
 
-    updateSituationInfo(allyAtk, allyDef, foeAtk, foeDef) {
+    updateSituation(allyAtk, allyDef, foeAtk, foeDef, allyLives, foeLives, maxLives) {
         // ランクから倍率への変換マップ (backend/SB_info.py と同期)
         const rankToPower = (rank) => {
              const mapping = {
@@ -1030,11 +1073,7 @@ class UI{
         };
 
         const formatMultiplier = (num) => {
-            // 整数（1.0, 2.0など）の場合は小数点以下1桁で表示
-            if (num % 1 === 0) {
-                return num.toFixed(1);
-            }
-            // 小数（1.5, 0.66など）の場合はそのまま表示
+            if (num % 1 === 0) return num.toFixed(1);
             return num.toString();
         };
 
@@ -1042,6 +1081,16 @@ class UI{
         this.situationAllyB.selector.text(formatMultiplier(rankToPower(allyDef)) + "倍");
         this.situationFoeA.selector.text(formatMultiplier(rankToPower(foeAtk)) + "倍");
         this.situationFoeB.selector.text(formatMultiplier(rankToPower(foeDef)) + "倍");
+
+        if (maxLives > 1) {
+            this.situationAllyLivesRow.selector.show();
+            this.situationFoeLivesRow.selector.show();
+            this.situationAllyLives.selector.text(allyLives);
+            this.situationFoeLives.selector.text(foeLives);
+        } else {
+            this.situationAllyLivesRow.selector.hide();
+            this.situationFoeLivesRow.selector.hide();
+        }
     }
 
     // --- エフェクト再生メソッド ---
@@ -1130,5 +1179,43 @@ class UI{
         setTimeout(() => {
             elements.forEach(el => el.selector.removeClass('damage-blink'));
         }, 1000);
+    }
+
+    playKnockoutEffect(isAlly) {
+        const elements = isAlly ?
+            [this.allyType1Img, this.allyType2Img, this.allyOnlyTypeImg, this.allyWord] :
+            [this.foeType1Img, this.foeType2Img, this.foeOnlyTypeImg, this.foeWord];
+
+        const name = isAlly ? this.allyNameText : this.foeNameText;
+        this.showMessage(`${name}はたおれた！`);
+
+        elements.forEach(el => {
+            // 現在表示されている要素だけをアニメーション対象にする
+            const isVisible = el.selector.is(':visible') && (el.selector.prop('tagName') !== 'IMG' || (el.selector.attr('src') && el.selector.attr('src') !== ''));
+            el.isKnockoutTarget = isVisible;
+
+            if (isVisible) {
+                el.selector.stop(true, false).animate({
+                    top: '+=100px',
+                    opacity: 0
+                }, 800, function() {
+                    $(this).hide().css({ top: '', opacity: '' });
+                });
+            }
+        });
+    }
+
+    playReviveEffect(isAlly) {
+        const elements = isAlly ?
+            [this.allyType1Img, this.allyType2Img, this.allyOnlyTypeImg, this.allyWord] :
+            [this.foeType1Img, this.foeType2Img, this.foeOnlyTypeImg, this.foeWord];
+
+        elements.forEach(el => {
+            // 気絶時に表示されていた要素だけを復活させる
+            if (el.isKnockoutTarget) {
+                el.selector.stop(true, false).css({ top: '', opacity: 0 }).show();
+                el.selector.animate({ opacity: 1 }, 800);
+            }
+        });
     }
 }

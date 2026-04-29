@@ -184,6 +184,7 @@ user_profiles: Dict[str, dict] = {}
 class make_new_battle_info(BaseModel):
     player1_id: str
     player2_id: str
+    max_lives: int = 1
 
 def make_new_battle(info: make_new_battle_info, p1_profile: dict = None, p2_profile: dict = None):
     bi = Battle_info(
@@ -191,7 +192,8 @@ def make_new_battle(info: make_new_battle_info, p1_profile: dict = None, p2_prof
         info.player2_id,
         sb_info=sb_info_instance,
         p1_profile=p1_profile,
-        p2_profile=p2_profile
+        p2_profile=p2_profile,
+        max_lives=info.max_lives
     )
     battle_rooms[bi.room_id] = bi
     return bi.make_init_response(info.player1_id)
@@ -236,9 +238,10 @@ def turn_process(info: turn_info):
 
 manager = ConnectionManager()
 
-waiting_player = None # {"socket": WebSocket, "player_id": str}
+waiting_player_standard = None # {"socket": WebSocket, "player_id": str}
+waiting_player_stock = None # {"socket": WebSocket, "player_id": str}
 waiting_double_player = None # {"socket": WebSocket, "player_id": str}
-private_rooms: Dict[str, Dict] = {} # {room_id: {"socket": WebSocket, "player_id": str}}
+private_rooms: Dict[str, Dict] = {} # {room_id: {"socket": WebSocket, "player_id": str, "max_lives": int}}
 
 # Double Battle Global Stores
 double_battle_rooms: Dict[str, DoubleBattle_info] = {}
@@ -357,7 +360,7 @@ def stop_double_turn_timer(room_id: str):
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
-    global waiting_player, waiting_double_player
+    global waiting_player_standard, waiting_player_stock, waiting_double_player
     try:
         while True:
             try:
@@ -417,10 +420,17 @@ async def websocket_endpoint(websocket: WebSocket):
 
                     info = req.get("info", {})
                     player_id = info.get("player_id")
+                    max_lives = info.get("max_lives", 1)
                     manager.register_player(websocket, player_id)
 
-                    if waiting_player is not None:
-                        if waiting_player["player_id"] == player_id:
+                    # モードに応じた待機キューを選択
+                    if max_lives > 1:
+                        target_queue = waiting_player_stock
+                    else:
+                        target_queue = waiting_player_standard
+
+                    if target_queue is not None:
+                        if target_queue["player_id"] == player_id:
                             continue
                         
                         # ルーム数制限
@@ -429,19 +439,20 @@ async def websocket_endpoint(websocket: WebSocket):
                             continue
 
                         # 競合対策: 待機プレイヤーを即座に取り出す
-                        p1_data = waiting_player
-                        waiting_player = None
+                        p1_data = target_queue
+                        if max_lives > 1: waiting_player_stock = None
+                        else: waiting_player_standard = None
                         
                         p2_data = {"socket": websocket, "player_id": player_id}
                         
                         p1_profile = user_profiles.get(p1_data["player_id"])
                         p2_profile = user_profiles.get(p2_data["player_id"])
 
-                        bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=sb_info_instance, p1_profile=p1_profile, p2_profile=p2_profile)
+                        bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=sb_info_instance, p1_profile=p1_profile, p2_profile=p2_profile, max_lives=max_lives)
                         battle_rooms[bi.room_id] = bi
                         p1_name = p1_profile.get("name", "Unknown") if p1_profile else "Unknown"
                         p2_name = p2_profile.get("name", "Unknown") if p2_profile else "Unknown"
-                        logger.info(f"Match found: room={bi.room_id}, p1={p1_name} ({p1_data['player_id']}), p2={p2_name} ({p2_data['player_id']})")
+                        logger.info(f"Match found ({'Stock' if max_lives > 1 else 'Standard'}): room={bi.room_id}, p1={p1_name} ({p1_data['player_id']}), p2={p2_name} ({p2_data['player_id']})")
 
                         manager.join_room(p1_data["socket"], bi.room_id)
                         manager.join_room(p2_data["socket"], bi.room_id)
@@ -452,7 +463,9 @@ async def websocket_endpoint(websocket: WebSocket):
                         await start_turn_timer(bi.room_id)
 
                     else:
-                        waiting_player = {"socket": websocket, "player_id": player_id}
+                        new_waiter = {"socket": websocket, "player_id": player_id}
+                        if max_lives > 1: waiting_player_stock = new_waiter
+                        else: waiting_player_standard = new_waiter
                         await websocket.send_text(json.dumps({"type": "waiting", "message": "対戦相手を探しています..."}))
 
                 elif req.get("type") == "join_private_room":
@@ -479,7 +492,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             p1_profile = user_profiles.get(p1_data["player_id"])
                             p2_profile = user_profiles.get(p2_data["player_id"])
 
-                            bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=sb_info_instance, room_id=room_id, p1_profile=p1_profile, p2_profile=p2_profile)
+                            bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=sb_info_instance, room_id=room_id, p1_profile=p1_profile, p2_profile=p2_profile, max_lives=p1_data.get("max_lives", 1))
                             battle_rooms[bi.room_id] = bi
                             logger.info(f"Private match started: room={bi.room_id}, p1={p1_data['player_id']}, p2={p2_data['player_id']}")
 
@@ -501,7 +514,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         while True:
                             new_room_id = f"{secrets.randbelow(1000000):06d}"
                             if new_room_id not in private_rooms: break
-                        private_rooms[new_room_id] = {"socket": websocket, "player_id": player_id}
+                        private_rooms[new_room_id] = {"socket": websocket, "player_id": player_id, "max_lives": info.get("max_lives", 1)}
                         await websocket.send_text(json.dumps({"type": "private_room_created", "room_id": new_room_id}))
                         logger.info(f"Private room created: room={new_room_id}, player={player_id}")
 
@@ -657,8 +670,10 @@ async def websocket_endpoint(websocket: WebSocket):
     
     except WebSocketDisconnect:
         # 待機中のプレイヤーが切断した場合
-        if waiting_player and waiting_player["socket"] == websocket:
-            waiting_player = None
+        if waiting_player_standard and waiting_player_standard["socket"] == websocket:
+            waiting_player_standard = None
+        if waiting_player_stock and waiting_player_stock["socket"] == websocket:
+            waiting_player_stock = None
         if waiting_double_player and waiting_double_player["socket"] == websocket:
             waiting_double_player = None
         

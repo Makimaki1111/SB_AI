@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
@@ -66,20 +66,28 @@
       const resolvePage = () => {
         const raw = (window.location.hash || "").replace(/^#/, "");
         const decoded = raw ? decodeURIComponent(raw) : "";
-        return allowedPages.has(decoded) ? decoded : "title.html";
+        const basePage = decoded.split('?')[0];
+        return allowedPages.has(basePage) ? decoded : "title.html";
       };
 
       const applyRoute = () => {
         const page = resolvePage();
+        const basePage = page.split('?')[0];
         
         // すべてのフレームを非表示
         Object.values(frames).forEach(f => f.classList.remove('active'));
         
         // 対象のフレームを表示
-        if (frames[page]) {
-          frames[page].classList.add('active');
+        if (frames[basePage]) {
+          const f = frames[basePage];
+          // クエリパラメータが異なる場合はsrcを更新して再読み込み
+          const currentSrc = f.getAttribute('src');
+          if (currentSrc !== page) {
+            f.setAttribute('src', page);
+          }
+          f.classList.add('active');
           // アクティブになったことを通知
-          frames[page].contentWindow.postMessage({ type: 'sb:activated' }, '*');
+          f.contentWindow.postMessage({ type: 'sb:activated' }, '*');
         }
       };
 
@@ -89,7 +97,8 @@
 
         if (data.type === "sb:navigate") {
           const page = data.page;
-          if (!allowedPages.has(page)) return;
+          const basePage = page.split('?')[0];
+          if (!allowedPages.has(basePage)) return;
           if (window.location.hash !== `#${page}`) {
             window.location.hash = page;
           }

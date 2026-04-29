@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 
 <head>
@@ -84,7 +84,9 @@
 
         <!-- 右下ふきだし -->
         <div class="balloon right">
-          <div class="ally-name"></div>
+          <div class="ally-name-container" style="display: flex; align-items: center; justify-content: flex-start; gap: 5px;">
+            <div class="ally-name"></div>
+          </div>
           <div class="bar">
             <div class="ally-hp-bar"></div>
           </div>
@@ -105,7 +107,10 @@
 
         <!-- 左上ふきだし -->
         <div class="balloon left">
-          <div class="foe-name"></div>
+          <div class="foe-name-container" style="display: flex; align-items: center; justify-content: flex-start; gap: 5px;">
+            <div class="foe-name"></div>
+            <div class="foe-lives-container" style="display: flex; gap: 2px;"></div>
+          </div>
           <div class="bar">
             <div class="foe-hp-bar"></div>
           </div>
@@ -202,24 +207,39 @@
       <h3>あいて<span id="foe-rank"></span></h3>
       <p>こうげき<br><span id="foe-A">1.0倍</span></p>
       <p>ぼうぎょ<br><span id="foe-B">1.0倍</span></p>
+      <p id="s-foe-lives-row" style="display:none;">のこり<br><span id="foe-lives">-</span></p>
     </div>
     <div id="s-ally-info">
       <h3>じぶん<span id="ally-rank"></span></h3>
       <p>こうげき<br><span id="ally-A">1.0倍</span></p>
       <p>ぼうぎょ<br><span id="ally-B">1.0倍</span></p>
+      <p id="s-ally-lives-row" style="display:none;">のこり<br><span id="ally-lives">-</span></p>
     </div>
     <div class="close-modal" id="close-situation-modal-btn">とじる</div>
   </div>
 
   <script>
+    // URLパラメータの解析
+    const urlParams = new URLSearchParams(window.location.search);
+    const battleMode = urlParams.get('mode') || 'standard';
+    const isStockMode = (battleMode === 'stock');
+
+    // モードに応じてタイトルを更新
+    document.addEventListener('DOMContentLoaded', () => {
+      const titleEl = document.querySelector('.single-lobby-screen h1');
+      if (titleEl) {
+        titleEl.textContent = isStockMode ? '残基バトル' : 'シングルバトル';
+      }
+    });
+
     // バトル開始ボタンのイベントリスナー
-    document.getElementById('vs-cpu-btn').addEventListener('click', () => startBattle('cpu'));
-    document.getElementById('create-room-btn').addEventListener('click', () => startBattle('room', null));
+    document.getElementById('vs-cpu-btn').addEventListener('click', () => startBattle('cpu', null, isStockMode ? 3 : 1));
+    document.getElementById('create-room-btn').addEventListener('click', () => startBattle('room', null, isStockMode ? 3 : 1));
 
     document.getElementById('join-room-btn').addEventListener('click', () => {
       const roomId = document.getElementById('room-id-input').value;
       if (roomId && roomId.trim() !== '') {
-        startBattle('room', roomId.trim());
+        startBattle('room', roomId.trim(), isStockMode ? 3 : 1);
       } else {
         alert('ルームIDを入力してください。');
       }

@@ -1,4 +1,4 @@
-﻿const TYPE_SOUND_MAP = {
+const TYPE_SOUND_MAP = {
   "ノーマル": "resource/normal.mp3",
   "動物": "resource/animal.mp3",
   "植物": "resource/plant.mp3",
@@ -58,8 +58,9 @@ const battleState = {
   isVsCpu: false,
   mode: null, // 'player', 'cpu', 'room'
   character: "",
-  ally: { hp: 0, maxHp: 0, atk: 0, def: 0, ability: '', abilityChangeCount: 0, is_poison: false },
-  foe: { hp: 0, maxHp: 0, atk: 0, def: 0, ability: '', abilityChangeCount: 0, is_poison: false },
+  ally: { hp: 0, maxHp: 0, atk: 0, def: 0, ability: '', abilityChangeCount: 0, is_poison: false, lives: 0 },
+  foe: { hp: 0, maxHp: 0, atk: 0, def: 0, ability: '', abilityChangeCount: 0, is_poison: false, lives: 0 },
+  maxLives: 1,
   allAbilities: {}
 };
 
@@ -177,8 +178,11 @@ const onMadeRoom = async (data) => {
 
   battleState.ally.hp = data["ally"]["max_hp"];
   battleState.ally.maxHp = data["ally"]["max_hp"];
+  battleState.ally.lives = data["state"]["ally_lives"];
   battleState.foe.hp = data["foe"]["max_hp"];
   battleState.foe.maxHp = data["foe"]["max_hp"];
+  battleState.foe.lives = data["state"]["foe_lives"];
+  battleState.maxLives = data["state"]["max_lives"] || 1;
 
   battleState.ally.ability = data.ally.ability;
   battleState.ally.abilityChangeCount = data.ally.ability_change_count;
@@ -235,12 +239,35 @@ const processEvent = async (events, is_my_turn) => {
     if (e["type"] === "damage") {
       battleState.ally.hp = Math.max(0, battleState.ally.hp - (e["ally_damage"] || 0));
       battleState.foe.hp = Math.max(0, battleState.foe.hp - (e["foe_damage"] || 0));
-      ui.updateHPs(battleState.ally.hp, battleState.ally.maxHp, battleState.foe.hp, battleState.foe.maxHp);
+
+      const hpAnim = ui.updateHPs(battleState.ally.hp, battleState.ally.maxHp, battleState.foe.hp, battleState.foe.maxHp);
+
       // ダメージ点滅エフェクト (毒ダメージの場合は点滅させない)
       if (e["message"] !== "毒のダメージを受けた！") {
         if ((e["ally_damage"] || 0) > 0) ui.playDamageEffect(true);
         if ((e["foe_damage"] || 0) > 0) ui.playDamageEffect(false);
       }
+
+      // HPが0になった場合のみ、アニメーション終了を待ってから気絶演出を開始
+      if (battleState.ally.hp <= 0 || battleState.foe.hp <= 0) {
+        await hpAnim;
+        if (battleState.ally.hp <= 0) ui.playKnockoutEffect(true);
+        if (battleState.foe.hp <= 0) ui.playKnockoutEffect(false);
+      }
+    } else if (e["type"] === "revive") {
+      const isAlly = (e["player"] === "ally");
+      if (isAlly) {
+        battleState.ally.hp = e["hp"];
+        battleState.ally.lives = e["lives"];
+        battleState.ally.is_poison = false;
+      } else {
+        battleState.foe.hp = e["hp"];
+        battleState.foe.lives = e["lives"];
+        battleState.foe.is_poison = false;
+      }
+      ui.playReviveEffect(isAlly);
+      ui.updateHPs(battleState.ally.hp, battleState.ally.maxHp, battleState.foe.hp, battleState.foe.maxHp);
+      ui.updatePoisonStatus(battleState.ally.is_poison, battleState.foe.is_poison);
     } else if (e["type"] === "cure") {
       battleState.ally.hp = Math.min(battleState.ally.maxHp, battleState.ally.hp + (e["ally_cure"] || 0));
       battleState.foe.hp = Math.min(battleState.foe.maxHp, battleState.foe.hp + (e["foe_cure"] || 0));
@@ -363,7 +390,7 @@ const backToTitle = () => {
     sock.close();
     sock = null;
   }
-  
+
   // ページ遷移
   // シングルバトルのロビー(初期状態)に戻るためリロードする
   // (ダブルバトルの backToLobby と同様の挙動)
@@ -399,6 +426,9 @@ const onAccepted = async (data) => {
   // 毒状態の更新（イベント同期のため、新規毒発生時はここでは更新しない）
   battleState.ally.is_poison = data.state.ally_poison;
   battleState.foe.is_poison = data.state.foe_poison;
+  battleState.ally.lives = data.state.ally_lives;
+  battleState.foe.lives = data.state.foe_lives;
+  battleState.maxLives = data.state.max_lives || 1;
 
   let showAllyPoison = battleState.ally.is_poison;
   let showFoePoison = battleState.foe.is_poison;
@@ -534,11 +564,12 @@ const onError = (data) => {
 }
 
 // WebSocket接続とイベントリスナー登録
-window.startBattle = function (mode, roomId = null) {
+window.startBattle = function (mode, roomId = null, maxLives = 1) {
   // iOS対策: バトル開始のクリックイベント内で確実にAudioContextをアンロックする
   sbUnlockAudioContext();
 
   battleState.mode = mode;
+  battleState.maxLives = maxLives;
   if (mode === 'player' || mode === 'room') {
     battleState.isVsCpu = false;
   } else if (mode === 'cpu') {
@@ -546,10 +577,10 @@ window.startBattle = function (mode, roomId = null) {
   }
 
   initializeBattleScreen();
-  connectWebSocket(mode, roomId);
+  connectWebSocket(mode, roomId, maxLives);
 }
 
-function connectWebSocket(mode, roomId) {
+function connectWebSocket(mode, roomId, maxLives = 1) {
   isManualClose = false; // 新しい接続を開始する時にフラグをリセット
   // 既に接続があれば切断
   if (sock && sock.readyState === WebSocket.OPEN) {
@@ -576,16 +607,16 @@ function connectWebSocket(mode, roomId) {
     }
 
     if (mode === 'player') {
-      sendFindMatch(player1_id);
+      sendFindMatch(player1_id, maxLives);
     } else if (mode === 'cpu') {
-      sendMakeNewBattle(player1_id, cpu_id);
+      sendMakeNewBattle(player1_id, cpu_id, maxLives);
     } else if (mode === 'room') {
       if (roomId) {
-        sendJoinPrivateRoom(player1_id, roomId);
+        sendJoinPrivateRoom(player1_id, roomId, maxLives);
       } else {
         // バックエンドが create_private_room に対応していない可能性があるため、
         // 以前の仕様に合わせて join_private_room に空のIDを送ることで作成リクエストとする
-        sendJoinPrivateRoom(player1_id, "");
+        sendJoinPrivateRoom(player1_id, "", maxLives);
       }
     }
   });
@@ -647,29 +678,29 @@ function connectWebSocket(mode, roomId) {
   });
 }
 
-function sendFindMatch(player_id) {
+function sendFindMatch(player_id, maxLives = 1) {
   if (sock && sock.readyState === WebSocket.OPEN) {
     sock.send(JSON.stringify({
       type: "find_match",
-      info: { player_id: player_id }
+      info: { player_id: player_id, max_lives: maxLives }
     }));
   }
 }
 
-function sendMakeNewBattle(p1, p2) {
+function sendMakeNewBattle(p1, p2, maxLives = 1) {
   if (sock && sock.readyState === WebSocket.OPEN) {
     sock.send(JSON.stringify({
       type: "make_new_battle",
-      info: { player1_id: p1, player2_id: p2 }
+      info: { player1_id: p1, player2_id: p2, max_lives: maxLives }
     }));
   }
 }
 
-function sendJoinPrivateRoom(player_id, room_id) {
+function sendJoinPrivateRoom(player_id, room_id, maxLives = 1) {
   if (sock && sock.readyState === WebSocket.OPEN) {
     sock.send(JSON.stringify({
       type: "join_private_room",
-      info: { player_id: player_id, room_id: room_id }
+      info: { player_id: player_id, room_id: room_id, max_lives: maxLives }
     }));
   }
 }
@@ -846,11 +877,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- 状況確認モーダルのイベントリスナー ---
   ui.situationButton.onClick(() => {
-    ui.updateSituationInfo(
-      battleState.ally.atk,
-      battleState.ally.def,
-      battleState.foe.atk,
-      battleState.foe.def
+    ui.updateSituation(
+      battleState.ally.atk, battleState.ally.def,
+      battleState.foe.atk, battleState.foe.def,
+      battleState.ally.lives, battleState.foe.lives,
+      battleState.maxLives
     );
     ui.showSituationModal();
     sbPlaySound("resource/pera.mp3");
