@@ -1,4 +1,4 @@
-try:
+﻿try:
     from SB_info import SB_info
 except ImportError:
     from backend.SB_info import SB_info
@@ -25,6 +25,7 @@ BASE_DAMAGE_NORMAL = 7.0
 BASE_DAMAGE_TYPED = 10.0
 DAMAGE_RANDOM_MIN = 0.85
 DAMAGE_RANDOM_MAX = 0.99
+STOCK_LIVES = 3
 
 class TextInput(BaseModel):
     text:str
@@ -597,6 +598,8 @@ class Battle_info:
 
         self.player1 = Player(player1_id, p1_name)
         self.player2 = Player(player2_id, p2_name)
+        self.player1_lives = STOCK_LIVES
+        self.player2_lives = STOCK_LIVES
 
         # 特性関連
         self.abilities = get_default_abilities()
@@ -637,6 +640,34 @@ class Battle_info:
     def katakana_to_hiragana(self, text: str) -> str:
         """全角カタカナをひらがなに変換する"""
         return "".join(chr(ord(c) - 96) if 0x30A1 <= ord(c) <= 0x30F6 else c for c in text)
+
+    def _handle_knockout(self, defeated: Player):
+        """HPが0になったプレイヤーの残機を処理する。"""
+        if defeated.id == self.player1.id:
+            self.player1_lives -= 1
+            lives_left = self.player1_lives
+            if lives_left <= 0:
+                self.player1_win = False
+                return
+        else:
+            self.player2_lives -= 1
+            lives_left = self.player2_lives
+            if lives_left <= 0:
+                self.player1_win = True
+                return
+
+        defeated.hp = self.MAX_HP
+        defeated.attack_rank = 0
+        defeated.defense_rank = 0
+        defeated.types = [""]
+        defeated.poison_turns = 0
+        defeated.poisoner_id = None
+        defeated.leech_turns = 0
+        defeated.leech_target_id = None
+        self.events.append({
+            "type": "message",
+            "message": f"{defeated.name}は復帰した！（残機{lives_left}）"
+        })
 
     def try_attack(self, player_id, word: str):
         """player1に返す用のメッセージ
@@ -793,7 +824,7 @@ class Battle_info:
                     self.events.append(event)
 
                 self.player2.take_damage(damage)
-                if(self.player2.is_defeated): self.player1_win = True
+                if(self.player2.is_defeated): self._handle_knockout(self.player2)
 
         else:
             # タイプ特定
@@ -884,7 +915,7 @@ class Battle_info:
                     self.events.append(event)
 
                 self.player1.take_damage(damage)
-                if(self.player1.is_defeated): self.player1_win = False
+                if(self.player1.is_defeated): self._handle_knockout(self.player1)
 
         # --- 特性効果を元に戻す ---
         if ability_activated:
@@ -936,7 +967,7 @@ class Battle_info:
                 p.poison_turns += 1
                 
                 if p.is_defeated:
-                    self.player1_win = (p.id != self.player1.id)
+                    self._handle_knockout(p)
 
         # やどりぎ処理
         if attacker.leech_turns > 0:
@@ -966,7 +997,7 @@ class Battle_info:
                 })
 
                 if actual_defender.is_defeated:
-                    self.player1_win = (attacker.id == self.player1.id)
+                    self._handle_knockout(actual_defender)
             else:
                 attacker.leech_turns = 0
 
@@ -1092,6 +1123,7 @@ class Battle_info:
                 "ally_B" : self.player1.defense_rank,
                 "ally_type" : self.player1.types,
                 "ally_poison" : self.player1.poison_turns > 0,
+                "ally_lives" : self.player1_lives,
                 "ally_ability": self.player1.ability,
                 "ally_ability_change_count": self.player1.ability_change_count,
                 "ally_win" : self.player1_win,
@@ -1103,6 +1135,7 @@ class Battle_info:
                 "foe_B" : self.player2.defense_rank,
                 "foe_type" : self.player2.types,
                 "foe_poison" : self.player2.poison_turns > 0,
+                "foe_lives" : self.player2_lives,
                 "foe_ability": self.player2.ability,
                 "foe_ability_change_count": self.player2.ability_change_count,
                 "room_id" : self.room_id,
@@ -1136,6 +1169,7 @@ class Battle_info:
             },
             "ally" : {
                 "max_hp" : self.MAX_HP,
+                "lives" : self.player1_lives,
                 "name" : ally.name,
                 "ability": ally.ability,
                 "ability_change_count": ally.ability_change_count,
@@ -1143,6 +1177,7 @@ class Battle_info:
             },
             "foe" : {
                 "max_hp" : self.MAX_HP,
+                "lives" : self.player2_lives,
                 "name" : foe.name,
                 "is_poison": foe.poison_turns > 0
             }
@@ -1165,6 +1200,7 @@ class Battle_info:
         new_state["ally_B"] = s["foe_B"]
         new_state["ally_type"] = s["foe_type"]
         new_state["ally_poison"] = s["foe_poison"]
+        new_state["ally_lives"] = s["foe_lives"]
         new_state["ally_ability"] = s["foe_ability"]
         new_state["ally_ability_change_count"] = s["foe_ability_change_count"]
         
@@ -1173,6 +1209,7 @@ class Battle_info:
         new_state["foe_B"] = s["ally_B"]
         new_state["foe_type"] = s["ally_type"]
         new_state["foe_poison"] = s["ally_poison"]
+        new_state["foe_lives"] = s["ally_lives"]
         new_state["foe_ability"] = s["ally_ability"]
         new_state["foe_ability_change_count"] = s["ally_ability_change_count"]
 
@@ -1280,6 +1317,9 @@ class Battle_info:
         """
         CPUのターンを実行し、行動結果を返します。（ディープラーニングAI）
         """
+
+        """
+        TODO: AI_CPU実装？
         try:
             from ai_production_wrapper import ProductionAIAgent
             # サーバー起動後、最初の呼び出しでモデルがロードされる（以降はキャッシュ）
@@ -1288,6 +1328,8 @@ class Battle_info:
         except ImportError as e:
             print(f"[Warning] Failed to load Deep Learning AI: {e}. Falling back to random AI.")
             cpu_word = self.get_cpu_word()
+        """
+        cpu_word = self.get_cpu_word()
 
         if cpu_word:
             # CPUが選んだ単語で攻撃
