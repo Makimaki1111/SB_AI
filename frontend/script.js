@@ -223,6 +223,12 @@ const onMadeRoom = async (data) => {
 }
 
 const onPreCheck = (data) => {
+  // 入力欄が空、送信直後（非表示）、または非表示状態なら表示しない
+  const currentText = ui.input.selector.val();
+  if (!currentText || !ui.input.selector.is(':visible')) {
+    ui.hideCheckResult();
+    return;
+  }
   ui.showCheckResult(data);
 }
 

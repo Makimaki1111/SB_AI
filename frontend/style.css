@@ -626,11 +626,11 @@ select {
 /* スマホ向けにさらに大きく見せる */
 @media (max-width: 420px) {
 
-  .button-lobby,
   #vs-human-btn,
   #vs-player-btn,
   #vs-cpu-btn,
-  #create-room-btn {
+  #create-room-btn,
+  #random-match-btn {
     width: 86%;
     font-size: 1.6rem;
     padding: 16px 20px;

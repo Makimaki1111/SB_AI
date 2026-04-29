@@ -1,4 +1,4 @@
-﻿// double_script.js - ダブルバトル用のスクリプト
+// double_script.js - ダブルバトル用のスクリプト
 let player1_id = localStorage.getItem("sb_player_id");
 if (!player1_id) {
     player1_id = "player_" + Math.random().toString(36).substring(2, 9);
@@ -884,10 +884,16 @@ function sendIncludeCheckDouble(roomId, word) {
 }
 
 function onDoublePreCheck(data) {
-    ui.showCheckResult(data);
-    if (doubleBattleState.currentTargetId) {
-        ui.updatePredictionMessage(doubleBattleState.currentTargetId);
-    }
+  // 入力欄が空、送信直後（非表示）、または非表示状態なら表示しない
+  const currentText = ui.input.selector.val();
+  if (!currentText || !ui.input.selector.is(':visible')) {
+    ui.hideCheckResult();
+    return;
+  }
+  ui.showCheckResult(data);
+  if (doubleBattleState.currentTargetId) {
+    ui.updatePredictionMessage(doubleBattleState.currentTargetId);
+  }
 }
 
 function preloadImages() {
