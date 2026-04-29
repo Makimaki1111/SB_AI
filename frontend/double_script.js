@@ -1,4 +1,4 @@
-// double_script.js - ダブルバトル用のスクリプト
+﻿// double_script.js - ダブルバトル用のスクリプト
 let player1_id = localStorage.getItem("sb_player_id");
 if (!player1_id) {
     player1_id = "player_" + Math.random().toString(36).substring(2, 9);
@@ -66,14 +66,6 @@ function shouldPlayAbilityChangeSound(event) {
         return false;
     }
     return doubleBattleState.chars[changedCharId].owner_id === player1_id;
-}
-
-function hasParentAudioManager() {
-    try {
-        return !!(window.parent && window.parent !== window && window.parent.SB_AUDIO);
-    } catch (e) {
-        return false;
-    }
 }
 
 let protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -155,8 +147,8 @@ $(() => {
     if (typeof preloadSounds === "function") {
         preloadSounds(preloadPaths);
     }
-    if (typeof startBGM === "function") {
-        startBGM("resource/horizon.mp3");
+    if (typeof requestBGM === "function") {
+        requestBGM("resource/horizon.mp3");
     }
 
     let isAudioUnlocked = false;
@@ -167,8 +159,8 @@ $(() => {
         if (typeof window.unlockAudioContext === 'function') {
             window.unlockAudioContext();
         }
-        if (typeof window.startBGM === 'function') {
-            window.startBGM("resource/horizon.mp3");
+        if (typeof window.requestBGM === 'function') {
+            window.requestBGM("resource/horizon.mp3");
         }
     };
     document.body.addEventListener("click", userInteractionHandler, { once: true });
@@ -482,7 +474,7 @@ async function initDoubleBattle(data) {
 
     ui.showMessage("バトルスタート！");
     playEventSound("start", "");
-    startBGM("resource/overflow.mp3");
+    requestBGM("resource/overflow.mp3");
 
     // Ensure all characters are visible initially
     $('.char-wrapper').show();

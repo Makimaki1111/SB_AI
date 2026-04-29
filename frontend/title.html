@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8" />
@@ -127,8 +127,8 @@
             if (typeof window.unlockAudioContext === 'function') {
                 window.unlockAudioContext();
             }
-            if (typeof window.startBGM === 'function') {
-                window.startBGM('resource/horizon.mp3');
+            if (typeof window.requestBGM === 'function') {
+                window.requestBGM('resource/horizon.mp3');
             }
         };
         document.body.addEventListener('click', userInteractionHandler, { once: true });
@@ -136,8 +136,8 @@
 
         // ページロード完了時にBGM再生を試みる
         window.addEventListener('load', () => {
-            if (typeof window.startBGM === 'function') {
-                window.startBGM('resource/horizon.mp3');
+            if (typeof window.requestBGM === 'function') {
+                window.requestBGM('resource/horizon.mp3');
             }
         });
 
@@ -157,8 +157,8 @@
         // 画面がアクティブになった時（index.htmlからの通知）にもBGM再生を試みる
         window.addEventListener("message", (event) => {
             if (event.data && event.data.type === 'sb:activated') {
-                if (typeof window.startBGM === 'function') {
-                    window.startBGM('resource/horizon.mp3');
+                if (typeof window.requestBGM === 'function') {
+                    window.requestBGM('resource/horizon.mp3');
                 }
                 // カルーセルアニメーションを再始動
                 restartCarouselAnimations();

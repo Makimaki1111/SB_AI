@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 
 <head>
@@ -256,8 +256,8 @@
         if (typeof window.unlockAudioContext === 'function') {
           window.unlockAudioContext();
         }
-        if (typeof window.startBGM === 'function') {
-          window.startBGM('resource/horizon.mp3');
+        if (typeof window.requestBGM === 'function') {
+          window.requestBGM('resource/horizon.mp3');
         }
       } catch (e) {
         // noop

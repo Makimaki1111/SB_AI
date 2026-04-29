@@ -14,26 +14,30 @@
   const MSG_POISON_HIT = /\u6bd2\u306e\u30c0\u30e1\u30fc\u30b8|\u6bd2\u3092\u53d7\u3051/; // 毒のダメージ / 毒を受けた
   const MSG_SEED = /\u3084\u3069\u308a\u304e|\u7a2e\u3092\u690d\u3048\u4ed8\u3051/; // やどりぎ / 種を植え付け
 
-  const getAudioManager = () => {
-    try {
-      if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
-        return window.parent.SB_AUDIO;
-      }
-    } catch (e) {
-      // noop
+  const callAudio = (method, ...args) => {
+    // iframe 配下では親に委譲して、音声実体を1つに保つ
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({
+        type: `sb:audio:${method}`,
+        args
+      }, "*");
+      // 委譲完了。戻り値を使わない呼び出しが大半なので true を返す
+      return true;
     }
-    if (window.SB_AUDIO) {
-      return window.SB_AUDIO;
+
+    if (window.SB_AUDIO && typeof window.SB_AUDIO[method] === "function") {
+      return window.SB_AUDIO[method](...args);
     }
-    return null;
+    return false;
   };
 
-  const callAudio = (method, ...args) => {
-    const manager = getAudioManager();
-    if (!manager || typeof manager[method] !== "function") {
-      return false;
+  const requestBGM = (path) => {
+    if (!path) return false;
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: "sb:request_bgm", path }, "*");
+      return true;
     }
-    return manager[method](...args);
+    return callAudio("startBGM", path);
   };
 
   const resolveTypeSound = (typeName) => {
@@ -88,6 +92,10 @@
     return callAudio("startBGM", path);
   };
 
+  window.requestBGM = function (path) {
+    return requestBGM(path);
+  };
+
   window.stopBGM = function () {
     if (isPageUnloading) {
       return false;
@@ -123,6 +131,7 @@
     preloadSounds = window.preloadSounds;
     playSound = window.playSound;
     startBGM = window.startBGM;
+    requestBGM = window.requestBGM;
     stopBGM = window.stopBGM;
     unlockAudioContext = window.unlockAudioContext;
     playEventSound = window.playEventSound;

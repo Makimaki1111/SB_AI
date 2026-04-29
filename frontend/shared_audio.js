@@ -1,14 +1,4 @@
-﻿(() => {
-  // If this page runs in the index.html iframe, reuse parent audio manager.
-  try {
-    if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
-      window.SB_AUDIO = window.parent.SB_AUDIO;
-      return;
-    }
-  } catch (e) {
-    // noop
-  }
-
+(() => {
   if (window.SB_AUDIO) {
     return;
   }

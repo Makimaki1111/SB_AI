@@ -1,4 +1,4 @@
-const TYPE_SOUND_MAP = {
+﻿const TYPE_SOUND_MAP = {
   "ノーマル": "resource/normal.mp3",
   "動物": "resource/animal.mp3",
   "植物": "resource/plant.mp3",
@@ -67,199 +67,23 @@ let ui;
 
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
-// 音声バッファのキャッシュ (Web Audio API用)
-const audioCache = {};
-const lastPlayTime = {}; // 重複再生防止用のタイムスタンプ記録
-
-// --- Web Audio API 制御 ---
-let audioCtx = null;
-let bgmGainNode = null;
-let seGainNode = null;
-let bgmSource = null;
-let bgmAudioElement = null; // フォールバック用（HTML5 Audio）
-let currentBgmPath = null;
-
-// 音量設定 (初期値)
-let BGM_VOLUME = 0.1;
-let SE_VOLUME = 0.5;
-
-// Web Audio APIの初期化
-function initAudioContext() {
-  // 親フレームがある場合は、ローカルのAudioContextを作らないようにする
-  if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
-    return;
-  }
-
-  if (!audioCtx) {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    audioCtx = new AudioContext();
-
-    // BGM用ゲインノード（音量調整）
-    bgmGainNode = audioCtx.createGain();
-    bgmGainNode.gain.value = BGM_VOLUME;
-    bgmGainNode.connect(audioCtx.destination);
-
-    // SE用ゲインノード（音量調整）
-    seGainNode = audioCtx.createGain();
-    seGainNode.gain.value = SE_VOLUME;
-    seGainNode.connect(audioCtx.destination);
-  }
-}
-
-window.setBGMVolume = function (val) {
-  // 親フレームのSB_AUDIOを優先利用
-  if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
-    return window.parent.SB_AUDIO.setBGMVolume(val);
-  }
-
-  BGM_VOLUME = val;
-  if (bgmGainNode && audioCtx) {
-    // ノイズ防止のため少し時間をかけて滑らかに変更
-    bgmGainNode.gain.setTargetAtTime(val, audioCtx.currentTime, 0.1);
-  }
-  // HTML5 Audio (フォールバック時)
-  if (bgmAudioElement) {
-    bgmAudioElement.volume = val;
-  }
-};
-
-window.setSEVolume = function (val) {
-  // 親フレームのSB_AUDIOを優先利用
-  if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
-    return window.parent.SB_AUDIO.setSEVolume(val);
-  }
-
-  SE_VOLUME = val;
-  if (seGainNode && audioCtx) {
-    seGainNode.gain.setTargetAtTime(val, audioCtx.currentTime, 0.1);
-  }
-};
-
-// 音声ファイルのロードとデコード
-async function loadAudio(path) {
-  if (audioCache[path]) return audioCache[path];
-
-  // file:// プロトコルでは fetch が CORS エラーになるため、最初から HTML5 Audio を使用する
-  if (window.location.protocol === 'file:') {
-    return new Promise((resolve) => {
-      const audio = new Audio(path);
-      audio.preload = 'auto';
-      audioCache[path] = audio;
-      resolve(audio);
-    });
-  }
-
-  try {
-    const response = await fetch(path);
-    const arrayBuffer = await response.arrayBuffer();
-    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-    audioCache[path] = audioBuffer;
-    return audioBuffer;
-  } catch (e) {
-    console.warn(`Web Audio API load failed, falling back to HTML5 Audio: ${path}`, e);
-    // フォールバック: HTML5 Audio オブジェクトを生成して返す
-    // (file:// プロトコルなどで fetch が CORS エラーになる場合の対策)
-    return new Promise((resolve) => {
-      const audio = new Audio(path);
-      audioCache[path] = audio;
-      resolve(audio);
-    });
-  }
-}
-
-async function preloadSounds() {
-  // 親フレームのオーディオマネージャーがある場合はそちらに任せる（二重ロード防止）
-  try {
-    if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
-      // パスリストの作成は省略し、親側で必要なものをロードしてもらうか、
-      // ここでリストを作って渡す。audio_bridge経由なら渡す必要がある。
-    const paths = new Set();
-    Object.values(TYPE_SOUND_MAP).forEach(p => paths.add(p));
-    Object.values(EVENT_SOUND_MAP).forEach(p => paths.add(p));
-    Object.values(DAMAGE_MSG_MAP).forEach(p => paths.add(p));
-    paths.add("resource/horizon.mp3");
-    paths.add("resource/overflow.mp3");
-    paths.add("resource/concent.mp3");
-    paths.add("resource/pera.mp3");
-    return window.parent.SB_AUDIO.preloadSounds(Array.from(paths));
-    }
-  } catch(e) {}
-
-  initAudioContext();
+// --- Audio Bridge Helpers ---
+function sbPreloadSounds() {
+  if (typeof window.preloadSounds !== "function") return Promise.resolve();
   const paths = new Set();
-  // マップからパスを収集
   Object.values(TYPE_SOUND_MAP).forEach(p => paths.add(p));
   Object.values(EVENT_SOUND_MAP).forEach(p => paths.add(p));
   Object.values(DAMAGE_MSG_MAP).forEach(p => paths.add(p));
-
-  // 個別に指定されているBGMやSE
   paths.add("resource/horizon.mp3");
   paths.add("resource/overflow.mp3");
   paths.add("resource/concent.mp3");
   paths.add("resource/pera.mp3");
-
-  // 並列ロード
-  const promises = Array.from(paths).map(p => loadAudio(p));
-  await Promise.all(promises);
+  return window.preloadSounds(Array.from(paths));
 }
 
-async function playSound(path) {
-  try {
-    // 親フレームのSB_AUDIOを優先利用
-    if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
-      return window.parent.SB_AUDIO.playSound(path);
-    }
-
-    if (!path) return false;
-
-    // 短時間の重複再生防止 (100ms以内の連打は無視)
-    // これにより、クリックイベントの重複発火による音量増大（二重再生）を防ぐ
-    const now = Date.now();
-    if (lastPlayTime[path] && now - lastPlayTime[path] < 100) {
-      return false;
-    }
-    lastPlayTime[path] = now;
-
-    initAudioContext();
-    if (audioCtx.state === 'suspended') await audioCtx.resume();
-
-    const buffer = await loadAudio(path);
-    if (!buffer) return false;
-
-    if (buffer instanceof AudioBuffer) {
-      // Web Audio API
-      const source = audioCtx.createBufferSource();
-      source.buffer = buffer;
-
-      // 個別音量調整: pera.mp3 が大きすぎるため、このファイルだけ音量を下げる
-      let volumeScale = 1.0;
-      if (path.includes("pera.mp3")) {
-        volumeScale = 0.3; // 30%に調整
-      }
-
-      // ローカルのゲインノードを作成して音量を調整
-      const localGain = audioCtx.createGain();
-      localGain.gain.value = volumeScale;
-
-      // 接続: source -> localGain -> seGainNode (全体のSE音量) -> destination
-      source.connect(localGain);
-      localGain.connect(seGainNode);
-      source.start(0);
-    } else if (buffer instanceof HTMLAudioElement) {
-      // HTML5 Audio (フォールバック)
-      // SEは重ねて再生したいので cloneNode する
-      const audio = buffer.cloneNode();
-      let volumeScale = 1.0;
-      if (path.includes("pera.mp3")) { volumeScale = 0.3; }
-      audio.volume = SE_VOLUME * volumeScale;
-      audio.play().catch(e => console.warn('HTML5 Audio play failed', e));
-    }
-
-    return true;
-  } catch (e) {
-    console.warn('playEffectSound error', e);
-    return false;
-  }
+function sbPlaySound(path) {
+  if (!path || typeof window.playSound !== "function") return false;
+  return window.playSound(path);
 }
 
 function playEventSound(type, message) {
@@ -269,153 +93,30 @@ function playEventSound(type, message) {
   } else if (type === "damage") {
     console.warn("未知のメッセージです:" + message);
   }
-  if (path) playSound(path);
+  if (path) sbPlaySound(path);
 }
 
 function playIconSound(type) {
   // console.log(type);
   let path = TYPE_SOUND_MAP[type];
-  if (path !== undefined) playSound(path);
-}
-
-// --- BGM 制御 (Web Audio API) ---
-
-async function startBGM(bgmPath) {
-  try {
-    // 親フレームのSB_AUDIOを優先利用
-    if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
-      return window.parent.SB_AUDIO.startBGM(bgmPath);
-    }
-
-    initAudioContext();
-    // iOS対策: await audioCtx.resume() をすると、待機中にユーザー操作の権限が切れ、
-    // その後の再生がブロックされることがあるため、awaitせずにリクエストだけ投げておく。
-    if (audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
-
-    // 同じ曲が既に再生中なら何もしない
-    if (bgmSource && currentBgmPath === bgmPath) return true;
-    // フォールバック時のチェック
-    if (bgmAudioElement && currentBgmPath === bgmPath && !bgmAudioElement.paused) {
-      return true;
-    }
-
-    const buffer = await loadAudio(bgmPath);
-    if (!buffer) return false;
-
-    // 再生準備の前に、既存のBGMを確実に停止する
-    stopBGM();
-
-    if (buffer instanceof AudioBuffer) {
-      // Web Audio API
-      bgmSource = audioCtx.createBufferSource();
-      bgmSource.buffer = buffer;
-      bgmSource.loop = true;
-      bgmSource.connect(bgmGainNode); // BGM用音量ノードに接続
-
-      bgmSource.start(0);
-    } else if (buffer instanceof HTMLAudioElement) {
-      // HTML5 Audio (フォールバック)
-      bgmAudioElement = buffer;
-      bgmAudioElement.loop = true;
-      bgmAudioElement.volume = BGM_VOLUME;
-      bgmAudioElement.currentTime = 0;
-
-      bgmAudioElement.play().catch(e => console.warn('BGM play failed', e));
-    }
-
-    currentBgmPath = bgmPath;
-    return true;
-  } catch (e) {
-    console.warn('startBGM error', e);
-    return false;
-  }
-}
-
-function stopBGM() {
-  try {
-    // 親フレームのSB_AUDIOを優先利用
-    if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
-      return window.parent.SB_AUDIO.stopBGM();
-    }
-
-    if (bgmSource) {
-      try {
-        bgmSource.stop();
-        bgmSource.disconnect();
-      } catch (e) {
-        // 既に止まっている場合など
-      }
-      bgmSource = null;
-    }
-    // HTML5 Audio の停止
-    if (bgmAudioElement) {
-      bgmAudioElement.pause();
-      bgmAudioElement.currentTime = 0;
-      bgmAudioElement = null;
-    }
-
-    currentBgmPath = null;
-    return true;
-  } catch (e) {
-    console.warn('stopBGM error', e);
-    return false;
-  }
-}
-
-function getParentAudioManager() {
-  try {
-    if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
-      return window.parent.SB_AUDIO;
-    }
-  } catch (e) {
-    // noop
-  }
-  return null;
+  if (path !== undefined) sbPlaySound(path);
 }
 
 function startManagedBGM(path) {
-  const manager = getParentAudioManager();
-  if (manager && typeof manager.startBGM === "function") {
-    return manager.startBGM(path);
-  }
-
-  if (window.SB_AUDIO && typeof window.SB_AUDIO.startBGM === "function") {
-    return window.SB_AUDIO.startBGM(path);
-  }
-  return startBGM(path);
+  if (typeof window.requestBGM === "function") return window.requestBGM(path);
+  if (typeof window.startBGM === "function") return window.startBGM(path);
+  return false;
 }
 
 function stopManagedBGM() {
-  const manager = getParentAudioManager();
-  if (manager && typeof manager.stopBGM === "function") {
-    return manager.stopBGM();
-  }
-
-  if (window.SB_AUDIO && typeof window.SB_AUDIO.stopBGM === "function") {
-    return window.SB_AUDIO.stopBGM();
-  }
-  return stopBGM();
+  if (typeof window.stopBGM === "function") return window.stopBGM();
+  return false;
 }
 
 // モバイルブラウザの自動再生制限対策：ユーザー操作時に音声を一瞬再生してアンロックする
-function unlockAudioContext() {
-  // 親フレームのSB_AUDIOを優先利用
-  if (window.parent && window.parent !== window && window.parent.SB_AUDIO) {
-    return window.parent.SB_AUDIO.unlockAudioContext();
-  }
-
-  initAudioContext();
-  if (audioCtx.state === 'suspended') {
-    audioCtx.resume();
-  }
-  // 無音バッファを生成して再生（ファイルロード不要）
-  const buffer = audioCtx.createBuffer(1, 1, 22050);
-  const source = audioCtx.createBufferSource();
-  source.buffer = buffer;
-  source.connect(audioCtx.destination);
-  source.start(0);
+function sbUnlockAudioContext() {
+  if (typeof window.unlockAudioContext === "function") return window.unlockAudioContext();
+  return false;
 }
 
 // 現在のURLに基づいてWebSocketの接続先を決定する
@@ -655,7 +356,7 @@ const onAllyLose = () => {
 
 const backToTitle = () => {
   // iOS対策: 画面遷移時にAudioContextを確実に有効化する
-  unlockAudioContext();
+  sbUnlockAudioContext();
 
   isManualClose = true;
   if (sock) {
@@ -748,7 +449,7 @@ const onAccepted = async (data) => {
 
       // 特性変更メッセージを表示 (自分のみ)
       if (abilityChangeEvent.player === 'ally') {
-        playSound("resource/concent.mp3");
+        sbPlaySound("resource/concent.mp3");
         ui.showModalMessage('とくせいを変更した！', 2000);
       }
     }
@@ -763,7 +464,7 @@ const onAccepted = async (data) => {
       },
       () => { // 閉じるボタンのコールバック
         ui.hideAbilityModal();
-        playSound("resource/pera.mp3");
+        sbPlaySound("resource/pera.mp3");
       }
     );
 
@@ -835,7 +536,7 @@ const onError = (data) => {
 // WebSocket接続とイベントリスナー登録
 window.startBattle = function (mode, roomId = null) {
   // iOS対策: バトル開始のクリックイベント内で確実にAudioContextをアンロックする
-  unlockAudioContext();
+  sbUnlockAudioContext();
 
   battleState.mode = mode;
   if (mode === 'player' || mode === 'room') {
@@ -1066,7 +767,7 @@ document.addEventListener("DOMContentLoaded", () => {
   preloadImages();
 
   // 音声のプリロードを開始
-  preloadSounds();
+  sbPreloadSounds();
 
   // 待機中BGM再生
   startManagedBGM("resource/horizon.mp3");
@@ -1117,7 +818,7 @@ document.addEventListener("DOMContentLoaded", () => {
   ui.cancelBtn.onClick(() => {
     if (confirm("本当ににげますか？")) {
       // iOS対策: ダイアログを閉じた後にAudioContextの再開を試みる
-      unlockAudioContext();
+      sbUnlockAudioContext();
       sendRunAway(battleState.roomId, player1_id);
       backToTitle();
     }
@@ -1135,12 +836,12 @@ document.addEventListener("DOMContentLoaded", () => {
       },
       () => {
         ui.hideAbilityModal(); // 閉じる時の処理
-        playSound("resource/pera.mp3");
+        sbPlaySound("resource/pera.mp3");
       }
     );
 
     ui.showAbilityModal();
-    playSound("resource/pera.mp3");
+    sbPlaySound("resource/pera.mp3");
   });
 
   // --- 状況確認モーダルのイベントリスナー ---
@@ -1152,12 +853,12 @@ document.addEventListener("DOMContentLoaded", () => {
       battleState.foe.def
     );
     ui.showSituationModal();
-    playSound("resource/pera.mp3");
+    sbPlaySound("resource/pera.mp3");
   });
 
   ui.closeSituationModalBtn.onClick(() => {
     ui.hideSituationModal();
-    playSound("resource/pera.mp3");
+    sbPlaySound("resource/pera.mp3");
   });
 
   // 画面リサイズ対応

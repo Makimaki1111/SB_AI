@@ -36,6 +36,20 @@
   <iframe id="single-frame" src="single_battle.html" allow="autoplay" title="Single Battle"></iframe>
   <iframe id="double-frame" src="double_battle.html" allow="autoplay" title="Double Battle"></iframe>
   <script>
+    let sbAudioUnlocked = false;
+    let pendingBgmPath = null;
+
+    function requestRootBGM(path) {
+      if (!path) return;
+      if (!sbAudioUnlocked) {
+        pendingBgmPath = path;
+        return;
+      }
+      if (window.SB_AUDIO && typeof window.SB_AUDIO.startBGM === "function") {
+        window.SB_AUDIO.startBGM(path);
+      }
+    }
+
     (function bindFrameRoute() {
       // リロード時にハッシュを削除してタイトルから開始させる
       if (window.location.hash) {
@@ -71,11 +85,31 @@
 
       window.addEventListener("message", (event) => {
         const data = event && event.data;
-        if (!data || data.type !== "sb:navigate") return;
-        const page = data.page;
-        if (!allowedPages.has(page)) return;
-        if (window.location.hash !== `#${page}`) {
-          window.location.hash = page;
+        if (!data) return;
+
+        if (data.type === "sb:navigate") {
+          const page = data.page;
+          if (!allowedPages.has(page)) return;
+          if (window.location.hash !== `#${page}`) {
+            window.location.hash = page;
+          }
+          return;
+        }
+
+        if (data.type === "sb:request_bgm") {
+          requestRootBGM(data.path);
+          return;
+        }
+
+        if (data.type && data.type.startsWith("sb:audio:")) {
+          const method = data.type.replace("sb:audio:", "");
+          if (!window.SB_AUDIO || typeof window.SB_AUDIO[method] !== "function") {
+            return;
+          }
+          if (method === "unlockAudioContext") {
+            sbAudioUnlocked = true;
+          }
+          window.SB_AUDIO[method](...(data.args || []));
         }
       });
 
@@ -89,10 +123,12 @@
       const handler = () => {
         if (unlocked) return;
         unlocked = true;
+        sbAudioUnlocked = true;
         if (window.SB_AUDIO) {
           window.SB_AUDIO.unlockAudioContext();
-          window.SB_AUDIO.startBGM("resource/horizon.mp3");
         }
+        requestRootBGM(pendingBgmPath || "resource/horizon.mp3");
+        pendingBgmPath = null;
       };
 
       document.addEventListener("click", handler, { once: true });
