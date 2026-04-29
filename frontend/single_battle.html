@@ -40,7 +40,23 @@
     <div class="phone-box">
       <div class="content">
         <a id="back-to-title-btn-lobby" class="back-to-title-link">←もどる</a>
-        <h1>シングルバトル</h1>
+        <h1 style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+          <span id="lobby-title-text">シングルバトル</span>
+          <span id="stock-help-btn" style="display: none; width: 26px; height: 26px; background: rgba(0,0,0,0.1); border: 2px solid #666; color: #666; border-radius: 50%; font-size: 0.9rem; cursor: pointer; justify-content: center; align-items: center; font-weight: bold; flex-shrink: 0; transition: all 0.2s;">?</span>
+        </h1>
+
+        <!-- 特殊ルール説明吹き出し -->
+        <div id="stock-help-balloon" style="display: none; position: absolute; top: 125px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 360px; background: rgba(255,255,255,0.98); border: 1px solid #ddd; border-radius: 16px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); z-index: 1000; font-size: 0.95rem; color: #333; line-height: 1.5; text-align: center; cursor: pointer; backdrop-filter: blur(5px); animation: sbFadeIn 0.3s ease-out;">
+          <div style="font-weight: 800; margin-bottom: 8px; color: #ff8f00; font-size: 1rem; border-bottom: 1px solid #eee; padding-bottom: 5px;">特殊ルールの説明</div>
+          相手のHPを<span style="color: #ff4d4d; font-weight: 800; font-size: 1.1rem;">3回</span>0にしたら<br>プレイヤーの勝ちとなります。
+          <div style="margin-top: 12px; font-size: 0.75rem; color: #999; font-weight: bold;">(タップして閉じる)</div>
+          <style>
+            @keyframes sbFadeIn {
+              from { opacity: 0; transform: translate(-50%, -10px); }
+              to { opacity: 1; transform: translate(-50%, 0); }
+            }
+          </style>
+        </div>
 
         <!-- 特性変更ボタン -->
         <div id="lobby-ability-btn" style="width: 90%; max-width: 400px; margin: 10px 0; padding: 0; background: #fff; border: 2px solid #eee; border-radius: 20px; cursor: pointer; display: flex; box-shadow: 0 4px 12px rgba(0,0,0,0.1); box-sizing: border-box; overflow: hidden; min-height: 120px; flex-shrink: 0; transition: transform 0.1s;">
@@ -267,9 +283,45 @@
 
     // モードに応じてタイトルを更新
     document.addEventListener('DOMContentLoaded', () => {
-      const titleEl = document.querySelector('.single-lobby-screen h1');
-      if (titleEl) {
-        titleEl.textContent = isStockMode ? '残基バトル' : 'シングルバトル';
+      const titleEl = document.getElementById('lobby-title-text');
+      const helpBtn = document.getElementById('stock-help-btn');
+      const helpBalloon = document.getElementById('stock-help-balloon');
+
+      if (isStockMode) {
+        if (titleEl) titleEl.textContent = '特殊ルール';
+        if (helpBtn && helpBalloon) {
+          helpBtn.style.display = 'flex';
+          
+          // 表示切り替え
+          helpBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVisible = helpBalloon.style.display === 'block';
+            helpBalloon.style.display = isVisible ? 'none' : 'block';
+            if (!isVisible && typeof playSound === 'function') playSound("resource/pera.mp3");
+          });
+
+          // 吹き出し自体をタップしても閉じる
+          helpBalloon.addEventListener('click', () => {
+            helpBalloon.style.display = 'none';
+          });
+
+          // 画面のどこかをタップしたら閉じる
+          document.addEventListener('click', (e) => {
+            if (helpBalloon.style.display === 'block' && e.target !== helpBtn) {
+              helpBalloon.style.display = 'none';
+            }
+          });
+
+          // ホバー効果
+          helpBtn.addEventListener('mouseenter', () => {
+            helpBtn.style.background = 'rgba(0,0,0,0.2)';
+          });
+          helpBtn.addEventListener('mouseleave', () => {
+            helpBtn.style.background = 'rgba(0,0,0,0.1)';
+          });
+        }
+      } else {
+        if (titleEl) titleEl.textContent = 'シングルバトル';
       }
     });
 
