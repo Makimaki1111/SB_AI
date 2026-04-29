@@ -413,10 +413,10 @@ async def websocket_endpoint(websocket: WebSocket):
 
             # --- マッチメイキング処理 ---
                 elif req.get("type") == "find_match":
-                    # 本番環境（Render等）ではランダムマッチを無効化
-                    if os.getenv("RENDER") or os.getenv("DISABLE_RANDOM_MATCH"):
-                        await websocket.send_text(json.dumps({"type": "error", "message": "ランダムマッチは現在無効です"}))
-                        continue
+                    # 本番環境（Render等）でランダムマッチを無効化したい場合は以下のコメントアウトを外す
+                    # if os.getenv("RENDER") or os.getenv("DISABLE_RANDOM_MATCH"):
+                    #     await websocket.send_text(json.dumps({"type": "error", "message": "ランダムマッチは現在無効です"}))
+                    #     continue
 
                     info = req.get("info", {})
                     player_id = info.get("player_id")
@@ -466,7 +466,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         new_waiter = {"socket": websocket, "player_id": player_id}
                         if max_lives > 1: waiting_player_stock = new_waiter
                         else: waiting_player_standard = new_waiter
-                        await websocket.send_text(json.dumps({"type": "waiting", "message": "対戦相手を探しています..."}))
+                        await websocket.send_text(json.dumps({"type": "waiting", "message": "マッチング中…"}))
 
                 elif req.get("type") == "join_private_room":
                     info = req.get("info", {})

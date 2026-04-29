@@ -638,7 +638,7 @@ function connectWebSocket(mode, roomId, maxLives = 1) {
         onMadeRoom(data);
         break;
       case "waiting":
-        ui.setWaitMessage(data.message);
+        ui.showMessage(data.message);
         break;
       case "private_room_created":
         ui.showMessage(`ルームID: ${data.room_id}\n\n対戦相手を待っています...`);

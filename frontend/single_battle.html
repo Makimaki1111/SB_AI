@@ -43,7 +43,7 @@
         <h1>シングルバトル</h1>
 
         <!-- 特性変更ボタン -->
-        <div id="lobby-ability-btn" style="width: 90%; max-width: 400px; margin-top: auto; margin-bottom: auto; padding: 0; background: #fff; border: 2px solid #eee; border-radius: 20px; cursor: pointer; display: flex; box-shadow: 0 4px 12px rgba(0,0,0,0.1); box-sizing: border-box; overflow: hidden; min-height: 150px; transition: transform 0.1s;">
+        <div id="lobby-ability-btn" style="width: 90%; max-width: 400px; margin: 10px 0; padding: 0; background: #fff; border: 2px solid #eee; border-radius: 20px; cursor: pointer; display: flex; box-shadow: 0 4px 12px rgba(0,0,0,0.1); box-sizing: border-box; overflow: hidden; min-height: 120px; flex-shrink: 0; transition: transform 0.1s;">
           <!-- 左半分: アイコン -->
           <div style="width: 40%; background: #f9f9f9; display: flex; justify-content: center; align-items: center;">
             <img id="lobby-ability-icon" src="" style="width: 80px; height: 80px; object-fit: contain; display: none;">
@@ -59,8 +59,9 @@
 
         <!-- シングルバトルメニュー -->
         <div id="single-menu-container" class="title-buttons-container">
+          <a id="random-match-btn" style="margin-bottom: 5px;">ランダムマッチ</a>
           <a id="vs-cpu-btn">コンピュータ戦</a>
-          <hr style="width: 80%; border-top: 1px solid #ccc; margin: 0;">
+          <hr style="width: 80%; border-top: 1px solid #ccc; margin: 5px 0;">
           <a id="create-room-btn">ルーム作成</a>
           <div class="room-input-group">
             <input type="text" id="room-id-input" placeholder="ルームID"
@@ -273,6 +274,15 @@
     });
 
     // バトル開始ボタンのイベントリスナー
+    const randomMatchBtn = document.getElementById('random-match-btn');
+    if (randomMatchBtn) {
+      randomMatchBtn.addEventListener('click', () => {
+        randomMatchBtn.textContent = 'マッチング中…';
+        randomMatchBtn.style.pointerEvents = 'none';
+        randomMatchBtn.style.opacity = '0.7';
+        startBattle('player', null, isStockMode ? 3 : 1);
+      });
+    }
     document.getElementById('vs-cpu-btn').addEventListener('click', () => startBattle('cpu', null, isStockMode ? 3 : 1));
     document.getElementById('create-room-btn').addEventListener('click', () => startBattle('room', null, isStockMode ? 3 : 1));
 
