@@ -168,6 +168,83 @@ const modalStyles = `
     box-shadow: none;
     border-color: #777;
 }
+#situation-modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: rgba(0, 0, 0, 0.6) !important;
+    z-index: 2000 !important;
+    display: none;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+.situation-modal-wrapper {
+    width: 90% !important;
+    max-width: 400px !important;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    color: #333;
+    font-family: "M PLUS Rounded 1c", sans-serif;
+}
+.situation-cards-container {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    margin-bottom: 20px;
+}
+.s-card {
+    flex: 1;
+    background: #f9f9f9;
+    border-radius: 15px;
+    padding: 12px 8px;
+    border: 2px solid #eee;
+}
+.s-card.foe-card {
+    border-color: #ffcdd2;
+}
+.s-card.ally-card {
+    border-color: #c8e6c9;
+}
+.s-card-header {
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    color: #555;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 4px;
+}
+.s-stat-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.s-stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.s-stat-label {
+    font-size: 0.7rem;
+    color: #888;
+}
+.s-stat-value {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #333;
+}
+.s-lives-item .s-stat-value {
+    color: #ff9800;
+}
 </style>
 `;
 
@@ -237,7 +314,7 @@ class UI{
         this.situationAllyB = new UIObject($('#ally-B'));
         this.situationAllyLives = new UIObject($('#ally-lives'));
         this.situationAllyLivesRow = new UIObject($('#s-ally-lives-row'));
-        this.closeSituationModalBtn = new UIObject($('#situation-modal .close-modal'));
+        this.closeSituationModalBtn = new UIObject($('#close-situation-modal-btn'));
 
         // --- エフェクト関連 ---
         this.allyEffectContainer = new UIObject($('#ally-effect-container'));
@@ -1048,7 +1125,7 @@ class UI{
 
     // --- 状況モーダル関連メソッド ---
     showSituationModal() {
-        this.situationModal.selector.fadeIn('fast');
+        this.situationModal.selector.css('display', 'flex').hide().fadeIn('fast');
     }
 
     hideSituationModal() {
@@ -1085,8 +1162,20 @@ class UI{
         if (maxLives > 1) {
             this.situationAllyLivesRow.selector.show();
             this.situationFoeLivesRow.selector.show();
-            this.situationAllyLives.selector.text(allyLives);
-            this.situationFoeLives.selector.text(foeLives);
+            
+            const renderLives = (container, current, max) => {
+                container.empty();
+                for (let i = 0; i < max; i++) {
+                    const item = $('<div class="lives-display-item"></div>');
+                    if (i >= current) {
+                        item.addClass('lost');
+                    }
+                    container.append(item);
+                }
+            };
+
+            renderLives(this.situationAllyLives.selector, allyLives, maxLives);
+            renderLives(this.situationFoeLives.selector, foeLives, maxLives);
         } else {
             this.situationAllyLivesRow.selector.hide();
             this.situationFoeLivesRow.selector.hide();

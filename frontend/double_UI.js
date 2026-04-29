@@ -175,6 +175,85 @@ const modalStyles = `
 .tab-btn.active {
     /* JSで制御するため、ここには基本スタイルのみ */
 }
+#situation-modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: rgba(0, 0, 0, 0.6) !important;
+    z-index: 2000 !important;
+    display: none;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+.situation-modal-wrapper {
+    width: 95% !important;
+    max-width: 500px !important;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    color: #333;
+    font-family: "M PLUS Rounded 1c", sans-serif;
+}
+.situation-cards-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 20px;
+    justify-content: center;
+}
+.s-card {
+    background: #f9f9f9;
+    border-radius: 15px;
+    padding: 10px 5px;
+    border: 2px solid #eee;
+    box-sizing: border-box;
+}
+.s-card.foe-card {
+    border-color: #ffcdd2;
+}
+.s-card.ally-card {
+    border-color: #c8e6c9;
+}
+.s-card-header {
+    font-weight: bold;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    color: #555;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.s-stat-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.s-stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.s-stat-label {
+    font-size: 0.65rem;
+    color: #888;
+}
+.s-stat-value {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #333;
+}
 </style>
 `;
 
@@ -673,7 +752,9 @@ class DoubleUI {
         }
     }
 
-    showSituationModal() { this.situationModal.selector.fadeIn('fast'); }
+    showSituationModal() { 
+        this.situationModal.selector.css('display', 'flex').hide().fadeIn('fast'); 
+    }
     hideSituationModal() { this.situationModal.selector.fadeOut('fast'); }
     showAbilityModal() { 
         this.abilityModal.selector.css({

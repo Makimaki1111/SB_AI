@@ -203,19 +203,53 @@
 
   <!-- バトル用 状況確認モーダル -->
   <div id="situation-modal" style="display: none;">
-    <div id="s-foe-info">
-      <h3>あいて<span id="foe-rank"></span></h3>
-      <p>こうげき<br><span id="foe-A">1.0倍</span></p>
-      <p>ぼうぎょ<br><span id="foe-B">1.0倍</span></p>
-      <p id="s-foe-lives-row" style="display:none;">のこり<br><span id="foe-lives">-</span></p>
+    <div class="situation-modal-wrapper">
+      <h2 style="margin-top: 0; margin-bottom: 15px; font-size: 1.4rem; color: #333;">じょうきょう</h2>
+      
+      <div class="situation-cards-container">
+        <!-- 相手のカード -->
+        <div class="s-card foe-card">
+          <div class="s-card-header">あいて</div>
+          <div class="s-stat-grid">
+            <div class="s-stat-item">
+              <span class="s-stat-label">こうげき</span>
+              <span class="s-stat-value" id="foe-A">1.0倍</span>
+            </div>
+            <div class="s-stat-item">
+              <span class="s-stat-label">ぼうぎょ</span>
+              <span class="s-stat-value" id="foe-B">1.0倍</span>
+            </div>
+            <div class="s-stat-item s-lives-item" id="s-foe-lives-row" style="display:none;">
+              <span class="s-stat-label">のこり</span>
+              <div class="s-stat-value s-lives-container" id="foe-lives" style="display: flex; gap: 4px; justify-content: center; margin-top: 4px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 自分のカード -->
+        <div class="s-card ally-card">
+          <div class="s-card-header">じぶん</div>
+          <div class="s-stat-grid">
+            <div class="s-stat-item">
+              <span class="s-stat-label">こうげき</span>
+              <span class="s-stat-value" id="ally-A">1.0倍</span>
+            </div>
+            <div class="s-stat-item">
+              <span class="s-stat-label">ぼうぎょ</span>
+              <span class="s-stat-value" id="ally-B">1.0倍</span>
+            </div>
+            <div class="s-stat-item s-lives-item" id="s-ally-lives-row" style="display:none;">
+              <span class="s-stat-label">のこり</span>
+              <div class="s-stat-value s-lives-container" id="ally-lives" style="display: flex; gap: 4px; justify-content: center; margin-top: 4px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="modal-btn btn-close" id="close-situation-modal-btn">とじる</button>
+      </div>
     </div>
-    <div id="s-ally-info">
-      <h3>じぶん<span id="ally-rank"></span></h3>
-      <p>こうげき<br><span id="ally-A">1.0倍</span></p>
-      <p>ぼうぎょ<br><span id="ally-B">1.0倍</span></p>
-      <p id="s-ally-lives-row" style="display:none;">のこり<br><span id="ally-lives">-</span></p>
-    </div>
-    <div class="close-modal" id="close-situation-modal-btn">とじる</div>
   </div>
 
   <script>

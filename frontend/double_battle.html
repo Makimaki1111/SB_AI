@@ -271,37 +271,71 @@
 
     <!-- ダブルバトル用 状況確認モーダル -->
     <div id="situation-modal" style="display: none;">
-        <div style="display: flex; justify-content: space-between; width: 100%;">
-            <!-- Left: Own Team -->
-            <div style="text-align: left; width: 45%;">
-                <h3 style="margin-top: 5px; margin-bottom: 10px; border-bottom: 2px solid #ccc;">じぶんチーム</h3>
-                <div id="s-p1a-info" style="margin-bottom: 10px;">
-                    <h4 style="margin: 0; color: #ff5722;" id="s-p1a-name">チーム1A</h4>
-                    <p style="margin: 0; font-size: 0.9em;">こうげき: <span id="s-p1a-atk">1.0倍</span></p>
-                    <p style="margin: 0; font-size: 0.9em;">ぼうぎょ: <span id="s-p1a-def">1.0倍</span></p>
+        <div class="situation-modal-wrapper" style="max-width: 500px !important;">
+            <h2 style="margin-top: 0; margin-bottom: 15px; font-size: 1.4rem; color: #333;">じょうきょう</h2>
+
+            <div class="situation-cards-container" style="flex-wrap: wrap; justify-content: center; gap: 10px;">
+                <!-- 相手チーム (P2A, P2B) -->
+                <div class="s-card foe-card" style="width: 45%;">
+                    <div class="s-card-header" id="s-p2a-name">あいてA</div>
+                    <div class="s-stat-grid">
+                        <div class="s-stat-item">
+                            <span class="s-stat-label">こうげき</span>
+                            <span class="s-stat-value" id="s-p2a-atk">1.0倍</span>
+                        </div>
+                        <div class="s-stat-item">
+                            <span class="s-stat-label">ぼうぎょ</span>
+                            <span class="s-stat-value" id="s-p2a-def">1.0倍</span>
+                        </div>
+                    </div>
                 </div>
-                <div id="s-p1b-info">
-                    <h4 style="margin: 0; color: #ff5722;" id="s-p1b-name">チーム1B</h4>
-                    <p style="margin: 0; font-size: 0.9em;">こうげき: <span id="s-p1b-atk">1.0倍</span></p>
-                    <p style="margin: 0; font-size: 0.9em;">ぼうぎょ: <span id="s-p1b-def">1.0倍</span></p>
+                <div class="s-card foe-card" style="width: 45%;">
+                    <div class="s-card-header" id="s-p2b-name">あいてB</div>
+                    <div class="s-stat-grid">
+                        <div class="s-stat-item">
+                            <span class="s-stat-label">こうげき</span>
+                            <span class="s-stat-value" id="s-p2b-atk">1.0倍</span>
+                        </div>
+                        <div class="s-stat-item">
+                            <span class="s-stat-label">ぼうぎょ</span>
+                            <span class="s-stat-value" id="s-p2b-def">1.0倍</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 自分チーム (P1A, P1B) -->
+                <div class="s-card ally-card" style="width: 45%;">
+                    <div class="s-card-header" id="s-p1a-name">じぶんA</div>
+                    <div class="s-stat-grid">
+                        <div class="s-stat-item">
+                            <span class="s-stat-label">こうげき</span>
+                            <span class="s-stat-value" id="s-p1a-atk">1.0倍</span>
+                        </div>
+                        <div class="s-stat-item">
+                            <span class="s-stat-label">ぼうぎょ</span>
+                            <span class="s-stat-value" id="s-p1a-def">1.0倍</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="s-card ally-card" style="width: 45%;">
+                    <div class="s-card-header" id="s-p1b-name">じぶんB</div>
+                    <div class="s-stat-grid">
+                        <div class="s-stat-item">
+                            <span class="s-stat-label">こうげき</span>
+                            <span class="s-stat-value" id="s-p1b-atk">1.0倍</span>
+                        </div>
+                        <div class="s-stat-item">
+                            <span class="s-stat-label">ぼうぎょ</span>
+                            <span class="s-stat-value" id="s-p1b-def">1.0倍</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <!-- Right: Opponent Team -->
-            <div style="text-align: right; width: 45%;">
-                <h3 style="margin-top: 5px; margin-bottom: 10px; border-bottom: 2px solid #ccc;">あいてチーム</h3>
-                <div id="s-p2a-info" style="margin-bottom: 10px;">
-                    <h4 style="margin: 0; color: #00bcd4;" id="s-p2a-name">チーム2A</h4>
-                    <p style="margin: 0; font-size: 0.9em;">こうげき: <span id="s-p2a-atk">1.0倍</span></p>
-                    <p style="margin: 0; font-size: 0.9em;">ぼうぎょ: <span id="s-p2a-def">1.0倍</span></p>
-                </div>
-                <div id="s-p2b-info">
-                    <h4 style="margin: 0; color: #00bcd4;" id="s-p2b-name">チーム2B</h4>
-                    <p style="margin: 0; font-size: 0.9em;">こうげき: <span id="s-p2b-atk">1.0倍</span></p>
-                    <p style="margin: 0; font-size: 0.9em;">ぼうぎょ: <span id="s-p2b-def">1.0倍</span></p>
-                </div>
+
+            <div class="modal-actions">
+                <button class="modal-btn btn-close" id="close-situation-modal-btn">とじる</button>
             </div>
         </div>
-        <div class="close-modal" id="close-situation-modal-btn" style="margin-top: 15px;">とじる</div>
     </div>
 
     <!-- ダブルバトル用 特性確認モーダル -->
