@@ -180,6 +180,15 @@ sb_info_instance = SB_info()
 # ユーザー情報を保存する辞書 (player_id -> {"name": str, "ability": str})
 user_profiles: Dict[str, dict] = {}
 
+def get_player_name(player_id: str) -> str:
+    """プレイヤーIDから名前を解決するヘルパー"""
+    if player_id == "cpu":
+        return "CPU"
+    profile = user_profiles.get(player_id)
+    if profile:
+        return profile.get("name", "名無し")
+    return player_id
+
 # --- 既存のREST API（必要なら残してもOK） ---
 class make_new_battle_info(BaseModel):
     player1_id: str
@@ -377,23 +386,51 @@ async def websocket_endpoint(websocket: WebSocket):
                 await websocket.send_text(json.dumps({"type": "error", "message": "Invalid JSON"}))
                 continue
             
+            # 基本的なバリデーション
+            if not isinstance(req, dict):
+                continue
+            
+            info = req.get("info")
+            if not isinstance(info, dict):
+                info = {}
+            
             # player_id の長さチェック (DoS対策)
-            if "info" in req and "player_id" in req["info"]:
-                if len(str(req["info"]["player_id"])) > 64:
+            if "player_id" in info:
+                if len(str(info["player_id"])) > 64:
                     await websocket.send_text(json.dumps({"type": "error", "message": "Invalid player_id"}))
                     continue
             
-            # ログ出力 (include_check系は頻度が高いため除外)
+            # ログ出力 (詳細化)
             msg_type = req.get("type")
             if msg_type not in ["include_check", "include_check_double"]:
-                info_summary = req.get("info", {}).copy()
-                # ログに見せたくない情報があればここでフィルタリングするが、現状は特になし
-                logger.info(f"WS Recv: type={msg_type}, info={info_summary}")
+                player_id = info.get("player_id", "unknown")
+                p_name = get_player_name(player_id)
+                
+                # イベントに応じた説明文を作成
+                action_desc = ""
+                if msg_type == "update_user_info":
+                    action_desc = f"ユーザー情報を更新しました (名前: {info.get('name')})"
+                elif msg_type == "find_match":
+                    mode_name = "特殊ルール" if info.get("max_lives", 1) > 1 else "通常ルール"
+                    action_desc = f"マッチング待機を開始しました (モード: {mode_name})"
+                elif msg_type == "join_private_room":
+                    rid = info.get("room_id")
+                    action_desc = f"プライベートルームに参加しようとしています (ルームID: {rid or '新規作成'})"
+                elif msg_type == "submit_word":
+                    action_desc = f"単語「{info.get('word')}」を送信しました (ルーム: {info.get('room_id')})"
+                elif msg_type == "change_ability":
+                    action_desc = f"特性を「{info.get('ability_id')}」に変更しました (ルーム: {info.get('room_id')})"
+                elif msg_type == "run_away":
+                    action_desc = f"逃げ出しました (ルーム: {info.get('room_id')})"
+                else:
+                    action_desc = f"アクション: {msg_type}"
+
+                logger.info(f"WS Recv: {p_name} ({player_id}) が{action_desc}")
 
             # --- ユーザー情報更新 ---
             try:
                 if req.get("type") == "update_user_info":
-                    info = req.get("info", {})
+                    # info = req.get("info", {})
                     player_id = info.get("player_id")
                     name = info.get("name")
                     ability = info.get("ability")
@@ -418,7 +455,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     #     await websocket.send_text(json.dumps({"type": "error", "message": "ランダムマッチは現在無効です"}))
                     #     continue
 
-                    info = req.get("info", {})
+                    # info = req.get("info", {})
                     player_id = info.get("player_id")
                     max_lives = info.get("max_lives", 1)
                     manager.register_player(websocket, player_id)
@@ -450,9 +487,9 @@ async def websocket_endpoint(websocket: WebSocket):
 
                         bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=sb_info_instance, p1_profile=p1_profile, p2_profile=p2_profile, max_lives=max_lives)
                         battle_rooms[bi.room_id] = bi
-                        p1_name = p1_profile.get("name", "Unknown") if p1_profile else "Unknown"
-                        p2_name = p2_profile.get("name", "Unknown") if p2_profile else "Unknown"
-                        logger.info(f"Match found ({'Stock' if max_lives > 1 else 'Standard'}): room={bi.room_id}, p1={p1_name} ({p1_data['player_id']}), p2={p2_name} ({p2_data['player_id']})")
+                        p1_name = get_player_name(p1_data["player_id"])
+                        p2_name = get_player_name(p2_data["player_id"])
+                        logger.info(f"対戦開始 ({'特殊' if max_lives > 1 else '通常'}): ルーム={bi.room_id}, プレイヤー1={p1_name} ({p1_data['player_id']}), プレイヤー2={p2_name} ({p2_data['player_id']})")
 
                         manager.join_room(p1_data["socket"], bi.room_id)
                         manager.join_room(p2_data["socket"], bi.room_id)
@@ -469,7 +506,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         await websocket.send_text(json.dumps({"type": "waiting", "message": "マッチング中…"}))
 
                 elif req.get("type") == "join_private_room":
-                    info = req.get("info", {})
+                    # info = req.get("info", {})
                     player_id = info.get("player_id")
                     room_id = info.get("room_id")
                     manager.register_player(websocket, player_id)
@@ -516,7 +553,8 @@ async def websocket_endpoint(websocket: WebSocket):
                             if new_room_id not in private_rooms: break
                         private_rooms[new_room_id] = {"socket": websocket, "player_id": player_id, "max_lives": info.get("max_lives", 1)}
                         await websocket.send_text(json.dumps({"type": "private_room_created", "room_id": new_room_id}))
-                        logger.info(f"Private room created: room={new_room_id}, player={player_id}")
+                        p_name = get_player_name(player_id)
+                        logger.info(f"プライベートルーム作成: ルーム={new_room_id}, 作成者={p_name} ({player_id})")
 
             # typeで分岐し、既存の関数を利用
                 elif req.get("type") == "make_new_battle":
@@ -525,7 +563,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         await websocket.send_text(json.dumps({"type": "error", "message": "サーバーが混雑しています"}))
                         continue
 
-                    info = req.get("info", {})
+                    # info = req.get("info", {})
                     model = make_new_battle_info(**info)
                     manager.register_player(websocket, model.player1_id)
                     p1_profile = user_profiles.get(model.player1_id)
@@ -550,7 +588,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     await start_turn_timer(res["room_id"])
 
                 elif req.get("type") == "include_check":
-                    info = req.get("info", {})
+                    # info = req.get("info", {})
                     model = include_check_info(**info)
                     res = include_check(model)
                     
@@ -561,7 +599,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     await websocket.send_text(json.dumps(res)) # チェック結果は本人だけでOK
 
                 elif req.get("type") == "submit_word":
-                    info = req.get("info", {})
+                    # info = req.get("info", {})
                     model = turn_info(**info)
                     
                     # セキュリティチェック: 送信元ソケットとplayer_idの一致確認
@@ -613,7 +651,7 @@ async def websocket_endpoint(websocket: WebSocket):
                                     await start_turn_timer(room_id)
 
                 elif req.get("type") == "run_away":
-                    info = req.get("info", {})
+                    # info = req.get("info", {})
                     model = run_away_info(**info)
                     
                     # セキュリティチェック
@@ -634,7 +672,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         logger.info(f"Battle room {model.room_id} was removed because a player ran away.")
 
                 elif req.get("type") == "change_ability":
-                    info = req.get("info", {})
+                    # info = req.get("info", {})
                     room_id = info.get("room_id")
                     player_id = info.get("player_id")
                     new_ability_id = info.get("ability_id")
@@ -711,7 +749,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 del battle_rooms[room_id]
                 logger.info(f"Battle room {room_id} was removed due to disconnection.")
 
-        logger.info("WebSocket切断・登録解除")
+        p_name = get_player_name(disconnected_player_id) if disconnected_player_id else "不明なプレイヤー"
+        logger.info(f"WebSocket切断: {p_name} ({disconnected_player_id}) との接続が終了しました")
 
 
 
@@ -736,28 +775,51 @@ async def websocket_double_endpoint(websocket: WebSocket):
                 await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "Invalid JSON"}))
                 continue
             
+            # 基本的なバリデーション
+            if not isinstance(req, dict):
+                continue
+            
+            info = req.get("info")
+            if not isinstance(info, dict):
+                info = {}
+            
             # player_id の長さチェック
-            if "info" in req and "player_id" in req["info"]:
-                if len(str(req["info"]["player_id"])) > 64:
+            if "player_id" in info:
+                if len(str(info["player_id"])) > 64:
                     await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "Invalid player_id"}))
                     continue
 
-            # ログ出力 (include_check系は頻度が高いため除外)
+            # ログ出力 (詳細化)
             msg_type = req.get("type")
             if msg_type not in ["include_check", "include_check_double"]:
-                info_summary = req.get("info", {}).copy()
+                player_id = info.get("player_id", "unknown")
+                p_name = get_player_name(player_id)
                 
-                # プレイヤー名を追加してログに出力
-                p_id = info_summary.get("player_id")
-                if p_id and p_id in user_profiles:
-                    info_summary["player_name"] = user_profiles[p_id].get("name")
+                # イベントに応じた説明文を作成
+                action_desc = ""
+                if msg_type == "update_user_info":
+                    action_desc = f"ユーザー情報を更新しました (名前: {info.get('name')})"
+                elif msg_type == "create_double_room":
+                    action_desc = f"ダブルバトルのルームを作成しました (モード: {info.get('mode')})"
+                elif msg_type == "find_match_double":
+                    action_desc = "ダブルバトルのマッチング待機を開始しました"
+                elif msg_type == "join_double_room":
+                    action_desc = f"ダブルバトルのルームに参加しようとしています (ルームID: {info.get('room_id')})"
+                elif msg_type == "submit_word_double":
+                    action_desc = f"単語「{info.get('word')}」を送信しました (ルーム: {info.get('room_id')})"
+                elif msg_type == "change_ability_double":
+                    action_desc = f"特性を「{info.get('ability_id')}」に変更しました (ルーム: {info.get('room_id')})"
+                elif msg_type == "run_away_double":
+                    action_desc = f"逃げ出しました (ルーム: {info.get('room_id')})"
+                else:
+                    action_desc = f"アクション: {msg_type}"
 
-                logger.info(f"WS Double Recv: type={msg_type}, info={info_summary}")
+                logger.info(f"WS Double Recv: {p_name} ({player_id}) が{action_desc}")
 
             try:
                 # ユーザー情報の更新
                 if req.get("type") == "update_user_info":
-                    info = req.get("info", {})
+                    # info = req.get("info", {})
                     player_id = info.get("player_id")
                     name = info.get("name")
                     ability = info.get("ability")
@@ -772,7 +834,7 @@ async def websocket_double_endpoint(websocket: WebSocket):
 
                 # ルーム作成
                 elif req.get("type") == "create_double_room":
-                    info = req.get("info", {})
+                    # info = req.get("info", {})
                     player_id = info.get("player_id")
                     mode = info.get("mode", "1v1_double")  # 1v1_double or 2v2_double
 
@@ -805,7 +867,7 @@ async def websocket_double_endpoint(websocket: WebSocket):
                         await manager.safe_send_text(websocket, json.dumps({"type": "error", "message": "サーバーが混雑しています"}))
                         continue
 
-                    info = req.get("info", {})
+                    # info = req.get("info", {})
                     player_id = info.get("player_id")
                     manager.register_player(websocket, player_id)
 
@@ -844,7 +906,7 @@ async def websocket_double_endpoint(websocket: WebSocket):
 
                 # ランダムマッチ
                 elif req.get("type") == "find_match_double":
-                    info = req.get("info", {})
+                    # info = req.get("info", {})
                     player_id = info.get("player_id")
                     manager.register_player(websocket, player_id)
                     if waiting_double_player is not None:
@@ -890,7 +952,7 @@ async def websocket_double_endpoint(websocket: WebSocket):
 
                 # ルーム参加
                 elif req.get("type") == "join_double_room":
-                    info = req.get("info", {})
+                    # info = req.get("info", {})
                     player_id = info.get("player_id")
                     room_id = info.get("room_id")
                     manager.register_player(websocket, player_id)
@@ -955,7 +1017,7 @@ async def websocket_double_endpoint(websocket: WebSocket):
 
                 # 単語送信（攻撃）
                 elif req.get("type") == "submit_word_double":
-                    info = req.get("info", {})
+                    # info = req.get("info", {})
                     room_id = info.get("room_id")
                     player_id = info.get("player_id")
                     word = info.get("word")
@@ -1015,7 +1077,7 @@ async def websocket_double_endpoint(websocket: WebSocket):
 
                 # 逃げる処理
                 elif req.get("type") == "run_away_double":
-                    info = req.get("info", {})
+                    # info = req.get("info", {})
                     room_id = info.get("room_id")
                     player_id = info.get("player_id")
 
@@ -1046,7 +1108,7 @@ async def websocket_double_endpoint(websocket: WebSocket):
 
                 # タイプチェック（入力中プレビュー）
                 elif req.get("type") == "include_check_double":
-                    info = req.get("info", {})
+                    # info = req.get("info", {})
                     room_id = info.get("room_id")
                     word = info.get("word", "")
 
@@ -1064,7 +1126,7 @@ async def websocket_double_endpoint(websocket: WebSocket):
 
                 # 特性変更
                 elif req.get("type") == "change_ability_double":
-                    info = req.get("info", {})
+                    # info = req.get("info", {})
                     room_id = info.get("room_id")
                     player_id = info.get("player_id")
                     char_id = info.get("char_id")
@@ -1112,10 +1174,12 @@ async def websocket_double_endpoint(websocket: WebSocket):
                     break
         if room_to_remove:
             del double_private_rooms[room_to_remove]
-            logger.info(f"Double private room {room_to_remove} removed.")
+            logger.info(f"ダブルバトル用プライベートルーム削除 (メンバー不在): ルーム={room_to_remove}")
 
         # 実際の切断プレイヤーIDを取得
         disconnected_player_id = manager.socket_to_player_id.get(websocket)
+        p_name = get_player_name(disconnected_player_id) if disconnected_player_id else "不明なプレイヤー"
+        logger.info(f"WS Double 切断: {p_name} ({disconnected_player_id}) との接続が終了しました")
 
         # メモリリーク防止: 切断したユーザーのプロフィールを削除
         if disconnected_player_id and disconnected_player_id in user_profiles:

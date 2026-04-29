@@ -668,7 +668,7 @@ class Battle_info:
         self.events.append({
             "type": "revive",
             "player": "ally" if defeated.id == self.player1.id else "foe",
-            "message": f"{defeated.name}は復帰した！（残機{lives_left}）",
+            "message": f"{defeated.name}は復帰した！（のこり{lives_left}）",
             "lives": lives_left,
             "hp": self.MAX_HP
         })
