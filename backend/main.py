@@ -422,6 +422,12 @@ async def websocket_endpoint(websocket: WebSocket):
                     action_desc = f"特性を「{info.get('ability_id')}」に変更しました (ルーム: {info.get('room_id')})"
                 elif msg_type == "run_away":
                     action_desc = f"逃げ出しました (ルーム: {info.get('room_id')})"
+                elif msg_type == "make_new_battle":
+                    # CPU戦かどうか判定
+                    is_cpu = info.get("player2_id", "").startswith("cpu_")
+                    mode = "CPU戦" if is_cpu else "対人戦"
+                    lives = info.get("max_lives", 1)
+                    action_desc = f"{mode}を開始しました (ストック: {lives})"
                 else:
                     action_desc = f"アクション: {msg_type}"
 
@@ -571,7 +577,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     res = make_new_battle(model, p1_profile, p2_profile)
                     # 部屋作成時は送信元を部屋に登録
                     manager.join_room(websocket, res["room_id"])
-                    logger.info(f"New battle created (make_new_battle): room={res['room_id']}")
+                    # 重複するため、ここでの logger.info(New battle created...) は削除
                     await websocket.send_text(json.dumps(res)) # 作成者には直接応答
                     
                     # CPU戦でCPU先行の場合、初手を実行する
@@ -993,7 +999,8 @@ async def websocket_double_endpoint(websocket: WebSocket):
 
                             bi = DoubleBattle_info(mode, team1_ids, team2_ids, sb_info=sb_info_instance, room_id=room_id, profiles=user_profiles)
                             double_battle_rooms[bi.room_id] = bi
-                            logger.info(f"Double battle started: room={bi.room_id}, mode={mode}")
+                            p_ids = [p["player_id"] for p in players]
+                            logger.info(f"Double battle started: room={bi.room_id}, mode={mode}, players={p_ids}")
 
                             await start_double_turn_timer(bi.room_id)
                             for p in players:
