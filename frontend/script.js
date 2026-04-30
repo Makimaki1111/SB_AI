@@ -60,7 +60,8 @@ const battleState = {
   character: "",
   ally: { hp: 0, maxHp: 0, atk: 0, def: 0, ability: '', abilityChangeCount: 0, is_poison: false, lives: 0 },
   foe: { hp: 0, maxHp: 0, atk: 0, def: 0, ability: '', abilityChangeCount: 0, is_poison: false, lives: 0 },
-  maxLives: 1,
+  allyMaxLives: 1,
+  foeMaxLives: 1,
   allAbilities: {}
 };
 
@@ -182,7 +183,8 @@ const onMadeRoom = async (data) => {
   battleState.foe.hp = data["foe"]["max_hp"];
   battleState.foe.maxHp = data["foe"]["max_hp"];
   battleState.foe.lives = data["state"]["foe_lives"];
-  battleState.maxLives = data["state"]["max_lives"] || 1;
+  battleState.allyMaxLives = data["state"]["ally_max_lives"] || 1;
+  battleState.foeMaxLives = data["state"]["foe_max_lives"] || 1;
 
   battleState.ally.ability = data.ally.ability;
   battleState.ally.abilityChangeCount = data.ally.ability_change_count;
@@ -196,6 +198,8 @@ const onMadeRoom = async (data) => {
   ui.setAllyName(data["ally"]["name"]);
   ui.setFoeName(data["foe"]["name"]);
   ui.updatePoisonStatus(battleState.ally.is_poison, battleState.foe.is_poison);
+  ui.updateLives(true, battleState.ally.lives, battleState.allyMaxLives);
+  ui.updateLives(false, battleState.foe.lives, battleState.foeMaxLives);
   if (battleState.ally && typeof battleState.ally.abilityChangeCount !== 'undefined') { // Defensive check
     ui.abilityInfoContainer.selector.css('display', 'flex');
     ui.situationButton.show();
@@ -274,6 +278,7 @@ const processEvent = async (events, is_my_turn) => {
       ui.playReviveEffect(isAlly);
       ui.updateHPs(battleState.ally.hp, battleState.ally.maxHp, battleState.foe.hp, battleState.foe.maxHp);
       ui.updatePoisonStatus(battleState.ally.is_poison, battleState.foe.is_poison);
+      ui.updateLives(isAlly, isAlly ? battleState.ally.lives : battleState.foe.lives, isAlly ? battleState.allyMaxLives : battleState.foeMaxLives);
     } else if (e["type"] === "cure") {
       battleState.ally.hp = Math.min(battleState.ally.maxHp, battleState.ally.hp + (e["ally_cure"] || 0));
       battleState.foe.hp = Math.min(battleState.foe.maxHp, battleState.foe.hp + (e["foe_cure"] || 0));
@@ -434,7 +439,11 @@ const onAccepted = async (data) => {
   battleState.foe.is_poison = data.state.foe_poison;
   battleState.ally.lives = data.state.ally_lives;
   battleState.foe.lives = data.state.foe_lives;
-  battleState.maxLives = data.state.max_lives || 1;
+  battleState.allyMaxLives = data.state.ally_max_lives || 1;
+  battleState.foeMaxLives = data.state.foe_max_lives || 1;
+
+  ui.updateLives(true, battleState.ally.lives, battleState.allyMaxLives);
+  ui.updateLives(false, battleState.foe.lives, battleState.foeMaxLives);
 
   let showAllyPoison = battleState.ally.is_poison;
   let showFoePoison = battleState.foe.is_poison;
@@ -570,12 +579,13 @@ const onError = (data) => {
 }
 
 // WebSocket接続とイベントリスナー登録
-window.startBattle = function (mode, roomId = null, maxLives = 1) {
+window.startBattle = function (mode, roomId = null, p1MaxLives = 1, p2MaxLives = 1) {
   // iOS対策: バトル開始のクリックイベント内で確実にAudioContextをアンロックする
   sbUnlockAudioContext();
 
   battleState.mode = mode;
-  battleState.maxLives = maxLives;
+  battleState.p1MaxLives = p1MaxLives;
+  battleState.p2MaxLives = p2MaxLives;
   if (mode === 'player' || mode === 'room') {
     battleState.isVsCpu = false;
   } else if (mode === 'cpu') {
@@ -583,10 +593,10 @@ window.startBattle = function (mode, roomId = null, maxLives = 1) {
   }
 
   initializeBattleScreen();
-  connectWebSocket(mode, roomId, maxLives);
+  connectWebSocket(mode, roomId, p1MaxLives, p2MaxLives);
 }
 
-function connectWebSocket(mode, roomId, maxLives = 1) {
+function connectWebSocket(mode, roomId, p1MaxLives = 1, p2MaxLives = 1) {
   isManualClose = false; // 新しい接続を開始する時にフラグをリセット
   // 既に接続があれば切断
   if (sock && sock.readyState === WebSocket.OPEN) {
@@ -613,16 +623,16 @@ function connectWebSocket(mode, roomId, maxLives = 1) {
     }
 
     if (mode === 'player') {
-      sendFindMatch(player1_id, maxLives);
+      sendFindMatch(player1_id, p1MaxLives); // プレイヤーマッチングは共通の残機を期待
     } else if (mode === 'cpu') {
-      sendMakeNewBattle(player1_id, cpu_id, maxLives);
+      sendMakeNewBattle(player1_id, cpu_id, p1MaxLives, p2MaxLives);
     } else if (mode === 'room') {
       if (roomId) {
-        sendJoinPrivateRoom(player1_id, roomId, maxLives);
+        sendJoinPrivateRoom(player1_id, roomId, p1MaxLives, p2MaxLives);
       } else {
         // バックエンドが create_private_room に対応していない可能性があるため、
         // 以前の仕様に合わせて join_private_room に空のIDを送ることで作成リクエストとする
-        sendJoinPrivateRoom(player1_id, "", maxLives);
+        sendJoinPrivateRoom(player1_id, "", p1MaxLives, p2MaxLives);
       }
     }
   });
@@ -693,20 +703,20 @@ function sendFindMatch(player_id, maxLives = 1) {
   }
 }
 
-function sendMakeNewBattle(p1, p2, maxLives = 1) {
+function sendMakeNewBattle(p1, p2, p1MaxLives = 1, p2MaxLives = 1) {
   if (sock && sock.readyState === WebSocket.OPEN) {
     sock.send(JSON.stringify({
       type: "make_new_battle",
-      info: { player1_id: p1, player2_id: p2, max_lives: maxLives }
+      info: { player1_id: p1, player2_id: p2, p1_max_lives: p1MaxLives, p2_max_lives: p2MaxLives }
     }));
   }
 }
 
-function sendJoinPrivateRoom(player_id, room_id, maxLives = 1) {
+function sendJoinPrivateRoom(player_id, room_id, p1MaxLives = 1, p2MaxLives = 1) {
   if (sock && sock.readyState === WebSocket.OPEN) {
     sock.send(JSON.stringify({
       type: "join_private_room",
-      info: { player_id: player_id, room_id: room_id, max_lives: maxLives }
+      info: { player_id: player_id, room_id: room_id, p1_max_lives: p1MaxLives, p2_max_lives: p2MaxLives }
     }));
   }
 }
@@ -887,7 +897,7 @@ document.addEventListener("DOMContentLoaded", () => {
       battleState.ally.atk, battleState.ally.def,
       battleState.foe.atk, battleState.foe.def,
       battleState.ally.lives, battleState.foe.lives,
-      battleState.maxLives
+      battleState.allyMaxLives, battleState.foeMaxLives
     );
     ui.showSituationModal();
     sbPlaySound("resource/pera.mp3");

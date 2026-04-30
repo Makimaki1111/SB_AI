@@ -42,34 +42,51 @@
         <a id="back-to-title-btn-lobby" class="back-to-title-link">←もどる</a>
         <h1 style="display: flex; align-items: center; justify-content: center; gap: 10px;">
           <span id="lobby-title-text">シングルバトル</span>
-          <span id="stock-help-btn" style="display: none; width: 26px; height: 26px; background: rgba(0,0,0,0.1); border: 2px solid #666; color: #666; border-radius: 50%; font-size: 0.9rem; cursor: pointer; justify-content: center; align-items: center; font-weight: bold; flex-shrink: 0; transition: all 0.2s;">?</span>
+          <span id="stock-help-btn"
+            style="display: none; width: 26px; height: 26px; background: rgba(0,0,0,0.1); border: 2px solid #666; color: #666; border-radius: 50%; font-size: 0.9rem; cursor: pointer; justify-content: center; align-items: center; font-weight: bold; flex-shrink: 0; transition: all 0.2s;">?</span>
         </h1>
 
         <!-- 特殊ルール説明吹き出し -->
-        <div id="stock-help-balloon" style="display: none; position: absolute; top: 125px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 360px; background: rgba(255,255,255,0.98); border: 1px solid #ddd; border-radius: 16px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); z-index: 1000; font-size: 0.95rem; color: #333; line-height: 1.5; text-align: center; cursor: pointer; backdrop-filter: blur(5px); animation: sbFadeIn 0.3s ease-out;">
-          <div style="font-weight: 800; margin-bottom: 8px; color: #ff8f00; font-size: 1rem; border-bottom: 1px solid #eee; padding-bottom: 5px;">特殊ルールの説明</div>
-          相手のHPを<span style="color: #ff4d4d; font-weight: 800; font-size: 1.1rem;">3回</span>0にしたら<br>プレイヤーの勝ちとなります。
+        <div id="stock-help-balloon"
+          style="display: none; position: absolute; top: 125px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 360px; background: rgba(255,255,255,0.98); border: 1px solid #ddd; border-radius: 16px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); z-index: 1000; font-size: 0.95rem; color: #333; line-height: 1.5; text-align: center; cursor: pointer; backdrop-filter: blur(5px); animation: sbFadeIn 0.3s ease-out;">
+          <div
+            style="font-weight: 800; margin-bottom: 8px; color: #ff8f00; font-size: 1rem; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+            特殊ルールの説明</div>
+          相手のHPを<span style="color: #ff4d4d; font-weight: 800; font-size: 1.1rem;">複数回</span>0にしたら<br>プレイヤーの勝ちとなります。
           <div style="margin-top: 12px; font-size: 0.75rem; color: #999; font-weight: bold;">(タップして閉じる)</div>
           <style>
             @keyframes sbFadeIn {
-              from { opacity: 0; transform: translate(-50%, -10px); }
-              to { opacity: 1; transform: translate(-50%, 0); }
+              from {
+                opacity: 0;
+                transform: translate(-50%, -10px);
+              }
+
+              to {
+                opacity: 1;
+                transform: translate(-50%, 0);
+              }
             }
           </style>
         </div>
 
         <!-- 特性変更ボタン -->
-        <div id="lobby-ability-btn" style="width: 90%; max-width: 400px; margin: 10px 0; padding: 0; background: #fff; border: 2px solid #eee; border-radius: 20px; cursor: pointer; display: flex; box-shadow: 0 4px 12px rgba(0,0,0,0.1); box-sizing: border-box; overflow: hidden; min-height: 120px; flex-shrink: 0; transition: transform 0.1s;">
+        <div id="lobby-ability-btn"
+          style="width: 90%; max-width: 400px; margin: 10px 0; padding: 0; background: #fff; border: 2px solid #eee; border-radius: 20px; cursor: pointer; display: flex; box-shadow: 0 4px 12px rgba(0,0,0,0.1); box-sizing: border-box; overflow: hidden; min-height: 120px; flex-shrink: 0; transition: transform 0.1s;">
           <!-- 左半分: アイコン -->
           <div style="width: 40%; background: #f9f9f9; display: flex; justify-content: center; align-items: center;">
             <img id="lobby-ability-icon" src="" style="width: 80px; height: 80px; object-fit: contain; display: none;">
           </div>
           <!-- 右半分: 情報 -->
-          <div style="width: 60%; padding: 12px; display: flex; flex-direction: column; justify-content: center; text-align: left;">
+          <div
+            style="width: 60%; padding: 12px; display: flex; flex-direction: column; justify-content: center; text-align: left;">
             <!-- 右上: 特性名 -->
-            <div id="lobby-ability-name" style="font-size: 1.2rem; font-weight: 800; color: #333; line-height: 1.2; border-bottom: 2px solid #eee; padding-bottom: 6px; margin-bottom: 6px;"></div>
+            <div id="lobby-ability-name"
+              style="font-size: 1.2rem; font-weight: 800; color: #333; line-height: 1.2; border-bottom: 2px solid #eee; padding-bottom: 6px; margin-bottom: 6px;">
+            </div>
             <!-- 右下: 説明 -->
-            <div id="lobby-ability-short-desc" style="font-size: 0.8rem; color: #666; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; line-clamp: 3; overflow: hidden;"></div>
+            <div id="lobby-ability-short-desc"
+              style="font-size: 0.8rem; color: #666; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; line-clamp: 3; overflow: hidden;">
+            </div>
           </div>
         </div>
 
@@ -101,7 +118,8 @@
 
         <!-- 右下ふきだし -->
         <div class="balloon right">
-          <div class="ally-name-container" style="display: flex; align-items: center; justify-content: flex-start; gap: 5px;">
+          <div class="ally-name-container"
+            style="display: flex; align-items: center; justify-content: flex-start; gap: 5px;">
             <div class="ally-name"></div>
           </div>
           <div class="bar">
@@ -124,7 +142,8 @@
 
         <!-- 左上ふきだし -->
         <div class="balloon left">
-          <div class="foe-name-container" style="display: flex; align-items: center; justify-content: flex-start; gap: 5px;">
+          <div class="foe-name-container"
+            style="display: flex; align-items: center; justify-content: flex-start; gap: 5px;">
             <div class="foe-name"></div>
             <div class="foe-lives-container" style="display: flex; gap: 2px;"></div>
           </div>
@@ -169,7 +188,8 @@
           <div id="actions-wrapper">
             <div id="situation-button">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="action-btn-icon">
-                <path d="M3 13.125C3 12.5037 3.50368 12 4.125 12H6.75C7.37132 12 7.875 12.5037 7.875 13.125V18.375C7.875 18.9963 7.37132 19.5 6.75 19.5H4.125C3.50368 19.5 3 18.9963 3 18.375V13.125ZM10.125 7.125C10.125 6.50368 10.6287 6 11.25 6H13.875C14.4963 6 15 6.50368 15 7.125V18.375C15 18.9963 14.4963 19.5 13.875 19.5H11.25C10.6287 19.5 10.125 18.9963 10.125 18.375V7.125ZM17.25 3.375C17.25 2.75368 17.7537 2.25 18.375 2.25H21C21.6213 2.25 22.125 2.75368 22.125 3.375V18.375C22.125 18.9963 21.6213 19.5 21 19.5H18.375C17.7537 19.5 17.25 18.9963 17.25 18.375V3.375Z"/>
+                <path
+                  d="M3 13.125C3 12.5037 3.50368 12 4.125 12H6.75C7.37132 12 7.875 12.5037 7.875 13.125V18.375C7.875 18.9963 7.37132 19.5 6.75 19.5H4.125C3.50368 19.5 3 18.9963 3 18.375V13.125ZM10.125 7.125C10.125 6.50368 10.6287 6 11.25 6H13.875C14.4963 6 15 6.50368 15 7.125V18.375C15 18.9963 14.4963 19.5 13.875 19.5H11.25C10.6287 19.5 10.125 18.9963 10.125 18.375V7.125ZM17.25 3.375C17.25 2.75368 17.7537 2.25 18.375 2.25H21C21.6213 2.25 22.125 2.75368 22.125 3.375V18.375C22.125 18.9963 21.6213 19.5 21 19.5H18.375C17.7537 19.5 17.25 18.9963 17.25 18.375V3.375Z" />
               </svg>
               <p class="action-btn-text">状況</p>
             </div>
@@ -190,14 +210,54 @@
   </div>
 
   <!-- ロビー用 特性選択モーダル -->
-  <div id="lobby-ability-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center;">
-    <div style="background: white; width: 90%; max-width: 420px; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 15px; max-height: 80vh;">
+  <div id="lobby-ability-modal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center;">
+    <div
+      style="background: white; width: 90%; max-width: 420px; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 15px; max-height: 80vh;">
       <h3 style="margin: 0; text-align: center;">とくせいを選択</h3>
-      <div id="lobby-ability-desc" style="font-size: 0.9rem; color: #666; background: #f5f5f5; padding: 10px; border-radius: 8px; min-height: 3em;"></div>
-      <div id="lobby-abilities-list" style="display: flex; flex-wrap: wrap; gap: 8px; overflow-y: auto; padding: 5px; flex: 1; justify-content: center;">
+      <div id="lobby-ability-desc"
+        style="font-size: 0.9rem; color: #666; background: #f5f5f5; padding: 10px; border-radius: 8px; min-height: 3em;">
+      </div>
+      <div id="lobby-abilities-list"
+        style="display: flex; flex-wrap: wrap; gap: 8px; overflow-y: auto; padding: 5px; flex: 1; justify-content: center;">
         <!-- JSで生成 -->
       </div>
-      <button id="close-lobby-ability-modal" style="padding: 12px; background: #4CAF50; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">決定</button>
+      <button id="close-lobby-ability-modal"
+        style="padding: 12px; background: #4CAF50; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">決定</button>
+    </div>
+  </div>
+  
+  <!-- 残機選択モーダル -->
+  <div id="stock-selection-modal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2001; justify-content: center; align-items: center;">
+    <div
+      style="background: white; width: 90%; max-width: 380px; border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); display: flex; flex-direction: column; gap: 20px; text-align: center;">
+      <h3 style="margin: 0; font-size: 1.3rem; font-weight: 800; color: #333;">のこり数をえらぶ</h3>
+      
+      <div style="display: flex; flex-direction: column; gap: 15px; text-align: left;">
+        <div>
+          <label style="font-weight: 800; font-size: 0.9rem; color: #555; margin-bottom: 5px; display: block;">じぶん の のこり数</label>
+          <div id="ally-stock-options" style="display: flex; justify-content: center; gap: 8px;">
+            <!-- JSでボタンを生成 -->
+          </div>
+        </div>
+        
+        <div style="width: 100%; height: 1px; background: #eee; margin: 5px 0;"></div>
+        
+        <div>
+          <label style="font-weight: 800; font-size: 0.9rem; color: #555; margin-bottom: 5px; display: block;">あいて の のこり数</label>
+          <div id="foe-stock-options" style="display: flex; justify-content: center; gap: 8px;">
+            <!-- JSでボタンを生成 -->
+          </div>
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <button id="cancel-stock-btn"
+          style="flex: 1; padding: 12px; border-radius: 12px; border: 2px solid #eee; background: white; color: #666; font-weight: 700; cursor: pointer;">キャンセル</button>
+        <button id="confirm-stock-btn"
+          style="flex: 1; padding: 12px; border-radius: 12px; border: none; background: linear-gradient(180deg, #ffd77a, #ffb84d); color: #222; font-weight: 800; cursor: pointer; box-shadow: 0 4px 10px rgba(255,184,77,0.3);">決定</button>
+      </div>
     </div>
   </div>
 
@@ -228,7 +288,7 @@
   <div id="situation-modal" style="display: none;">
     <div class="situation-modal-wrapper">
       <h2 style="margin-top: 0; margin-bottom: 15px; font-size: 1.4rem; color: #333;">じょうきょう</h2>
-      
+
       <div class="situation-cards-container">
         <!-- 相手のカード -->
         <div class="s-card foe-card">
@@ -244,7 +304,8 @@
             </div>
             <div class="s-stat-item s-lives-item" id="s-foe-lives-row" style="display:none;">
               <span class="s-stat-label">のこり</span>
-              <div class="s-stat-value s-lives-container" id="foe-lives" style="display: flex; gap: 4px; justify-content: center; margin-top: 4px;"></div>
+              <div class="s-stat-value s-lives-container" id="foe-lives"
+                style="display: flex; gap: 4px; justify-content: center; margin-top: 4px;"></div>
             </div>
           </div>
         </div>
@@ -263,7 +324,8 @@
             </div>
             <div class="s-stat-item s-lives-item" id="s-ally-lives-row" style="display:none;">
               <span class="s-stat-label">のこり</span>
-              <div class="s-stat-value s-lives-container" id="ally-lives" style="display: flex; gap: 4px; justify-content: center; margin-top: 4px;"></div>
+              <div class="s-stat-value s-lives-container" id="ally-lives"
+                style="display: flex; gap: 4px; justify-content: center; margin-top: 4px;"></div>
             </div>
           </div>
         </div>
@@ -291,7 +353,7 @@
         if (titleEl) titleEl.textContent = '特殊ルール';
         if (helpBtn && helpBalloon) {
           helpBtn.style.display = 'flex';
-          
+
           // 表示切り替え
           helpBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -332,16 +394,100 @@
         randomMatchBtn.textContent = 'マッチング中…';
         randomMatchBtn.style.pointerEvents = 'none';
         randomMatchBtn.style.opacity = '0.7';
-        startBattle('player', null, isStockMode ? 3 : 1);
+        // 自分と相手の両方に 2 を渡す
+        startBattle('player', null, isStockMode ? 2 : 1, isStockMode ? 2 : 1);
       });
     }
-    document.getElementById('vs-cpu-btn').addEventListener('click', () => startBattle('cpu', null, isStockMode ? 3 : 1));
-    document.getElementById('create-room-btn').addEventListener('click', () => startBattle('room', null, isStockMode ? 3 : 1));
+    // 自分と相手の両方に 2 を渡す
+    document.getElementById('vs-cpu-btn').addEventListener('click', () => startBattle('cpu', null, isStockMode ? 2 : 1, isStockMode ? 2 : 1));
+    
+    // ルーム作成ボタンの挙動を変更（残機選択モーダルを表示）
+    const createRoomBtn = document.getElementById('create-room-btn');
+    const stockModal = document.getElementById('stock-selection-modal');
+    const allyStockOptions = document.getElementById('ally-stock-options');
+    const foeStockOptions = document.getElementById('foe-stock-options');
+    let selectedStockAlly = 2; // デフォルト値
+    let selectedStockFoe = 2; // デフォルト値
+
+    createRoomBtn.addEventListener('click', () => {
+      if (isStockMode) {
+        // ストックモードの場合はモーダルを表示
+        stockModal.style.display = 'flex';
+        renderStockOptions();
+        if (typeof playSound === 'function') playSound("resource/pera.mp3");
+      } else {
+        // 通常モードはそのまま作成
+        startBattle('room', null, 1, 1);
+      }
+    });
+
+    function renderStockOptions() {
+      // 自分の選択
+      allyStockOptions.innerHTML = '';
+      for (let i = 1; i <= 5; i++) {
+        const btn = createStockButton(i, selectedStockAlly, (val) => {
+          selectedStockAlly = val;
+          renderStockOptions();
+        });
+        allyStockOptions.appendChild(btn);
+      }
+      // 相手の選択
+      foeStockOptions.innerHTML = '';
+      for (let i = 1; i <= 5; i++) {
+        const btn = createStockButton(i, selectedStockFoe, (val) => {
+          selectedStockFoe = val;
+          renderStockOptions();
+        });
+        foeStockOptions.appendChild(btn);
+      }
+      // 決定ボタンの有効・無効切り替え
+      const confirmBtn = document.getElementById('confirm-stock-btn');
+      if (selectedStockAlly === 1 && selectedStockFoe === 1) {
+        confirmBtn.disabled = true;
+        confirmBtn.style.opacity = '0.5';
+        confirmBtn.style.cursor = 'not-allowed';
+      } else {
+        confirmBtn.disabled = false;
+        confirmBtn.style.opacity = '1';
+        confirmBtn.style.cursor = 'pointer';
+      }
+    }
+
+    function createStockButton(value, currentSelected, onSelect) {
+      const btn = document.createElement('div');
+      btn.textContent = value;
+      const isSelected = value === currentSelected;
+      btn.style.cssText = `
+        flex: 1; height: 45px; border-radius: 10px; display: flex; 
+        justify-content: center; align-items: center; font-size: 1.1rem; 
+        font-weight: 800; cursor: pointer; transition: all 0.2s;
+        border: 2px solid ${isSelected ? '#ffb84d' : '#eee'};
+        background: ${isSelected ? '#fff9f0' : 'white'};
+        color: ${isSelected ? '#ff8f00' : '#666'};
+        box-shadow: ${isSelected ? '0 4px 8px rgba(255,184,77,0.15)' : 'none'};
+      `;
+      btn.addEventListener('click', () => {
+        onSelect(value);
+        if (typeof playSound === 'function') playSound("resource/concent.mp3");
+      });
+      return btn;
+    }
+
+    document.getElementById('cancel-stock-btn').addEventListener('click', () => {
+      stockModal.style.display = 'none';
+      if (typeof playSound === 'function') playSound("resource/pera.mp3");
+    });
+
+    document.getElementById('confirm-stock-btn').addEventListener('click', () => {
+      stockModal.style.display = 'none';
+      startBattle('room', null, selectedStockAlly, selectedStockFoe);
+    });
 
     document.getElementById('join-room-btn').addEventListener('click', () => {
       const roomId = document.getElementById('room-id-input').value;
       if (roomId && roomId.trim() !== '') {
-        startBattle('room', roomId.trim(), isStockMode ? 3 : 1);
+        // 参加時はルームの設定に従うが、一応デフォルト値を渡しておく
+        startBattle('room', roomId.trim(), isStockMode ? 2 : 1, isStockMode ? 2 : 1);
       } else {
         alert('ルームIDを入力してください。');
       }
@@ -390,7 +536,7 @@
     document.body.addEventListener('touchstart', userInteractionHandler, { once: true });
 
     // --- ロビー用 特性選択ロジック ---
-    (function() {
+    (function () {
       const lobbyAbilityBtn = document.getElementById('lobby-ability-btn');
       const lobbyAbilityModal = document.getElementById('lobby-ability-modal');
       const closeLobbyAbilityModal = document.getElementById('close-lobby-ability-modal');
@@ -421,7 +567,7 @@
         const shortDesc = document.getElementById('lobby-ability-short-desc');
         const icon = document.getElementById('lobby-ability-icon');
         if (icon) icon.style.display = 'block';
-        
+
         if (currentAbilityId && allAbilities[currentAbilityId]) {
           const info = allAbilities[currentAbilityId];
           lobbyAbilityName.textContent = info.name;
@@ -437,7 +583,7 @@
 
       function renderLobbyAbilities() {
         lobbyAbilitiesList.innerHTML = '';
-        
+
         // ランダム
         const randomDiv = document.createElement('div');
         randomDiv.className = `skill-item ${currentAbilityId === "" ? "selected" : ""}`;

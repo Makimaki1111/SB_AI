@@ -585,11 +585,12 @@ class Battle_info:
     """
     ブラウザ対戦時のマッチ情報を保持するクラス
     """
-    def __init__(self, player1_id, player2_id, sb_info: SB_info, room_id: str | None = None, p1_profile: dict = None, p2_profile: dict = None, max_lives: int = 1):
+    def __init__(self, player1_id, player2_id, sb_info: SB_info, room_id: str | None = None, p1_profile: dict = None, p2_profile: dict = None, p1_max_lives: int = 1, p2_max_lives: int = 1):
         self.room_id = room_id or str(uuid.uuid4())
         self.used = defaultdict(list)
         self.MAX_HP = MAX_HP
-        self.max_lives = max_lives
+        self.p1_max_lives = p1_max_lives
+        self.p2_max_lives = p2_max_lives
         self.is_cpu = (player2_id == "cpu")
 
         self.sb_info = sb_info
@@ -599,8 +600,8 @@ class Battle_info:
 
         self.player1 = Player(player1_id, p1_name)
         self.player2 = Player(player2_id, p2_name)
-        self.player1_lives = max_lives
-        self.player2_lives = max_lives
+        self.player1_lives = p1_max_lives
+        self.player2_lives = p2_max_lives
 
         # 特性関連
         self.abilities = get_default_abilities()
@@ -1145,7 +1146,8 @@ class Battle_info:
                 "room_id" : self.room_id,
                 "is_cpu" : self.is_cpu,
                 "is_my_turn" : self.player1_turn,
-                "max_lives" : self.max_lives,
+                "ally_max_lives" : self.p1_max_lives,
+                "foe_max_lives" : self.p2_max_lives,
                 "turn" : self.turn,
                 "word" : self.word
             }
@@ -1173,7 +1175,8 @@ class Battle_info:
                 "character" : self.character,
                 "ally_lives" : self.player1_lives if is_p1 else self.player2_lives,
                 "foe_lives" : self.player2_lives if is_p1 else self.player1_lives,
-                "max_lives" : self.max_lives
+                "ally_max_lives" : self.p1_max_lives if is_p1 else self.p2_max_lives,
+                "foe_max_lives" : self.p2_max_lives if is_p1 else self.p1_max_lives
             },
             "ally" : {
                 "max_hp" : self.MAX_HP,
@@ -1209,6 +1212,7 @@ class Battle_info:
         new_state["ally_type"] = s["foe_type"]
         new_state["ally_poison"] = s["foe_poison"]
         new_state["ally_lives"] = s["foe_lives"]
+        new_state["ally_max_lives"] = s["foe_max_lives"]
         new_state["ally_ability"] = s["foe_ability"]
         new_state["ally_ability_change_count"] = s["foe_ability_change_count"]
         
@@ -1218,6 +1222,7 @@ class Battle_info:
         new_state["foe_type"] = s["ally_type"]
         new_state["foe_poison"] = s["ally_poison"]
         new_state["foe_lives"] = s["ally_lives"]
+        new_state["foe_max_lives"] = s["ally_max_lives"]
         new_state["foe_ability"] = s["ally_ability"]
         new_state["foe_ability_change_count"] = s["ally_ability_change_count"]
 

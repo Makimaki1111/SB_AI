@@ -637,19 +637,9 @@ class UI{
     }
 
     updateLives(isAlly, current, max) {
-        const container = isAlly ? this.allyLivesContainer.selector : this.foeLivesContainer.selector;
-        if (!container.length) return;
-        
-        container.empty();
-        if (max <= 1) return; // 通常バトルでは表示しない
-
-        for (let i = 0; i < max; i++) {
-            const item = $('<div class="lives-display-item"></div>');
-            if (i >= current) {
-                item.addClass('lost');
-            }
-            container.append(item);
-        }
+        // メイン画面（ふきだし付近）には残機を表示しないため、処理をスキップ
+        // 状況確認モーダル内での表示は updateSituation 側で処理される
+        return;
     }
 
     updateHPBar(hp, max_hp, dom) {
@@ -1139,7 +1129,7 @@ class UI{
         this.situationFoeB.selector.text("1.0倍");
     }
 
-    updateSituation(allyAtk, allyDef, foeAtk, foeDef, allyLives, foeLives, maxLives) {
+    updateSituation(allyAtk, allyDef, foeAtk, foeDef, allyLives, foeLives, allyMaxLives, foeMaxLives) {
         // ランクから倍率への変換マップ (backend/SB_info.py と同期)
         const rankToPower = (rank) => {
              const mapping = {
@@ -1159,7 +1149,9 @@ class UI{
         this.situationFoeA.selector.text(formatMultiplier(rankToPower(foeAtk)) + "倍");
         this.situationFoeB.selector.text(formatMultiplier(rankToPower(foeDef)) + "倍");
 
-        if (maxLives > 1) {
+        const hasStock = allyMaxLives > 1 || foeMaxLives > 1;
+
+        if (hasStock) {
             this.situationAllyLivesRow.selector.show();
             this.situationFoeLivesRow.selector.show();
             
@@ -1174,8 +1166,8 @@ class UI{
                 }
             };
 
-            renderLives(this.situationAllyLives.selector, allyLives, maxLives);
-            renderLives(this.situationFoeLives.selector, foeLives, maxLives);
+            renderLives(this.situationAllyLives.selector, allyLives, allyMaxLives);
+            renderLives(this.situationFoeLives.selector, foeLives, foeMaxLives);
         } else {
             this.situationAllyLivesRow.selector.hide();
             this.situationFoeLivesRow.selector.hide();
