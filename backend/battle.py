@@ -1,7 +1,9 @@
 try:
     from SB_info import SB_info
+    from base_battle import BaseBattle
 except ImportError:
     from backend.SB_info import SB_info
+    from backend.base_battle import BaseBattle
 
 from collections import defaultdict
 from pydantic import BaseModel
@@ -581,13 +583,12 @@ def get_all_abilities_info() -> dict:
     data = {k: v.get_display_data() for k, v in abilities.items()}
     return data
 
-class Battle_info:
+class Battle_info(BaseBattle):
     """
     ブラウザ対戦時のマッチ情報を保持するクラス
     """
     def __init__(self, player1_id, player2_id, sb_info: SB_info, room_id: str | None = None, p1_profile: dict = None, p2_profile: dict = None, p1_max_lives: int = 1, p2_max_lives: int = 1):
-        self.room_id = room_id or str(uuid.uuid4())
-        self.used = defaultdict(list)
+        super().__init__(sb_info, room_id)
         self.MAX_HP = MAX_HP
         self.p1_max_lives = p1_max_lives
         self.p2_max_lives = p2_max_lives
@@ -619,11 +620,13 @@ class Battle_info:
 
         self.player1_win = None
         self.player1_turn = random.random() < 0.5
-        self.START_CHARACTER = "あいうえおかきくけこさしすせそたちつてとなにねのはひふへほまみむめやゆよらりるれろわ"
-        self.character = random.choice(self.START_CHARACTER)
-        self.events = []
+        self.init_character()
         self.turn = 0
         self.word = ""
+
+    @property
+    def is_finished(self) -> bool:
+        return self.player1_win is not None
 
     def _get_serializable_abilities(self):
         """
@@ -639,9 +642,6 @@ class Battle_info:
         }
         return serializable_abilities
 
-    def katakana_to_hiragana(self, text: str) -> str:
-        """全角カタカナをひらがなに変換する"""
-        return "".join(chr(ord(c) - 96) if 0x30A1 <= ord(c) <= 0x30F6 else c for c in text)
 
     def _handle_knockout(self, defeated: Player):
         """HPが0になったプレイヤーの残機を処理する。"""
@@ -684,27 +684,16 @@ class Battle_info:
         Returns:
             _type_: _description_
         """
-        # 入力をひらがなに正規化
-        word = self.katakana_to_hiragana(word)
+        # 基本バリデーション
+        word, error = self.validate_word(word)
+        if error:
+            return error
 
-        if(self.player1_win != None):
-            return {"type" : "error", "message" : "戦闘はすでに終了しています"}
-        elif player_id != self.player1.id and player_id != self.player2.id:
+        # プレイヤーとターンのチェック
+        if player_id != self.player1.id and player_id != self.player2.id:
             return {"type" : "error", "message" : "このルームのプレイヤーではありません"}
-        elif(self.player1_turn ^ (player_id == self.player1.id)):
+        elif (self.player1_turn ^ (player_id == self.player1.id)):
             return {"type" : "error", "message" : "自分のターンではありません"}
-        elif(not word):
-            return {"type" : "error", "message" : "単語を入力してください"}
-        elif(not self.sb_info.include_in_all_words(word) and not self.sb_info.include_in_typed_words(word)):
-            return {"type" : "error", "message" : "辞書にない単語です"}
-        elif(word in self.used):
-            return {"type" : "error", "message" : "使用済みの単語です"}
-        elif(word[0] != self.character):
-            return {"type" : "error", "message" : "開始文字がマッチしていません"}
-        elif(self.sb_info.get_next_initial(word) == "ん"):
-            return {"type" : "error", "message" : "「ん」で終わっています"}
-        elif(not self.sb_info.include_in_typed_heads( self.sb_info.get_next_initial(word) )):
-            return {"type" : "error", "message" : "禁止された単語です"}
 
         self.word = word
         types = self._type_check(word)
@@ -729,7 +718,7 @@ class Battle_info:
             # やどりぎ等のターン終了時効果処理
             self._process_end_of_turn_effects(current_player, self.player2 if self.player1_turn else self.player1)
 
-            self.character = self.sb_info.get_next_initial(word)
+            self.record_used_word(word, player_id)
             ret = self._make_response()
             self.word = "" # レスポンス生成後に単語をリセット
             self.player1_turn = not self.player1_turn
@@ -943,7 +932,7 @@ class Battle_info:
         # やどりぎ等のターン終了時効果処理
         self._process_end_of_turn_effects(current_player, self.player2 if self.player1_turn else self.player1)
 
-        self.character = self.sb_info.get_next_initial(word)
+        self.record_used_word(word, player_id)
         ret = self._make_response()
         self.word = "" # レスポンス生成後に単語をリセット
 

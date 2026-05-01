@@ -1,7 +1,9 @@
 try:
     from SB_info import SB_info
+    from base_battle import BaseBattle
 except ImportError:
     from backend.SB_info import SB_info
+    from backend.base_battle import BaseBattle
 
 try:
     from battle import Player, get_default_abilities, MAX_HP, FOOD_LIMIT, MEDICAL_LIMIT, MIN_RANK, MAX_RANK, FOOD_RECOVERY_AMOUNT, MEDICAL_RECOVERY_AMOUNT, CRITICAL_HIT_CHANCE, CRITICAL_HIT_MULTIPLIER, BASE_DAMAGE_NORMAL, BASE_DAMAGE_TYPED, DAMAGE_RANDOM_MIN, DAMAGE_RANDOM_MAX, VIOLENCE_ATTACK_DROP, LEECH_SEED_TURNS, LEECH_SEED_DRAIN_AMOUNT, IshokudogenAbility
@@ -31,14 +33,14 @@ class DoubleBattlePlayer(Player):
     def is_defeated(self) -> bool:
         return self.hp <= 0
 
-class DoubleBattle_info:
+class DoubleBattle_info(BaseBattle):
     """
     ダブルバトルの状態を管理するクラス。
     2体のキャラクター(A, B) vs 2体のキャラクター(A, B)の戦いを想定。
     """
     # mode = '1v1_double' (2 players, 4 chars) or '2v2_double' (4 players, 4 chars)
     def __init__(self, mode: str, team1_players: list, team2_players: list, sb_info: SB_info, room_id: str | None = None, profiles: dict = None, is_cpu: bool = False):
-        self.room_id = room_id or str(uuid.uuid4())
+        super().__init__(sb_info, room_id)
         self.mode = mode
         self.is_cpu = is_cpu
         self.used = defaultdict(list)
@@ -73,12 +75,15 @@ class DoubleBattle_info:
             self.turn_order = [self.p2a, self.p1a, self.p2b, self.p1b]
         self.current_turn_index = 0
 
-        self.START_CHARACTER = "あいうえおかきくけこさしすせそたちつてとなにねのはひふへほまみむめやゆよらりるれろわ"
-        self.character = random.choice(self.START_CHARACTER)
+        self.init_character()
         self.last_actor_id = None
         self.events = []
         self.turn = 0
         self.word = ""
+
+    @property
+    def is_finished(self) -> bool:
+        return self.team1_win is not None
 
     def _create_character(self, owner_id: str, char_id: str, default_name: str, profiles: dict) -> DoubleBattlePlayer:
         prof = profiles.get(owner_id, {})
@@ -134,12 +139,6 @@ class DoubleBattle_info:
         # 勝敗が決定したら、現在の行動者をなしにするか、UI側で検知する
         return self.team1_win is not None
 
-    def _type_check(self, word: str) -> list[str]:
-        t1, t2 = self.sb_info.get_types(word)
-        types = []
-        if t1: types.append(t1)
-        if t2: types.append(t2)
-        return types
 
     def _calc_damage(self, at1, at2, dt1, dt2, ability_obj, attacker: DoubleBattlePlayer, defender: DoubleBattlePlayer) -> tuple[float, int, bool]:
         effect = self.sb_info.type_effect(at1, at2, dt1, dt2)
@@ -178,12 +177,7 @@ class DoubleBattle_info:
 
         return effect, int(damage), is_critical
 
-    def _is_valid_initial(self, word: str):
-        return word.startswith(self.character)
 
-    def katakana_to_hiragana(self, text: str) -> str:
-        """全角カタカナをひらがなに変換する"""
-        return "".join(chr(ord(c) - 96) if 0x30A1 <= ord(c) <= 0x30F6 else c for c in text)
 
     def _is_used(self, word: str):
         return word in self.used
@@ -282,26 +276,14 @@ class DoubleBattle_info:
                 attacker.leech_turns = 0
 
     def try_attack(self, player_id: str, word: str, target_char_id: str = None):
-        # 入力をひらがなに正規化
-        word = self.katakana_to_hiragana(word)
+        # 基本バリデーション
+        word, error = self.validate_word(word)
+        if error:
+            return error
 
-        if self.team1_win is not None:
-            return {"type": "error", "message": "戦闘はすでに終了しています"}
-            
         current_actor = self.get_current_actor()
         if player_id != current_actor.owner_id:
             return {"type": "error", "message": "自分のターンではありません"}
-            
-        if not word: return {"type": "error", "message": "単語を入力してください"}
-        if not self.sb_info.include_in_all_words(word) and not self.sb_info.include_in_typed_words(word):
-            return {"type": "error", "message": "辞書にない単語です"}
-        if word in self.used: return {"type": "error", "message": "使用済みの単語です"}
-        if not self._is_valid_initial(word): return {"type": "error", "message": f"「{self.character}」からはじまることばを入力してください"}
-        if self.sb_info.get_next_initial(word) == "ん": return {"type": "error", "message": "「ん」で終わっています"}
-        if not self.sb_info.include_in_typed_heads(self.sb_info.get_next_initial(word)):
-            return {"type": "error", "message": "禁止された単語です"}
-
-        # ターゲット選定: 特に指定がなければ生きている相手を適当に狙う
         target_actor = None
         enemies = self.team2 if current_actor in self.team1 else self.team1
         
@@ -347,8 +329,7 @@ class DoubleBattle_info:
             self._check_win_condition()
             self._patch_ability_events(current_actor, target_actor)
 
-            self.character = self.sb_info.get_next_initial(word)
-            self.used[word].append(current_actor.id)
+            self.record_used_word(word, current_actor.id)
             self.last_actor_id = current_actor.id
             self._advance_turn_index()
             # skip dead players
@@ -488,8 +469,7 @@ class DoubleBattle_info:
         self._patch_ability_events(current_actor, target_actor)
         
         # 次の文字
-        self.character = self.sb_info.get_next_initial(word)
-        self.used[word].append(current_actor.id)
+        self.record_used_word(word, current_actor.id)
         
         self.last_actor_id = current_actor.id
 
