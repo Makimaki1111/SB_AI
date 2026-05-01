@@ -5,11 +5,11 @@ from typing import Dict, List, Optional
 from collections import defaultdict
 
 try:
-    from battle import Battle_info
-    from double_battle import DoubleBattle_info
+    from battle import SingleBattle
+    from double_battle import DoubleBattle
 except ImportError:
-    from backend.battle import Battle_info
-    from backend.double_battle import DoubleBattle_info
+    from backend.battle import SingleBattle
+    from backend.double_battle import DoubleBattle
 
 class RoomManager:
     """
@@ -44,7 +44,7 @@ class RoomManager:
         # 最大ルーム数
         self.MAX_ROOMS = 50
 
-    def get_room(self, room_id: str) -> Optional[Battle_info | DoubleBattle_info]:
+    def get_room(self, room_id: str) -> Optional[SingleBattle | DoubleBattle]:
         """指定されたIDのルームを取得（シングル・ダブル両対応）"""
         if room_id in self.battle_rooms:
             return self.battle_rooms[room_id]

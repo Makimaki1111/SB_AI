@@ -10,7 +10,7 @@ project_root = os.path.dirname(backend_dir)
 sys.path.insert(0, project_root)
 
 try:
-    from backend.battle import Battle_info
+    from backend.battle import SingleBattle
     from backend.SB_info import SB_info
     print("SUCCESS: Imports successful")
 except Exception as e:
@@ -20,7 +20,7 @@ except Exception as e:
 def test_battle_logic():
     print("Starting Battle Logic Test...")
     sb_info = SB_info()
-    battle = Battle_info("p1", "p2", sb_info)
+    battle = SingleBattle("p1", "p2", sb_info)
     
     print(f"Initial character: {battle.character}")
     

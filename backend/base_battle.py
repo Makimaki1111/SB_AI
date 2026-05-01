@@ -80,7 +80,7 @@ class BaseBattle:
 
         # 毒ダメージ処理
         for p in self.players:
-            if not p.is_defeated and p.poison_turns > 0 and getattr(p, 'poisoner_id', None) == attacker.id:
+            if not p.is_defeated and p.poison_turns > 0:
                 damage = int(MAX_HP * (p.poison_turns / 16))
                 p.take_damage(damage)
                 self.events.append({
@@ -257,11 +257,6 @@ class BaseBattle:
         # 特性などから参照できるように現在の状態を保存
         self.current_actor = current_player
         self.current_target = target_player
-
-        # いしょくどうげん互換処理
-        if ability_obj and getattr(ability_obj, "name", "") == "いしょくどうげん" and "食べ物" in types:
-            if "食べ物" in types: types.remove("食べ物")
-            if "医療" not in types: types.append("医療")
 
         # 特性発動 (ダメージ置換系)
         if ability_obj and ability_obj.check_condition(current_player, types, word):

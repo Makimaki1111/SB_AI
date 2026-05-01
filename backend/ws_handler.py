@@ -5,12 +5,12 @@ import time
 from typing import Optional
 
 try:
-    from battle import Battle_info
-    from double_battle import DoubleBattle_info
+    from battle import SingleBattle
+    from double_battle import DoubleBattle
     from constants import STOCK_LIVES
 except ImportError:
-    from backend.battle import Battle_info
-    from backend.double_battle import DoubleBattle_info
+    from backend.battle import SingleBattle
+    from backend.double_battle import DoubleBattle
     from backend.constants import STOCK_LIVES
 
 logger = logging.getLogger(__name__)
@@ -126,7 +126,7 @@ class WebSocketHandler:
             p1_profile = self.room_manager.user_profiles.get(p1_data["player_id"])
             p2_profile = self.room_manager.user_profiles.get(p2_data["player_id"])
 
-            bi = Battle_info(p1_data["player_id"], p2_data["player_id"], sb_info=self.room_manager.sb_info, p1_profile=p1_profile, p2_profile=p2_profile, p1_max_lives=max_lives, p2_max_lives=max_lives)
+            bi = SingleBattle(p1_data["player_id"], p2_data["player_id"], sb_info=self.room_manager.sb_info, p1_profile=p1_profile, p2_profile=p2_profile, p1_max_lives=max_lives, p2_max_lives=max_lives)
             bi.init_character()
             self.room_manager.battle_rooms[bi.room_id] = bi
             
@@ -160,7 +160,7 @@ class WebSocketHandler:
             
             p2_data = {"socket": websocket, "player_id": player_id}
             
-            bi = DoubleBattle_info("1v1_double", [p1_data["player_id"]], [p2_data["player_id"]], sb_info=self.room_manager.sb_info, profiles=self.room_manager.user_profiles)
+            bi = DoubleBattle("1v1_double", [p1_data["player_id"]], [p2_data["player_id"]], sb_info=self.room_manager.sb_info, profiles=self.room_manager.user_profiles)
             bi.init_character()
             self.room_manager.double_battle_rooms[bi.room_id] = bi
             
@@ -209,7 +209,7 @@ class WebSocketHandler:
         # CPUの場合はプロファイルを適当に作るか、Noneにする
         p2_profile = {"name": "CPU", "ability": "random"} if p2_id.startswith("cpu") else None
         
-        bi = Battle_info(player_id, p2_id, sb_info=self.room_manager.sb_info, p1_profile=p1_profile, p2_profile=p2_profile, p1_max_lives=max_lives, p2_max_lives=max_lives, is_cpu=p2_id.startswith("cpu"))
+        bi = SingleBattle(player_id, p2_id, sb_info=self.room_manager.sb_info, p1_profile=p1_profile, p2_profile=p2_profile, p1_max_lives=max_lives, p2_max_lives=max_lives, is_cpu=p2_id.startswith("cpu"))
         bi.init_character()
         self.room_manager.battle_rooms[bi.room_id] = bi
         
@@ -224,7 +224,7 @@ class WebSocketHandler:
             await websocket.send_text(json.dumps({"type": "error", "message": "プレイヤーIDが不明です。再接続してください。"}))
             return
         # ダブルCPU戦の開始
-        bi = DoubleBattle_info(
+        bi = DoubleBattle(
             "1v1_double", 
             [player_id], 
             ["cpu_a", "cpu_b"], 
@@ -271,7 +271,7 @@ class WebSocketHandler:
                     bi.init_character()
                     self.room_manager.double_battle_rooms[bi.room_id] = bi
                 else:
-                    bi = Battle_info(
+                    bi = SingleBattle(
                         p1_data["player_id"], p2_data["player_id"], 
                         sb_info=self.room_manager.sb_info, room_id=room_id, 
                         p1_profile=p1_profile, p2_profile=p2_profile, 
