@@ -379,20 +379,12 @@ class WebSocketHandler:
             return
 
         # CPU戦の処理
-        if room.is_cpu:
-            # CPUのターンかどうか判定
-            is_cpu_turn = False
-            if not is_double:
-                is_cpu_turn = not room.player1_turn
-            else:
-                is_cpu_turn = room.get_current_actor().owner_id.startswith("cpu_")
-
-            if is_cpu_turn:
-                await asyncio.sleep(1)
-                cpu_res = room.execute_cpu_turn()
-                await self.connection_manager.broadcast_battle_state(room_id, cpu_res, is_double=is_double, room_manager=self.room_manager)
-                if room.is_finished:
-                    return
+        if room.is_cpu_turn:
+            await asyncio.sleep(1)
+            cpu_res = room.execute_cpu_turn()
+            await self.connection_manager.broadcast_battle_state(room_id, cpu_res, is_double=is_double, room_manager=self.room_manager)
+            if room.is_finished:
+                return
 
         # タイマー開始
         await self._start_turn_timer(room_id, is_double)

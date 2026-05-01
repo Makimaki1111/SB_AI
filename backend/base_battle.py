@@ -1,9 +1,11 @@
 try:
     from SB_info import SB_info
     from constants import *
+    from player import Player
 except ImportError:
     from backend.SB_info import SB_info
     from backend.constants import *
+    from backend.player import Player
 
 import random
 import uuid
@@ -23,6 +25,7 @@ class BaseBattle:
         self.character = ""
         self.players = [] # サブクラスでPlayerオブジェクトを格納する
         self.START_CHARACTERS = "あいうえおかきくけこさしすせそたちつてとなにねのはひふへほまみむめやゆよらりるれろわ"
+        self.winner_team = None # None: 進行中, 0: チーム1勝利, 1: チーム2勝利
 
     def katakana_to_hiragana(self, text: str) -> str:
         """カタカナをひらがなに変換する"""
@@ -79,8 +82,7 @@ class BaseBattle:
     def _process_end_of_turn_effects(self, attacker, defender):
         """ターン終了時の継続効果（毒、やどりぎなど）を処理する"""
         # 勝敗判定はサブクラスに任せるか、プロパティを参照する
-        if hasattr(self, "player1_win") and getattr(self, "player1_win") is not None: return
-        if hasattr(self, "team1_win") and getattr(self, "team1_win") is not None: return
+        if self.is_finished: return
 
         # 毒ダメージ処理
         for p in self.players:
@@ -126,6 +128,88 @@ class BaseBattle:
                 })
             else:
                 attacker.leech_turns = 0
+
+    def handle_disconnection(self, player_id: str, message: str = "あいてが通信を切断しました。"):
+        """プレイヤーの切断を処理する"""
+        if self.is_finished: return None
+        for p in self.players:
+            if p.owner_id == player_id and not p.is_defeated:
+                p.hp = 0
+                self.events.append({"type": "message", "message": f"{p.name} は逃げ出した！"})
+        self.events.append({"type": "error", "message": message})
+        self._check_win_condition()
+        ret = self._make_response()
+        self.events = []
+        return ret
+
+    def timeout(self):
+        """現在の行動プレイヤーのタイムアウト処理（即敗北）"""
+        if self.is_finished: return self._make_response()
+        current_actor = self.get_current_actor()
+        if not current_actor: return self._make_response()
+
+        current_actor.hp = 0
+        self.events.append({"type": "damage", "message": f"時間切れ！{current_actor.name}は力尽きた…", "target": self.get_player_label(current_actor), "damage": 0})
+        
+        # 即座に相手チームの勝利にする
+        team_idx = self._get_team_index(current_actor)
+        if team_idx != -1:
+            self.winner_team = 1 - team_idx
+            
+        ret = self._make_response()
+        self.events = []
+        return ret
+
+    def _get_serializable_abilities(self):
+        """特性一覧のシリアライズ（全バトル共通）"""
+        return {k: v.get_display_data() for k, v in self.abilities.items()}
+
+    def get_current_actor(self) -> Player:
+        """現在の行動順のプレイヤーを返す（サブクラスで実装）"""
+        raise NotImplementedError
+
+    def _check_win_condition(self) -> bool:
+        """勝敗判定を行い、winner_teamを更新する（サブクラスで実装）"""
+        raise NotImplementedError
+
+    def _handle_knockout(self, player: Player):
+        """プレイヤーが倒れた時の処理（サブクラスで実装）"""
+        raise NotImplementedError
+
+    def handle_disconnection(self, player_id: str, message: str = "あいてが通信を切断しました。"):
+        if self.is_finished: return None
+        
+        disconnected_team_idx = -1
+        for p in self.players:
+            if p.owner_id == player_id:
+                p.hp = 0
+                self.events.append({"type": "message", "message": f"{p.name} は逃げ出した！"})
+                if disconnected_team_idx == -1:
+                    disconnected_team_idx = self._get_team_index(p)
+        
+        if disconnected_team_idx != -1:
+            self.winner_team = 1 - disconnected_team_idx
+            
+        self.events.append({"type": "error", "message": message})
+        ret = self._make_response()
+        self.events = []
+        return ret
+
+    def _get_team_index(self, player: Player) -> int:
+        """プレイヤーが属するチームインデックス(0 or 1)を返す。見つからない場合は-1"""
+        if hasattr(self, "player1") and player.id == self.player1.id: return 0
+        if hasattr(self, "player2") and player.id == self.player2.id: return 1
+        if hasattr(self, "team1") and player in self.team1: return 0
+        if hasattr(self, "team2") and player in self.team2: return 1
+        return -1
+
+    def _get_serializable_abilities(self):
+        """現在のターンがCPUかどうか"""
+        raise NotImplementedError
+
+    def _make_response(self) -> dict:
+        """レスポンスを生成する（サブクラスで実装）"""
+        raise NotImplementedError
 
     def include_check(self, word: str, current_actor=None):
         """入力中の単語のタイプチェックと相性予測"""

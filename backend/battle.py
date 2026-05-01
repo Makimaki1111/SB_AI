@@ -37,7 +37,6 @@ class SingleBattle(BaseBattle):
         self.player2_lives = p2_max_lives
         
         self.player1_turn = (random.random() < 0.5)
-        self.player1_win = None
         self.is_cpu = is_cpu
         self.abilities = get_default_abilities()
         self.init_character()
@@ -52,23 +51,27 @@ class SingleBattle(BaseBattle):
         """SingleBattleではally/foeを返す"""
         return "ally" if player.id == self.player1.id else "foe"
 
+    def get_current_actor(self) -> Player:
+        return self.player1 if self.player1_turn else self.player2
+
+    @property
+    def is_cpu_turn(self) -> bool:
+        return self.is_cpu and not self.player1_turn
+
     @property
     def is_finished(self) -> bool:
-        return self.player1_win is not None
+        return self.winner_team is not None
 
     def init_character(self):
         self.character = random.choice(self.START_CHARACTERS)
 
-    def _get_serializable_abilities(self):
-        serializable_abilities = {}
-        for ability_id, ability_obj in self.abilities.items():
-            serializable_abilities[ability_id] = ability_obj.get_display_data()
-        serializable_abilities["secret"] = {
-            "name": "ひみつ",
-            "description": "相手もきみのとくせいを知らないぞ",
-            "icon_type": "ノーマル"
-        }
-        return serializable_abilities
+    def _check_win_condition(self) -> bool:
+        if self.player1_lives <= 0 or (self.player1.hp <= 0 and self.player1_lives == 0):
+            self.winner_team = 1 # プレイヤー2勝利
+        elif self.player2_lives <= 0 or (self.player2.hp <= 0 and self.player2_lives == 0):
+            self.winner_team = 0 # プレイヤー1勝利
+        return self.is_finished
+
 
     def make_init_response(self, player_id: str) -> dict:
         is_p1 = (player_id == self.player1.id)
@@ -111,15 +114,15 @@ class SingleBattle(BaseBattle):
         if defeated_player.id == self.player1.id:
             self.player1_lives -= 1
             lives_left = self.player1_lives
-            if lives_left <= 0: self.player1_win = False
+            if lives_left <= 0: self.winner_team = 1
             else: defeated_player.hp = MAX_HP
         else:
             self.player2_lives -= 1
             lives_left = self.player2_lives
-            if lives_left <= 0: self.player1_win = True
+            if lives_left <= 0: self.winner_team = 0
             else: defeated_player.hp = MAX_HP
             
-        if self.player1_win is None:
+        if self.winner_team is None:
             defeated_player.attack_rank = 0
             defeated_player.defense_rank = 0
             defeated_player.types = [""]
@@ -132,12 +135,12 @@ class SingleBattle(BaseBattle):
                 "message": f"{defeated_player.name}は復帰した！（のこり{lives_left}）",
                 "lives": lives_left,
                 "hp": MAX_HP,
-                "target": defeated_player.id
+                "target": self.get_player_label(defeated_player)
             })
 
     def try_attack(self, player_id: str, word: str):
         self.word = word
-        if self.player1_win is not None: return self._make_response()
+        if self.is_finished: return self._make_response()
         
         current_player = self.player1 if self.player1_turn else self.player2
         target_player = self.player2 if self.player1_turn else self.player1
@@ -167,14 +170,13 @@ class SingleBattle(BaseBattle):
         self.execute_attack_flow(current_player, target_player, word, types, ability_obj, is_single=True)
 
         self._process_end_of_turn_effects(current_player, target_player)
-        self.record_used_word(word, player_id)
-        self.character = self.sb_info.get_next_initial(word)
+        self._check_win_condition()
         
+        if not self.is_finished:
+            self.player1_turn = not self.player1_turn
+            
         ret = self._make_response()
-        self.player1_turn = not self.player1_turn
-        self.turn += 1
-        self.events = []
-        self.word = ""
+        self.word, self.events = "", []
         return ret
 
     def _make_response(self):
@@ -190,7 +192,7 @@ class SingleBattle(BaseBattle):
                 "ally_lives": self.player1_lives,
                 "ally_ability": self.player1.ability,
                 "ally_ability_change_count": self.player1.ability_change_count,
-                "ally_win": self.player1_win,
+                "ally_win": self.winner_team == 0 if self.winner_team is not None else None,
                 "character": self.character,
                 "events": self.events[:],
                 "foe_HP": self.player2.hp,
@@ -223,7 +225,7 @@ class SingleBattle(BaseBattle):
         for f in fields:
             new_state[f"ally_{f}"], new_state[f"foe_{f}"] = s[f"foe_{f}"], s[f"ally_{f}"]
         new_state["is_my_turn"] = not s["is_my_turn"]
-        new_state["ally_win"] = not s["ally_win"] if s["ally_win"] is not None else None
+        new_state["ally_win"] = (self.winner_team == 1) if self.winner_team is not None else None
         new_events = []
         for e in s["events"]:
             ne = e.copy()
@@ -255,7 +257,8 @@ class SingleBattle(BaseBattle):
     def execute_cpu_turn(self):
         cpu_word = self.get_cpu_word()
         if cpu_word: return self.try_attack(self.player2.id, cpu_word)
-        self.player1_win = True
+        self.player2.hp = 0
+        self._check_win_condition()
         return self._make_response()
 
     def get_cpu_word(self):
@@ -264,21 +267,3 @@ class SingleBattle(BaseBattle):
             if not self._is_used(word): return word
         return ""
 
-    def handle_disconnection(self, player_id: str, message: str = "あいてが通信を切断しました。"):
-        if self.player1_win is not None: return None
-        if player_id == self.player1.id:
-            self.player1_win = False
-            self.player1.hp = 0
-        else:
-            self.player1_win = True
-            self.player2.hp = 0
-        return self._make_response()
-
-    def timeout(self):
-        if self.player1_turn:
-            self.player1.hp = 0
-            self.player1_win = False
-        else:
-            self.player2.hp = 0
-            self.player1_win = True
-        return self._make_response()

@@ -47,8 +47,6 @@ class DoubleBattle(BaseBattle):
         self.team2 = [self.p2a, self.p2b]
         self.players = self.team1 + self.team2 # BaseBattle 用
 
-        self.team1_win = None
-        
         # 行動順
         self.turn_order = [self.p1a, self.p2a, self.p1b, self.p2b]
         if random.random() < 0.5:
@@ -60,7 +58,11 @@ class DoubleBattle(BaseBattle):
 
     @property
     def is_finished(self) -> bool:
-        return self.team1_win is not None
+        return self.winner_team is not None
+
+    @property
+    def is_cpu_turn(self) -> bool:
+        return self.is_cpu and self.get_current_actor().owner_id.startswith("cpu_")
 
     def init_character(self):
         self.character = random.choice(self.START_CHARACTERS)
@@ -100,9 +102,9 @@ class DoubleBattle(BaseBattle):
     def _check_win_condition(self):
         t1_dead = all(p.is_defeated for p in self.team1)
         t2_dead = all(p.is_defeated for p in self.team2)
-        if t1_dead: self.team1_win = False
-        elif t2_dead: self.team1_win = True
-        return self.team1_win is not None
+        if t1_dead: self.winner_team = 1
+        elif t2_dead: self.winner_team = 0
+        return self.is_finished
 
     def _patch_ability_events(self, current_actor, target_actor):
         """特性イベントのフォーマットをダブルバトル用に調整"""
@@ -121,7 +123,7 @@ class DoubleBattle(BaseBattle):
                     }
 
     def try_attack(self, player_id: str, word: str, target_char_id: str = None):
-        if self.team1_win is not None: return self._make_response()
+        if self.is_finished: return self._make_response()
         
         current_actor = self.get_current_actor()
         if player_id != current_actor.owner_id:
@@ -171,7 +173,7 @@ class DoubleBattle(BaseBattle):
         if cpu_word:
             valid_targets = [p.id for p in self.team1 if not p.is_defeated]
             if not valid_targets:
-                self.team1_win = False
+                self.winner_team = 1
                 return self._make_response()
             return self.try_attack(actor.owner_id, cpu_word, target_char_id=random.choice(valid_targets))
         else:
@@ -188,20 +190,6 @@ class DoubleBattle(BaseBattle):
 
     def _is_used(self, word: str) -> bool:
         return word in self.used
-
-    def timeout(self):
-        if self.team1_win is not None: return self._make_response()
-        current_actor = self.get_current_actor()
-        timed_out_team = self.team1 if current_actor in self.team1 else self.team2
-        for p in timed_out_team:
-            if not p.is_defeated:
-                dmg = p.hp
-                p.take_damage(dmg)
-                self.events.append({"type": "damage", "message": f"時間切れ！{p.name}は倒れた！", "target": p.id, "damage": dmg})
-        self._check_win_condition()
-        ret = self._make_response()
-        self.events = []
-        return ret
 
     def change_ability(self, player_id: str, char_id: str, new_ability_id: str):
         char = getattr(self, char_id, None)
@@ -228,8 +216,6 @@ class DoubleBattle(BaseBattle):
         res["all_abilities"] = self._get_serializable_abilities()
         return self.get_personalized_response(res, player_id)
 
-    def _get_serializable_abilities(self):
-        return {k: {"name": v.name, "description": v.description, "icon_type": v.icon_type} for k, v in self.abilities.items()}
 
     def _make_response(self):
         current_actor = self.get_current_actor()
@@ -245,7 +231,7 @@ class DoubleBattle(BaseBattle):
             "character": self.character,
             "word": self.word,
             "events": self.events,
-            "team1_win": self.team1_win,
+            "team1_win": self.winner_team == 0 if self.winner_team is not None else None,
             "characters": {
                 "p1a": self._serialize_player(self.p1a),
                 "p1b": self._serialize_player(self.p1b),
@@ -285,14 +271,3 @@ class DoubleBattle(BaseBattle):
             new_res["events"] = masked_events
         return new_res
 
-    def handle_disconnection(self, player_id: str, message: str = "あいてが通信を切断しました。"):
-        if self.team1_win is not None: return None
-        for p in self.team1 + self.team2:
-            if p.owner_id == player_id and not p.is_defeated:
-                p.hp = 0
-                self.events.append({"type": "message", "message": f"{p.name} は逃げ出した！"})
-        self.events.append({"type": "error", "message": message})
-        self._check_win_condition()
-        ret = self._make_response()
-        self.events = []
-        return ret

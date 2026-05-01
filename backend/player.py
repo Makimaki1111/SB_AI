@@ -7,6 +7,7 @@ class Player:
     """シングルバトル用のプレイヤークラス"""
     def __init__(self, id: str, name: str):
         self.id = id
+        self.owner_id = id
         self.name = name
         self.hp = MAX_HP
         self.attack_rank = 0
