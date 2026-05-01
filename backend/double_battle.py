@@ -157,9 +157,6 @@ class DoubleBattle_info(BaseBattle):
         ability_obj = self.abilities.get(current_actor.ability)
 
         # BaseBattleの共通フローに委譲
-        # ダブルバトル向けの特性処理のため一時的にplayer1/2を設定
-        self.player1, self.player2 = current_actor, target_actor
-        
         self.execute_attack_flow(current_actor, target_actor, word, types, ability_obj, is_single=False)
 
         self._process_end_of_turn_effects(current_actor, target_actor)

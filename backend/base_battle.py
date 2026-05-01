@@ -254,6 +254,10 @@ class BaseBattle:
         Returns:
             bool: 攻撃が完了したかどうか（Falseの場合は中断など）
         """
+        # 特性などから参照できるように現在の状態を保存
+        self.current_actor = current_player
+        self.current_target = target_player
+
         # いしょくどうげん互換処理
         if ability_obj and getattr(ability_obj, "name", "") == "いしょくどうげん" and "食べ物" in types:
             if "食べ物" in types: types.remove("食べ物")
@@ -284,8 +288,6 @@ class BaseBattle:
                 self.events.append({
                     "type": "cure", 
                     "message": "体力が回復した", 
-                    "ally_cure": cure_amount if is_single and getattr(self, "player1_turn", False) else 0, 
-                    "foe_cure": 0 if is_single and getattr(self, "player1_turn", False) else cure_amount,
                     "amount": cure_amount,
                     "target": current_player.id
                 })
@@ -299,13 +301,11 @@ class BaseBattle:
                     current_player.poison_turns = 0
                     current_player.poisoner_id = None
                     # JSON構造の統一に向けてplayer/target両方を付与
-                    self.events.append({"type": "cure_poison", "message": "毒が治った！", "player": "ally" if is_single and getattr(self, "player1_turn", False) else "foe", "target": current_player.id})
+                    self.events.append({"type": "cure_poison", "message": "毒が治った！", "target": current_player.id})
                 
                 self.events.append({
                     "type": "cure", 
                     "message": "体力が回復した", 
-                    "ally_cure": MEDICAL_RECOVERY_AMOUNT if is_single and getattr(self, "player1_turn", False) else 0, 
-                    "foe_cure": 0 if is_single and getattr(self, "player1_turn", False) else MEDICAL_RECOVERY_AMOUNT,
                     "amount": MEDICAL_RECOVERY_AMOUNT,
                     "target": current_player.id
                 })
@@ -323,8 +323,6 @@ class BaseBattle:
             event = {
                 "type": "damage", 
                 "message": msg, 
-                "ally_damage": 0 if is_single and getattr(self, "player1_turn", False) else damage, 
-                "foe_damage": damage if is_single and getattr(self, "player1_turn", False) else 0,
                 "damage": damage,
                 "attacker": current_player.id,
                 "target": target_player.id
@@ -356,7 +354,6 @@ class BaseBattle:
             self.events.append({
                 "type": "stat_down", 
                 "message": "攻撃が下がった！", 
-                "player": "ally" if is_single and getattr(self, "player1_turn", False) else "foe", 
                 "stat_type": "attack", 
                 "new_rank": current_player.attack_rank,
                 "target": current_player.id

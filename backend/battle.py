@@ -124,12 +124,9 @@ class TypeStatBoostAbility(Ability):
             "type": "stat_up",
             "message": f"{stat_name}が上がった！(現在{battle.sb_info.rank_to_power(new_rank)}倍)",
             "stat_type": self.stat_type,
-            "new_rank": new_rank
+            "new_rank": new_rank,
+            "target": player.id
         }
-        if hasattr(battle, "player1"):
-            event["player"] = "ally" if player.id == battle.player1.id else "foe"
-        else:
-            event["target"] = player.id
         battle.events.append(event)
 
 class MukimukiAbility(Ability):
@@ -149,19 +146,18 @@ class LeechSeedAbility(Ability):
 
     def apply_damage_replacement_effect(self, player: Player, battle: 'BaseBattle'):
         player.leech_turns = LEECH_SEED_TURNS
-        # ターゲットの特定
-        if hasattr(battle, "player1"):
-            opponent = battle.player2 if player.id == battle.player1.id else battle.player1
+        # ターゲットの特定 (base_battle で保存された current_target を使用)
+        opponent = battle.current_target
+        if opponent:
             player.leech_target_id = opponent.id
             event = {
                 "type": "ability_trigger",
                 "message": "相手に種を植え付けた！",
-                "player": "ally" if player.id == battle.player1.id else "foe"
+                "poison_target": opponent.id, # 毒と同じ扱いでUI表示するため
+                "attacker": player.id,
+                "target": opponent.id
             }
             battle.events.append(event)
-        else:
-            # ダブルバトルの場合は要件に応じて実装
-            pass
 
 class LongWordBonusAbility(Ability):
     def __init__(self):
@@ -190,18 +186,9 @@ class RevolutionAbility(Ability):
 
         event = {
             "type": "ability_trigger",
-            "message": "全ての能力変化がひっくり返った！"
+            "message": "全ての能力変化がひっくり返った！",
+            "new_ranks": new_ranks
         }
-        if hasattr(battle, "player1"):
-            event["player"] = "ally" if player.id == battle.player1.id else "foe"
-            event["new_ranks"] = {
-                "ally_atk": battle.player1.attack_rank,
-                "ally_def": battle.player1.defense_rank,
-                "foe_atk": battle.player2.attack_rank,
-                "foe_def": battle.player2.defense_rank
-            }
-        else:
-            event["new_ranks"] = new_ranks
         battle.events.append(event)
 
 class TyphoonIkkaAbility(Ability):
@@ -221,13 +208,9 @@ class TyphoonIkkaAbility(Ability):
 
         event = {
             "type": "ability_trigger",
-            "message": "すべての能力変化が元に戻った！"
+            "message": "すべての能力変化が元に戻った！",
+            "new_ranks": new_ranks
         }
-        if hasattr(battle, "player1"):
-            event["player"] = "ally" if player.id == battle.player1.id else "foe"
-            event["new_ranks"] = {"ally_atk": 0, "ally_def": 0, "foe_atk": 0, "foe_def": 0}
-        else:
-            event["new_ranks"] = new_ranks
         battle.events.append(event)
 
 class IkasuiAbility(Ability):
@@ -463,10 +446,10 @@ class Battle_info(BaseBattle):
             defeated_player.leech_target_id = None
             self.events.append({
                 "type": "revive",
-                "player": "ally" if defeated_player.id == self.player1.id else "foe",
                 "message": f"{defeated_player.name}は復帰した！（のこり{lives_left}）",
                 "lives": lives_left,
-                "hp": MAX_HP
+                "hp": MAX_HP,
+                "target": defeated_player.id
             })
 
     def try_attack(self, player_id: str, word: str):
