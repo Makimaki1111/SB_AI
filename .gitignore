@@ -3,3 +3,5 @@
 venv
 *.db
 react-frontend
+/tmp
+/backend/tests

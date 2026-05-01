@@ -1,54 +1,38 @@
 try:
     from SB_info import SB_info
     from base_battle import BaseBattle
+    from constants import *
 except ImportError:
     from backend.SB_info import SB_info
     from backend.base_battle import BaseBattle
+    from backend.constants import *
 
 from collections import defaultdict
 from pydantic import BaseModel
 import random
 import uuid
-battle_rooms = {}
-MAX_HP = 60
-FOOD_LIMIT = 6
-MEDICAL_LIMIT = 5
-MAX_RANK = 6
-MIN_RANK = -6
-ABILITY_CHANGE_COUNT_INIT = 2
-LEECH_SEED_TURNS = 4
-LEECH_SEED_DRAIN_AMOUNT = 5
-FOOD_RECOVERY_AMOUNT = 20
-MEDICAL_RECOVERY_AMOUNT = 40
-VIOLENCE_ATTACK_DROP = 2
-CRITICAL_HIT_CHANCE = 0.125
-CRITICAL_HIT_MULTIPLIER = 1.5
-BASE_DAMAGE_NORMAL = 7.0
-BASE_DAMAGE_TYPED = 10.0
-DAMAGE_RANDOM_MIN = 0.85
-DAMAGE_RANDOM_MAX = 0.99
-STOCK_LIVES = 3
+
+# 定数は constants.py に集約されています
 
 class TextInput(BaseModel):
-    text:str
+    text: str
 
 class Player:
-    """プレイヤーの状態を管理するクラス"""
-    def __init__(self, player_id: str, name: str):
-        self.id = player_id
+    def __init__(self, id: str, name: str):
+        self.id = id
         self.name = name
         self.hp = MAX_HP
         self.attack_rank = 0
         self.defense_rank = 0
         self.types = [""]
-        self.ability = "" # 特性
-        self.ability_change_count = ABILITY_CHANGE_COUNT_INIT # 特性変更の残り回数
-        self.leech_turns = 0 # やどりぎの残りターン数
-        self.leech_target_id = None # やどりぎを植えられた相手のID
-        self.food_count = 0 # 食べ物使用回数
-        self.medical_count = 0 # 医療使用回数
-        self.poison_turns = 0 # 毒の経過ターン数 (0なら毒ではない)
-        self.poisoner_id = None # 毒を付与したプレイヤーのID
+        self.ability = "random"
+        self.ability_change_count = ABILITY_CHANGE_COUNT_INIT
+        self.food_count = 0
+        self.medical_count = 0
+        self.poison_turns = 0
+        self.poisoner_id = None
+        self.leech_turns = 0
+        self.leech_target_id = None
 
     def take_damage(self, damage: int):
         self.hp = max(0, self.hp - damage)
@@ -57,581 +41,359 @@ class Player:
         self.hp = min(MAX_HP, self.hp + amount)
 
     @property
+    def is_active(self) -> bool:
+        return self.hp > 0
+
+    @property
     def is_defeated(self) -> bool:
         return self.hp <= 0
 
 class Ability:
-    """特性の基底クラス"""
     def __init__(self, name: str, description: str, icon_type: str):
         self.name = name
         self.description = description
         self.icon_type = icon_type
         self.replaces_damage = False
 
-    def get_display_data(self) -> dict:
-        """フロントエンドに渡すためのデータを返す"""
-        return {
-            "name": self.name,
-            "description": self.description,
-            "icon_type": self.icon_type,
-        }
-
     def check_condition(self, player: Player, types: list, word: str) -> bool:
-        """特性の発動条件をチェックする"""
         return False
 
-    def apply_effect(self, player: Player, battle: 'Battle_info') -> bool:
-        """攻撃後の効果を適用し、発動したかどうかを返す"""
-        return False
-
-    def apply_after_effect(self, player: Player, battle: 'Battle_info'):
-        """ダメージ計算・表示後に適用する効果"""
+    def apply_after_effect(self, player: Player, battle: 'BaseBattle'):
         pass
 
-    def apply_damage_replacement_effect(self, player: Player, battle: 'Battle_info'):
-        """ダメージ計算を代替する効果を適用する"""
+    def apply_damage_replacement_effect(self, player: Player, battle: 'BaseBattle'):
         pass
-
-    def get_violence_penalty_reduction(self) -> int:
-        """暴力タイプ使用時の攻撃力ダウン軽減量を返す"""
-        return 0
 
     def get_damage_multiplier(self, types: list, word: str) -> float:
-        """ダメージ計算時の倍率補正を返す"""
         return 1.0
 
     def get_food_recovery_amount(self, default_amount: int) -> int:
-        """食べ物タイプ使用時の回復量を返す"""
         return default_amount
 
     def should_ignore_food_limit(self) -> bool:
-        """食べ物の回数制限を無視するかどうか"""
         return False
 
-    def on_receive_damage(self, player: Player, attacker: Player, damage: int, effect: float, battle: 'Battle_info'):
-        """ダメージを受けた時の効果"""
+    def get_violence_penalty_reduction(self) -> int:
+        return 0
+
+    def on_receive_damage(self, player: Player, attacker: Player, damage: int, effect: float, battle: 'BaseBattle'):
         pass
 
     def should_force_critical(self, types: list) -> bool:
-        """急所に必ず当たるかどうか"""
         return False
 
-class StatBoostAbility(Ability):
-    """特定の条件で攻撃ランクを上昇させる特性の共通クラス"""
-    def __init__(self, name: str, description: str, icon_type: str, condition_types: list = [], min_word_len: int = 0):
-        super().__init__(name, description, icon_type)
-        self._condition_types = condition_types
-        self._min_word_len = min_word_len
-
-    def check_condition(self, player: Player, types: list, word: str) -> bool:
-        if self._condition_types and any(t in types for t in self._condition_types):
-            return True
-        if self._min_word_len > 0 and len(word) >= self._min_word_len:
-            return True
-        return False
-
-    def apply_effect(self, player: Player, battle: 'Battle_info') -> bool:
-        player.attack_rank = min(MAX_RANK, player.attack_rank + 2)
-        event = {
-            "type": "stat_up",
-            "message": f"攻撃がぐーんと上がった！",
-            "player": "ally" if player.id == battle.player1.id else "foe",
-            "stat_type": "attack",
-            "new_rank": player.attack_rank
+    def get_display_data(self) -> dict:
+        return {
+            "name": self.name,
+            "description": self.description,
+            "icon_type": self.icon_type
         }
-        battle.events.append(event)
-        return True
-
-class TypeStatBoostAbility(Ability):
-    """特定タイプでダメージの代わりにステータスランクを上げる汎用特性"""
-    def __init__(self, name: str, description: str, icon_type: str, target_type: str, boost_amount: int, stat_type: str = "attack"):
-        super().__init__(name, description, icon_type)
-        self.replaces_damage = True
-        self.target_type = target_type
-        self.boost_amount = boost_amount
-        self.stat_type = stat_type
-
-    def check_condition(self, player: Player, types: list, word: str) -> bool:
-        return self.target_type in types
-
-    def apply_damage_replacement_effect(self, player: Player, battle: 'Battle_info'):
-        if self.stat_type == "defense":
-            player.defense_rank = min(MAX_RANK, player.defense_rank + self.boost_amount)
-            current_rank = player.defense_rank
-            stat_name = "防御"
-        else:
-            player.attack_rank = min(MAX_RANK, player.attack_rank + self.boost_amount)
-            current_rank = player.attack_rank
-            stat_name = "攻撃"
-        
-        # 上昇量に応じてメッセージを微調整
-        msg_adverb = "ぐーんと" if self.boost_amount >= 2 else ""
-        
-        event = {
-            "type": "stat_up",
-            "message": f"{stat_name}が{msg_adverb}上がった！(現在{battle.sb_info.rank_to_power(current_rank)}倍)",
-            "player": "ally" if player.id == battle.player1.id else "foe",
-            "stat_type": self.stat_type,
-            "new_rank": current_rank
-        }
-        battle.events.append(event)
 
 class TypePowerUpAbility(Ability):
-    """特定タイプの単語でダメージ倍率を上げる"""
     def __init__(self, name: str, description: str, icon_type: str, target_type: str, damage_multiplier: float = 1.5):
         super().__init__(name, description, icon_type)
         self.target_type = target_type
         self.damage_multiplier = damage_multiplier
-
-    def check_condition(self, player: Player, types: list, word: str) -> bool:
-        return self.target_type in types
-
-    def apply_effect(self, player: Player, battle: 'Battle_info') -> bool:
-        return False
 
     def get_damage_multiplier(self, types: list, word: str) -> float:
         if self.target_type in types:
             return self.damage_multiplier
         return 1.0
 
+class TypeStatBoostAbility(Ability):
+    def __init__(self, name: str, description: str, icon_type: str, target_type: str, boost_amount: int, stat_type: str = "attack"):
+        super().__init__(name, description, icon_type)
+        self.target_type = target_type
+        self.boost_amount = boost_amount
+        self.stat_type = stat_type
+        self.replaces_damage = True
+
+    def check_condition(self, player: Player, types: list, word: str) -> bool:
+        return self.target_type in types
+
+    def apply_damage_replacement_effect(self, player: Player, battle: 'BaseBattle'):
+        if self.stat_type == "attack":
+            player.attack_rank = min(MAX_RANK, player.attack_rank + self.boost_amount)
+            new_rank = player.attack_rank
+        else:
+            player.defense_rank = min(MAX_RANK, player.defense_rank + self.boost_amount)
+            new_rank = player.defense_rank
+
+        stat_name = "攻撃" if self.stat_type == "attack" else "防御"
+        event = {
+            "type": "stat_up",
+            "message": f"{stat_name}が上がった！(現在{battle.sb_info.rank_to_power(new_rank)}倍)",
+            "stat_type": self.stat_type,
+            "new_rank": new_rank
+        }
+        if hasattr(battle, "player1"):
+            event["player"] = "ally" if player.id == battle.player1.id else "foe"
+        else:
+            event["target"] = player.id
+        battle.events.append(event)
+
 class MukimukiAbility(Ability):
-    """特性「むきむき」"""
     def __init__(self):
-        super().__init__(
-            name="むきむき",
-            description="暴力タイプの言葉を使っても攻撃力がすこししか下がらなくなる",
-            icon_type="暴力"
-        )
+        super().__init__(name="むきむき", description="暴力タイプの言葉を使っても攻撃がすこししか下がらなくなる", icon_type="暴力")
 
     def get_violence_penalty_reduction(self) -> int:
         return 1
 
 class LeechSeedAbility(Ability):
-    """特性「やどりぎ」"""
     def __init__(self):
-        super().__init__(
-            name="やどりぎ",
-            description="植物タイプの言葉を使うとダメージを与える代わりに相手にやどりぎを植え付ける",
-            icon_type="植物"
-        )
+        super().__init__(name="やどりぎ", description="植物タイプの言葉を使うとダメージを与える代わりに相手にやどりぎを植え付ける", icon_type="植物")
         self.replaces_damage = True
 
     def check_condition(self, player: Player, types: list, word: str) -> bool:
-        # 既にやどりぎ中の場合は発動しない（通常攻撃になる）
         return "植物" in types and player.leech_turns == 0
 
-    def apply_damage_replacement_effect(self, player: Player, battle: 'Battle_info'):
+    def apply_damage_replacement_effect(self, player: Player, battle: 'BaseBattle'):
         player.leech_turns = LEECH_SEED_TURNS
-        if hasattr(battle, 'player2') and battle.player2:
-            player.leech_target_id = battle.player2.id
-        battle.events.append({"type": "ability_trigger", "message": f"相手に種を植え付けた！", "player": "ally" if player.id == battle.player1.id else "foe"})
+        # ターゲットの特定
+        if hasattr(battle, "player1"):
+            opponent = battle.player2 if player.id == battle.player1.id else battle.player1
+            player.leech_target_id = opponent.id
+            event = {
+                "type": "ability_trigger",
+                "message": "相手に種を植え付けた！",
+                "player": "ally" if player.id == battle.player1.id else "foe"
+            }
+            battle.events.append(event)
+        else:
+            # ダブルバトルの場合は要件に応じて実装
+            pass
 
 class LongWordBonusAbility(Ability):
-    """特性「おれのことばのもじすうがおおいほどいりょくがおおきくなるけんについて」"""
     def __init__(self):
-        super().__init__(
-            name="おれのことばのもじすうがおおいほどいりょくがおおきくなるけんについて",
-            description="言葉の文字数が多いほど威力が大きくなる",
-            icon_type="物語"
-        )
+        super().__init__(name="おれのことばのもじすうがおおいほどあいてへのダメージがおおきくなるけんについて", description="言葉の文字数が多いほど威力が大きくなる", icon_type="物語")
 
     def get_damage_multiplier(self, types: list, word: str) -> float:
         length = len(word)
-        if length >= 7:
-            return 2.0
-        elif length == 6:
-            return 1.5
+        if length >= 7: return 2.0
+        elif length == 6: return 1.5
         return 1.0
 
 class RevolutionAbility(Ability):
-    """特性「かくめい」"""
     def __init__(self):
-        super().__init__(
-            name="かくめい",
-            description="遊びタイプの言葉を使うたびに自分と相手の能力変化をひっくり返す",
-            icon_type="遊び"
-        )
+        super().__init__(name="かくめい", description="遊びタイプの言葉を使うたびに自分と相手の能力変化をひっくり返す", icon_type="遊び")
 
     def check_condition(self, player: Player, types: list, word: str) -> bool:
         return "遊び" in types
 
-    def apply_after_effect(self, player: Player, battle: 'Battle_info'):
-        if hasattr(battle, 'team1'):
-            # ダブルバトル: すべての生存キャラクターを対象にする
-            new_ranks = {}
-            for p in battle.team1 + battle.team2:
-                if not p.is_defeated:
-                    p.attack_rank *= -1
-                    p.defense_rank *= -1
-                    new_ranks[p.id] = {"attack_rank": p.attack_rank, "defense_rank": p.defense_rank}
-            
-            event = {
-                "type": "ability_trigger",
-                "message": "全ての能力変化がひっくり返った！",
-                "new_ranks": new_ranks
+    def apply_after_effect(self, player: Player, battle: 'BaseBattle'):
+        new_ranks = {}
+        for p in battle.players:
+            if not p.is_defeated:
+                p.attack_rank *= -1
+                p.defense_rank *= -1
+                new_ranks[p.id] = {"attack_rank": p.attack_rank, "defense_rank": p.defense_rank}
+
+        event = {
+            "type": "ability_trigger",
+            "message": "全ての能力変化がひっくり返った！"
+        }
+        if hasattr(battle, "player1"):
+            event["player"] = "ally" if player.id == battle.player1.id else "foe"
+            event["new_ranks"] = {
+                "ally_atk": battle.player1.attack_rank,
+                "ally_def": battle.player1.defense_rank,
+                "foe_atk": battle.player2.attack_rank,
+                "foe_def": battle.player2.defense_rank
             }
         else:
-            # シングルバトル
-            opponent = battle.player2 if player.id == battle.player1.id else battle.player1
-            player.attack_rank *= -1
-            player.defense_rank *= -1
-            opponent.attack_rank *= -1
-            opponent.defense_rank *= -1
-
-            event = {
-                "type": "ability_trigger",
-                "message": "全ての能力変化がひっくり返った！",
-                "player": "ally" if player.id == battle.player1.id else "foe",
-                "new_ranks": {
-                    "ally_atk": battle.player1.attack_rank,
-                    "ally_def": battle.player1.defense_rank,
-                    "foe_atk": battle.player2.attack_rank,
-                    "foe_def": battle.player2.defense_rank
-                }
-            }
+            event["new_ranks"] = new_ranks
         battle.events.append(event)
 
 class TyphoonIkkaAbility(Ability):
-    """特性「たいふういっか」"""
     def __init__(self):
-        super().__init__(
-            name="たいふういっか",
-            description="天気タイプの言葉を使うと自分と相手の能力変化をもとに戻す",
-            icon_type="天気"
-        )
+        super().__init__(name="たいふういっか", description="天気タイプの言葉を使うと自分と相手の能力変化をもとに戻す", icon_type="天気")
 
     def check_condition(self, player: Player, types: list, word: str) -> bool:
         return "天気" in types
 
-    def apply_after_effect(self, player: Player, battle: 'Battle_info'):
-        if hasattr(battle, 'team1'):
-            # ダブルバトル: すべての生存キャラクターを対象にする
-            new_ranks = {}
-            for p in battle.team1 + battle.team2:
-                if not p.is_defeated:
-                    p.attack_rank = 0
-                    p.defense_rank = 0
-                    new_ranks[p.id] = {"attack_rank": 0, "defense_rank": 0}
+    def apply_after_effect(self, player: Player, battle: 'BaseBattle'):
+        new_ranks = {}
+        for p in battle.players:
+            if not p.is_defeated:
+                p.attack_rank = 0
+                p.defense_rank = 0
+                new_ranks[p.id] = {"attack_rank": 0, "defense_rank": 0}
 
-            event = {
-                "type": "ability_trigger",
-                "message": "すべての能力変化が元に戻った！",
-                "new_ranks": new_ranks
-            }
+        event = {
+            "type": "ability_trigger",
+            "message": "すべての能力変化が元に戻った！"
+        }
+        if hasattr(battle, "player1"):
+            event["player"] = "ally" if player.id == battle.player1.id else "foe"
+            event["new_ranks"] = {"ally_atk": 0, "ally_def": 0, "foe_atk": 0, "foe_def": 0}
         else:
-            # シングルバトル
-            opponent = battle.player2 if player.id == battle.player1.id else battle.player1
-            player.attack_rank = 0
-            player.defense_rank = 0
-            opponent.attack_rank = 0
-            opponent.defense_rank = 0
-
-            event = {
-                "type": "ability_trigger",
-                "message": "すべての能力変化が元に戻った！",
-                "player": "ally" if player.id == battle.player1.id else "foe",
-                "new_ranks": {
-                    "ally_atk": 0,
-                    "ally_def": 0,
-                    "foe_atk": 0,
-                    "foe_def": 0
-                }
-            }
+            event["new_ranks"] = new_ranks
         battle.events.append(event)
 
 class IkasuiAbility(Ability):
-    """特性「いかすい」"""
     def __init__(self):
-        super().__init__(
-            name="いかすい",
-            description="いくらでも食べることができる",
-            icon_type="食べ物"
-        )
+        super().__init__(name="いかすい", description="いくらでも食べることができる", icon_type="食べ物")
 
     def should_ignore_food_limit(self) -> bool:
         return True
 
 class IshokudogenAbility(Ability):
-    """特性「いしょくどうげん」"""
     def __init__(self):
-        super().__init__(
-            name="いしょくどうげん",
-            description="食べ物タイプの言葉で医療タイプと同じ効果が得られる",
-            icon_type="医療"
-        )
+        super().__init__(name="いしょくどうげん", description="食べ物タイプの言葉で医療タイプと同じ効果が得られる", icon_type="医療")
 
     def get_food_recovery_amount(self, default_amount: int) -> int:
         return MEDICAL_RECOVERY_AMOUNT
 
 class HokenAbility(Ability):
-    """特性「ほけん」"""
     def __init__(self):
-        super().__init__(
-            name="ほけん",
-            description="効果抜群のダメージを受けると攻撃力がぐぐーんと上がる",
-            icon_type="社会"
-        )
+        super().__init__(name="ほけん", description="効果抜群のダメージを受けると攻撃力がぐぐーんと上がる", icon_type="社会")
 
-    def on_receive_damage(self, player: Player, attacker: Player, damage: int, effect: float, battle: 'Battle_info'):
+    def on_receive_damage(self, player: Player, attacker: Player, damage: int, effect: float, battle: 'BaseBattle'):
         if effect > 1:
             player.attack_rank = min(MAX_RANK, player.attack_rank + 3)
             event = {
                 "type": "stat_up",
                 "message": f"弱点を突かれて攻撃がぐぐーんと上がった！(現在{battle.sb_info.rank_to_power(player.attack_rank)}倍)",
-                "player": "ally" if player.id == battle.player1.id else "foe",
                 "stat_type": "attack",
                 "new_rank": player.attack_rank
             }
+            if hasattr(battle, "player1"):
+                event["player"] = "ally" if player.id == battle.player1.id else "foe"
+            else:
+                event["target"] = player.id
             battle.events.append(event)
 
 class KarateAbility(Ability):
-    """特性「からて」"""
     def __init__(self):
-        super().__init__(
-            name="からて",
-            description="人体タイプの言葉を使った時に必ず相手の急所に当たる",
-            icon_type="人体"
-        )
+        super().__init__(name="からて", description="人体タイプの言葉を使った時に必ず相手の急所に当たる", icon_type="人体")
 
     def should_force_critical(self, types: list) -> bool:
         return "人体" in types
 
 class ZuboshiAbility(Ability):
-    """特性「ずぼし」"""
     def __init__(self):
-        super().__init__(
-            name="ずぼし",
-            description="暴言タイプの言葉を使った時に必ず相手の急所に当たる",
-            icon_type="暴言"
-        )
+        super().__init__(name="ずぼし", description="暴言タイプの言葉を使った時に必ず相手の急所に当たる", icon_type="暴言")
 
     def should_force_critical(self, types: list) -> bool:
         return "暴言" in types
 
 class DebuggerAbility(Ability):
-    """特性「デバッガー」"""
     def __init__(self):
-        super().__init__(
-            name="デバッガー",
-            description="まだタイプのついていない言葉の威力が上がる",
-            icon_type="ノーマル"
-        )
+        super().__init__(name="デバッガー", description="まだタイプのついていない言葉の威力が上がる", icon_type="ノーマル")
 
     def get_damage_multiplier(self, types: list, word: str) -> float:
-        if not types:
-            return 1.9
+        if not types: return 1.9
         return 1.0
 
 class DokubariAbility(Ability):
-    """特性「どくばり」"""
     def __init__(self):
-        super().__init__(
-            name="どくばり",
-            description="虫タイプの言葉を使うと相手を毒状態にできる",
-            icon_type="虫"
-        )
+        super().__init__(name="どくばり", description="虫タイプの言葉を使うと相手を毒状態にできる", icon_type="虫")
 
     def check_condition(self, player: Player, types: list, word: str) -> bool:
         return "虫" in types
 
-    def apply_after_effect(self, player: Player, battle: 'Battle_info'):
-        opponent = battle.player2 if player.id == battle.player1.id else battle.player1
-        if opponent.poison_turns == 0:
-            opponent.poison_turns = 1
-            opponent.poisoner_id = player.id
-            battle.events.append({
-                "type": "ability_trigger",
-                "message": f"毒を受けた！",
-                "player": "ally" if player.id == battle.player1.id else "foe",
-                "poison_target": "ally" if opponent.id == battle.player1.id else "foe"
-            })
+    def apply_after_effect(self, player: Player, battle: 'BaseBattle'):
+        if hasattr(battle, "player1"):
+            opponent = battle.player2 if player.id == battle.player1.id else battle.player1
+            if opponent.poison_turns == 0:
+                opponent.poison_turns = 1
+                opponent.poisoner_id = player.id
+                event = {
+                    "type": "ability_trigger",
+                    "message": "毒を受けた！",
+                    "player": "ally" if player.id == battle.player1.id else "foe",
+                    "poison_target": "ally" if opponent.id == battle.player1.id else "foe"
+                }
+                battle.events.append(event)
 
 class IkakuAbility(Ability):
-    """特性「いかく」"""
     def __init__(self):
-        super().__init__(
-            name="いかく",
-            description="動物タイプの言葉を使うとダメージを与える代わりに相手の攻撃力を下げる",
-            icon_type="動物"
-        )
+        super().__init__(name="いかく", description="動物タイプの言葉を使うとダメージを与える代わりに相手の攻撃力を下げる", icon_type="動物")
         self.replaces_damage = True
 
     def check_condition(self, player: Player, types: list, word: str) -> bool:
         return "動物" in types
 
-    def apply_damage_replacement_effect(self, player: Player, battle: 'Battle_info'):
-        opponent = battle.player2 if player.id == battle.player1.id else battle.player1
-        opponent.attack_rank = max(MIN_RANK, opponent.attack_rank - 1)
-        
-        event = {
-            "type": "stat_down",
-            "message": f"{self.name}で攻撃が下がった！(現在{battle.sb_info.rank_to_power(opponent.attack_rank)}倍)",
-            "player": "foe" if player.id == battle.player1.id else "ally",
-            "stat_type": "attack",
-            "new_rank": opponent.attack_rank
-        }
-        battle.events.append(event)
+    def apply_damage_replacement_effect(self, player: Player, battle: 'BaseBattle'):
+        if hasattr(battle, "player1"):
+            opponent = battle.player2 if player.id == battle.player1.id else battle.player1
+            opponent.attack_rank = max(MIN_RANK, opponent.attack_rank - 1)
+            event = {
+                "type": "stat_down",
+                "message": f"いかくで攻撃が下がった！(現在{battle.sb_info.rank_to_power(opponent.attack_rank)}倍)",
+                "player": "foe" if player.id == battle.player1.id else "ally",
+                "stat_type": "attack",
+                "new_rank": opponent.attack_rank
+            }
+            battle.events.append(event)
 
 def get_default_abilities() -> dict:
-    """デフォルトの特性セットを返す"""
     return {
         "ikaku": IkakuAbility(),
         "debugger": DebuggerAbility(),
-        "passion": TypeStatBoostAbility(
-            name="じょうねつ",
-            description="感情タイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
-            icon_type="感情",
-            target_type="感情",
-            boost_amount=1
-        ),
-        "kyojin": TypePowerUpAbility(
-            name="きょじん",
-            description="人物タイプの言葉の威力が上がる",
-            icon_type="人物",
-            target_type="人物",
-            damage_multiplier=1.5
-        ),
+        "passion": TypeStatBoostAbility("じょうねつ", "感情タイプの言葉を使うとダメージを与える代わりに攻撃力が上がる", "感情", "感情", 1),
+        "kyojin": TypePowerUpAbility("きょじん", "人物タイプの言葉の威力が上がる", "人物", "人物", 1.5),
         "ikasui": IkasuiAbility(),
-        "rocknroll": TypeStatBoostAbility(
-            name="ロックンロール",
-            description="芸術タイプの言葉を使うとダメージを与える代わりに攻撃力がぐーんと上がる",
-            icon_type="芸術",
-            target_type="芸術",
-            boost_amount=2
-        ),
+        "rocknroll": TypeStatBoostAbility("ロックンロール", "芸術タイプの言葉を使うとダメージを与える代わりに攻撃力がぐーんと上がる", "芸術", "芸術", 2),
         "mukimuki": MukimukiAbility(),
-        "training": TypeStatBoostAbility(
-            name="トレーニング",
-            description="スポーツタイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
-            icon_type="スポーツ",
-            target_type="スポーツ",
-            boost_amount=1
-        ),
+        "training": TypeStatBoostAbility("トレーニング", "スポーツタイプの言葉を使うとダメージを与える代わりに攻撃力が上がる", "スポーツ", "スポーツ", 1),
         "hoken": HokenAbility(),
-        "procrastination": TypeStatBoostAbility(
-            name="さきのばし",
-            description="時間タイプの言葉を使うとダメージを与える代わりに防御力が上がる",
-            icon_type="時間",
-            target_type="時間",
-            boost_amount=1,
-            stat_type="defense"
-        ),
+        "procrastination": TypeStatBoostAbility("さきのばし", "時間タイプの言葉を使うとダメージを与える代わりに防御力が上がる", "時間", "時間", 1, stat_type="defense"),
         "karate": KarateAbility(),
         "zuboshi": ZuboshiAbility(),
         "ishokudogen": IshokudogenAbility(),
-        "kachikochi": TypeStatBoostAbility(
-            name="かちこち",
-            description="機械タイプの言葉を使うとダメージを与える代わりに防御力が上がる",
-            icon_type="機械",
-            target_type="機械",
-            boost_amount=1,
-            stat_type="defense"
-        ),
+        "kachikochi": TypeStatBoostAbility("かちこち", "機械タイプの言葉を使うとダメージを与える代わりに防御力が上がる", "機械", "機械", 1, stat_type="defense"),
         "dokubari": DokubariAbility(),
         "taifuikka": TyphoonIkkaAbility(),
         "yadorigi": LeechSeedAbility(),
-        "jikken": TypePowerUpAbility(
-            name="じっけん",
-            description="理科タイプの言葉の威力が上がる",
-            icon_type="理科",
-            target_type="理科",
-            damage_multiplier=1.5
-        ),
-        "global": TypePowerUpAbility(
-            name="グローバル",
-            description="地名タイプの言葉の威力が上がる",
-            icon_type="地名",
-            target_type="地名",
-            damage_multiplier=1.5
-        ),
-        "shinkoushin": TypePowerUpAbility(
-            name="しんこうしん",
-            description="宗教タイプの言葉の威力が上がる",
-            icon_type="宗教",
-            target_type="宗教",
-            damage_multiplier=1.5
-        ),
+        "jikken": TypePowerUpAbility("じっけん", "理科タイプの言葉の威力が上がる", "理科", "理科", 1.5),
+        "global": TypePowerUpAbility("グローバル", "地名タイプの言葉の威力が上がる", "地名", "地名", 1.5),
+        "shinkoushin": TypePowerUpAbility("しんこうしん", "宗教タイプの言葉の威力が上がる", "宗教", "宗教", 1.5),
         "revolution": RevolutionAbility(),
-        "calculation": TypeStatBoostAbility(
-            name="けいさん",
-            description="数学タイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
-            icon_type="数学",
-            target_type="数学",
-            boost_amount=1
-        ),
-        "layering": TypeStatBoostAbility(
-            name="かさねぎ",
-            description="服飾タイプの言葉を使うとダメージを与える代わりに防御力が上がる",
-            icon_type="服飾",
-            target_type="服飾",
-            boost_amount=1,
-            stat_type="defense"
-        ),
-        "arming": TypeStatBoostAbility(
-            name="ぶそう",
-            description="工作タイプの言葉を使うとダメージを与える代わりに攻撃力が上がる",
-            icon_type="工作",
-            target_type="工作",
-            boost_amount=1
-        ),
+        "calculation": TypeStatBoostAbility("けいさん", "数学タイプの言葉を使うとダメージを与える代わりに攻撃力が上がる", "数学", "数学", 1),
+        "layering": TypeStatBoostAbility("かさねぎ", "服飾タイプの言葉を使うとダメージを与える代わりに防御力が上がる", "服飾", "服飾", 1, stat_type="defense"),
+        "arming": TypeStatBoostAbility("ぶそう", "工作タイプの言葉を使うとダメージを与える代わりに攻撃力が上がる", "工作", "工作", 1),
         "long_word": LongWordBonusAbility()
     }
 
 def get_all_abilities_info() -> dict:
-    """全特性の表示用データを返す"""
     abilities = get_default_abilities()
-    data = {k: v.get_display_data() for k, v in abilities.items()}
-    return data
+    return {k: v.get_display_data() for k, v in abilities.items()}
 
 class Battle_info(BaseBattle):
-    """
-    ブラウザ対戦時のマッチ情報を保持するクラス
-    """
-    def __init__(self, player1_id, player2_id, sb_info: SB_info, room_id: str | None = None, p1_profile: dict = None, p2_profile: dict = None, p1_max_lives: int = 1, p2_max_lives: int = 1):
+    def __init__(self, player1_id: str, player2_id: str, sb_info: SB_info, room_id: str | None = None, p1_profile: dict = None, p2_profile: dict = None, p1_max_lives: int = 1, p2_max_lives: int = 1, is_cpu: bool = False):
         super().__init__(sb_info, room_id)
-        self.MAX_HP = MAX_HP
-        self.p1_max_lives = p1_max_lives
-        self.p2_max_lives = p2_max_lives
-        self.is_cpu = (player2_id == "cpu")
-
-        self.sb_info = sb_info
-
-        p1_name = p1_profile.get("name") if p1_profile and p1_profile.get("name") else "じぶん"
-        p2_name = p2_profile.get("name") if p2_profile and p2_profile.get("name") else "プレイヤー2"
-
+        p1_name = p1_profile.get("name", "じぶん") if p1_profile else "じぶん"
+        p2_name = p2_profile.get("name", "プレイヤー2") if p2_profile else "プレイヤー2"
+        
         self.player1 = Player(player1_id, p1_name)
         self.player2 = Player(player2_id, p2_name)
+        self.players = [self.player1, self.player2]
+        
+        self.p1_max_lives = p1_max_lives
+        self.p2_max_lives = p2_max_lives
         self.player1_lives = p1_max_lives
         self.player2_lives = p2_max_lives
-
-        # 特性関連
+        
+        self.player1_turn = (random.random() < 0.5)
+        self.player1_win = None
+        self.is_cpu = is_cpu
         self.abilities = get_default_abilities()
-        self.ability_ids = list(self.abilities.keys())
-
+        
+        # プロファイルから特性を反映
         if p1_profile and p1_profile.get("ability") in self.abilities:
             self.player1.ability = p1_profile["ability"]
-        else:
-            self.player1.ability = random.choice(self.ability_ids)
-
         if p2_profile and p2_profile.get("ability") in self.abilities:
             self.player2.ability = p2_profile["ability"]
-        else:
-            self.player2.ability = random.choice(self.ability_ids)
-
-        self.player1_win = None
-        self.player1_turn = random.random() < 0.5
-        self.init_character()
-        self.turn = 0
-        self.word = ""
 
     @property
     def is_finished(self) -> bool:
         return self.player1_win is not None
 
+    def init_character(self):
+        self.character = random.choice(self.START_CHARACTERS)
+
     def _get_serializable_abilities(self):
-        """
-        フロントエンドに渡すための、JSONシリアライズ可能な特性データの辞書を作成する。
-        """
         serializable_abilities = {}
         for ability_id, ability_obj in self.abilities.items():
             serializable_abilities[ability_id] = ability_obj.get_display_data()
@@ -642,515 +404,8 @@ class Battle_info(BaseBattle):
         }
         return serializable_abilities
 
-
-    def _handle_knockout(self, defeated: Player):
-        """HPが0になったプレイヤーの残機を処理する。"""
-        if defeated.id == self.player1.id:
-            self.player1_lives -= 1
-            lives_left = self.player1_lives
-            if lives_left <= 0:
-                self.player1_win = False
-                return
-        else:
-            self.player2_lives -= 1
-            lives_left = self.player2_lives
-            if lives_left <= 0:
-                self.player1_win = True
-                return
-
-        defeated.hp = self.MAX_HP
-        defeated.attack_rank = 0
-        defeated.defense_rank = 0
-        defeated.types = [""]
-        defeated.poison_turns = 0
-        defeated.poisoner_id = None
-        defeated.leech_turns = 0
-        defeated.leech_target_id = None
-        self.events.append({
-            "type": "revive",
-            "player": "ally" if defeated.id == self.player1.id else "foe",
-            "message": f"{defeated.name}は復帰した！（のこり{lives_left}）",
-            "lives": lives_left,
-            "hp": self.MAX_HP
-        })
-
-    def try_attack(self, player_id, word: str):
-        """player1に返す用のメッセージ
-
-        Args:
-            player_id (_type_): _description_
-            word (_type_): _description_
-
-        Returns:
-            _type_: _description_
-        """
-        # 基本バリデーション
-        word, error = self.validate_word(word)
-        if error:
-            return error
-
-        # プレイヤーとターンのチェック
-        if player_id != self.player1.id and player_id != self.player2.id:
-            return {"type" : "error", "message" : "このルームのプレイヤーではありません"}
-        elif (self.player1_turn ^ (player_id == self.player1.id)):
-            return {"type" : "error", "message" : "自分のターンではありません"}
-
-        self.word = word
-        types = self._type_check(word)
-        original_types = types[:] # 元のタイプを保持（防御相性用）
-
-        # --- 特性処理 ---
-        current_player = self.player1 if self.player1_turn else self.player2
-        ability_obj = self.abilities.get(current_player.ability)
-
-        # 「いしょくどうげん」の場合、食べ物を医療として扱う
-        if ability_obj and isinstance(ability_obj, IshokudogenAbility) and "食べ物" in types:
-            # 食べ物タイプを削除し、医療タイプを追加して処理を移譲する
-            types.remove("食べ物")
-            if "医療" not in types:
-                types.append("医療")
-
-        # ダメージ計算を代替する特性の処理
-        if ability_obj and ability_obj.replaces_damage and ability_obj.check_condition(current_player, types, word):
-            current_player.types = original_types[:] # フロントエンド表示用にタイプを更新
-            ability_obj.apply_damage_replacement_effect(current_player, self)
-            
-            # やどりぎ等のターン終了時効果処理
-            self._process_end_of_turn_effects(current_player, self.player2 if self.player1_turn else self.player1)
-
-            self.record_used_word(word, player_id)
-            ret = self._make_response()
-            self.word = "" # レスポンス生成後に単語をリセット
-            self.player1_turn = not self.player1_turn
-            self.turn += 1
-            return ret
-
-        original_attack_rank = current_player.attack_rank
-        ability_activated = False
-        if ability_obj and not ability_obj.replaces_damage and ability_obj.check_condition(current_player, types, word):
-            ability_activated = ability_obj.apply_effect(current_player, self)
-
-        if(player_id == self.player1.id):
-            # タイプ特定
-            self.player1.types = original_types[:]
-            at1 = types[0] if len(types) >= 1 else ""
-            at2 = types[1] if len(types) >= 2 else ""
-            dt1 = self.player2.types[0] if len(self.player2.types) >= 1 else ""
-            dt2 = self.player2.types[1] if len(self.player2.types) >= 2 else ""
-            
-            if("食べ物" in types):
-                limit = FOOD_LIMIT
-                ignore_limit = ability_obj and ability_obj.should_ignore_food_limit()
-                
-                if ignore_limit or self.player1.food_count < limit:
-                    self.player1.food_count += 1
-                    cure_amount = FOOD_RECOVERY_AMOUNT
-                    if ability_obj:
-                        cure_amount = ability_obj.get_food_recovery_amount(cure_amount)
-                    event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : cure_amount, "foe_cure" : 0}
-                    self.events.append(event)
-                    self.player1.heal(cure_amount)
-                else:
-                    self.events.append({"type" : "message", "message" : "もう食べられない！"})
-            elif("医療" in types):
-                limit = MEDICAL_LIMIT
-                if self.player1.medical_count < limit:
-                    self.player1.medical_count += 1
-                    
-                    # 毒解除
-                    if self.player1.poison_turns > 0:
-                        self.player1.poison_turns = 0
-                        self.player1.poisoner_id = None
-                        self.events.append({"type" : "cure_poison", "message" : "毒が治った！", "player": "ally"})
-
-                    event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : MEDICAL_RECOVERY_AMOUNT, "foe_cure" : 0}
-                    self.events.append(event)
-                    self.player1.heal(MEDICAL_RECOVERY_AMOUNT)
-                else:
-                    self.events.append({"type" : "message", "message" : "もう回復できない！"})
-            else:
-                # ダメージ計算
-                effect, damage, is_critical = self._calc_damage(at1,at2,dt1,dt2, ability_obj)
-
-                # 特性によるダメージ補正
-                if ability_obj:
-                    damage = int(damage * ability_obj.get_damage_multiplier(types, word))
-
-                # 急所補正
-                if is_critical:
-                    damage = int(damage * CRITICAL_HIT_MULTIPLIER)
-
-                msg = "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…" if effect > 0 else "効果はないようだ…"
-
-                event = {
-                    "type" : "damage",
-                    "message" : msg,
-                    "ally_damage" : 0,
-                    "foe_damage" : damage
-                }
-                self.events.append(event)
-
-                if is_critical:
-                    self.events.append({
-                        "type": "critical",
-                        "message": "急所に当たった！"
-                    })
-
-                # 防御側の特性発動チェック
-                defender_ability = self.abilities.get(self.player2.ability)
-                if defender_ability:
-                    defender_ability.on_receive_damage(self.player2, self.player1, damage, effect, self)
-
-                # 暴力で攻撃ダウン
-                if("暴力" in types):
-                    drop = VIOLENCE_ATTACK_DROP
-                    if ability_obj:
-                        drop -= ability_obj.get_violence_penalty_reduction()
-                    self.player1.attack_rank = max(MIN_RANK, self.player1.attack_rank - drop)
-                    msg_adverb = "がくっと" if drop >= 2 else ""
-                    event = {
-                        "type" : "stat_down",
-                        "message" : f"攻撃が{msg_adverb}下がった！(現在{self.sb_info.rank_to_power(self.player1.attack_rank)}倍)",
-                        "player" : "ally",
-                        "stat_type": "attack",
-                        "new_rank" : self.player1.attack_rank
-                    }
-                    self.events.append(event)
-
-                self.player2.take_damage(damage)
-                if(self.player2.is_defeated): self._handle_knockout(self.player2)
-
-        else:
-            # タイプ特定
-            self.player2.types = original_types[:]
-            at1 = types[0] if len(types) >= 1 else ""
-            at2 = types[1] if len(types) >= 2 else ""
-            dt1 = self.player1.types[0] if len(self.player1.types) >= 1 else ""
-            dt2 = self.player1.types[1] if len(self.player1.types) >= 2 else ""
-
-            if("食べ物" in types):
-                limit = FOOD_LIMIT
-                ignore_limit = ability_obj and ability_obj.should_ignore_food_limit()
-                
-                if ignore_limit or self.player2.food_count < limit:
-                    self.player2.food_count += 1
-                    cure_amount = FOOD_RECOVERY_AMOUNT
-                    if ability_obj:
-                        cure_amount = ability_obj.get_food_recovery_amount(cure_amount)
-                    event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : 0, "foe_cure" : cure_amount}
-                    self.events.append(event)
-                    self.player2.heal(cure_amount)
-                else:
-                    self.events.append({"type" : "message", "message" : "もう食べられない！"})
-
-            elif("医療" in types):
-                limit = MEDICAL_LIMIT
-                if self.player2.medical_count < limit:
-                    self.player2.medical_count += 1
-
-                    # 毒解除
-                    if self.player2.poison_turns > 0:
-                        self.player2.poison_turns = 0
-                        self.player2.poisoner_id = None
-                        self.events.append({"type" : "cure_poison", "message" : "毒が治った！", "player": "foe"})
-
-                    event = {"type" : "cure", "message" : "体力が回復した", "ally_cure" : 0, "foe_cure" : MEDICAL_RECOVERY_AMOUNT}
-                    self.events.append(event)
-                    self.player2.heal(MEDICAL_RECOVERY_AMOUNT)
-                else:
-                    self.events.append({"type" : "message", "message" : "もう回復できない！"})
-            else:
-                # ダメージ計算
-                effect, damage, is_critical = self._calc_damage(at1,at2,dt1,dt2, ability_obj)
-
-                # 特性によるダメージ補正
-                if ability_obj:
-                    damage = int(damage * ability_obj.get_damage_multiplier(types, word))
-
-                # 急所補正
-                if is_critical:
-                    damage = int(damage * CRITICAL_HIT_MULTIPLIER)
-
-                msg = "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…" if effect > 0 else "効果はないようだ…"
-
-                event = {
-                    "type" : "damage",
-                    "message" : msg,
-                    "ally_damage" : damage,
-                    "foe_damage" : 0
-                }
-                self.events.append(event)
-
-                if is_critical:
-                    self.events.append({
-                        "type": "critical",
-                        "message": "急所に当たった！"
-                    })
-
-                # 防御側の特性発動チェック
-                defender_ability = self.abilities.get(self.player1.ability)
-                if defender_ability:
-                    defender_ability.on_receive_damage(self.player1, self.player2, damage, effect, self)
-
-                # 暴力で攻撃ダウン
-                if("暴力" in types):
-                    drop = VIOLENCE_ATTACK_DROP
-                    if ability_obj:
-                        drop -= ability_obj.get_violence_penalty_reduction()
-                    self.player2.attack_rank = max(MIN_RANK, self.player2.attack_rank - drop)
-                    msg_adverb = "がくっと" if drop >= 2 else ""
-                    event = {
-                        "type" : "stat_down",
-                        "message" : f"攻撃が{msg_adverb}下がった！(現在{self.sb_info.rank_to_power(self.player2.attack_rank)}倍)",
-                        "player" : "foe",
-                        "stat_type": "attack",
-                        "new_rank" : self.player2.attack_rank
-                    }
-                    self.events.append(event)
-
-                self.player1.take_damage(damage)
-                if(self.player1.is_defeated): self._handle_knockout(self.player1)
-
-        # --- 特性効果を元に戻す ---
-        if ability_activated:
-            current_player.attack_rank = original_attack_rank
-
-        # ダメージ計算後の特性効果適用
-        if ability_obj and not ability_obj.replaces_damage and ability_obj.check_condition(current_player, types, word):
-            ability_obj.apply_after_effect(current_player, self)
-
-        # AI用推理情報の保存
-        self.last_turn_word_length = len(word)
-        # HP回復の要素しかなかった場合はダメージ0とする
-        if ability_obj and ability_obj.replaces_damage:
-            self.last_turn_damage = 0
-        elif "食べ物" in types or "医療" in types:
-            self.last_turn_damage = 0
-        else:
-             self.last_turn_damage = damage
-
-        # やどりぎ等のターン終了時効果処理
-        self._process_end_of_turn_effects(current_player, self.player2 if self.player1_turn else self.player1)
-
-        self.record_used_word(word, player_id)
-        ret = self._make_response()
-        self.word = "" # レスポンス生成後に単語をリセット
-
-        # ターン交代
-        self.player1_turn = not self.player1_turn
-        self.turn += 1
-        return ret
-
-    def _process_end_of_turn_effects(self, attacker: Player, defender: Player):
-        """ターン終了時の継続効果（やどりぎなど）を処理する"""
-        # 勝敗が決まっている場合は処理しない
-        if self.player1_win is not None:
-            return
-
-        # 毒ダメージ処理 (毒を付与したキャラクターの行動終了時に発動)
-        for p in [self.player1, self.player2]:
-            if not p.is_defeated and p.poison_turns > 0 and getattr(p, 'poisoner_id', None) == attacker.id:
-                damage = int(self.MAX_HP * (p.poison_turns / 16))
-                p.take_damage(damage)
-                self.events.append({
-                    "type": "damage",
-                    "message": "毒のダメージを受けた！",
-                    "ally_damage": damage if p.id == self.player1.id else 0,
-                    "foe_damage": 0 if p.id == self.player1.id else damage
-                })
-                p.poison_turns += 1
-                
-                if p.is_defeated:
-                    self._handle_knockout(p)
-
-        # やどりぎ処理
-        if attacker.leech_turns > 0:
-            actual_defender = defender
-            if hasattr(attacker, 'leech_target_id') and attacker.leech_target_id:
-                if attacker.leech_target_id == self.player1.id:
-                    actual_defender = self.player1
-                elif attacker.leech_target_id == self.player2.id:
-                    actual_defender = self.player2
-
-            if not actual_defender.is_defeated:
-                drain_amount = LEECH_SEED_DRAIN_AMOUNT
-                actual_drain = min(actual_defender.hp, drain_amount)
-                
-                actual_defender.take_damage(actual_drain)
-                attacker.heal(actual_drain)
-                attacker.leech_turns -= 1
-
-                # 吸収イベント（ダメージと回復を同時に行う）
-                self.events.append({
-                    "type": "drain",
-                    "message": "やどりぎで体力を奪った！",
-                    "ally_damage": 0 if attacker.id == self.player1.id else actual_drain,
-                    "foe_damage": actual_drain if attacker.id == self.player1.id else 0,
-                    "ally_cure": actual_drain if attacker.id == self.player1.id else 0,
-                    "foe_cure": 0 if attacker.id == self.player1.id else actual_drain
-                })
-
-                if actual_defender.is_defeated:
-                    self._handle_knockout(actual_defender)
-            else:
-                attacker.leech_turns = 0
-
-    def include_check(self,_input:str):
-        # 入力をひらがなに正規化
-        _input = self.katakana_to_hiragana(_input)
-
-        ret = {
-            "type" : "pre_check",
-            "name" : _input,
-            "include" : False, 
-            "used" : False,
-            "type1" : "",
-            "type2" : "",
-        }
-
-        if not _input:
-            return ret
-
-        is_included = self.sb_info.include_in_all_words(_input)
-        ret["include"] = is_included
-
-        if is_included:
-            # タイプを取得
-            types = [t for t in self.sb_info.get_types(_input) if t]
-            ret["type1"] = types[0] if len(types) >= 1 else ""
-            ret["type2"] = types[1] if len(types) >= 2 else ""
-            
-            # --- 相性予測 ---
-            defender = self.player2 if self.player1_turn else self.player1
-            at1 = types[0] if len(types) >= 1 else ""
-            at2 = types[1] if len(types) >= 2 else ""
-            dt1 = defender.types[0] if len(defender.types) >= 1 else ""
-            dt2 = defender.types[1] if len(defender.types) >= 2 else ""
-            effect = self.sb_info.type_effect(at1, at2, dt1, dt2)
-            ret["prediction"] = "効果はばつぐんだ！" if effect > 1 else "ふつうのダメージだ" if effect == 1 else "効果はいまひとつのようだ…" if effect > 0 else "効果はないようだ…"
-
-        if _input in self.used:
-            ret["used"] = True
-
-        return ret
-
-    def _type_check(self,_input:str) -> list:
-        """
-            タイプを確認 & used更新 (AI無効化版)
-        Args:
-            _input (str): 単語
-
-        Returns:
-            タイプ (list)
-        """
-        # 辞書にあればそのタイプ、なければノーマル
-        if self.sb_info.include_in_typed_words(_input):
-            types = [t for t in self.sb_info.get_types(_input) if t]
-        else:
-            types = [""]
-            
-        self.used[_input] = types
-
-        return types
-
-    def _calc_damage(self,at1:str, at2:str, dt1:str, dt2:str, attacker_ability: Ability = None) -> tuple:
-        """
-            ダメージを計算します
-        Args:
-            at1 (str): 攻撃タイプ1
-            at2 (str): 攻撃タイプ2
-            dt1 (str): 防御タイプ1
-            dt2 (str): 防御タイプ2
-
-        Returns:
-            tuple: (相性, ダメージ, 急所かどうか)
-        """
-        e = self.sb_info.type_effect(at1,at2,dt1,dt2)
-        
-        # 急所判定 (暴言か人体タイプが含まれる場合、12.5%の確率)
-        is_critical = False
-        if attacker_ability and attacker_ability.should_force_critical([at1, at2]):
-            is_critical = True
-        elif "暴言" in [at1, at2] or "人体" in [at1, at2]:
-            if random.random() < CRITICAL_HIT_CHANCE:
-                is_critical = True
-
-        # ランク補正の計算
-        if self.player1_turn:
-            atk_pow = self.sb_info.rank_to_power(self.player1.attack_rank)
-            def_pow = self.sb_info.rank_to_power(self.player2.defense_rank)
-        else:
-            atk_pow = self.sb_info.rank_to_power(self.player2.attack_rank)
-            def_pow = self.sb_info.rank_to_power(self.player1.defense_rank)
-        
-        rank_correction = atk_pow / def_pow
-        
-        if is_critical:
-            # 急所の場合、自分に不利な補正（< 1.0）を無視する
-            rank_correction = max(1.0, rank_correction)
-
-        damage = 0.0
-        if(at1 == at2 == ""):
-            # 攻撃がノータイプ
-            damage = BASE_DAMAGE_NORMAL * rank_correction
-        elif(dt1 == dt2 == ""):
-            # 防御がノータイプ
-            damage = BASE_DAMAGE_TYPED * e * rank_correction
-        else:
-            # 攻守タイプあり
-            damage = BASE_DAMAGE_TYPED * e * rank_correction
-            damage *= random.uniform(DAMAGE_RANDOM_MIN, DAMAGE_RANDOM_MAX)
-            
-        return e, int(damage), is_critical
-
-    def _make_response(self) -> dict:
-        """
-            frontend側に返す辞書を作成します
-        Returns:
-            dict: 返す情報
-        """
-        ret = {
-            "type": "accepted",
-            "state" : {
-                "ally_HP" : self.player1.hp,
-                "ally_A" : self.player1.attack_rank,
-                "ally_B" : self.player1.defense_rank,
-                "ally_type" : self.player1.types,
-                "ally_poison" : self.player1.poison_turns > 0,
-                "ally_lives" : self.player1_lives,
-                "ally_ability": self.player1.ability,
-                "ally_ability_change_count": self.player1.ability_change_count,
-                "ally_win" : self.player1_win,
-                "ally_is_attacker" : None,
-                "character" : self.character,
-                "events" : self.events[:],
-                "foe_HP" : self.player2.hp,
-                "foe_A" : self.player2.attack_rank,
-                "foe_B" : self.player2.defense_rank,
-                "foe_type" : self.player2.types,
-                "foe_poison" : self.player2.poison_turns > 0,
-                "foe_lives" : self.player2_lives,
-                "foe_ability": self.player2.ability,
-                "foe_ability_change_count": self.player2.ability_change_count,
-                "room_id" : self.room_id,
-                "is_cpu" : self.is_cpu,
-                "is_my_turn" : self.player1_turn,
-                "ally_max_lives" : self.p1_max_lives,
-                "foe_max_lives" : self.p2_max_lives,
-                "turn" : self.turn,
-                "word" : self.word
-            }
-        }
-
-        self.events = []
-        return ret
-
     def make_init_response(self, player_id: str) -> dict:
-        """
-        ゲーム開始時のレスポンスを作成する（視点対応）
-        """
         is_p1 = (player_id == self.player1.id)
-        
         ally = self.player1 if is_p1 else self.player2
         foe = self.player2 if is_p1 else self.player1
 
@@ -1168,7 +423,7 @@ class Battle_info(BaseBattle):
                 "foe_max_lives" : self.p2_max_lives if is_p1 else self.p1_max_lives
             },
             "ally" : {
-                "max_hp" : self.MAX_HP,
+                "max_hp" : MAX_HP,
                 "lives" : self.player1_lives if is_p1 else self.player2_lives,
                 "name" : ally.name,
                 "ability": ally.ability,
@@ -1176,227 +431,262 @@ class Battle_info(BaseBattle):
                 "is_poison": ally.poison_turns > 0
             },
             "foe" : {
-                "max_hp" : self.MAX_HP,
+                "max_hp" : MAX_HP,
                 "lives" : self.player2_lives if is_p1 else self.player1_lives,
                 "name" : foe.name,
                 "is_poison": foe.poison_turns > 0
             }
         }
 
-    @staticmethod
-    def flip_turn_response(response: dict) -> dict:
-        """
-        Player1視点のレスポンスをPlayer2視点に変換する
-        """
-        if response.get("type") != "accepted":
-            return response
+    def _is_used(self, word: str) -> bool:
+        return word in self.used
+
+    def _handle_knockout(self, defeated_player: Player):
+        if defeated_player.id == self.player1.id:
+            self.player1_lives -= 1
+            lives_left = self.player1_lives
+            if lives_left <= 0: self.player1_win = False
+            else: defeated_player.hp = MAX_HP
+        else:
+            self.player2_lives -= 1
+            lives_left = self.player2_lives
+            if lives_left <= 0: self.player1_win = True
+            else: defeated_player.hp = MAX_HP
+            
+        if self.player1_win is None:
+            defeated_player.attack_rank = 0
+            defeated_player.defense_rank = 0
+            defeated_player.types = [""]
+            defeated_player.poison_turns = 0
+            defeated_player.poisoner_id = None
+            defeated_player.leech_turns = 0
+            defeated_player.leech_target_id = None
+            self.events.append({
+                "type": "revive",
+                "player": "ally" if defeated_player.id == self.player1.id else "foe",
+                "message": f"{defeated_player.name}は復帰した！（のこり{lives_left}）",
+                "lives": lives_left,
+                "hp": MAX_HP
+            })
+
+    def try_attack(self, player_id: str, word: str):
+        if self.player1_win is not None: return self._make_response()
         
+        current_player = self.player1 if self.player1_turn else self.player2
+        target_player = self.player2 if self.player1_turn else self.player1
+        
+        if player_id != current_player.id:
+            return {"type": "error", "message": "あなたのターンではありません"}
+
+        word = self.katakana_to_hiragana(word)
+        if not word or word[0] != self.character:
+            return {"type": "error", "message": "開始文字がマッチしていません"}
+        
+        if self._is_used(word):
+            return {"type": "error", "message": "その単語は既に使用されています"}
+        
+        if not self.sb_info.include_in_all_words(word):
+            return {"type": "error", "message": "辞書にない単語です"}
+
+        # 「ん」チェック (devブランチのロジックに合わせる)
+        if self.sb_info.get_next_initial(word) == "ん":
+            return {"type": "error", "message": "「ん」で終わっています"}
+
+        types = [t for t in self.sb_info.get_types(word) if t]
+        original_types = types[:]
+        ability_obj = self.abilities.get(current_player.ability)
+        
+        # 特性発動チェック (ダメージ置換系)
+        if ability_obj and ability_obj.check_condition(current_player, types, word):
+            if ability_obj.replaces_damage:
+                current_player.types = original_types[:]
+                ability_obj.apply_damage_replacement_effect(current_player, self)
+                self._process_end_of_turn_effects(current_player, target_player)
+                self.record_used_word(word, player_id)
+                self.character = self.sb_info.get_next_initial(word)
+                ret = self._make_response()
+                self.player1_turn = not self.player1_turn
+                self.turn += 1
+                return ret
+        
+        # 通常攻撃
+        current_player.types = original_types[:]
+        at1 = types[0] if len(types) >= 1 else ""
+        at2 = types[1] if len(types) >= 2 else ""
+        dt1 = target_player.types[0] if len(target_player.types) >= 1 else ""
+        dt2 = target_player.types[1] if len(target_player.types) >= 2 else ""
+        
+        # いしょくどうげん処理 ( try_attack 内での特別扱い)
+        if ability_obj and isinstance(ability_obj, IshokudogenAbility) and "食べ物" in types:
+            types_for_dmg = [t for t in types if t != "食べ物"]
+            if "医療" not in types_for_dmg: types_for_dmg.append("医療")
+        else:
+            types_for_dmg = types
+
+        # 回復系処理
+        if "食べ物" in types:
+            limit = FOOD_LIMIT
+            ignore_limit = ability_obj and ability_obj.should_ignore_food_limit()
+            if ignore_limit or current_player.food_count < limit:
+                current_player.food_count += 1
+                cure_amount = FOOD_RECOVERY_AMOUNT
+                if ability_obj: cure_amount = ability_obj.get_food_recovery_amount(cure_amount)
+                self.events.append({"type": "cure", "message": "体力が回復した", "ally_cure": cure_amount if self.player1_turn else 0, "foe_cure": 0 if self.player1_turn else cure_amount})
+                current_player.heal(cure_amount)
+            else:
+                self.events.append({"type": "message", "message": "もう食べられない！"})
+        elif "医療" in types:
+            if current_player.medical_count < MEDICAL_LIMIT:
+                current_player.medical_count += 1
+                if current_player.poison_turns > 0:
+                    current_player.poison_turns = 0
+                    current_player.poisoner_id = None
+                    self.events.append({"type": "cure_poison", "message": "毒が治った！", "player": "ally" if self.player1_turn else "foe"})
+                self.events.append({"type": "cure", "message": "体力が回復した", "ally_cure": MEDICAL_RECOVERY_AMOUNT if self.player1_turn else 0, "foe_cure": 0 if self.player1_turn else MEDICAL_RECOVERY_AMOUNT})
+                current_player.heal(MEDICAL_RECOVERY_AMOUNT)
+            else:
+                self.events.append({"type": "message", "message": "もう回復できない！"})
+        else:
+            effect, damage, is_critical = self._calc_damage(at1, at2, dt1, dt2, ability_obj, current_player, target_player)
+            if ability_obj: damage = int(damage * ability_obj.get_damage_multiplier(types, word))
+            if is_critical: damage = int(damage * CRITICAL_HIT_MULTIPLIER)
+            
+            msg = self._get_effect_message(effect)
+            self.events.append({"type": "damage", "message": msg, "ally_damage": 0 if self.player1_turn else damage, "foe_damage": damage if self.player1_turn else 0})
+            if is_critical: self.events.append({"type": "critical", "message": "急所に当たった！"})
+            
+            # 防御側特性
+            defender_ability = self.abilities.get(target_player.ability)
+            if defender_ability:
+                try: defender_ability.on_receive_damage(target_player, current_player, damage, effect, self)
+                except Exception: pass
+
+            target_player.take_damage(damage)
+            if target_player.is_defeated: self._handle_knockout(target_player)
+
+        # 暴力ペナルティ
+        if "暴力" in types:
+            drop = VIOLENCE_ATTACK_DROP
+            if ability_obj: drop -= ability_obj.get_violence_penalty_reduction()
+            current_player.attack_rank = max(MIN_RANK, current_player.attack_rank - drop)
+            self.events.append({"type": "stat_down", "message": "攻撃力が下がった！", "player": "ally" if self.player1_turn else "foe", "stat_type": "attack", "new_rank": current_player.attack_rank})
+
+        # 事後特性
+        if ability_obj and not ability_obj.replaces_damage and ability_obj.check_condition(current_player, types, word):
+            try: ability_obj.apply_after_effect(current_player, self)
+            except Exception: pass
+            
+        self._process_end_of_turn_effects(current_player, target_player)
+        self.record_used_word(word, player_id)
+        self.character = self.sb_info.get_next_initial(word)
+        
+        ret = self._make_response()
+        self.player1_turn = not self.player1_turn
+        self.turn += 1
+        return ret
+
+    def _make_response(self):
+        return {
+            "type": "accepted",
+            "room_id": self.room_id,
+            "state": {
+                "ally_HP": self.player1.hp,
+                "ally_A": self.player1.attack_rank,
+                "ally_B": self.player1.defense_rank,
+                "ally_type": self.player1.types,
+                "ally_poison": self.player1.poison_turns > 0,
+                "ally_lives": self.player1_lives,
+                "ally_ability": self.player1.ability,
+                "ally_ability_change_count": self.player1.ability_change_count,
+                "ally_win": self.player1_win,
+                "character": self.character,
+                "events": self.events[:],
+                "foe_HP": self.player2.hp,
+                "foe_A": self.player2.attack_rank,
+                "foe_B": self.player2.defense_rank,
+                "foe_type": self.player2.types,
+                "foe_poison": self.player2.poison_turns > 0,
+                "foe_lives": self.player2_lives,
+                "foe_ability": self.player2.ability,
+                "foe_ability_change_count": self.player2.ability_change_count,
+                "is_cpu": self.is_cpu,
+                "is_my_turn": self.player1_turn,
+                "ally_max_lives": self.p1_max_lives,
+                "foe_max_lives": self.p2_max_lives,
+                "turn": self.turn,
+                "word": self.word
+            }
+        }
+
+    def get_personalized_response(self, base_res: dict, player_id: str) -> dict:
+        is_p1 = (player_id == self.player1.id)
+        if not is_p1: return self.flip_turn_response(base_res)
+        return base_res
+
+    def flip_turn_response(self, response: dict) -> dict:
+        if response.get("type") != "accepted": return response
         s = response["state"]
         new_state = s.copy()
-
-        # ステータスの入れ替え
-        new_state["ally_HP"] = s["foe_HP"]
-        new_state["ally_A"] = s["foe_A"]
-        new_state["ally_B"] = s["foe_B"]
-        new_state["ally_type"] = s["foe_type"]
-        new_state["ally_poison"] = s["foe_poison"]
-        new_state["ally_lives"] = s["foe_lives"]
-        new_state["ally_max_lives"] = s["foe_max_lives"]
-        new_state["ally_ability"] = s["foe_ability"]
-        new_state["ally_ability_change_count"] = s["foe_ability_change_count"]
-        
-        new_state["foe_HP"] = s["ally_HP"]
-        new_state["foe_A"] = s["ally_A"]
-        new_state["foe_B"] = s["ally_B"]
-        new_state["foe_type"] = s["ally_type"]
-        new_state["foe_poison"] = s["ally_poison"]
-        new_state["foe_lives"] = s["ally_lives"]
-        new_state["foe_max_lives"] = s["ally_max_lives"]
-        new_state["foe_ability"] = s["ally_ability"]
-        new_state["foe_ability_change_count"] = s["ally_ability_change_count"]
-
-        # ターンと勝敗の反転
+        fields = ["HP", "A", "B", "type", "poison", "lives", "ability", "ability_change_count", "max_lives"]
+        for f in fields:
+            new_state[f"ally_{f}"], new_state[f"foe_{f}"] = s[f"foe_{f}"], s[f"ally_{f}"]
         new_state["is_my_turn"] = not s["is_my_turn"]
         new_state["ally_win"] = not s["ally_win"] if s["ally_win"] is not None else None
-
-        # イベントの視点反転
         new_events = []
         for e in s["events"]:
             ne = e.copy()
-            if "ally_damage" in e: ne["ally_damage"] = e["foe_damage"]
-            if "foe_damage" in e: ne["foe_damage"] = e["ally_damage"]
-            if "ally_cure" in e: ne["ally_cure"] = e["foe_cure"]
-            if "foe_cure" in e: ne["foe_cure"] = e["ally_cure"]
+            if "ally_damage" in e: ne["ally_damage"], ne["foe_damage"] = e["foe_damage"], e["ally_damage"]
+            if "ally_cure" in e: ne["ally_cure"], ne["foe_cure"] = e["foe_cure"], e["ally_cure"]
             if "player" in e: ne["player"] = "foe" if e["player"] == "ally" else "ally"
             if "poison_target" in e: ne["poison_target"] = "foe" if e["poison_target"] == "ally" else "ally"
-            if "new_ranks" in e:
-                nr = e["new_ranks"].copy()
-                nr["ally_atk"] = e["new_ranks"]["foe_atk"]
-                nr["ally_def"] = e["new_ranks"]["foe_def"]
-                nr["foe_atk"] = e["new_ranks"]["ally_atk"]
-                nr["foe_def"] = e["new_ranks"]["ally_def"]
-                ne["new_ranks"] = nr
             new_events.append(ne)
         new_state["events"] = new_events
-
-        return {"type": "accepted", "state": new_state}
-
-    def mask_response_for_pvp(self, response: dict) -> dict:
-        """
-        対人戦用に相手の特性情報をマスクする
-        """
-        if response.get("type") != "accepted":
-            return response
-        
-        # ディープコピーしないと元の辞書（他プレイヤーへの送信データ）まで書き換わってしまう可能性があるが、
-        # flip_turn_responseで既にコピーされている前提であれば浅いコピーでstateだけ分離すれば良い。
-        # 安全のためstateはコピーする。
-        new_response = response.copy()
-        new_state = response["state"].copy()
-        new_response["state"] = new_state
-
-        # 相手の特性を隠す
-        new_state.pop("foe_ability", None)
-        new_state.pop("foe_ability_change_count", None)
-        
-        # イベント内の情報もマスク
-        new_events = []
-        for e in new_state["events"]:
-            ne = e.copy()
-            if e["type"] == "ability_changed" and e.get("player") == "foe":
-                ne["new_ability"] = "secret"
-                ne["message"] = ""
-                ne["new_ability_change_count"] = ABILITY_CHANGE_COUNT_INIT
-            new_events.append(ne)
-        new_state["events"] = new_events
-
-        return new_response
+        return {"type": "accepted", "room_id": response.get("room_id"), "state": new_state}
 
     def change_ability(self, player_id: str, new_ability_id: str):
-        """プレイヤーの特性を変更する"""
-        if player_id == self.player1.id:
-            player = self.player1
-        elif player_id == self.player2.id:
-            player = self.player2
-        else:
-            return {"type": "error", "message": "このルームのプレイヤーではありません"}
+        player = self.player1 if player_id == self.player1.id else self.player2 if player_id == self.player2.id else None
+        if not player: return {"type": "error", "message": "このルームのプレイヤーではありません"}
+        if player.ability_change_count <= 0: return {"type": "error", "message": "特性はもう変更できません"}
+        if new_ability_id not in self.abilities: return {"type": "error", "message": "存在しない特性です"}
         
-        if player.ability_change_count <= 0:
-            return {"type": "error", "message": "特性はもう変更できません"}
-
-        if new_ability_id not in self.abilities:
-            return {"type": "error", "message": "存在しない特性です"}
-
-        if new_ability_id == player.ability:
-            return {"type": "error", "message": "現在の特性と同じです"}
-
         player.ability_change_count -= 1
         player.ability = new_ability_id
-
-        ability_display_name = self.abilities[new_ability_id].name
-
-        event = {
+        self.events.append({
             "type": "ability_changed",
-            "message": f"特性が「{ability_display_name}」に変わった！ (残り変更回数: {player.ability_change_count})",
+            "message": f"特性が「{self.abilities[new_ability_id].name}」に変わった！",
             "player": "ally" if player.id == self.player1.id else "foe",
-            # フロントエンドでの表示更新のために、変更後の情報をイベントに含める
             "new_ability": new_ability_id,
             "new_ability_change_count": player.ability_change_count
-        }
-        self.events.append(event)
+        })
+        return self._make_response()
 
+    def execute_cpu_turn(self):
+        cpu_word = self.get_cpu_word()
+        if cpu_word: return self.try_attack(self.player2.id, cpu_word)
+        self.player1_win = True
         return self._make_response()
 
     def get_cpu_word(self):
         candidates = self.sb_info.get_typed_word_candidates(self.character)
         for word in candidates:
-            if word not in self.used:
-                return word
-        
+            if not self._is_used(word): return word
         return ""
 
-    def execute_cpu_turn(self):
-        """
-        CPUのターンを実行し、行動結果を返します。（ディープラーニングAI）
-        """
-
-        """
-        TODO: AI_CPU実装？
-        try:
-            from ai_production_wrapper import ProductionAIAgent
-            # サーバー起動後、最初の呼び出しでモデルがロードされる（以降はキャッシュ）
-            ai_agent = ProductionAIAgent.get_instance(self.sb_info, self.abilities)
-            cpu_word = ai_agent.get_best_word(self)
-        except ImportError as e:
-            print(f"[Warning] Failed to load Deep Learning AI: {e}. Falling back to random AI.")
-            cpu_word = self.get_cpu_word()
-        """
-        cpu_word = self.get_cpu_word()
-
-        if cpu_word:
-            # CPUが選んだ単語で攻撃
-            return self.try_attack(self.player2.id, cpu_word)
-        else:
-            # CPUが単語を見つけられなかった場合（降参）
-            self.player1_win = True
-            return self._make_response()
-
-    def handle_disconnection(self, disconnected_player_id: str, message: str = "あいてが通信を切断しました。"):
-        """
-        プレイヤーの切断を処理し、勝敗を決定してレスポンスを返します。
-        """
-        # すでに決着がついている場合は何もしない
-        if self.player1_win is not None:
-            return None
-        
-        if disconnected_player_id == self.player1.id:
+    def handle_disconnection(self, player_id: str, message: str = "あいてが通信を切断しました。"):
+        if self.player1_win is not None: return None
+        if player_id == self.player1.id:
             self.player1_win = False
-            dmg = self.player1.hp
-            self.player1.take_damage(dmg)
-            self.events.append({
-                "type": "damage",
-                "message": message,
-                "ally_damage": dmg,
-                "foe_damage": 0
-            })
-        elif disconnected_player_id == self.player2.id:
+            self.player1.hp = 0
+        else:
             self.player1_win = True
-            dmg = self.player2.hp
-            self.player2.take_damage(dmg)
-            self.events.append({
-                "type": "damage",
-                "message": message,
-                "ally_damage": 0,
-                "foe_damage": dmg
-            })
-        
-        if self.player1_win is not None:
-            return self._make_response()
-        return None
+            self.player2.hp = 0
+        return self._make_response()
 
     def timeout(self):
-        """
-        タイムアウト処理: 現在のターンプレイヤーが即敗北
-        """
         if self.player1_turn:
-            dmg = self.player1.hp
-            self.player1.take_damage(dmg)
+            self.player1.hp = 0
             self.player1_win = False
-            self.events.append({
-                "type": "damage",
-                "message": "時間切れ！敗北しました。",
-                "ally_damage": dmg,
-                "foe_damage": 0
-            })
         else:
-            dmg = self.player2.hp
-            self.player2.take_damage(dmg)
+            self.player2.hp = 0
             self.player1_win = True
-            self.events.append({
-                "type": "damage",
-                "message": "時間切れ！勝利しました。",
-                "ally_damage": 0,
-                "foe_damage": dmg
-            })
-        
         return self._make_response()
