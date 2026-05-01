@@ -66,6 +66,7 @@ class DoubleBattle(BaseBattle):
     def init_character(self):
         self.character = random.choice(self.START_CHARACTERS)
 
+
     def _create_character(self, owner_id: str, char_id: str, default_name: str, profiles: dict) -> DoubleBattlePlayer:
         prof = profiles.get(owner_id, {})
         name = prof.get("name", default_name)
@@ -76,14 +77,19 @@ class DoubleBattle(BaseBattle):
 
         char = DoubleBattlePlayer(owner_id, char_id, name)
         
+        # 特性の割り当て
         ability_id = prof.get("ability")
+        # 1v1ダブルモードの2体目の場合は ability_2 を優先
         if self.mode == "1v1_double" and (char_id == 'p1b' or char_id == 'p2b') and prof.get("ability_2"):
             ability_id = prof.get("ability_2")
-
-        if ability_id in self.abilities:
+            
+        if ability_id in self.abilities and ability_id != "random":
             char.ability = ability_id
         else:
-            char.ability = random.choice(self.ability_ids)
+            # ランダムまたは無効なIDの場合
+            valid_ids = [k for k in self.abilities.keys() if k != "random"]
+            char.ability = random.choice(valid_ids) if valid_ids else "ikaku"
+            
         return char
 
     def get_current_actor(self) -> DoubleBattlePlayer:
@@ -284,5 +290,23 @@ class DoubleBattle(BaseBattle):
                 if (is_t1 and cid in ["p2a", "p2b"]) or (not is_t1 and cid in ["p1a", "p1b"]): continue
             masked_events.append(e)
         new_res["events"] = masked_events
+        # フロントエンド演出用のマッピング情報
+        team1_ids = [p.id for p in self.team1]
+        team2_ids = [p.id for p in self.team2]
+        
+        id_to_ui_map = {}
+        if is_t1:
+            id_to_ui_map = {"p1a": "p1a", "p1b": "p1b", "p2a": "p2a", "p2b": "p2b"}
+            player_ids = team1_ids
+        else:
+            # 自分がチーム2の場合、画面上の p1a/p1b 位置に p2a/p2b を表示させる
+            id_to_ui_map = {"p2a": "p1a", "p2b": "p1b", "p1a": "p2a", "p1b": "p2b"}
+            player_ids = team2_ids
+
+        new_res["info"] = {
+            "player_ids": player_ids,
+            "id_to_ui_map": id_to_ui_map
+        }
+        
         return new_res
 

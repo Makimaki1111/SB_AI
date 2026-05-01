@@ -221,7 +221,7 @@ class BattleManager {
     /**
      * Sends a word to the server
      */
-    submitWord(word) {
+    submitWord(word, targetId = null) {
         if (!word || !this.sock || this.sock.readyState !== WebSocket.OPEN) return;
         this.ui.disableInput();
         this.ui.clearInput();
@@ -230,7 +230,8 @@ class BattleManager {
         const info = {
             player_id: this.player1_id,
             room_id: this.battleState?.room_id,
-            text: word
+            word: word,
+            target_id: targetId
         };
         this.sock.send(JSON.stringify({ type: "submit_word", info }));
     }
@@ -251,12 +252,13 @@ class BattleManager {
     /**
      * Sends ability change request
      */
-    changeAbility(newAbilityId) {
+    changeAbility(newAbilityId, charId = "p1") {
         if (!this.sock || this.sock.readyState !== WebSocket.OPEN) return;
         const info = {
             player_id: this.player1_id,
             room_id: this.battleState?.room_id,
-            new_ability: newAbilityId
+            ability_id: newAbilityId,
+            char_id: charId
         };
         this.sock.send(JSON.stringify({ type: "change_ability", info }));
     }

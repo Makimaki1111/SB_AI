@@ -315,9 +315,20 @@ class DoubleUI {
             }
         });
 
+        this.targetP2aBtn = new UIObject($('#target-p2a-btn'));
+        this.targetP2bBtn = new UIObject($('#target-p2b-btn'));
+
+        this.targetP2aBtn.selector.on('click', () => {
+            this.updatePredictionMessage('p2a');
+        });
+        this.targetP2bBtn.selector.on('click', () => {
+            this.updatePredictionMessage('p2b');
+        });
+
         // モーダルのイベントリスナー解除用関数
         this.abilityModalCleanup = null;
         this.activeCharTab = 'p1a'; // 初期タブ
+        this.uiToIdMap = {}; // UI ID から サーバー ID へのマッピング
     }
 
     initCharUI(id) {
@@ -481,6 +492,11 @@ class DoubleUI {
             this.setHP(uiId, char.hp, char.max_hp);
             this.setCharVisibility(uiId, !char.is_defeated);
         }
+        // マッピングの保持
+        this.uiToIdMap = {};
+        for (const [id, uiId] of Object.entries(idToUiMap)) {
+            this.uiToIdMap[uiId] = id;
+        }
         // Update situation and ability info
         this.updateSituationInfo({ chars: state.characters });
         const allAbilities = this.battleManager ? this.battleManager.allAbilities : {};
@@ -535,6 +551,25 @@ class DoubleUI {
 
     updatePreCheck(data) {
         this.showCheckResult(data);
+    }
+
+    onAbilityChanged(e) {
+        this.showMessage(e.message || "特性が変わった！");
+        if (typeof playEventSound === 'function') playEventSound("ability_changed", e.message);
+
+        // 特定のキャラクターの特性を更新
+        if (this.battleManager && this.battleManager.battleState) {
+            const chars = this.battleManager.battleState.characters;
+            const targetId = e.target; // 絶対ID (p1a, p1bなど)
+            
+            if (chars[targetId]) {
+                chars[targetId].ability = e.new_ability;
+                chars[targetId].ability_change_count = e.new_ability_change_count;
+            }
+            
+            const allAbilities = this.battleManager.allAbilities || {};
+            this.updateAbilityInfo(chars, allAbilities);
+        }
     }
 
     setCharVisibility(id, visible) {
@@ -599,9 +634,10 @@ class DoubleUI {
         }
     }
 
-    updatePredictionMessage(targetId) {
-        // targetId: p2a, p2b などのUI上のID (サーバーIDと一致している前提)
-        const msg = this.lastPredictions[targetId];
+    updatePredictionMessage(uiTargetId) {
+        // uiTargetId: p2a, p2b などのUI上のID
+        const serverId = this.uiToIdMap[uiTargetId];
+        const msg = this.lastPredictions[serverId];
         if (msg) {
             this.predictionMessage.selector.text(msg).show();
         } else {
@@ -961,7 +997,9 @@ class DoubleUI {
     }
 
     updateSituationInfo(state) {
-        const chars = state.chars;
+        const chars = state.characters || state.chars || {};
+        const idToUiMap = this.battleManager ? this.battleManager.idToUiMap : {};
+        
         const rankToPower = (rank) => {
             const mapping = {
                 "-6": 0.25, "-5": 0.28, "-4": 0.33, "-3": 0.4, "-2": 0.5, "-1": 0.66, "0": 1.0,
@@ -975,15 +1013,15 @@ class DoubleUI {
             return num.toString() + "倍";
         };
 
-        for (let id of ['p1a', 'p1b', 'p2a', 'p2b']) {
-            if (chars[id]) {
-                const char = chars[id];
+        for (const [absId, uiId] of Object.entries(idToUiMap)) {
+            if (chars[absId]) {
+                const char = chars[absId];
                 const atkRank = char.attack_rank !== undefined ? char.attack_rank : (char.atk !== undefined ? char.atk : 0);
                 const defRank = char.defense_rank !== undefined ? char.defense_rank : (char.def_ !== undefined ? char.def_ : 0);
 
-                $(`#s-${id}-name`).text(char.name);
-                $(`#s-${id}-atk`).text(formatMultiplier(rankToPower(atkRank)));
-                $(`#s-${id}-def`).text(formatMultiplier(rankToPower(defRank)));
+                $(`#s-${uiId}-name`).text(char.name);
+                $(`#s-${uiId}-atk`).text(formatMultiplier(rankToPower(atkRank)));
+                $(`#s-${uiId}-def`).text(formatMultiplier(rankToPower(defRank)));
             }
         }
     }
@@ -999,25 +1037,29 @@ class DoubleUI {
     }
 
     updateAbilityInfo(chars, allAbilities) {
-        // 自分チーム (p1a, p1b) の画面表示のみ更新（モーダルはpopulateAbilityModalで制御）
-        for (let id of ['p1a', 'p1b']) {
-            if (!chars[id]) continue;
-            $(`#a-${id}-name`).text(chars[id].name);
+        const idToUiMap = this.battleManager ? this.battleManager.idToUiMap : {};
+        
+        // 味方チームのスロット (p1a, p1b) に対応する絶対IDを探して更新
+        for (const [absId, uiId] of Object.entries(idToUiMap)) {
+            if (uiId !== 'p1a' && uiId !== 'p1b') continue;
+            if (!chars[absId]) continue;
 
-            const currentAbility = chars[id].ability;
+            const char = chars[absId];
+            $(`#a-${uiId}-name`).text(char.name);
+
+            const currentAbility = char.ability;
             const abilityObj = allAbilities[currentAbility];
             
-            // メイン画面の小さな情報ボックス更新
             if (abilityObj) {
-                $(`#a-${id}-ability-name`).text(abilityObj.name);
-                $(`#a-${id}-ability-desc`).text(abilityObj.description);
+                $(`#a-${uiId}-ability-name`).text(abilityObj.name);
+                $(`#a-${uiId}-ability-desc`).text(abilityObj.description);
             } else {
-                $(`#a-${id}-ability-name`).text(currentAbility || "---");
-                $(`#a-${id}-ability-desc`).text("");
+                $(`#a-${uiId}-ability-name`).text(currentAbility || "---");
+                $(`#a-${uiId}-ability-desc`).text("");
             }
 
-            const changeCount = chars[id].ability_change_count || 0;
-            $(`#a-${id}-remain`).text(`(あと${changeCount}回)`);
+            const changeCount = char.ability_change_count || 0;
+            $(`#a-${uiId}-remain`).text(`(あと${changeCount}回)`);
         }
     }
 

@@ -471,7 +471,7 @@ class UI{
                     this.foeCurrentAbilityDesc.selector.text("");
                 }
             }
-            this.updateLives(uiId === "ally", char.lives || 0, state.ally_max_lives || 3);
+            this.updateLives(uiId === "ally", char.lives, (uiId === "ally" ? state.ally_max_lives : state.foe_max_lives) || 3);
             
             const atkRank = char.attack_rank !== undefined ? char.attack_rank : (char.atk !== undefined ? char.atk : 0);
             const defRank = char.defense_rank !== undefined ? char.defense_rank : (char.def_ !== undefined ? char.def_ : 0);
@@ -537,6 +537,27 @@ class UI{
 
     updatePreCheck(data) {
         this.showCheckResult(data);
+    }
+
+    onAbilityChanged(e) {
+        this.showMessage(e.message || "特性が変わった！");
+        if (typeof playEventSound === 'function') playEventSound("ability_changed", e.message);
+
+        // 自分自身の特性表示を更新 (シングルバトルの場合は常に自分)
+        const allAbilities = this.battleManager ? this.battleManager.allAbilities : null;
+        const abilityObj = allAbilities ? allAbilities[e.new_ability] : null;
+        
+        if (abilityObj) {
+            this.allyCurrentAbilityName.selector.text(abilityObj.name);
+            this.allyCurrentAbilityDesc.selector.text(abilityObj.description);
+        } else {
+            this.allyCurrentAbilityName.selector.text(e.new_ability || "---");
+            this.allyCurrentAbilityDesc.selector.text("");
+        }
+        
+        if (e.new_ability_change_count !== undefined) {
+            this.abilityChangeCounterDisplay.selector.text(`(あと${e.new_ability_change_count}回)`);
+        }
     }
 
     // --- Helper methods adapted for unified call ---
@@ -1404,6 +1425,26 @@ class UI{
                 // アニメーション終了後に削除
                 setTimeout(() => { particle.remove(); }, 1500);
             }, i * 80); // 少しずつずらして出現させる
+        }
+    }
+
+    updateLives(isAlly, lives, maxLives) {
+        const container = isAlly ? this.allyLivesContainer.selector : this.foeLivesContainer.selector;
+        if (!container.length) return;
+
+        container.empty();
+        // lives が undefined の場合は非表示（ストック制でないモード）
+        if (lives === undefined || lives === null) return;
+
+        for (let i = 0; i < maxLives; i++) {
+            const heart = $('<span class="heart"></span>');
+            if (i >= lives) {
+                heart.addClass('empty');
+                heart.html('&#9825;'); // ♡
+            } else {
+                heart.html('&#9829;'); // ♥
+            }
+            container.append(heart);
         }
     }
 

@@ -26,7 +26,12 @@ window.startDoubleBattle = function(mode, roomId = null) {
     ui.showMessage("マッチング中...");
     
     const type = (mode === 'cpu') ? "join_double_cpu_room" : "find_double_match";
-    const info = { player_id: player1_id };
+    const info = { 
+        player_id: player1_id,
+        name: localStorage.getItem("sb_username") || "じぶん",
+        ability: localStorage.getItem("sb_ability") || "random",
+        ability_2: localStorage.getItem("sb_ability_2") || "random"
+    };
     if (roomId) info.room_id = roomId;
     
     battleManager.connect(getWsUrl(), type, info);

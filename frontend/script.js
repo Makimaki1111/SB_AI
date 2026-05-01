@@ -87,7 +87,11 @@ window.startBattle = function (mode, roomId = null, p1MaxLives = 3, p2MaxLives =
   sbUnlockAudioContext();
   ui.showBattleScreen();
   const type = (mode === 'cpu') ? "join_cpu_room" : (mode === 'room' ? "join_private_room" : "find_match");
-  const info = { player_id: player1_id };
+  const info = { 
+    player_id: player1_id,
+    name: localStorage.getItem("sb_username") || "じぶん",
+    ability: localStorage.getItem("sb_ability") || "random"
+  };
   if (roomId) info.room_id = roomId;
   if (mode === 'room') {
     info.p1_max_lives = p1MaxLives;

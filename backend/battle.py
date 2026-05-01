@@ -43,11 +43,16 @@ class SingleBattle(BaseBattle):
         self.abilities = get_default_abilities()
         self.init_character()
         
-        # プロファイルから特性を反映
-        if p1_profile and p1_profile.get("ability") in self.abilities:
-            self.player1.ability = p1_profile["ability"]
-        if p2_profile and p2_profile.get("ability") in self.abilities:
-            self.player2.ability = p2_profile["ability"]
+        # プロファイルから特性を反映 (randomや存在しないIDの場合はランダムに割り当て)
+        def resolve_ability(profile):
+            if profile and profile.get("ability") in self.abilities:
+                return profile["ability"]
+            # ランダムまたは無効な特性IDの場合
+            valid_ids = [k for k in self.abilities.keys() if k != "random"]
+            return random.choice(valid_ids) if valid_ids else "ikaku"
+
+        self.player1.ability = resolve_ability(p1_profile)
+        self.player2.ability = resolve_ability(p2_profile)
 
     def get_player_label(self, player) -> str:
         """SingleBattleでも生のIDを返す (BattleManagerのidToUiMapと同期するため)"""
@@ -112,7 +117,7 @@ class SingleBattle(BaseBattle):
                 "target": self.get_player_label(defeated_player)
             })
 
-    def try_attack(self, player_id: str, word: str):
+    def try_attack(self, player_id: str, word: str, target_id: str = None):
         self.word = word
         if self.is_finished: return self._make_response()
         
@@ -208,6 +213,19 @@ class SingleBattle(BaseBattle):
             state["characters"][foe_id]["ability"] = "secret"
             state["characters"][foe_id]["ability_change_count"] = ABILITY_CHANGE_COUNT_INIT
 
+        # フロントエンド演出用のマッピング情報
+        if is_p1:
+            id_to_ui_map = {self.player1.id: "ally", self.player2.id: "foe"}
+            player_ids = [self.player1.id]
+        else:
+            id_to_ui_map = {self.player2.id: "ally", self.player1.id: "foe"}
+            player_ids = [self.player2.id]
+
+        new_res["info"] = {
+            "player_ids": player_ids,
+            "id_to_ui_map": id_to_ui_map
+        }
+        
         return new_res
 
 

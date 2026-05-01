@@ -117,11 +117,11 @@ class RoomManager:
             return prof["name"]
         return "じぶん"
 
-    def update_user_info(self, player_id: str, name: str, ability: str):
+    def update_user_info(self, player_id: str, name: str, ability: str, ability_2: Optional[str] = None):
         """ユーザープロフィールの更新"""
         if not name: name = "じぶん"
         if len(name) > 8: name = name[:8]
-        self.user_profiles[player_id] = {"name": name, "ability": ability}
+        self.user_profiles[player_id] = {"name": name, "ability": ability, "ability_2": ability_2}
 
     def create_private_room(self, websocket, player_id: str, p1_lives: int, p2_lives: int, is_double: bool = False) -> str:
         """プライベートルームを作成してIDを返す"""

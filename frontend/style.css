@@ -51,17 +51,17 @@ select {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  /* 上下のエリアを離す */
+  /* 荳贋ｸ九・繧ｨ繝ｪ繧｢繧帝屬縺・*/
   gap: 1rem;
 }
 
-/* 操作エリア（タイマー、メッセージ、入力） */
+/* 謫堺ｽ懊お繝ｪ繧｢・医ち繧､繝槭・縲√Γ繝・そ繝ｼ繧ｸ縲∝・蜉幢ｼ・*/
 .action-area {
   flex: 1;
   display: flex;
   flex-direction: column;
   position: relative;
-  /* 画像などの絶対配置の基準 */
+  /* 逕ｻ蜒上↑縺ｩ縺ｮ邨ｶ蟇ｾ驟咲ｽｮ縺ｮ蝓ｺ貅・*/
 }
 
 .input-wrapper {
@@ -69,11 +69,11 @@ select {
   display: flex;
   flex-direction: column;
   gap: 0rem;
-  /* 要素間の間隔をgapで一括管理 */
+  /* 隕∫ｴ�髢薙・髢馴囈繧暖ap縺ｧ荳諡ｬ邂｡逅・*/
   min-height: 5.3em;
 }
 
-/* フッターエリア（ボタン） */
+/* 繝輔ャ繧ｿ繝ｼ繧ｨ繝ｪ繧｢・医・繧ｿ繝ｳ・・*/
 .footer-area {
   display: flex;
   justify-content: center;
@@ -87,7 +87,7 @@ select {
   background-color: #e0e0e0;
   border-radius: 4px;
   margin-bottom: 0;
-  /* gapで管理するため削除 */
+  /* gap縺ｧ邂｡逅・☆繧九◆繧∝炎髯､ */
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -99,7 +99,7 @@ select {
   transition: width 0.1s linear, background-color 0.3s ease;
 }
 
-/* 白い楕円 */
+/* 逋ｽ縺・･募・ */
 .ellipse-left {
   position: absolute;
   bottom: -40px;
@@ -112,7 +112,7 @@ select {
   z-index: 1;
 }
 
-/* 白い楕円 */
+/* 逋ｽ縺・･募・ */
 .ellipse-right {
   position: absolute;
   bottom: 100px;
@@ -164,12 +164,12 @@ select {
   justify-content: center;
   color: #333;
   padding: 0 0 0 3px;
-  /* アイコンを中央に寄せるための微調整 */
+  /* 繧｢繧､繧ｳ繝ｳ繧剃ｸｭ螟ｮ縺ｫ蟇・○繧九◆繧√・蠕ｮ隱ｿ謨ｴ */
   box-sizing: border-box;
 }
 
 
-/* ふきだし共通 */
+/* 縺ｵ縺阪□縺怜・騾・*/
 .balloon {
   position: absolute;
   background: white;
@@ -204,13 +204,13 @@ select {
   border-radius: 3px;
 }
 
-/* 左上に表示 */
+/* 蟾ｦ荳翫↓陦ｨ遉ｺ */
 .balloon.left {
   top: 10px;
   left: -8px;
 }
 
-/* 右下に表示 */
+/* 蜿ｳ荳九↓陦ｨ遉ｺ */
 .balloon.right {
   bottom: 10px;
   right: -8px;
@@ -393,7 +393,7 @@ select {
   box-sizing: border-box;
 }
 
-/* ally-imgとfoe-imgのフェードインアニメーション */
+/* ally-img縺ｨfoe-img縺ｮ繝輔ぉ繝ｼ繝峨う繝ｳ繧｢繝九Γ繝ｼ繧ｷ繝ｧ繝ｳ */
 #ally-img,
 #foe-img {
   opacity: 0;
@@ -412,7 +412,7 @@ select {
   }
 }
 
-/* タイトル画面用: ボタンを中央に大きく配置 */
+/* 繧ｿ繧､繝医Ν逕ｻ髱｢逕ｨ: 繝懊ち繝ｳ繧剃ｸｭ螟ｮ縺ｫ螟ｧ縺阪￥驟咲ｽｮ */
 #title-screen .phone-box .content {
   position: relative;
   display: flex;
@@ -424,7 +424,7 @@ select {
   padding-top: 0;
 }
 
-/* タイトル文字を上部に固定配置 */
+/* 繧ｿ繧､繝医Ν譁・ｭ励ｒ荳企Κ縺ｫ蝗ｺ螳夐・鄂ｮ */
 #title-screen .phone-box .content p {
   position: absolute;
   top: 40px;
@@ -450,7 +450,7 @@ select {
   width: 100%;
 }
 
-/* 対人戦 / コンピュータ戦 ボタン共通 */
+/* 蟇ｾ莠ｺ謌ｦ / 繧ｳ繝ｳ繝斐Η繝ｼ繧ｿ謌ｦ 繝懊ち繝ｳ蜈ｱ騾・*/
 .button-lobby,
 #vs-human-btn,
 #vs-player-btn,
@@ -482,7 +482,7 @@ select {
   transition: transform 120ms ease-in-out;
 }
 
-/* ロビー・タイトル画面のボタンコンテナ */
+/* 繝ｭ繝薙・繝ｻ繧ｿ繧､繝医Ν逕ｻ髱｢縺ｮ繝懊ち繝ｳ繧ｳ繝ｳ繝・リ */
 .title-buttons-container {
   display: flex;
   flex-direction: column;
@@ -493,10 +493,10 @@ select {
   margin-top: 20px;
   position: relative;
   z-index: 10;
-  /* タイトル等と被らないよう配慮 */
+  /* 繧ｿ繧､繝医Ν遲峨→陲ｫ繧峨↑縺・ｈ縺・・諷ｮ */
 }
 
-/* ルームID入力欄のコンテナを .button-lobby と同期させる */
+/* 繝ｫ繝ｼ繝�ID蜈･蜉帶ｬ・・繧ｳ繝ｳ繝・リ繧・.button-lobby 縺ｨ蜷梧悄縺輔○繧・*/
 .room-input-group {
     display: flex;
     gap: 8px;
@@ -508,34 +508,34 @@ select {
     flex-shrink: 0;
 }
 
-/* タイトル画面専用のボタン配置（下部固定） */
+/* 繧ｿ繧､繝医Ν逕ｻ髱｢蟆ら畑縺ｮ繝懊ち繝ｳ驟咲ｽｮ・井ｸ矩Κ蝗ｺ螳夲ｼ・*/
 #title-screen .title-buttons-container {
   position: absolute;
   bottom: 60px;
   margin-top: 0;
 }
 
-/* タイトル画面の回転カルーセル */
+/* 繧ｿ繧､繝医Ν逕ｻ髱｢縺ｮ蝗櫁ｻ｢繧ｫ繝ｫ繝ｼ繧ｻ繝ｫ */
 #title-carousel-container {
   position: absolute;
-  top: 42%; /* 位置を少し調整 */
+  top: 42%; /* 菴咲ｽｮ繧貞ｰ代＠隱ｿ謨ｴ */
   left: 0;
   width: 100%;
-  height: 180px; /* 3段分の高さ */
+  height: 180px; /* 3谿ｵ蛻・・鬮倥＆ */
   transform: translateY(-50%);
-  z-index: 1; /* 背景として扱うためz-indexを下げる */
+  z-index: 1; /* 閭梧勹縺ｨ縺励※謇ｱ縺・◆繧】-index繧剃ｸ九￡繧・*/
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 10px;
   overflow: hidden;
-  pointer-events: none; /* クリックを透過させる */
+  pointer-events: none; /* 繧ｯ繝ｪ繝・け繧帝城℃縺輔○繧・*/
   opacity: 0.8;
 }
 
 .carousel-row {
   display: flex;
-  width: max-content; /* 中身に合わせて幅を確保 */
+  width: max-content; /* 荳ｭ霄ｫ縺ｫ蜷医ｏ縺帙※蟷・ｒ遒ｺ菫・*/
   gap: 15px;
   will-change: transform;
 }
@@ -547,7 +547,7 @@ select {
   flex-shrink: 0;
 }
 
-/* 戻るボタンのスタイル */
+/* 謌ｻ繧九・繧ｿ繝ｳ縺ｮ繧ｹ繧ｿ繧､繝ｫ */
 .back-to-title-link {
   position: absolute;
   top: 0;
@@ -559,14 +559,14 @@ select {
   font-weight: 700;
   color: #555;
   text-decoration: none;
-  z-index: 200; /* 他の要素より手前に */
+  z-index: 200; /* 莉悶・隕∫ｴ�繧医ｊ謇句燕縺ｫ */
   background: none;
   border: none;
   cursor: pointer;
   text-align: left;
 }
 
-/* バトル終了後の「タイトルに戻る」ボタン（以前のデザイン） */
+/* 繝舌ヨ繝ｫ邨ゆｺ・ｾ後・縲後ち繧､繝医Ν縺ｫ謌ｻ繧九阪・繧ｿ繝ｳ・井ｻ･蜑阪・繝・じ繧､繝ｳ・・*/
 #back-to-title-btn {
   display: none;
   /* JS will toggle display */
@@ -584,7 +584,7 @@ select {
   cursor: pointer;
   position: absolute;
   right: 1.8rem;
-  bottom: 25rem; /* 位置調整 */
+  bottom: 25rem; /* 菴咲ｽｮ隱ｿ謨ｴ */
   z-index: 120;
   text-decoration: none;
   text-align: center;
@@ -595,7 +595,7 @@ select {
   transform: translateY(0);
 }
 
-/* シングルバトルロビー画面のレイアウト調整（ダブルバトルに合わせる） */
+/* 繧ｷ繝ｳ繧ｰ繝ｫ繝舌ヨ繝ｫ繝ｭ繝薙・逕ｻ髱｢縺ｮ繝ｬ繧､繧｢繧ｦ繝郁ｪｿ謨ｴ・医ム繝悶Ν繝舌ヨ繝ｫ縺ｫ蜷医ｏ縺帙ｋ・・*/
 #title-screen.single-lobby-screen .phone-box .content {
   padding-top: 80px;
   padding-bottom: 40px;
@@ -623,7 +623,7 @@ select {
   top: auto !important;
 }
 
-/* スマホ向けにさらに大きく見せる */
+/* 繧ｹ繝槭・蜷代￠縺ｫ縺輔ｉ縺ｫ螟ｧ縺阪￥隕九○繧・*/
 @media (max-width: 420px) {
 
   #vs-human-btn,
@@ -636,20 +636,20 @@ select {
     padding: 16px 20px;
   }
 
-  /* モバイルでの幅を同期 */
+  /* 繝｢繝舌う繝ｫ縺ｧ縺ｮ蟷・ｒ蜷梧悄 */
   .room-input-group {
     width: 86%;
   }
 }
 
 
-/* コンピュータ戦用の中断ボタン */
+/* 繧ｳ繝ｳ繝斐Η繝ｼ繧ｿ謌ｦ逕ｨ縺ｮ荳ｭ譁ｭ繝懊ち繝ｳ */
 #cancel-battle-btn {
-  /* position: absolute を解除し、footer-area内で配置 */
+  /* position: absolute 繧定ｧ｣髯､縺励’ooter-area蜀・〒驟咲ｽｮ */
 
   z-index: 100;
 
-  /* モダンなスタイル */
+  /* 繝｢繝繝ｳ縺ｪ繧ｹ繧ｿ繧､繝ｫ */
   padding: 12px 32px;
   font-size: 1.1rem;
   font-weight: 700;
@@ -676,9 +676,9 @@ select {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* --- 特性関連のスタイル --- */
+/* --- 迚ｹ諤ｧ髢｢騾｣縺ｮ繧ｹ繧ｿ繧､繝ｫ --- */
 
-/* アクションボタンのラッパー */
+/* 繧｢繧ｯ繧ｷ繝ｧ繝ｳ繝懊ち繝ｳ縺ｮ繝ｩ繝・ヱ繝ｼ */
 #actions-wrapper {
   display: flex;
   justify-content: center;
@@ -725,12 +725,12 @@ select {
 }
 
 #situation-button {
-  background: rgba(255, 242, 242, 0.9); /* ごく薄い赤 */
+  background: rgba(255, 242, 242, 0.9); /* 縺斐￥阮・＞襍､ */
   border-bottom: 4px solid #ff4757;
 }
 
 #ability-info-container {
-  background: rgba(242, 255, 242, 0.9); /* ごく薄い緑 */
+  background: rgba(242, 255, 242, 0.9); /* 縺斐￥阮・＞邱・*/
   border-bottom: 4px solid #2ed573;
 }
 
@@ -745,7 +745,7 @@ select {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* アイコンとテキストのスタイル */
+/* 繧｢繧､繧ｳ繝ｳ縺ｨ繝・く繧ｹ繝医・繧ｹ繧ｿ繧､繝ｫ */
 .action-btn-icon {
   width: 30px;
   height: 30px;
@@ -774,7 +774,7 @@ select {
   margin: 0;
 }
 
-/* --- 特性選択モーダル --- */
+/* --- 迚ｹ諤ｧ驕ｸ謚槭Δ繝ｼ繝繝ｫ --- */
 #ability-modal {
   position: fixed;
   top: 0;
@@ -788,7 +788,7 @@ select {
   flex-direction: column;
   justify-content: flex-start;
   padding-bottom: 60px;
-  /* 閉じるボタンの高さ分 */
+  /* 髢峨§繧九・繧ｿ繝ｳ縺ｮ鬮倥＆蛻・*/
   box-sizing: border-box;
 }
 
@@ -880,10 +880,10 @@ select {
 
 .skill-item.selected {
   background-color: #c8e6c9;
-  /* 少し濃い緑 */
+  /* 蟆代＠豼・＞邱・*/
   border: 2px solid #4CAF50;
   opacity: 1;
-  /* disabledを上書き */
+  /* disabled繧剃ｸ頑嶌縺・*/
 }
 
 .skill-item.selected span {
@@ -930,7 +930,7 @@ select {
   color: white;
   position: absolute;
   width: 100%;
-  /* z-indexを他の要素より高く設定 */
+  /* z-index繧剃ｻ悶・隕∫ｴ�繧医ｊ鬮倥￥險ｭ螳・*/
   z-index: 1500;
   text-align: center;
   padding: 10px;
@@ -938,10 +938,10 @@ select {
   left: 0;
   box-sizing: border-box;
   display: none;
-  /* 初期状態では非表示 */
+  /* 蛻晄悄迥ｶ諷九〒縺ｯ髱櫁｡ｨ遉ｺ */
 }
 
-/* --- 状況確認モーダル --- */
+/* --- 迥ｶ豕∫｢ｺ隱阪Δ繝ｼ繝繝ｫ --- */
 #situation-modal {
   position: fixed;
   top: 0;
@@ -955,7 +955,7 @@ select {
   flex-direction: column;
   padding-top: 40px;
   padding-bottom: 60px;
-  /* とじるボタンの高さ分を確保 */
+  /* 縺ｨ縺倥ｋ繝懊ち繝ｳ縺ｮ鬮倥＆蛻・ｒ遒ｺ菫・*/
   box-sizing: border-box;
 }
 
@@ -994,7 +994,7 @@ select {
   color: #555;
 }
 
-/* 状況モーダル専用の閉じるボタン設定（優先度を上げるためID指定） */
+/* 迥ｶ豕√Δ繝ｼ繝繝ｫ蟆ら畑縺ｮ髢峨§繧九・繧ｿ繝ｳ險ｭ螳夲ｼ亥━蜈亥ｺｦ繧剃ｸ翫￡繧九◆繧！D謖・ｮ夲ｼ・*/
 #situation-modal .close-modal {
   position: absolute;
   bottom: 0;
@@ -1021,14 +1021,14 @@ select {
   line-height: 100%;
 }
 
-/* --- 回復エフェクト --- */
+/* --- 蝗槫ｾｩ繧ｨ繝輔ぉ繧ｯ繝・--- */
 .effect-container {
   position: absolute;
   width: 220px;
   height: 150px;
   pointer-events: none;
   z-index: 5;
-  /* 楕円(1)より手前、キャラ(11)より奥 */
+  /* 讌募・(1)繧医ｊ謇句燕縲√く繝｣繝ｩ(11)繧医ｊ螂･ */
 }
 
 #ally-effect-container {
@@ -1044,7 +1044,7 @@ select {
 .heal-particle {
   position: absolute;
   color: #4CAF50;
-  /* 緑色 */
+  /* 邱題牡 */
   font-family: Arial, sans-serif;
   font-weight: bold;
   font-size: 24px;
@@ -1054,7 +1054,7 @@ select {
 
 .heal-particle::after {
   content: "+";
-  /* プラスマークを表示 */
+  /* 繝励Λ繧ｹ繝槭・繧ｯ繧定｡ｨ遉ｺ */
 }
 
 @keyframes floatUp {
@@ -1074,7 +1074,7 @@ select {
   }
 }
 
-/* --- 能力上昇エフェクト --- */
+/* --- 閭ｽ蜉帑ｸ頑・繧ｨ繝輔ぉ繧ｯ繝・--- */
 .stat-up-particle {
   position: absolute;
   font-family: Arial, sans-serif;
@@ -1083,14 +1083,14 @@ select {
   opacity: 0;
   user-select: none;
   color: #FF4500;
-  /* オレンジレッド (上昇はすべて赤) */
+  /* 繧ｪ繝ｬ繝ｳ繧ｸ繝ｬ繝・ラ (荳頑・縺ｯ縺吶∋縺ｦ襍､) */
 }
 
 .stat-up-particle::after {
-  content: "▲";
+  content: "笆ｲ";
 }
 
-/* --- 能力下降エフェクト --- */
+/* --- 閭ｽ蜉帑ｸ矩剄繧ｨ繝輔ぉ繧ｯ繝・--- */
 .stat-down-particle {
   position: absolute;
   font-family: Arial, sans-serif;
@@ -1099,11 +1099,11 @@ select {
   opacity: 0;
   user-select: none;
   color: #1E90FF;
-  /* ドジャーブルー (下降はすべて青) */
+  /* 繝峨ず繝｣繝ｼ繝悶Ν繝ｼ (荳矩剄縺ｯ縺吶∋縺ｦ髱・ */
 }
 
 .stat-down-particle::after {
-  content: "▼";
+  content: "笆ｼ";
 }
 
 @keyframes floatDown {
@@ -1123,7 +1123,7 @@ select {
   }
 }
 
-/* --- ダメージ点滅エフェクト --- */
+/* --- 繝繝｡繝ｼ繧ｸ轤ｹ貊・お繝輔ぉ繧ｯ繝・--- */
 @keyframes blink {
   0% {
     opacity: 1;
@@ -1142,12 +1142,24 @@ select {
   animation: blink 0.2s 5;
 }
 
-/* カルーセルアニメーション定義 */
+/* 繧ｫ繝ｫ繝ｼ繧ｻ繝ｫ繧｢繝九Γ繝ｼ繧ｷ繝ｧ繝ｳ螳夂ｾｩ */
 @keyframes scrollLeft {
   0% { transform: translateX(0%); }
-  100% { transform: translateX(-25%); } /* 4セット配置したので-25%で1ループ */
+  100% { transform: translateX(-25%); } /* 4繧ｻ繝・ヨ驟咲ｽｮ縺励◆縺ｮ縺ｧ-25%縺ｧ1繝ｫ繝ｼ繝・*/
 }
 @keyframes scrollRight {
   0% { transform: translateX(-25%); }
   100% { transform: translateX(0%); }
+}
+
+/* --- 谿区ｩ滂ｼ医ワ繝ｼ繝茨ｼ峨・繧ｹ繧ｿ繧､繝ｫ --- */
+.heart {
+  color: #ff4757;
+  font-size: 1.2rem;
+  text-shadow: 0 0 2px rgba(0,0,0,0.2);
+}
+
+.heart.empty {
+  color: #ccc;
+  text-shadow: none;
 }

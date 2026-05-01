@@ -95,7 +95,8 @@ class WebSocketHandler:
             return
         name = info.get("name", "じぶん")
         ability = info.get("ability")
-        self.room_manager.update_user_info(player_id, name, ability)
+        ability_2 = info.get("ability_2")
+        self.room_manager.update_user_info(player_id, name, ability, ability_2)
         self.connection_manager.register_player(websocket, player_id)
         await websocket.send_text(json.dumps({"type": "user_info_updated", "message": "ユーザー情報を更新しました"}))
 
@@ -125,9 +126,11 @@ class WebSocketHandler:
             if target_waiter["player_id"] == player_id:
                 return
             
-            if len(self.room_manager.rooms) >= self.room_manager.MAX_ROOMS:
-                await websocket.send_text(json.dumps({"type": "error", "message": "サーバーが混雑しています"}))
-                return
+            # プレイヤー情報を更新
+            name = info.get("name", "じぶん")
+            ability = info.get("ability")
+            ability_2 = info.get("ability_2")
+            self.room_manager.update_user_info(player_id, name, ability, ability_2)
 
             # 待機プレイヤーを取り出して対戦開始
             p1_data = target_waiter
@@ -163,9 +166,12 @@ class WebSocketHandler:
             await websocket.send_text(json.dumps({"type": "error", "message": "プレイヤーIDが不明です。再接続してください。"}))
             return
         self.connection_manager.register_player(websocket, player_id)
-        if await self._try_reconnect(websocket, player_id):
-            return
-        
+        # プレイヤー情報を更新
+        name = info.get("name", "じぶん")
+        ability = info.get("ability")
+        ability_2 = info.get("ability_2")
+        self.room_manager.update_user_info(player_id, name, ability, ability_2)
+
         if self.room_manager.waiting_player_double is not None:
             p1_data = self.room_manager.waiting_player_double
             if p1_data["player_id"] == player_id: return
@@ -212,6 +218,13 @@ class WebSocketHandler:
             await websocket.send_text(json.dumps({"type": "error", "message": "プレイヤーIDが不明です。再接続してください。"}))
             return
         self.connection_manager.register_player(websocket, player_id)
+        
+        # プレイヤー情報を更新
+        name = info.get("name", "じぶん")
+        ability = info.get("ability")
+        ability_2 = info.get("ability_2")
+        self.room_manager.update_user_info(player_id, name, ability, ability_2)
+
         if await self._try_reconnect(websocket, player_id):
             return
             
@@ -240,6 +253,14 @@ class WebSocketHandler:
         if not player_id:
             await websocket.send_text(json.dumps({"type": "error", "message": "プレイヤーIDが不明です。再接続してください。"}))
             return
+        self.connection_manager.register_player(websocket, player_id)
+        
+        # プレイヤー情報を更新
+        name = info.get("name", "じぶん")
+        ability = info.get("ability")
+        ability_2 = info.get("ability_2")
+        self.room_manager.update_user_info(player_id, name, ability, ability_2)
+
         # ダブルCPU戦の開始
         bi = DoubleBattle(
             "1v1_double", 
@@ -315,7 +336,8 @@ class WebSocketHandler:
             await websocket.send_text(json.dumps({"type": "error", "message": "ルームが見つかりません"}))
             return
 
-        res = room.try_attack(player_id, word)
+        target_id = info.get("target_id")
+        res = room.try_attack(player_id, word, target_id)
         if res.get("type") == "error":
             await websocket.send_text(json.dumps(res))
             return
