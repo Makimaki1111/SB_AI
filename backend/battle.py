@@ -48,6 +48,10 @@ class SingleBattle(BaseBattle):
         if p2_profile and p2_profile.get("ability") in self.abilities:
             self.player2.ability = p2_profile["ability"]
 
+    def get_player_label(self, player) -> str:
+        """SingleBattleではally/foeを返す"""
+        return "ally" if player.id == self.player1.id else "foe"
+
     @property
     def is_finished(self) -> bool:
         return self.player1_win is not None

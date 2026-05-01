@@ -82,7 +82,7 @@ class TypeStatBoostAbility(Ability):
             "message": f"{stat_name}が上がった！(現在{battle.sb_info.rank_to_power(new_rank)}倍)",
             "stat_type": self.stat_type,
             "new_rank": new_rank,
-            "target": player.id
+            "target": battle.get_player_label(player)
         }
         battle.events.append(event)
 
@@ -109,9 +109,9 @@ class LeechSeedAbility(Ability):
             event = {
                 "type": "ability_trigger",
                 "message": "相手に種を植え付けた！",
-                "poison_target": opponent.id,
-                "attacker": player.id,
-                "target": opponent.id
+                "poison_target": battle.get_player_label(opponent),
+                "attacker": battle.get_player_label(player),
+                "target": battle.get_player_label(opponent)
             }
             battle.events.append(event)
 
@@ -194,7 +194,7 @@ class IshokudogenAbility(Ability):
             battle.events.append({
                 "type": "cure_poison",
                 "message": f"医食同源の効果で毒が治った！",
-                "target": player.id
+                "target": battle.get_player_label(player)
             })
 
 class HokenAbility(Ability):
@@ -209,7 +209,7 @@ class HokenAbility(Ability):
                 "message": f"弱点を突かれて攻撃がぐぐーんと上がった！(現在{battle.sb_info.rank_to_power(player.attack_rank)}倍)",
                 "stat_type": "attack",
                 "new_rank": player.attack_rank,
-                "target": player.id
+                "target": battle.get_player_label(player)
             }
             battle.events.append(event)
 
@@ -243,19 +243,18 @@ class DokubariAbility(Ability):
         return "虫" in types
 
     def apply_after_effect(self, player: Player, battle: 'BaseBattle'):
-        if hasattr(battle, "player1"):
-            opponent = battle.player2 if player.id == battle.player1.id else battle.player1
-            if opponent.poison_turns == 0:
-                opponent.poison_turns = 1
-                opponent.poisoner_id = player.id
-                event = {
-                    "type": "ability_trigger",
-                    "message": "毒を受けた！",
-                    "target": opponent.id,
-                    "attacker": player.id,
-                    "poison_target": opponent.id
-                }
-                battle.events.append(event)
+        opponent = battle.current_target
+        if opponent and opponent.poison_turns == 0:
+            opponent.poison_turns = 1
+            opponent.poisoner_id = player.id
+            event = {
+                "type": "ability_trigger",
+                "message": "毒を受けた！",
+                "target": battle.get_player_label(opponent),
+                "attacker": battle.get_player_label(player),
+                "poison_target": battle.get_player_label(opponent)
+            }
+            battle.events.append(event)
 
 class IkakuAbility(Ability):
     def __init__(self):
@@ -266,13 +265,13 @@ class IkakuAbility(Ability):
         return "動物" in types
 
     def apply_damage_replacement_effect(self, player: Player, battle: 'BaseBattle'):
-        if hasattr(battle, "player1"):
-            opponent = battle.player2 if player.id == battle.player1.id else battle.player1
+        opponent = battle.current_target
+        if opponent:
             opponent.attack_rank = max(MIN_RANK, opponent.attack_rank - 1)
             event = {
                 "type": "stat_down",
                 "message": f"いかくで攻撃が下がった！(現在{battle.sb_info.rank_to_power(opponent.attack_rank)}倍)",
-                "target": opponent.id,
+                "target": battle.get_player_label(opponent),
                 "stat_type": "attack",
                 "new_rank": opponent.attack_rank
             }

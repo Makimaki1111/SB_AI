@@ -34,6 +34,10 @@ class BaseBattle:
         self.word = word
         self.character = self.sb_info.get_next_initial(word)
 
+    def get_player_label(self, player) -> str:
+        """プレイヤーの識別子を返す（Singleならally/foe、DoubleならID）"""
+        return player.id
+
     def _calc_damage(self, at1, at2, dt1, dt2, attacker_ability, attacker, defender):
         """
         ダメージを計算します
@@ -87,7 +91,7 @@ class BaseBattle:
                 self.events.append({
                     "type": "damage",
                     "message": f"毒のダメージを受けた！",
-                    "target": p.id,
+                    "target": self.get_player_label(p),
                     "damage": damage
                 })
                 p.poison_turns += 1
@@ -115,9 +119,9 @@ class BaseBattle:
                 self.events.append({
                     "type": "drain",
                     "message": "やどりぎで体力を奪った！",
-                    "target": actual_defender.id,
+                    "target": self.get_player_label(actual_defender),
                     "damage": actual_drain,
-                    "attacker": attacker.id,
+                    "attacker": self.get_player_label(attacker),
                     "cure_amount": actual_drain
                 })
             else:
