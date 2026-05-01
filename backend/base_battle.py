@@ -348,7 +348,7 @@ class BaseBattle:
         self.used[norm_word].append(actor_id)
         self.character = self.sb_info.get_next_initial(norm_word)
 
-    def execute_attack_flow(self, current_player, target_player, word: str, types: list[str], ability_obj, is_single: bool = True) -> bool:
+    def execute_attack_flow(self, current_player, target_player, word: str, types: list[str], ability_obj) -> bool:
         """
         攻撃処理の共通フローを実行する
         Returns:

@@ -113,13 +113,17 @@ async def websocket_endpoint(websocket: WebSocket):
             for rid in left_rooms:
                 room_manager.start_grace_period(rid, pid, delay=20)
 
-# --- 静的ファイルの配信設定 ---
-current_dir = os.path.dirname(os.path.abspath(__file__))
-frontend_dir = os.path.join(os.path.dirname(current_dir), "frontend")
+# --- フロントエンド配信設定 ---
+frontend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend")
 if os.path.exists(frontend_dir):
     app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
 else:
-    logger.warning(f"Frontend directory not found at {frontend_dir}")
+    # 開発環境などの構成が異なる場合のフォールバック
+    fallback_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "frontend")
+    if os.path.exists(fallback_dir):
+        app.mount("/", StaticFiles(directory=fallback_dir, html=True), name="frontend")
+    else:
+        logger.warning("Frontend directory not found. Please ensure 'frontend' exists.")
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

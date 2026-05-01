@@ -277,7 +277,6 @@ class DoubleUI {
 
         this.backToTitleBtn = new UIObject($('#back-to-title-btn'));
         this.cancelBtn = new UIObject($('#cancel-battle-btn'));
-        this.actionsWrapper = new UIObject($('#actions-wrapper'));
 
         this.timerBar = $('#timer-bar');
         this.timerContainer = $('#timer-container');
@@ -315,20 +314,9 @@ class DoubleUI {
             }
         });
 
-        this.targetP2aBtn = new UIObject($('#target-p2a-btn'));
-        this.targetP2bBtn = new UIObject($('#target-p2b-btn'));
-
-        this.targetP2aBtn.selector.on('click', () => {
-            this.updatePredictionMessage('p2a');
-        });
-        this.targetP2bBtn.selector.on('click', () => {
-            this.updatePredictionMessage('p2b');
-        });
-
         // モーダルのイベントリスナー解除用関数
         this.abilityModalCleanup = null;
         this.activeCharTab = 'p1a'; // 初期タブ
-        this.uiToIdMap = {}; // UI ID から サーバー ID へのマッピング
     }
 
     initCharUI(id) {
@@ -356,219 +344,6 @@ class DoubleUI {
             this.setCharVisibility(id, true);
             this.setWord(id, "");
             this.setHP(id, 1, 1); // Full width visual reset
-        }
-    }
-
-    // --- Unified Interface Methods ---
-    init(data, idToUiMap) {
-        this.resetAll();
-        this.lobbyScreen.hide();
-        this.battleScreen.show();
-        this.syncAll(data.state, idToUiMap);
-    }
-
-    async showStartMessage() {
-        this.showMessage("バトルスタート！");
-        if (typeof playEventSound === 'function') playEventSound("start", "");
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        this.hideMessage();
-    }
-
-    // stopTimer is already implemented below
-
-    setWord(uiId, word) {
-        // UIId is same as charId in double battle
-        const dom = this.chars[uiId].word.selector;
-        if (word) {
-            dom.text(word);
-            dom.stop(true, false).css('opacity', 0).show();
-            this._adjustWordScale(dom);
-            dom.animate({ opacity: 1 }, 300);
-        } else {
-            dom.hide();
-        }
-    }
-
-    setCharImage(uiId, types) {
-        const char = this.chars[uiId];
-        if (!char || typeof type_to_image === "undefined") return;
-
-        if (!types || types.length === 0) {
-            char.img1.selector.hide().attr('src', '').css('opacity', '');
-            char.img2.selector.hide().attr('src', '').css('opacity', '');
-            return;
-        }
-
-        const fadeInImage = (selector, src) => {
-            selector.stop(true, false);
-            selector.hide().attr('src', '').css('opacity', '');
-            const img = new Image();
-            img.onload = () => {
-                selector.css({ opacity: 0, display: 'block' });
-                selector.attr('src', src);
-                selector.animate({ opacity: 1 }, 300, () => {
-                    selector.css('opacity', '');
-                });
-            };
-            img.src = src;
-        };
-
-        if (types.length === 2) {
-            const newImg1 = type_to_image[types[0]];
-            const newImg2 = type_to_image[types[1]];
-            if (newImg1) {
-                fadeInImage(char.img1.selector, "img/" + newImg1 + ".gif");
-                char.img2.selector.hide();
-                if (newImg2) {
-                    setTimeout(() => {
-                        if (this.chars[uiId]) fadeInImage(this.chars[uiId].img2.selector, "img/" + newImg2 + ".gif");
-                    }, 80);
-                }
-            }
-        } else {
-            const newImg = type_to_image[types[0]];
-            if (newImg) {
-                fadeInImage(char.img1.selector, "img/" + newImg + ".gif");
-                char.img2.selector.hide();
-            }
-        }
-    }
-
-    async applyDamage(uiId, damage, message) {
-        this.playEffect(uiId, "damage");
-    }
-
-    async applyCure(uiId, amount) {
-        this.playEffect(uiId, "heal");
-    }
-
-    applyStatChange(uiId, statType, newRank) {
-        if (newRank > 0) this.playEffect(uiId, "stat_up");
-        else if (newRank < 0) this.playEffect(uiId, "stat_down");
-    }
-
-    applyPoison(uiId) {
-        // Visual effect for poison?
-    }
-
-    onAbilityChanged(e) {
-        if (e.message) this.showModalMessage(e.message, 2000);
-    }
-
-    // --- Unified Interface Methods ---
-    init(data, idToUiMap, battleManager) {
-        this.battleManager = battleManager;
-        this.showBattleScreen();
-        this.actionsWrapper.show(); // ルーム情報が来たら表示
-
-        // ボタンイベントの紐付け
-        this.situationButton.selector.off('click').on('click', () => {
-            this.showSituationModal();
-        });
-        this.closeSituationModalBtn.selector.off('click').on('click', () => {
-            this.hideSituationModal();
-        });
-        
-        this.abilityInfoContainer.selector.off('click').on('click', () => {
-            const state = battleManager.battleState;
-            if (!state) return;
-            // ダブルバトルでは先頭の自分のキャラを参照（仮）
-            const myId = Object.keys(idToUiMap).find(id => state.characters[id].owner_id === battleManager.player1_id);
-            const char = state.characters[myId];
-            if (!char) return;
-            
-            const canChange = char.ability_change_count > 0;
-            // 本来は A/B 選択が必要だが、まずはモーダル表示まで
-            this.showAbilityModal();
-        });
-
-        this.syncAll(data.state, idToUiMap);
-    }
-
-    syncAll(state, idToUiMap) {
-        for (const [id, char] of Object.entries(state.characters)) {
-            const uiId = idToUiMap[id];
-            this.setName(uiId, char.name, char.is_poison);
-            this.setHP(uiId, char.hp, char.max_hp);
-            this.setCharVisibility(uiId, !char.is_defeated);
-        }
-        // マッピングの保持
-        this.uiToIdMap = {};
-        for (const [id, uiId] of Object.entries(idToUiMap)) {
-            this.uiToIdMap[uiId] = id;
-        }
-        // Update situation and ability info
-        this.updateSituationInfo({ chars: state.characters });
-        const allAbilities = this.battleManager ? this.battleManager.allAbilities : {};
-        this.updateAbilityInfo(state.characters, allAbilities);
-    }
-
-    onMyTurnStart(state) {
-        this.setWaitMessage("あなたのターンです。");
-        this.setInputText(`「${state.character}」からはじまることば`);
-        this.enableInput();
-        this.showInputArea();
-        this.setTargetSelectionVisible(true);
-        this.startTimer(20, 20);
-    }
-
-    onOpponentTurnStart(state) {
-        this.setWaitMessage("相手のターンです。");
-        this.hideInputArea();
-        this.setTargetSelectionVisible(false);
-        this.startTimer(20, 20);
-    }
-
-    onWin() {
-        this.showMessage("あなたの勝ちです！");
-        this.showBackBtn();
-        if (typeof playSound === 'function') playSound("resource/start.mp3");
-    }
-
-    onLose() {
-        this.showMessage("あなたの負けです...");
-        this.showBackToTitleBtn();
-        if (typeof playSound === 'function') playSound("resource/end.mp3");
-    }
-
-    showBackToTitleBtn() {
-        this.backToTitleBtn.show();
-    }
-
-    // --- 画面遷移制御 ---
-    showBattleScreen() {
-        $('.double-lobby-screen').hide();
-        $('.double-battle-screen').show();
-        this.actionsWrapper.hide(); // ルーム情報が来るまで隠す
-        this.backToTitleBtn.hide();
-        this.disableInput();
-    }
-
-    showLobbyScreen() {
-        $('.double-battle-screen').hide();
-        $('.double-lobby-screen').show();
-    }
-
-    updatePreCheck(data) {
-        this.showCheckResult(data);
-    }
-
-    onAbilityChanged(e) {
-        this.showMessage(e.message || "特性が変わった！");
-        if (typeof playEventSound === 'function') playEventSound("ability_changed", e.message);
-
-        // 特定のキャラクターの特性を更新
-        if (this.battleManager && this.battleManager.battleState) {
-            const chars = this.battleManager.battleState.characters;
-            const targetId = e.target; // 絶対ID (p1a, p1bなど)
-            
-            if (chars[targetId]) {
-                chars[targetId].ability = e.new_ability;
-                chars[targetId].ability_change_count = e.new_ability_change_count;
-            }
-            
-            const allAbilities = this.battleManager.allAbilities || {};
-            this.updateAbilityInfo(chars, allAbilities);
         }
     }
 
@@ -634,10 +409,9 @@ class DoubleUI {
         }
     }
 
-    updatePredictionMessage(uiTargetId) {
-        // uiTargetId: p2a, p2b などのUI上のID
-        const serverId = this.uiToIdMap[uiTargetId];
-        const msg = this.lastPredictions[serverId];
+    updatePredictionMessage(targetId) {
+        // targetId: p2a, p2b などのUI上のID (サーバーIDと一致している前提)
+        const msg = this.lastPredictions[targetId];
         if (msg) {
             this.predictionMessage.selector.text(msg).show();
         } else {
@@ -997,9 +771,7 @@ class DoubleUI {
     }
 
     updateSituationInfo(state) {
-        const chars = state.characters || state.chars || {};
-        const idToUiMap = this.battleManager ? this.battleManager.idToUiMap : {};
-        
+        const chars = state.chars;
         const rankToPower = (rank) => {
             const mapping = {
                 "-6": 0.25, "-5": 0.28, "-4": 0.33, "-3": 0.4, "-2": 0.5, "-1": 0.66, "0": 1.0,
@@ -1013,15 +785,11 @@ class DoubleUI {
             return num.toString() + "倍";
         };
 
-        for (const [absId, uiId] of Object.entries(idToUiMap)) {
-            if (chars[absId]) {
-                const char = chars[absId];
-                const atkRank = char.attack_rank !== undefined ? char.attack_rank : (char.atk !== undefined ? char.atk : 0);
-                const defRank = char.defense_rank !== undefined ? char.defense_rank : (char.def_ !== undefined ? char.def_ : 0);
-
-                $(`#s-${uiId}-name`).text(char.name);
-                $(`#s-${uiId}-atk`).text(formatMultiplier(rankToPower(atkRank)));
-                $(`#s-${uiId}-def`).text(formatMultiplier(rankToPower(defRank)));
+        for (let id of ['p1a', 'p1b', 'p2a', 'p2b']) {
+            if (chars[id]) {
+                $(`#s-${id}-name`).text(chars[id].name);
+                $(`#s-${id}-atk`).text(formatMultiplier(rankToPower(chars[id].attack_rank)));
+                $(`#s-${id}-def`).text(formatMultiplier(rankToPower(chars[id].defense_rank)));
             }
         }
     }
@@ -1037,29 +805,25 @@ class DoubleUI {
     }
 
     updateAbilityInfo(chars, allAbilities) {
-        const idToUiMap = this.battleManager ? this.battleManager.idToUiMap : {};
-        
-        // 味方チームのスロット (p1a, p1b) に対応する絶対IDを探して更新
-        for (const [absId, uiId] of Object.entries(idToUiMap)) {
-            if (uiId !== 'p1a' && uiId !== 'p1b') continue;
-            if (!chars[absId]) continue;
+        // 自分チーム (p1a, p1b) の画面表示のみ更新（モーダルはpopulateAbilityModalで制御）
+        for (let id of ['p1a', 'p1b']) {
+            if (!chars[id]) continue;
+            $(`#a-${id}-name`).text(chars[id].name);
 
-            const char = chars[absId];
-            $(`#a-${uiId}-name`).text(char.name);
-
-            const currentAbility = char.ability;
+            const currentAbility = chars[id].ability;
             const abilityObj = allAbilities[currentAbility];
             
+            // メイン画面の小さな情報ボックス更新
             if (abilityObj) {
-                $(`#a-${uiId}-ability-name`).text(abilityObj.name);
-                $(`#a-${uiId}-ability-desc`).text(abilityObj.description);
+                $(`#a-${id}-ability-name`).text(abilityObj.name);
+                $(`#a-${id}-ability-desc`).text(abilityObj.description);
             } else {
-                $(`#a-${uiId}-ability-name`).text(currentAbility || "---");
-                $(`#a-${uiId}-ability-desc`).text("");
+                $(`#a-${id}-ability-name`).text(currentAbility || "---");
+                $(`#a-${id}-ability-desc`).text("");
             }
 
-            const changeCount = char.ability_change_count || 0;
-            $(`#a-${uiId}-remain`).text(`(あと${changeCount}回)`);
+            const changeCount = chars[id].ability_change_count || 0;
+            $(`#a-${id}-remain`).text(`(あと${changeCount}回)`);
         }
     }
 

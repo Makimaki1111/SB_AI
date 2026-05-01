@@ -160,7 +160,7 @@ class DoubleBattle(BaseBattle):
         ability_obj = self.abilities.get(current_actor.ability)
 
         # BaseBattleの共通フローに委譲
-        self.execute_attack_flow(current_actor, target_actor, word, types, ability_obj, is_single=False)
+        self.execute_attack_flow(current_actor, target_actor, word, types, ability_obj)
 
         self._process_end_of_turn_effects(current_actor, target_actor)
         self._check_win_condition()

@@ -283,14 +283,6 @@ class UI{
 
         this.backToTitleBtn = new UIObject($('#back-to-title-btn'));
         this.cancelBtn = new UIObject($('#cancel-battle-btn'));
-        this.actionsWrapper = new UIObject($('#actions-wrapper'));
-
-        this.allyName = new UIObject($('.ally-name'));
-        this.foeName = new UIObject($('.foe-name'));
-        this.allyHpBar = new UIObject($('.ally-hp-bar'));
-        this.foeHpBar = new UIObject($('.foe-hp-bar'));
-        this.hpText = new UIObject($('.hp').eq(0)); // ally hp text (1st .hp in single)
-        this.foeHpText = new UIObject($('.hp').eq(1)); // foe hp text (2nd .hp in single)
 
         this.timerBar = $('#timer-bar');
         this.timerContainer = $('#timer-container');
@@ -348,237 +340,7 @@ class UI{
 
     showBattleScreen() {
         this.titleScreen.hide();
-        this.battleScreen.selector.css('display', 'flex');
-        this.actionsWrapper.hide(); // ルーム情報が来るまで隠す
-        this.backToTitleBtn.hide();
-    }
-
-    // --- Unified Interface Methods ---
-    init(data, idToUiMap, battleManager) {
-        this.battleManager = battleManager;
-        this.showBattleScreen();
-        this.actionsWrapper.show(); // ルーム情報が来たら表示
-        
-        // ボタンイベントの紐付け
-        this.situationButton.selector.off('click').on('click', () => {
-            this.showSituationModal();
-        });
-        this.closeSituationModalBtn.selector.off('click').on('click', () => {
-            this.hideSituationModal();
-        });
-        
-        this.abilityInfoContainer.selector.off('click').on('click', () => {
-            const state = battleManager.battleState;
-            if (!state) return;
-            const myId = Object.keys(idToUiMap).find(id => idToUiMap[id] === "ally");
-            const char = state.characters[myId];
-            if (!char) return;
-            
-            const canChange = char.ability_change_count > 0;
-            this.populateAbilityModal(
-                battleManager.allAbilities, 
-                char.ability, 
-                canChange, 
-                (newId) => battleManager.changeAbility(newId),
-                () => this.hideAbilityModal()
-            );
-            this.showAbilityModal();
-        });
-
-        this.syncAll(data.state, idToUiMap);
-    }
-
-    async showStartMessage() {
-        this.showMessage("バトルスタート！");
-        if (typeof playEventSound === 'function') playEventSound("start", "");
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        this.hideMessage();
-    }
-
-    stopTimer() {
-        this.timerBar.css('width', '0%');
-        if (this.timerInterval) {
-            clearInterval(this.timerInterval);
-            this.timerInterval = null;
-        }
-    }
-
-    setWord(uiId, word) {
-        if (uiId === "ally") this.showAllyWord(word);
-        else this.showFoeWord(word);
-    }
-
-    setCharImage(uiId, types) {
-        // dummy data for showAllyImage/showFoeImage
-        const dummyData = { state: { [`${uiId}_type`]: types } };
-        if (uiId === "ally") this.showAllyImage(dummyData);
-        else this.showFoeImage(dummyData);
-    }
-
-    async applyDamage(uiId, damage, message) {
-        this.playDamageEffect(uiId === "ally");
-        // HP更新は syncAll で行うが、アニメーションのために一時的に減らすことも可能
-    }
-
-    async applyCure(uiId, amount) {
-        this.playHealEffect(uiId === "ally");
-    }
-
-    applyStatChange(uiId, statType, newRank) {
-        if (newRank > 0) this.playStatUpEffect(uiId === "ally");
-        else this.playStatDownEffect(uiId === "ally");
-    }
-
-    applyPoison(uiId) {
-        // 毒の視覚効果があればここで実行
-    }
-
-    onAbilityChanged(e) {
-        // 特性変更メッセージ
-        if (e.message) this.showModalMessage(e.message, 2000);
-    }
-
-    syncAll(state, idToUiMap) {
-        let allyPoison = false;
-        let foePoison = false;
-
-        for (const [id, char] of Object.entries(state.characters)) {
-            const uiId = idToUiMap[id];
-            this.setName(uiId, char.name, char.is_poison);
-            this.setHP(uiId, char.hp, char.max_hp);
-            // 特性表示の更新
-            const allAbilities = this.battleManager ? this.battleManager.allAbilities : null;
-            if (uiId === "ally") {
-                const abilityObj = allAbilities ? allAbilities[char.ability] : null;
-                if (abilityObj) {
-                    this.allyCurrentAbilityName.selector.text(abilityObj.name);
-                    this.allyCurrentAbilityDesc.selector.text(abilityObj.description);
-                } else {
-                    this.allyCurrentAbilityName.selector.text(char.ability || "---");
-                    this.allyCurrentAbilityDesc.selector.text("");
-                }
-                this.abilityChangeCounterDisplay.selector.text(`(あと${char.ability_change_count}回)`);
-            } else {
-                const abilityObj = (allAbilities && char.ability !== "secret") ? allAbilities[char.ability] : null;
-                if (abilityObj) {
-                    this.foeCurrentAbilityName.selector.text(abilityObj.name);
-                    this.foeCurrentAbilityDesc.selector.text(abilityObj.description);
-                } else if (char.ability === "secret") {
-                    this.foeCurrentAbilityName.selector.text("ひみつ");
-                    this.foeCurrentAbilityDesc.selector.text("相手もきみのとくせいを知らないぞ");
-                } else {
-                    this.foeCurrentAbilityName.selector.text(char.ability || "---");
-                    this.foeCurrentAbilityDesc.selector.text("");
-                }
-            }
-            this.updateLives(uiId === "ally", char.lives, (uiId === "ally" ? state.ally_max_lives : state.foe_max_lives) || 3);
-            
-            const atkRank = char.attack_rank !== undefined ? char.attack_rank : (char.atk !== undefined ? char.atk : 0);
-            const defRank = char.defense_rank !== undefined ? char.defense_rank : (char.def_ !== undefined ? char.def_ : 0);
-            const atkPower = this._rankToPower(atkRank);
-            const defPower = this._rankToPower(defRank);
-
-            if (uiId === "ally") {
-                allyPoison = !!char.is_poison;
-                this.situationAllyA.selector.text(`${atkPower.toFixed(1)}倍`);
-                this.situationAllyB.selector.text(`${defPower.toFixed(1)}倍`);
-            } else {
-                foePoison = !!char.is_poison;
-                this.situationFoeA.selector.text(`${atkPower.toFixed(1)}倍`);
-                this.situationFoeB.selector.text(`${defPower.toFixed(1)}倍`);
-            }
-        }
-        this.updatePoisonStatus(allyPoison, foePoison);
-    }
-
-    _rankToPower(rank) {
-        const mapping = {
-            "-6": 0.25, "-5": 0.28, "-4": 0.33, "-3": 0.4, "-2": 0.5, "-1": 0.66, "0": 1.0,
-            "1": 1.5, "2": 2.0, "3": 2.5, "4": 3.0, "5": 3.5, "6": 4.0
-        };
-        return mapping[rank] || 1.0;
-    }
-
-    onMyTurnStart(state) {
-        this.setWaitMessage("あなたのターンです。");
-        this.setInputText(`「${state.character}」からはじまることば`);
-        this.enableInput();
-        this.showInput();
-        this.showSubmitBtn();
-        this.focusInput();
-        // タイマー開始
-        this.startTimer(20, 20);
-    }
-
-    onOpponentTurnStart(state) {
-        this.setWaitMessage("相手のターンです。");
-        this.showMessage();
-        this.startTimer(20, 20);
-    }
-
-    onWin() {
-        if (typeof stopManagedBGM === 'function') stopManagedBGM();
-        if (typeof playEventSound === 'function') playEventSound("end", "");
-        this.showMessage("あいてとの勝負に勝った！");
-        this.disableInput();
-        this.showBackToTitleBtn();
-        this.stopTimer();
-    }
-
-    onLose() {
-        this.showMessage("あいてとの勝負に負けた…");
-        this.showBackToTitleBtn();
-        this.stopTimer();
-    }
-
-    showBackToTitleBtn() {
-        this.backToTitleBtn.show();
-    }
-
-    updatePreCheck(data) {
-        this.showCheckResult(data);
-    }
-
-    onAbilityChanged(e) {
-        this.showMessage(e.message || "特性が変わった！");
-        if (typeof playEventSound === 'function') playEventSound("ability_changed", e.message);
-
-        // 自分自身の特性表示を更新 (シングルバトルの場合は常に自分)
-        const allAbilities = this.battleManager ? this.battleManager.allAbilities : null;
-        const abilityObj = allAbilities ? allAbilities[e.new_ability] : null;
-        
-        if (abilityObj) {
-            this.allyCurrentAbilityName.selector.text(abilityObj.name);
-            this.allyCurrentAbilityDesc.selector.text(abilityObj.description);
-        } else {
-            this.allyCurrentAbilityName.selector.text(e.new_ability || "---");
-            this.allyCurrentAbilityDesc.selector.text("");
-        }
-        
-        if (e.new_ability_change_count !== undefined) {
-            this.abilityChangeCounterDisplay.selector.text(`(あと${e.new_ability_change_count}回)`);
-        }
-    }
-
-    // --- Helper methods adapted for unified call ---
-    setName(uiId, name, isPoison) {
-        if (uiId === "ally") {
-            this.allyName.selector.text(name);
-            this.allyNameText = name;
-        } else {
-            this.foeName.selector.text(name);
-            this.foeNameText = name;
-        }
-    }
-
-    setHP(uiId, hp, maxHp) {
-        if (uiId === "ally") {
-            this.updateHPBar(hp, maxHp, this.allyHpBar.selector);
-            this.hpText.selector.text(`${hp}/${maxHp}`);
-        } else {
-            this.updateHPBar(hp, maxHp, this.foeHpBar.selector);
-            this.foeHpText.selector.text(`${hp}/${maxHp}`);
-        }
+        this.battleScreen.selector.css('display', 'flex'); // Flexboxレイアウトを維持
     }
 
     _setImageWithReplaceAndFade(selector, src, duration = 300) {
@@ -843,15 +605,17 @@ class UI{
     }
 
     _renderAllyName() {
-        this.allyName.selector.text(this.allyNameText || "");
-        if (this.isAllyPoison) this.allyName.selector.append('<span class="poison">どく</span>');
-        this.allyName.show();
+        const el = $('.ally-name');
+        el.text(this.allyNameText || "");
+        if (this.isAllyPoison) el.append('<span class="poison">どく</span>');
+        el.show();
     }
 
     _renderFoeName() {
-        this.foeName.selector.text(this.foeNameText || "");
-        if (this.isFoePoison) this.foeName.selector.append('<span class="poison">どく</span>');
-        this.foeName.show();
+        const el = $('.foe-name');
+        el.text(this.foeNameText || "");
+        if (this.isFoePoison) el.append('<span class="poison">どく</span>');
+        el.show();
     }
 
     setAllyHP(hp, max_hp) {
@@ -1366,15 +1130,24 @@ class UI{
     }
 
     updateSituation(allyAtk, allyDef, foeAtk, foeDef, allyLives, foeLives, allyMaxLives, foeMaxLives) {
+        // ランクから倍率への変換マップ (backend/SB_info.py と同期)
+        const rankToPower = (rank) => {
+             const mapping = {
+                "-6": 0.25, "-5": 0.28, "-4": 0.33, "-3": 0.4, "-2": 0.5, "-1": 0.66, "0": 1.0,
+                "1": 1.5, "2": 2.0, "3": 2.5, "4": 3.0, "5": 3.5, "6": 4.0
+            };
+            return mapping[rank] || 1.0;
+        };
+
         const formatMultiplier = (num) => {
             if (num % 1 === 0) return num.toFixed(1);
             return num.toString();
         };
 
-        this.situationAllyA.selector.text(formatMultiplier(this._rankToPower(allyAtk)) + "倍");
-        this.situationAllyB.selector.text(formatMultiplier(this._rankToPower(allyDef)) + "倍");
-        this.situationFoeA.selector.text(formatMultiplier(this._rankToPower(foeAtk)) + "倍");
-        this.situationFoeB.selector.text(formatMultiplier(this._rankToPower(foeDef)) + "倍");
+        this.situationAllyA.selector.text(formatMultiplier(rankToPower(allyAtk)) + "倍");
+        this.situationAllyB.selector.text(formatMultiplier(rankToPower(allyDef)) + "倍");
+        this.situationFoeA.selector.text(formatMultiplier(rankToPower(foeAtk)) + "倍");
+        this.situationFoeB.selector.text(formatMultiplier(rankToPower(foeDef)) + "倍");
 
         const hasStock = allyMaxLives > 1 || foeMaxLives > 1;
 
@@ -1425,26 +1198,6 @@ class UI{
                 // アニメーション終了後に削除
                 setTimeout(() => { particle.remove(); }, 1500);
             }, i * 80); // 少しずつずらして出現させる
-        }
-    }
-
-    updateLives(isAlly, lives, maxLives) {
-        const container = isAlly ? this.allyLivesContainer.selector : this.foeLivesContainer.selector;
-        if (!container.length) return;
-
-        container.empty();
-        // lives が undefined の場合は非表示（ストック制でないモード）
-        if (lives === undefined || lives === null) return;
-
-        for (let i = 0; i < maxLives; i++) {
-            const heart = $('<span class="heart"></span>');
-            if (i >= lives) {
-                heart.addClass('empty');
-                heart.html('&#9825;'); // ♡
-            } else {
-                heart.html('&#9829;'); // ♥
-            }
-            container.append(heart);
         }
     }
 

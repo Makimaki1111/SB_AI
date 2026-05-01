@@ -30,15 +30,6 @@
             margin-top: 40px !important;
         }
     </style>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://unpkg.com/wanakana"></script>
-    <script src="type_to_image.js"></script>
-    <script src="shared_audio.js"></script>
-    <script src="audio_bridge.js"></script>
-    <script src="UIObject.js"></script>
-    <script src="double_UI.js?v=20"></script>
-    <script src="BattleManager.js"></script>
-    <script src="double_script.js?v=13"></script>
 </head>
 
 <body>
@@ -107,7 +98,7 @@
                     </div>
                 </div>
 
-                <!-- メニュースボタン群をコンテナでラップして重なりと間隔を管理 -->
+                <!-- メニューボタン群をコンテナでラップして重なりと間隔を管理 -->
                 <div class="title-buttons-container">
 
                     <!-- ランダムマッチ -->
@@ -409,6 +400,13 @@
         </div>
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/wanakana"></script>
+    <script src="type_to_image.js"></script>
+    <script src="shared_audio.js"></script>
+    <script src="audio_bridge.js"></script>
+    <!-- UIとベースロジックを流用 -->
+    <script src="UIObject.js"></script>
     <script>
         function navigateInShell(page) {
             try {
@@ -447,117 +445,6 @@
             if (checked) updateModeSelection(checked);
         });
 
-        // --- ロビー用 特性選択ロジック (ダブルバトル用) ---
-        (function () {
-            const btn1 = document.getElementById('double-lobby-ability-btn-1');
-            const btn2 = document.getElementById('double-lobby-ability-btn-2');
-            const modal = document.getElementById('double-lobby-ability-modal');
-            const closeBtn = document.getElementById('close-double-lobby-ability-modal');
-            const abilitiesList = document.getElementById('double-lobby-abilities-list');
-            const descEl = document.getElementById('double-lobby-ability-desc');
-
-            let allAbilities = {};
-            let currentTargetChar = 1; // 1 or 2
-            let currentAbilityId1 = localStorage.getItem("sb_ability") || "";
-            let currentAbilityId2 = localStorage.getItem("sb_ability_2") || "";
-
-            // 特性データの取得
-            let baseUrl = '';
-            const hostname = window.location.hostname;
-            if (!hostname || window.location.protocol === 'file:' || hostname === 'localhost' || hostname === '127.0.0.1') {
-                if (window.location.port !== '8000') baseUrl = 'http://localhost:8000';
-            }
-
-            fetch(`${baseUrl}/abilities`)
-                .then(res => res.json())
-                .then(data => {
-                    allAbilities = data;
-                    updateLobbyButtonDisplay(1);
-                    updateLobbyButtonDisplay(2);
-                })
-                .catch(e => console.error("特性データの取得に失敗しました", e));
-
-            function updateLobbyButtonDisplay(charIdx) {
-                const abilityId = (charIdx === 1) ? currentAbilityId1 : currentAbilityId2;
-                const nameEl = document.getElementById(`double-lobby-ability-name-${charIdx}`);
-                const shortDescEl = document.getElementById(`double-lobby-ability-short-desc-${charIdx}`);
-                const iconEl = document.getElementById(`double-lobby-ability-icon-${charIdx}`);
-
-                if (iconEl) iconEl.style.display = 'block';
-
-                if (abilityId && allAbilities[abilityId]) {
-                    const info = allAbilities[abilityId];
-                    if (nameEl) nameEl.textContent = info.name;
-                    if (shortDescEl) shortDescEl.textContent = info.description;
-                    const iconName = (typeof type_to_image !== 'undefined' && type_to_image[info.icon_type]) ? type_to_image[info.icon_type] : 'normal';
-                    if (iconEl) iconEl.src = `img/${iconName}.gif`;
-                } else {
-                    if (nameEl) nameEl.textContent = "ランダム";
-                    if (shortDescEl) shortDescEl.textContent = "ランダムに決定されます";
-                    if (iconEl) iconEl.src = "img/unaware.gif";
-                }
-            }
-
-            function renderAbilitiesList() {
-                abilitiesList.innerHTML = '';
-                const selectedId = (currentTargetChar === 1) ? currentAbilityId1 : currentAbilityId2;
-
-                // ランダム
-                const randomDiv = document.createElement('div');
-                randomDiv.className = `skill-item ${selectedId === "" ? "selected" : ""}`;
-                randomDiv.innerHTML = `<img class="skill-icon" src="img/unaware.gif"><br><span>ランダム</span>`;
-                randomDiv.addEventListener('click', () => selectAbility("", "ランダム", "ランダムに決定されます"));
-                abilitiesList.appendChild(randomDiv);
-
-                for (const [id, info] of Object.entries(allAbilities)) {
-                    if (id === "secret") continue;
-                    const div = document.createElement('div');
-                    div.className = `skill-item ${selectedId === id ? "selected" : ""}`;
-                    const iconName = (typeof type_to_image !== 'undefined' && type_to_image[info.icon_type]) ? type_to_image[info.icon_type] : 'normal';
-                    div.innerHTML = `<img class="skill-icon" src="img/${iconName}.gif"><br><span>${info.name}</span>`;
-                    div.addEventListener('click', () => selectAbility(id, info.name, info.description));
-                    abilitiesList.appendChild(div);
-                }
-            }
-
-            function selectAbility(id, name, desc) {
-                if (currentTargetChar === 1) {
-                    currentAbilityId1 = id;
-                    localStorage.setItem("sb_ability", id);
-                } else {
-                    currentAbilityId2 = id;
-                    localStorage.setItem("sb_ability_2", id);
-                }
-                descEl.textContent = desc;
-                renderAbilitiesList();
-                updateLobbyButtonDisplay(currentTargetChar);
-                if (typeof playSound === 'function') playSound("resource/concent.mp3");
-            }
-
-            btn1.addEventListener('click', () => {
-                currentTargetChar = 1;
-                modal.style.display = 'flex';
-                renderAbilitiesList();
-                const info = allAbilities[currentAbilityId1];
-                descEl.textContent = info ? info.description : "ランダムに決定されます";
-                if (typeof playSound === 'function') playSound("resource/pera.mp3");
-            });
-
-            btn2.addEventListener('click', () => {
-                currentTargetChar = 2;
-                modal.style.display = 'flex';
-                renderAbilitiesList();
-                const info = allAbilities[currentAbilityId2];
-                descEl.textContent = info ? info.description : "ランダムに決定されます";
-                if (typeof playSound === 'function') playSound("resource/pera.mp3");
-            });
-
-            closeBtn.addEventListener('click', () => {
-                modal.style.display = 'none';
-                if (typeof playSound === 'function') playSound("resource/pera.mp3");
-            });
-        })();
-
         const lobbyBackBtn = document.getElementById('lobby-back-btn');
         if (lobbyBackBtn) {
             lobbyBackBtn.addEventListener('click', (e) => {
@@ -566,6 +453,9 @@
             });
         }
     </script>
+    <script src="double_UI.js?v=20"></script>
+    <script src="double_script.js?v=13"></script>
+
 </body>
 
 </html>

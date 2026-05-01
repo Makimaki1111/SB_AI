@@ -146,7 +146,7 @@ class SingleBattle(BaseBattle):
         ability_obj = self.abilities.get(current_player.ability)
         
         # BaseBattleの共通フローに委譲
-        self.execute_attack_flow(current_player, target_player, word, types, ability_obj, is_single=True)
+        self.execute_attack_flow(current_player, target_player, word, types, ability_obj)
 
         self._process_end_of_turn_effects(current_player, target_player)
         self._check_win_condition()
