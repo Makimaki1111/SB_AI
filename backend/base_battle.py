@@ -244,10 +244,130 @@ class BaseBattle:
 
     def record_used_word(self, word: str, actor_id: str):
         """単語を使用済みリストに登録し、次の文字を更新"""
-        # 既に正規化されているはずだが、念のため
         norm_word = self.katakana_to_hiragana(word)
         self.used[norm_word].append(actor_id)
         self.character = self.sb_info.get_next_initial(norm_word)
+
+    def execute_attack_flow(self, current_player, target_player, word: str, types: list[str], ability_obj, is_single: bool = True) -> bool:
+        """
+        攻撃処理の共通フローを実行する
+        Returns:
+            bool: 攻撃が完了したかどうか（Falseの場合は中断など）
+        """
+        # いしょくどうげん互換処理
+        if ability_obj and getattr(ability_obj, "name", "") == "いしょくどうげん" and "食べ物" in types:
+            if "食べ物" in types: types.remove("食べ物")
+            if "医療" not in types: types.append("医療")
+
+        # 特性発動 (ダメージ置換系)
+        if ability_obj and ability_obj.check_condition(current_player, types, word):
+            if ability_obj.replaces_damage:
+                ability_obj.apply_damage_replacement_effect(current_player, self)
+                return True
+
+        # 通常攻撃
+        at1 = types[0] if len(types) >= 1 else ""
+        at2 = types[1] if len(types) >= 2 else ""
+        dt1 = target_player.types[0] if len(target_player.types) >= 1 else ""
+        dt2 = target_player.types[1] if len(target_player.types) >= 2 else ""
+
+        # 回復系処理
+        if "食べ物" in types:
+            limit = FOOD_LIMIT
+            ignore_limit = ability_obj and ability_obj.should_ignore_food_limit()
+            if ignore_limit or current_player.food_count < limit:
+                current_player.food_count += 1
+                cure_amount = FOOD_RECOVERY_AMOUNT
+                if ability_obj: cure_amount = ability_obj.get_food_recovery_amount(cure_amount)
+                
+                # イベント送信形式を統一
+                self.events.append({
+                    "type": "cure", 
+                    "message": "体力が回復した", 
+                    "ally_cure": cure_amount if is_single and getattr(self, "player1_turn", False) else 0, 
+                    "foe_cure": 0 if is_single and getattr(self, "player1_turn", False) else cure_amount,
+                    "amount": cure_amount,
+                    "target": current_player.id
+                })
+                current_player.heal(cure_amount)
+            else:
+                self.events.append({"type": "message", "message": "もう食べられない！", "target": current_player.id})
+        elif "医療" in types:
+            if current_player.medical_count < MEDICAL_LIMIT:
+                current_player.medical_count += 1
+                if current_player.poison_turns > 0:
+                    current_player.poison_turns = 0
+                    current_player.poisoner_id = None
+                    # JSON構造の統一に向けてplayer/target両方を付与
+                    self.events.append({"type": "cure_poison", "message": "毒が治った！", "player": "ally" if is_single and getattr(self, "player1_turn", False) else "foe", "target": current_player.id})
+                
+                self.events.append({
+                    "type": "cure", 
+                    "message": "体力が回復した", 
+                    "ally_cure": MEDICAL_RECOVERY_AMOUNT if is_single and getattr(self, "player1_turn", False) else 0, 
+                    "foe_cure": 0 if is_single and getattr(self, "player1_turn", False) else MEDICAL_RECOVERY_AMOUNT,
+                    "amount": MEDICAL_RECOVERY_AMOUNT,
+                    "target": current_player.id
+                })
+                current_player.heal(MEDICAL_RECOVERY_AMOUNT)
+            else:
+                self.events.append({"type": "message", "message": "もう回復できない！", "target": current_player.id})
+        else:
+            effect, damage, is_critical = self._calc_damage(at1, at2, dt1, dt2, ability_obj, current_player, target_player)
+            if ability_obj: damage = int(damage * ability_obj.get_damage_multiplier(types, word))
+            if is_critical: damage = int(damage * CRITICAL_HIT_MULTIPLIER)
+            
+            msg = self._get_effect_message(effect)
+            
+            # シングル・ダブルの互換性を取るためのイベント構築
+            event = {
+                "type": "damage", 
+                "message": msg, 
+                "ally_damage": 0 if is_single and getattr(self, "player1_turn", False) else damage, 
+                "foe_damage": damage if is_single and getattr(self, "player1_turn", False) else 0,
+                "damage": damage,
+                "attacker": current_player.id,
+                "target": target_player.id
+            }
+            self.events.append(event)
+            
+            if is_critical: 
+                self.events.append({"type": "critical", "message": "急所に当たった！", "attacker": current_player.id, "target": target_player.id})
+            
+            # 防御側特性
+            defender_ability = getattr(self, "abilities", {}).get(target_player.ability)
+            if defender_ability:
+                try: defender_ability.on_receive_damage(target_player, current_player, damage, effect, self)
+                except Exception: pass
+
+            target_player.take_damage(damage)
+            if target_player.is_defeated: 
+                # 撃破処理は各クラスに委譲
+                if hasattr(self, "_handle_knockout"):
+                    self._handle_knockout(target_player)
+                else:
+                    self.events.append({"type": "message", "message": f"{target_player.name}はたおれた！", "target": target_player.id})
+
+        # 暴力ペナルティ
+        if "暴力" in types:
+            drop = VIOLENCE_ATTACK_DROP
+            if ability_obj: drop -= ability_obj.get_violence_penalty_reduction()
+            current_player.attack_rank = max(MIN_RANK, current_player.attack_rank - drop)
+            self.events.append({
+                "type": "stat_down", 
+                "message": "攻撃が下がった！", 
+                "player": "ally" if is_single and getattr(self, "player1_turn", False) else "foe", 
+                "stat_type": "attack", 
+                "new_rank": current_player.attack_rank,
+                "target": current_player.id
+            })
+
+        # 事後特性
+        if ability_obj and not ability_obj.replaces_damage and ability_obj.check_condition(current_player, types, word):
+            try: ability_obj.apply_after_effect(current_player, self)
+            except Exception: pass
+            
+        return True
 
     def get_personalized_response(self, base_response: dict, player_id: str) -> dict:
         """プレイヤーの視点に合わせてレスポンスを加工する（サブクラスで実装）"""

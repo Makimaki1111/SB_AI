@@ -156,62 +156,11 @@ class DoubleBattle_info(BaseBattle):
         current_actor.types = types[:]
         ability_obj = self.abilities.get(current_actor.ability)
 
-        # 「いしょくどうげん」互換処理
-        if ability_obj and isinstance(ability_obj, IshokudogenAbility) and "食べ物" in types:
-            if "食べ物" in types: types.remove("食べ物")
-            if "医療" not in types: types.append("医療")
-
-        # 特性発動 (ダメージ置換系)
-        if ability_obj and ability_obj.check_condition(current_actor, types, word):
-            if ability_obj.replaces_damage:
-                # シングル用特性に一時的に self.player1/2 を提供
-                self.player1, self.player2 = current_actor, target_actor
-                ability_obj.apply_damage_replacement_effect(current_actor, self)
-                self._process_end_of_turn_effects(current_actor, target_actor)
-                self._check_win_condition()
-                self._patch_ability_events(current_actor, target_actor)
-                self.record_used_word(word, current_actor.id)
-                self.last_actor_id = current_actor.id
-                self._advance_turn_index()
-                ret = self._make_response()
-                self.word, self.events = "", []
-                return ret
-
-        # 通常攻撃
-        at1 = types[0] if len(types) >= 1 else ""
-        at2 = types[1] if len(types) >= 2 else ""
-        dt1 = target_actor.types[0] if len(target_actor.types) >= 1 else ""
-        dt2 = target_actor.types[1] if len(target_actor.types) >= 2 else ""
+        # BaseBattleの共通フローに委譲
+        # ダブルバトル向けの特性処理のため一時的にplayer1/2を設定
+        self.player1, self.player2 = current_actor, target_actor
         
-        effect, damage, is_critical = self._calc_damage(at1, at2, dt1, dt2, ability_obj, current_actor, target_actor)
-        if ability_obj: damage = int(damage * ability_obj.get_damage_multiplier(types, word))
-        if is_critical: damage = int(damage * CRITICAL_HIT_MULTIPLIER)
-
-        msg = self._get_effect_message(effect)
-        self.events.append({"type": "damage", "message": msg, "target": target_actor.id, "damage": damage, "attacker": current_actor.id})
-        if is_critical: self.events.append({"type": "critical", "message": "急所に当たった！"})
-
-        defender_ability = self.abilities.get(target_actor.ability)
-        if defender_ability:
-            self.player1, self.player2 = current_actor, target_actor
-            try: defender_ability.on_receive_damage(target_actor, current_actor, damage, effect, self)
-            except Exception: pass
-
-        if "暴力" in types:
-            drop = VIOLENCE_ATTACK_DROP
-            if ability_obj: drop -= ability_obj.get_violence_penalty_reduction()
-            current_actor.attack_rank = max(MIN_RANK, current_actor.attack_rank - drop)
-            self.events.append({"type": "stat_down", "message": "攻撃が下がった！", "target": current_actor.id, "stat_type": "attack", "new_rank": current_actor.attack_rank})
-
-        target_actor.take_damage(damage)
-        if target_actor.is_defeated:
-            self.events.append({"type": "message", "message": f"{target_actor.name}はたおれた！"})
-
-        # 事後特性
-        if ability_obj and not ability_obj.replaces_damage and ability_obj.check_condition(current_actor, types, word):
-            self.player1, self.player2 = current_actor, target_actor
-            try: ability_obj.apply_after_effect(current_actor, self)
-            except Exception: pass
+        self.execute_attack_flow(current_actor, target_actor, word, types, ability_obj, is_single=False)
 
         self._process_end_of_turn_effects(current_actor, target_actor)
         self._check_win_condition()

@@ -493,89 +493,12 @@ class Battle_info(BaseBattle):
             return {"type": "error", "message": "「ん」で終わっています"}
 
         types = [t for t in self.sb_info.get_types(word) if t]
-        original_types = types[:]
+        current_player.types = types[:]
         ability_obj = self.abilities.get(current_player.ability)
         
-        # 特性発動チェック (ダメージ置換系)
-        if ability_obj and ability_obj.check_condition(current_player, types, word):
-            if ability_obj.replaces_damage:
-                current_player.types = original_types[:]
-                ability_obj.apply_damage_replacement_effect(current_player, self)
-                self._process_end_of_turn_effects(current_player, target_player)
-                self.record_used_word(word, player_id)
-                self.character = self.sb_info.get_next_initial(word)
-                ret = self._make_response()
-                self.player1_turn = not self.player1_turn
-                self.turn += 1
-                return ret
-        
-        # 通常攻撃
-        current_player.types = original_types[:]
-        at1 = types[0] if len(types) >= 1 else ""
-        at2 = types[1] if len(types) >= 2 else ""
-        dt1 = target_player.types[0] if len(target_player.types) >= 1 else ""
-        dt2 = target_player.types[1] if len(target_player.types) >= 2 else ""
-        
-        # いしょくどうげん処理 ( try_attack 内での特別扱い)
-        if ability_obj and isinstance(ability_obj, IshokudogenAbility) and "食べ物" in types:
-            types_for_dmg = [t for t in types if t != "食べ物"]
-            if "医療" not in types_for_dmg: types_for_dmg.append("医療")
-        else:
-            types_for_dmg = types
+        # BaseBattleの共通フローに委譲
+        self.execute_attack_flow(current_player, target_player, word, types, ability_obj, is_single=True)
 
-        # 回復系処理
-        if "食べ物" in types:
-            limit = FOOD_LIMIT
-            ignore_limit = ability_obj and ability_obj.should_ignore_food_limit()
-            if ignore_limit or current_player.food_count < limit:
-                current_player.food_count += 1
-                cure_amount = FOOD_RECOVERY_AMOUNT
-                if ability_obj: cure_amount = ability_obj.get_food_recovery_amount(cure_amount)
-                self.events.append({"type": "cure", "message": "体力が回復した", "ally_cure": cure_amount if self.player1_turn else 0, "foe_cure": 0 if self.player1_turn else cure_amount})
-                current_player.heal(cure_amount)
-            else:
-                self.events.append({"type": "message", "message": "もう食べられない！"})
-        elif "医療" in types:
-            if current_player.medical_count < MEDICAL_LIMIT:
-                current_player.medical_count += 1
-                if current_player.poison_turns > 0:
-                    current_player.poison_turns = 0
-                    current_player.poisoner_id = None
-                    self.events.append({"type": "cure_poison", "message": "毒が治った！", "player": "ally" if self.player1_turn else "foe"})
-                self.events.append({"type": "cure", "message": "体力が回復した", "ally_cure": MEDICAL_RECOVERY_AMOUNT if self.player1_turn else 0, "foe_cure": 0 if self.player1_turn else MEDICAL_RECOVERY_AMOUNT})
-                current_player.heal(MEDICAL_RECOVERY_AMOUNT)
-            else:
-                self.events.append({"type": "message", "message": "もう回復できない！"})
-        else:
-            effect, damage, is_critical = self._calc_damage(at1, at2, dt1, dt2, ability_obj, current_player, target_player)
-            if ability_obj: damage = int(damage * ability_obj.get_damage_multiplier(types, word))
-            if is_critical: damage = int(damage * CRITICAL_HIT_MULTIPLIER)
-            
-            msg = self._get_effect_message(effect)
-            self.events.append({"type": "damage", "message": msg, "ally_damage": 0 if self.player1_turn else damage, "foe_damage": damage if self.player1_turn else 0})
-            if is_critical: self.events.append({"type": "critical", "message": "急所に当たった！"})
-            
-            # 防御側特性
-            defender_ability = self.abilities.get(target_player.ability)
-            if defender_ability:
-                try: defender_ability.on_receive_damage(target_player, current_player, damage, effect, self)
-                except Exception: pass
-
-            target_player.take_damage(damage)
-            if target_player.is_defeated: self._handle_knockout(target_player)
-
-        # 暴力ペナルティ
-        if "暴力" in types:
-            drop = VIOLENCE_ATTACK_DROP
-            if ability_obj: drop -= ability_obj.get_violence_penalty_reduction()
-            current_player.attack_rank = max(MIN_RANK, current_player.attack_rank - drop)
-            self.events.append({"type": "stat_down", "message": "攻撃力が下がった！", "player": "ally" if self.player1_turn else "foe", "stat_type": "attack", "new_rank": current_player.attack_rank})
-
-        # 事後特性
-        if ability_obj and not ability_obj.replaces_damage and ability_obj.check_condition(current_player, types, word):
-            try: ability_obj.apply_after_effect(current_player, self)
-            except Exception: pass
-            
         self._process_end_of_turn_effects(current_player, target_player)
         self.record_used_word(word, player_id)
         self.character = self.sb_info.get_next_initial(word)
