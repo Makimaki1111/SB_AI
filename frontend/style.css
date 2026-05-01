@@ -1151,3 +1151,265 @@ select {
   0% { transform: translateX(-25%); }
   100% { transform: translateX(0%); }
 }
+
+/* ========================================================= */
+/* モーダル用スタイル (UI.jsから移動・ネームスペース化) */
+/* ========================================================= */
+
+#ability-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 2000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    padding: 0;
+    margin: 0;
+}
+#ability-modal .ability-modal-wrapper {
+    width: 90%;
+    max-width: 400px;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    color: #333;
+    font-family: "M PLUS Rounded 1c", sans-serif;
+    position: relative;
+    height: auto;
+    max-height: 94vh;
+    overflow-y: hidden;
+}
+#ability-modal .current-ability-section {
+    width: 100%;
+    margin-bottom: 4px;
+    padding-bottom: 4px;
+    border-bottom: 1px dashed #ddd;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+}
+#ability-modal .section-label {
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 4px;
+    display: block;
+}
+#ability-modal .ability-name-display {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #333;
+    margin: 0;
+    height: 2.4rem;
+    line-height: 1.1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    overflow: hidden;
+}
+#ability-modal .ability-desc-display {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 1px;
+    line-height: 1.25;
+    height: 2.6rem;
+    overflow-y: auto;
+    display: block;
+    word-break: break-word;
+}
+#ability-modal .carousel-container {
+    position: relative;
+    width: 100%;
+    height: 160px;
+    margin: 0;
+    touch-action: pan-y;
+    user-select: none;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+#ability-modal .carousel-track {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 0;
+    height: 100%;
+}
+#ability-modal .carousel-item {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #fff;
+    border: 4px solid #ddd;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    top: 50%;
+    left: 50%;
+    transform-origin: center center;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), border-color 0.3s, background-color 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    z-index: 1;
+}
+#ability-modal .carousel-item.selected {
+    border-color: #ff9800;
+    background: #fff8e1;
+    z-index: 10;
+    box-shadow: 0 0 20px rgba(255, 152, 0, 0.6);
+}
+#ability-modal .carousel-item img {
+    width: 85%;
+    height: 85%;
+    object-fit: contain;
+}
+#ability-modal .modal-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 5px;
+    width: 100%;
+    justify-content: center;
+    flex-shrink: 0;
+    padding-bottom: 5px;
+}
+#ability-modal .modal-btn {
+    padding: 12px 24px;
+    border-radius: 30px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 1rem;
+    min-width: 110px;
+    transition: transform 0.1s, opacity 0.2s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+#ability-modal .modal-btn:active {
+    transform: scale(0.95);
+}
+#ability-modal .btn-decide {
+    background: linear-gradient(135deg, #ff9800, #ff5722);
+    color: white;
+}
+#ability-modal .btn-decide:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+#ability-modal .btn-close {
+    background: #f0f0f0;
+    color: #555;
+}
+
+#situation-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 2000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    margin: 0;
+}
+#situation-modal .situation-modal-wrapper {
+    width: 90%;
+    max-width: 400px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    color: #333;
+    font-family: "M PLUS Rounded 1c", sans-serif;
+}
+#situation-modal .situation-cards-container {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    margin-bottom: 20px;
+}
+#situation-modal .s-card {
+    flex: 1;
+    background: #f9f9f9;
+    border-radius: 15px;
+    padding: 12px 8px;
+    border: 2px solid #eee;
+}
+#situation-modal .s-card.foe-card {
+    border-color: #ffcdd2;
+}
+#situation-modal .s-card.ally-card {
+    border-color: #c8e6c9;
+}
+#situation-modal .s-card-header {
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    color: #555;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 4px;
+}
+#situation-modal .s-stat-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+#situation-modal .s-stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+#situation-modal .s-stat-label {
+    font-size: 0.7rem;
+    color: #888;
+}
+#situation-modal .s-stat-value {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #333;
+}
+#situation-modal .s-lives-item .s-stat-value {
+    color: #ff9800;
+}
+
+/* 共通で使用される lives-display-item */
+.lives-display-item {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background-color: #ff9800;
+    box-shadow: 0 0 4px rgba(255, 152, 0, 0.9);
+    border: 2px solid #fff;
+    flex-shrink: 0;
+}
+.lives-display-item.lost {
+    background-color: #555;
+    box-shadow: none;
+    border-color: #777;
+}
+
+/* インラインスタイル撲滅用の追加クラス */
+#ability-modal .current-ability-section.preview {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+#ability-modal .section-label.preview {
+    color: #ff9800;
+}

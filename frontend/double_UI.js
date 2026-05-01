@@ -1,267 +1,7 @@
 // double_UI.js - ダブルバトル用UI管理クラス
 
-const modalStyles = `
-<style id="ability-modal-styles">
-#ability-modal {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    background: rgba(0, 0, 0, 0.6) !important;
-    z-index: 2000 !important;
-    display: none;
-    justify-content: center !important;
-    align-items: center !important;
-    flex-direction: column !important;
-    padding: 0 !important;
-    margin: 0 !important;
-}
-.ability-modal-wrapper {
-    width: 90% !important;
-    max-width: 400px !important;
-    box-sizing: border-box !important;
-    background: rgba(255, 255, 255, 0.95);
-    transition: background 0.5s ease !important;
-    border-radius: 20px;
-    padding: 10px; /* さらに削減 */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    text-align: center;
-    color: #333;
-    font-family: "M PLUS Rounded 1c", sans-serif;
-    position: relative;
-    height: auto;
-    max-height: 92vh; /* 少し余裕を持たせる */
-    overflow-y: auto; /* 万が一入り切らない場合はスクロールを許可 */
-}
-.current-ability-section {
-    width: 100%;
-    margin-bottom: 4px;
-    padding-bottom: 4px;
-    border-bottom: 1px dashed #ddd; /* 線を細く */
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-}
-.section-label {
-    font-size: 0.8rem;
-    color: #888;
-    margin-bottom: 4px;
-    display: block;
-}
-.ability-name-display {
-    font-size: 1.1rem;
-    font-weight: bold;
-    color: #333;
-    margin: 0;
-    height: 2.4rem; /* さらに短縮 */
-    line-height: 1.1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    overflow: hidden;
-}
-.ability-desc-display {
-    font-size: 0.8rem;
-    color: #666;
-    margin-top: 1px;
-    line-height: 1.25;
-    height: 2.4rem; /* さらに短縮 */
-    overflow-y: auto;
-    display: block;
-    word-break: break-word;
-}
-.carousel-container {
-    position: relative;
-    width: 100%;
-    height: 160px; /* 極限まで短縮 */
-    margin: 0;
-    touch-action: pan-y;
-    user-select: none;
-    overflow: hidden;
-    flex-shrink: 0;
-}
-.carousel-track {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    width: 0;
-    height: 100%;
-}
-.carousel-item {
-    position: absolute;
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: #fff;
-    border: 4px solid #ddd;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    top: 50%;
-    left: 50%;
-    transform-origin: center center;
-    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), border-color 0.3s, background-color 0.3s, box-shadow 0.3s;
-    cursor: pointer;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    z-index: 1;
-}
-.carousel-item.selected {
-    border-color: #ff9800;
-    background: #fff8e1;
-    z-index: 10;
-    box-shadow: 0 0 20px rgba(255, 152, 0, 0.6);
-}
-.carousel-item img {
-    width: 85% !important;
-    height: 85% !important;
-    object-fit: contain !important;
-}
-.modal-actions {
-    display: flex;
-    gap: 15px;
-    margin-top: 5px; /* 短縮 */
-    width: 100%;
-    justify-content: center;
-    flex-shrink: 0;
-    padding-bottom: 2px;
-}
-.modal-btn {
-    padding: 12px 24px;
-    border-radius: 30px;
-    border: none;
-    font-weight: bold;
-    cursor: pointer;
-    font-size: 1rem;
-    min-width: 110px;
-    transition: transform 0.1s, opacity 0.2s;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-.modal-btn:active {
-    transform: scale(0.95);
-}
-.btn-decide {
-    background: linear-gradient(135deg, #ff9800, #ff5722);
-    color: white;
-}
-.btn-decide:disabled {
-    background: #ccc;
-    cursor: not-allowed;
-    box-shadow: none;
-}
-.btn-close {
-    background: #f0f0f0;
-    color: #555;
-}
-/* ダブルバトル特有のスタイルを追加 */
-.modal-tabs {
-    display: flex;
-    width: 100%;
-    justify-content: center;
-    margin-bottom: 5px; /* 短縮 */
-    gap: 10px;
-    flex-shrink: 0;
-}
-.tab-btn {
-    min-width: auto;
-    padding: 8px 16px;
-    font-size: 0.9rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-.tab-btn.active {
-    /* JSで制御するため、ここには基本スタイルのみ */
-}
-#situation-modal {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    background: rgba(0, 0, 0, 0.6) !important;
-    z-index: 2000 !important;
-    display: none;
-    justify-content: center !important;
-    align-items: center !important;
-    padding: 0 !important;
-    margin: 0 !important;
-}
-.situation-modal-wrapper {
-    width: 95% !important;
-    max-width: 500px !important;
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 20px;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    text-align: center;
-    color: #333;
-    font-family: "M PLUS Rounded 1c", sans-serif;
-}
-.situation-cards-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    width: 100%;
-    margin-bottom: 20px;
-    justify-content: center;
-}
-.s-card {
-    background: #f9f9f9;
-    border-radius: 15px;
-    padding: 10px 5px;
-    border: 2px solid #eee;
-    box-sizing: border-box;
-}
-.s-card.foe-card {
-    border-color: #ffcdd2;
-}
-.s-card.ally-card {
-    border-color: #c8e6c9;
-}
-.s-card-header {
-    font-weight: bold;
-    font-size: 0.85rem;
-    margin-bottom: 8px;
-    color: #555;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 3px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.s-stat-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-.s-stat-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-.s-stat-label {
-    font-size: 0.65rem;
-    color: #888;
-}
-.s-stat-value {
-    font-size: 1rem;
-    font-weight: bold;
-    color: #333;
-}
-</style>
-`;
-
 class DoubleUI {
     constructor() {
-        // 既存のスタイルを削除し、ダブルバトル用の完全なスタイルを確実に注入する
-        $('#ability-modal-styles').remove();
-        $('head').append(modalStyles);
         this.lobbyScreen = new UIObject($('#double-lobby-screen'));
         this.battleScreen = new UIObject($('#double-battle-screen'));
 
@@ -850,7 +590,7 @@ class DoubleUI {
             : 'rgba(220, 235, 255, 0.95)'; // 薄い青
             
         // 構造作成
-        const wrapper = $(`<div class="ability-modal-wrapper" style="background: ${bgColor} !important;"></div>`);
+        const wrapper = $(`<div class="ability-modal-wrapper" style="background: ${bgColor};"></div>`);
 
         // --- タブ表示 (ダブルバトル特有) ---
         const tabsContainer = $('<div class="modal-tabs"></div>');
@@ -858,7 +598,7 @@ class DoubleUI {
             if(!chars[id]) return;
             const isActive = id === activeId;
             const name = chars[id].name;
-            const tabBtn = $(`<button class="modal-btn tab-btn" style="background:${isActive ? '#ff9800' : '#eee'}; color:${isActive ? '#fff' : '#333'};">${name}</button>`);
+            const tabBtn = $(`<button class="modal-btn tab-btn ${isActive ? 'active' : ''}">${name}</button>`);
             
             tabBtn.on('click', () => {
                 this.activeCharTab = id;
@@ -923,8 +663,8 @@ class DoubleUI {
 
         // 3. 新しい特性の情報
         const newInfoSection = $(`
-            <div class="current-ability-section" style="border-bottom: none; margin-bottom: 0;">
-                <span class="section-label" style="color: #ff9800;">変更後のとくせい</span>
+            <div class="current-ability-section preview">
+                <span class="section-label preview">変更後のとくせい</span>
                 <h3 class="ability-name-display" id="new-ability-name"></h3>
                 <p class="ability-desc-display" id="new-ability-desc"></p>
             </div>

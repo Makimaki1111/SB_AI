@@ -476,3 +476,62 @@
     float: right;
     line-height: 100%;
 }
+
+/* ========================================================= */
+/* ダブルバトル用モーダル上書きスタイル (double_UI.jsから移動) */
+/* ========================================================= */
+
+#ability-modal .modal-tabs {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 5px;
+    gap: 10px;
+    flex-shrink: 0;
+}
+#ability-modal .tab-btn {
+    min-width: auto;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+/* JSで付与されるアクティブクラス用 */
+#ability-modal .tab-btn.active {
+    background: #ff9800;
+    color: #fff;
+}
+#ability-modal .tab-btn:not(.active) {
+    background: #eee;
+    color: #333;
+}
+
+#situation-modal .situation-modal-wrapper {
+    width: 95%;
+    max-width: 500px;
+}
+#situation-modal .situation-cards-container {
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+#situation-modal .s-card {
+    padding: 10px 5px;
+    box-sizing: border-box;
+}
+#situation-modal .s-card-header {
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    padding-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+#situation-modal .s-stat-grid {
+    gap: 5px;
+}
+#situation-modal .s-stat-label {
+    font-size: 0.65rem;
+}
+#situation-modal .s-stat-value {
+    font-size: 1rem;
+}
