@@ -80,7 +80,8 @@ class BaseBattle:
 
         # 毒ダメージ処理
         for p in self.players:
-            if not p.is_defeated and p.poison_turns > 0:
+            # 毒ダメージの発生条件: 毒を仕掛けた本人が行動したターンの終了時のみ
+            if not p.is_defeated and p.poison_turns > 0 and getattr(p, 'poisoner_id', None) == attacker.id:
                 damage = int(MAX_HP * (p.poison_turns / 16))
                 p.take_damage(damage)
                 self.events.append({

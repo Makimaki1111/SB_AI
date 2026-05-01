@@ -155,18 +155,12 @@ class DoubleBattle(BaseBattle):
         # BaseBattleの共通フローに委譲
         self.execute_attack_flow(current_actor, target_actor, word, types, ability_obj, is_single=False)
 
-        prev_index = self.current_turn_index
-        # get_current_actor は内部で生存者が見つかるまで _advance_turn_index を呼ぶ可能性がある
-        self.get_current_actor() # 次の行動者を決定 (内部で _advance_turn_index が呼ばれる)
-        
-        # 生存者全員が行動し終わった（インデックスが一周した）タイミングで継続ダメージ
-        if self.current_turn_index <= prev_index:
-            self._process_end_of_turn_effects(current_actor, target_actor)
-            
+        self._process_end_of_turn_effects(current_actor, target_actor)
         self._check_win_condition()
         self._patch_ability_events(current_actor, target_actor)
         self.record_used_word(word, current_actor.id)
         self.last_actor_id = current_actor.id
+        self._advance_turn_index()
         ret = self._make_response()
         self.word, self.events = "", []
         return ret
