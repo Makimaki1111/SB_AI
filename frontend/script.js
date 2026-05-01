@@ -538,14 +538,14 @@ const onAccepted = async (data) => {
   const isTimeout = data.state.events.some(e => e.message && e.message.includes("時間切れ"));
 
   // まず画像・単語表示はすぐ行う（タイムアウトでなく、かつ単語が存在する場合）
-  if (!isTimeout && data.state.word) {
+  if (!isTimeout && data.word) {
     if (data["state"]["is_my_turn"]) {
       ui.showAllyImage(data);
-      ui.showAllyWord(data["state"]["word"]);
+      ui.showAllyWord(data.word);
       playIconSound(data.state.ally_type[0]);
     } else {
       ui.showFoeImage(data);
-      ui.showFoeWord(data["state"]["word"]);
+      ui.showFoeWord(data.word);
       playIconSound(data.state.foe_type[0]);
     }
   }
@@ -587,7 +587,7 @@ const onError = (data) => {
 }
 
 // WebSocket接続とイベントリスナー登録
-window.startBattle = function (mode, roomId = null, p1MaxLives = 1, p2MaxLives = 1) {
+window.startBattle = function (mode, roomId = null, p1MaxLives = 3, p2MaxLives = 3) {
   // iOS対策: バトル開始のクリックイベント内で確実にAudioContextをアンロックする
   sbUnlockAudioContext();
 
@@ -604,7 +604,7 @@ window.startBattle = function (mode, roomId = null, p1MaxLives = 1, p2MaxLives =
   connectWebSocket(mode, roomId, p1MaxLives, p2MaxLives);
 }
 
-function connectWebSocket(mode, roomId, p1MaxLives = 1, p2MaxLives = 1) {
+function connectWebSocket(mode, roomId, p1MaxLives = 3, p2MaxLives = 3) {
   isManualClose = false; // 新しい接続を開始する時にフラグをリセット
   // 既に接続があれば切断
   if (sock && sock.readyState === WebSocket.OPEN) {

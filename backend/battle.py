@@ -344,7 +344,7 @@ def get_all_abilities_info() -> dict:
     return {k: v.get_display_data() for k, v in abilities.items()}
 
 class Battle_info(BaseBattle):
-    def __init__(self, player1_id: str, player2_id: str, sb_info: SB_info, room_id: str | None = None, p1_profile: dict = None, p2_profile: dict = None, p1_max_lives: int = 1, p2_max_lives: int = 1, is_cpu: bool = False):
+    def __init__(self, player1_id: str, player2_id: str, sb_info: SB_info, room_id: str | None = None, p1_profile: dict = None, p2_profile: dict = None, p1_max_lives: int = STOCK_LIVES, p2_max_lives: int = STOCK_LIVES, is_cpu: bool = False):
         super().__init__(sb_info, room_id)
         p1_name = p1_profile.get("name", "じぶん") if p1_profile else "じぶん"
         p2_name = p2_profile.get("name", "プレイヤー2") if p2_profile else "プレイヤー2"
@@ -453,6 +453,7 @@ class Battle_info(BaseBattle):
             })
 
     def try_attack(self, player_id: str, word: str):
+        self.word = word
         if self.player1_win is not None: return self._make_response()
         
         current_player = self.player1 if self.player1_turn else self.player2
@@ -489,6 +490,8 @@ class Battle_info(BaseBattle):
         ret = self._make_response()
         self.player1_turn = not self.player1_turn
         self.turn += 1
+        self.events = []
+        self.word = ""
         return ret
 
     def _make_response(self):

@@ -7,9 +7,11 @@ from typing import Optional
 try:
     from battle import Battle_info
     from double_battle import DoubleBattle_info
+    from constants import STOCK_LIVES
 except ImportError:
     from backend.battle import Battle_info
     from backend.double_battle import DoubleBattle_info
+    from backend.constants import STOCK_LIVES
 
 logger = logging.getLogger(__name__)
 
@@ -69,9 +71,9 @@ class WebSocketHandler:
             await websocket.send_text(json.dumps({"type": "error", "message": "プレイヤーIDが不明です。再接続してください。"}))
             return
         try:
-            max_lives = max(1, min(10, int(info.get("max_lives", 1))))
+            max_lives = max(1, min(10, int(info.get("max_lives", STOCK_LIVES))))
         except (TypeError, ValueError):
-            max_lives = 1
+            max_lives = STOCK_LIVES
         
         self.connection_manager.register_player(websocket, player_id)
 
@@ -147,8 +149,8 @@ class WebSocketHandler:
 
     async def _handle_create_private_room(self, websocket, player_id, info):
         # シングルバトルのプライベートルーム作成
-        p1_max_lives = max(1, min(10, int(info.get("p1_max_lives", 1))))
-        p2_max_lives = max(1, min(10, int(info.get("p2_max_lives", 1))))
+        p1_max_lives = max(1, min(10, int(info.get("p1_max_lives", STOCK_LIVES))))
+        p2_max_lives = max(1, min(10, int(info.get("p2_max_lives", STOCK_LIVES))))
         new_id = self.room_manager.create_private_room(websocket, player_id, p1_max_lives, p2_max_lives, is_double=False)
         await websocket.send_text(json.dumps({"type": "private_room_created", "room_id": new_id}))
 
@@ -168,9 +170,9 @@ class WebSocketHandler:
         # シングルCPU戦などの開始
         p2_id = info.get("player2_id", "cpu_1")
         try:
-            max_lives = max(1, min(10, int(info.get("max_lives", 1))))
+            max_lives = max(1, min(10, int(info.get("max_lives", STOCK_LIVES))))
         except (TypeError, ValueError):
-            max_lives = 1
+            max_lives = STOCK_LIVES
         
         p1_profile = self.room_manager.user_profiles.get(player_id)
         # CPUの場合はプロファイルを適当に作るか、Noneにする
@@ -242,8 +244,8 @@ class WebSocketHandler:
                         p1_data["player_id"], p2_data["player_id"], 
                         sb_info=self.room_manager.sb_info, room_id=room_id, 
                         p1_profile=p1_profile, p2_profile=p2_profile, 
-                        p1_max_lives=p1_data.get("p1_max_lives", 1),
-                        p2_max_lives=p1_data.get("p2_max_lives", 1)
+                        p1_max_lives=p1_data.get("p1_max_lives", STOCK_LIVES),
+                        p2_max_lives=p1_data.get("p2_max_lives", STOCK_LIVES)
                     )
                     bi.init_character()
                     self.room_manager.battle_rooms[bi.room_id] = bi
@@ -257,8 +259,8 @@ class WebSocketHandler:
             else:
                 await websocket.send_text(json.dumps({"type": "error", "message": "ルームが見つかりません"}))
         else: # 新規作成
-            p1_max_lives = max(1, min(10, int(info.get("p1_max_lives", 1))))
-            p2_max_lives = max(1, min(10, int(info.get("p2_max_lives", 1))))
+            p1_max_lives = max(1, min(10, int(info.get("p1_max_lives", STOCK_LIVES))))
+            p2_max_lives = max(1, min(10, int(info.get("p2_max_lives", STOCK_LIVES))))
             new_id = self.room_manager.create_private_room(websocket, player_id, p1_max_lives, p2_max_lives, is_double=is_double)
             await websocket.send_text(json.dumps({"type": "private_room_created", "room_id": new_id}))
 
