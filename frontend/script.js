@@ -247,15 +247,20 @@ const processEvent = async (events, is_my_turn) => {
     }
     playEventSound(e["type"], e["message"]);
     if (e["type"] === "damage") {
-      battleState.ally.hp = Math.max(0, battleState.ally.hp - (e["ally_damage"] || 0));
-      battleState.foe.hp = Math.max(0, battleState.foe.hp - (e["foe_damage"] || 0));
+      const isAlly = (e["target"] === player1_id);
+      const damage = e["damage"] || 0;
+      
+      if (isAlly) {
+        battleState.ally.hp = Math.max(0, battleState.ally.hp - damage);
+      } else {
+        battleState.foe.hp = Math.max(0, battleState.foe.hp - damage);
+      }
 
       const hpAnim = ui.updateHPs(battleState.ally.hp, battleState.ally.maxHp, battleState.foe.hp, battleState.foe.maxHp);
 
       // ダメージ点滅エフェクト (毒ダメージの場合は点滅させない)
-      if (e["message"] !== "毒のダメージを受けた！") {
-        if ((e["ally_damage"] || 0) > 0) ui.playDamageEffect(true);
-        if ((e["foe_damage"] || 0) > 0) ui.playDamageEffect(false);
+      if (e["message"] !== "毒のダメージを受けた！" && damage > 0) {
+        ui.playDamageEffect(isAlly);
       }
 
       // HPが0になった場合のみ、アニメーション終了を待ってから気絶演出を開始
@@ -265,7 +270,7 @@ const processEvent = async (events, is_my_turn) => {
         if (battleState.foe.hp <= 0) ui.playKnockoutEffect(false);
       }
     } else if (e["type"] === "revive") {
-      const isAlly = (e["player"] === "ally");
+      const isAlly = (e["target"] === player1_id);
       if (isAlly) {
         battleState.ally.hp = e["hp"];
         battleState.ally.lives = e["lives"];
@@ -280,14 +285,18 @@ const processEvent = async (events, is_my_turn) => {
       ui.updatePoisonStatus(battleState.ally.is_poison, battleState.foe.is_poison);
       ui.updateLives(isAlly, isAlly ? battleState.ally.lives : battleState.foe.lives, isAlly ? battleState.allyMaxLives : battleState.foeMaxLives);
     } else if (e["type"] === "cure") {
-      battleState.ally.hp = Math.min(battleState.ally.maxHp, battleState.ally.hp + (e["ally_cure"] || 0));
-      battleState.foe.hp = Math.min(battleState.foe.maxHp, battleState.foe.hp + (e["foe_cure"] || 0));
+      const isAlly = (e["target"] === player1_id);
+      const amount = e["amount"] || 0;
+      if (isAlly) {
+        battleState.ally.hp = Math.min(battleState.ally.maxHp, battleState.ally.hp + amount);
+        if (amount > 0) ui.playHealEffect(true);
+      } else {
+        battleState.foe.hp = Math.min(battleState.foe.maxHp, battleState.foe.hp + amount);
+        if (amount > 0) ui.playHealEffect(false);
+      }
       ui.updateHPs(battleState.ally.hp, battleState.ally.maxHp, battleState.foe.hp, battleState.foe.maxHp);
-      // 回復エフェクト再生
-      if ((e["ally_cure"] || 0) > 0) ui.playHealEffect(true);
-      if ((e["foe_cure"] || 0) > 0) ui.playHealEffect(false);
-    } else if (e["type"] === "stat_down") {
-      const isAlly = e["player"] === "ally";
+    } else if (e["type"] === "stat_down" || e["type"] === "stat_up") {
+      const isAlly = (e["target"] === player1_id);
       if (e["stat_type"] === "defense") {
         if (isAlly) battleState.ally.def = e["new_rank"];
         else battleState.foe.def = e["new_rank"];
@@ -295,47 +304,46 @@ const processEvent = async (events, is_my_turn) => {
         if (isAlly) battleState.ally.atk = e["new_rank"];
         else battleState.foe.atk = e["new_rank"];
       }
-      ui.playStatDownEffect(isAlly);
-    } else if (e["type"] === "stat_up") {
-      const isAlly = e["player"] === "ally";
-      if (e["stat_type"] === "defense") {
-        if (isAlly) battleState.ally.def = e["new_rank"];
-        else battleState.foe.def = e["new_rank"];
-      } else {
-        if (isAlly) battleState.ally.atk = e["new_rank"];
-        else battleState.foe.atk = e["new_rank"];
-      }
-      ui.playStatUpEffect(isAlly);
+      if (e["type"] === "stat_down") ui.playStatDownEffect(isAlly);
+      else ui.playStatUpEffect(isAlly);
     } else if (e["type"] === "drain") {
-      // ダメージ適用
-      battleState.ally.hp = Math.max(0, battleState.ally.hp - (e["ally_damage"] || 0));
-      battleState.foe.hp = Math.max(0, battleState.foe.hp - (e["foe_damage"] || 0));
-      // 回復適用
-      battleState.ally.hp = Math.min(battleState.ally.maxHp, battleState.ally.hp + (e["ally_cure"] || 0));
-      battleState.foe.hp = Math.min(battleState.foe.maxHp, battleState.foe.hp + (e["foe_cure"] || 0));
+      // ダレイン処理も新形式に合わせる場合(今回は使用されませんが後方互換で残す)
+      const isAllyDmg = (e["target"] === player1_id);
+      const damage = e["damage"] || 0;
+      const cure = e["amount"] || 0;
+      if (isAllyDmg) {
+         battleState.ally.hp = Math.max(0, battleState.ally.hp - damage);
+         battleState.foe.hp = Math.min(battleState.foe.maxHp, battleState.foe.hp + cure);
+         if (cure > 0) ui.playHealEffect(false);
+      } else {
+         battleState.foe.hp = Math.max(0, battleState.foe.hp - damage);
+         battleState.ally.hp = Math.min(battleState.ally.maxHp, battleState.ally.hp + cure);
+         if (cure > 0) ui.playHealEffect(true);
+      }
       ui.updateHPs(battleState.ally.hp, battleState.ally.maxHp, battleState.foe.hp, battleState.foe.maxHp);
-      // ドレイン時の回復エフェクト
-      if ((e["ally_cure"] || 0) > 0) ui.playHealEffect(true);
-      if ((e["foe_cure"] || 0) > 0) ui.playHealEffect(false);
     } else if (e["type"] === "ability_trigger") {
       if (e["new_ranks"]) {
-        battleState.ally.atk = e["new_ranks"]["ally_atk"];
-        battleState.ally.def = e["new_ranks"]["ally_def"];
-        battleState.foe.atk = e["new_ranks"]["foe_atk"];
-        battleState.foe.def = e["new_ranks"]["foe_def"];
+        for (const [p_id, ranks] of Object.entries(e["new_ranks"])) {
+            if (p_id === player1_id) {
+                battleState.ally.atk = ranks["attack_rank"];
+                battleState.ally.def = ranks["defense_rank"];
+            } else {
+                battleState.foe.atk = ranks["attack_rank"];
+                battleState.foe.def = ranks["defense_rank"];
+            }
+        }
       }
       // 毒付与イベントの場合、ここでUIを更新
       if (e["poison_target"]) {
-        if (e["poison_target"] === "ally") battleState.ally.is_poison = true;
-        if (e["poison_target"] === "foe") battleState.foe.is_poison = true;
+        const isAlly = (e["poison_target"] === player1_id);
+        if (isAlly) battleState.ally.is_poison = true;
+        else battleState.foe.is_poison = true;
         ui.updatePoisonStatus(battleState.ally.is_poison, battleState.foe.is_poison);
       }
     } else if (e["type"] === "cure_poison") {
-      if (e["player"] === "ally") {
-        battleState.ally.is_poison = false;
-      } else {
-        battleState.foe.is_poison = false;
-      }
+      const isAlly = (e["target"] === player1_id);
+      if (isAlly) battleState.ally.is_poison = false;
+      else battleState.foe.is_poison = false;
       ui.updatePoisonStatus(battleState.ally.is_poison, battleState.foe.is_poison);
     }
 

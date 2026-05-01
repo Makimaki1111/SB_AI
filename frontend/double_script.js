@@ -598,8 +598,8 @@ async function handleTurnResult(data) {
                     ui.playEffect(getUIId(e.target), e.type);
                 }
             } else if (e.type === "cure") {
-                if (e.cure_amount !== undefined && doubleBattleState.chars[e.target]) {
-                    doubleBattleState.chars[e.target].hp = Math.min(doubleBattleState.chars[e.target].maxHp, doubleBattleState.chars[e.target].hp + e.cure_amount);
+                if (e.amount !== undefined && doubleBattleState.chars[e.target]) {
+                    doubleBattleState.chars[e.target].hp = Math.min(doubleBattleState.chars[e.target].maxHp, doubleBattleState.chars[e.target].hp + e.amount);
                     const targetChar = doubleBattleState.chars[e.target];
                     ui.setHP(getUIId(e.target), targetChar.hp, targetChar.maxHp);
                 }
@@ -632,8 +632,8 @@ async function handleTurnResult(data) {
                     ui.setHP(getUIId(e.target), targetChar.hp, targetChar.maxHp);
                 }
                 // 回復適用
-                if (e.cure_amount !== undefined && doubleBattleState.chars[e.attacker]) {
-                    doubleBattleState.chars[e.attacker].hp = Math.min(doubleBattleState.chars[e.attacker].maxHp, doubleBattleState.chars[e.attacker].hp + e.cure_amount);
+                if (e.amount !== undefined && doubleBattleState.chars[e.attacker]) {
+                    doubleBattleState.chars[e.attacker].hp = Math.min(doubleBattleState.chars[e.attacker].maxHp, doubleBattleState.chars[e.attacker].hp + e.amount);
                     const atkChar = doubleBattleState.chars[e.attacker];
                     ui.setHP(getUIId(e.attacker), atkChar.hp, atkChar.maxHp);
                 }
