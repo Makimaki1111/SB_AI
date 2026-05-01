@@ -1,15 +1,17 @@
 try:
-    from SB_info import SB_info
     from base_battle import BaseBattle
-    from constants import *
     from player import Player
-    from abilities import get_default_abilities, get_all_abilities_info
+    from SB_info import SB_info
+    from abilities import get_default_abilities
+    from constants import MAX_HP, STOCK_LIVES, ABILITY_CHANGE_COUNT_INIT
+    from schemas import BattleResponse, BattleState, CharacterState, BattleEvent
 except ImportError:
-    from backend.SB_info import SB_info
     from backend.base_battle import BaseBattle
-    from backend.constants import *
     from backend.player import Player
-    from backend.abilities import get_default_abilities, get_all_abilities_info
+    from backend.SB_info import SB_info
+    from backend.abilities import get_default_abilities
+    from backend.constants import MAX_HP, STOCK_LIVES, ABILITY_CHANGE_COUNT_INIT
+    from backend.schemas import BattleResponse, BattleState, CharacterState, BattleEvent
 
 from collections import defaultdict
 from pydantic import BaseModel
@@ -74,38 +76,10 @@ class SingleBattle(BaseBattle):
 
 
     def make_init_response(self, player_id: str) -> dict:
-        is_p1 = (player_id == self.player1.id)
-        ally = self.player1 if is_p1 else self.player2
-        foe = self.player2 if is_p1 else self.player1
-
-        return {
-            "type": "made_room",
-            "message": "バトルルーム作成",
-            "room_id": self.room_id,
-            "all_abilities": self._get_serializable_abilities(),
-            "state" : {
-                "is_my_turn" : self.player1_turn if is_p1 else not self.player1_turn,
-                "character" : self.character,
-                "ally_lives" : self.player1_lives if is_p1 else self.player2_lives,
-                "foe_lives" : self.player2_lives if is_p1 else self.player1_lives,
-                "ally_max_lives" : self.p1_max_lives if is_p1 else self.p2_max_lives,
-                "foe_max_lives" : self.p2_max_lives if is_p1 else self.p1_max_lives
-            },
-            "ally" : {
-                "max_hp" : MAX_HP,
-                "lives" : self.player1_lives if is_p1 else self.player2_lives,
-                "name" : ally.name,
-                "ability": ally.ability,
-                "ability_change_count": ally.ability_change_count,
-                "is_poison": ally.poison_turns > 0
-            },
-            "foe" : {
-                "max_hp" : MAX_HP,
-                "lives" : self.player2_lives if is_p1 else self.player1_lives,
-                "name" : foe.name,
-                "is_poison": foe.poison_turns > 0
-            }
-        }
+        res = self._make_response()
+        res["type"] = "made_room"
+        res["all_abilities"] = self._get_serializable_abilities()
+        return self.get_personalized_response(res, player_id)
 
     def _is_used(self, word: str) -> bool:
         return word in self.used
@@ -179,63 +153,63 @@ class SingleBattle(BaseBattle):
         self.word, self.events = "", []
         return ret
 
-    def _make_response(self):
-        return {
-            "type": "accepted",
-            "room_id": self.room_id,
-            "state": {
-                "ally_HP": self.player1.hp,
-                "ally_A": self.player1.attack_rank,
-                "ally_B": self.player1.defense_rank,
-                "ally_type": self.player1.types,
-                "ally_poison": self.player1.poison_turns > 0,
-                "ally_lives": self.player1_lives,
-                "ally_ability": self.player1.ability,
-                "ally_ability_change_count": self.player1.ability_change_count,
-                "ally_win": self.winner_team == 0 if self.winner_team is not None else None,
-                "character": self.character,
-                "events": self.events[:],
-                "foe_HP": self.player2.hp,
-                "foe_A": self.player2.attack_rank,
-                "foe_B": self.player2.defense_rank,
-                "foe_type": self.player2.types,
-                "foe_poison": self.player2.poison_turns > 0,
-                "foe_lives": self.player2_lives,
-                "foe_ability": self.player2.ability,
-                "foe_ability_change_count": self.player2.ability_change_count,
-                "is_cpu": self.is_cpu,
-                "is_my_turn": self.player1_turn,
-                "ally_max_lives": self.p1_max_lives,
-                "foe_max_lives": self.p2_max_lives,
-                "turn": self.turn,
-                "word": self.word
-            }
+    def _make_response(self) -> dict:
+        chars = {
+            self.player1.id: CharacterState(
+                name=self.player1.name, hp=self.player1.hp, max_hp=MAX_HP,
+                attack_rank=self.player1.attack_rank, defense_rank=self.player1.defense_rank,
+                types=self.player1.types, is_poison=self.player1.poison_turns > 0,
+                ability=self.player1.ability, ability_change_count=self.player1.ability_change_count,
+                lives=self.player1_lives, owner_id=self.player1.id
+            ),
+            self.player2.id: CharacterState(
+                name=self.player2.name, hp=self.player2.hp, max_hp=MAX_HP,
+                attack_rank=self.player2.attack_rank, defense_rank=self.player2.defense_rank,
+                types=self.player2.types, is_poison=self.player2.poison_turns > 0,
+                ability=self.player2.ability, ability_change_count=self.player2.ability_change_count,
+                lives=self.player2_lives, owner_id=self.player2.id
+            )
         }
+        
+        state = BattleState(
+            room_id=self.room_id,
+            character=self.character,
+            is_my_turn=False, # get_personalized_response で設定
+            turn=self.turn,
+            last_actor_id=self.last_actor_id,
+            word=self.word,
+            characters=chars,
+            winner_team=self.winner_team,
+            ally_win=None, # get_personalized_response で設定
+            ally_max_lives=self.p1_max_lives,
+            foe_max_lives=self.p2_max_lives,
+            current_actor_id=self.player1.id if self.player1_turn else self.player2.id,
+            current_owner_id=self.player1.id if self.player1_turn else self.player2.id
+        )
+        
+        events = [BattleEvent(**e) for e in self.events if isinstance(e, dict)]
+        return BattleResponse(state=state, events=events).model_dump()
 
     def get_personalized_response(self, base_res: dict, player_id: str) -> dict:
+        new_res = base_res.copy()
+        state = new_res["state"]
+        
         is_p1 = (player_id == self.player1.id)
-        if not is_p1: return self.flip_turn_response(base_res)
-        return base_res
+        state["is_my_turn"] = self.player1_turn if is_p1 else not self.player1_turn
+        state["ally_max_lives"] = self.p1_max_lives if is_p1 else self.p2_max_lives
+        state["foe_max_lives"] = self.p2_max_lives if is_p1 else self.p1_max_lives
+        
+        if self.winner_team is not None:
+            state["ally_win"] = (is_p1 and self.winner_team == 0) or (not is_p1 and self.winner_team == 1)
+        
+        # 敵の特性をマスク
+        foe_id = self.player2.id if is_p1 else self.player1.id
+        if foe_id in state["characters"]:
+            state["characters"][foe_id]["ability"] = "secret"
+            state["characters"][foe_id]["ability_change_count"] = ABILITY_CHANGE_COUNT_INIT
 
-    def flip_turn_response(self, response: dict) -> dict:
-        if response.get("type") != "accepted": return response
-        s = response["state"]
-        new_state = s.copy()
-        fields = ["HP", "A", "B", "type", "poison", "lives", "ability", "ability_change_count", "max_lives"]
-        for f in fields:
-            new_state[f"ally_{f}"], new_state[f"foe_{f}"] = s[f"foe_{f}"], s[f"ally_{f}"]
-        new_state["is_my_turn"] = not s["is_my_turn"]
-        new_state["ally_win"] = (self.winner_team == 1) if self.winner_team is not None else None
-        new_events = []
-        for e in s["events"]:
-            ne = e.copy()
-            if "ally_damage" in e: ne["ally_damage"], ne["foe_damage"] = e["foe_damage"], e["ally_damage"]
-            if "ally_cure" in e: ne["ally_cure"], ne["foe_cure"] = e["foe_cure"], e["ally_cure"]
-            if "player" in e: ne["player"] = "foe" if e["player"] == "ally" else "ally"
-            if "poison_target" in e: ne["poison_target"] = "foe" if e["poison_target"] == "ally" else "ally"
-            new_events.append(ne)
-        new_state["events"] = new_events
-        return {"type": "accepted", "room_id": response.get("room_id"), "state": new_state}
+        return new_res
+
 
     def change_ability(self, player_id: str, new_ability_id: str):
         player = self.player1 if player_id == self.player1.id else self.player2 if player_id == self.player2.id else None

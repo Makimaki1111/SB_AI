@@ -1,11 +1,15 @@
 try:
-    from SB_info import SB_info
-    from constants import *
     from player import Player
+    from SB_info import SB_info
+    from abilities import Ability, get_default_abilities
+    from constants import *
+    from schemas import BattleResponse, BattleState, CharacterState, BattleEvent
 except ImportError:
-    from backend.SB_info import SB_info
-    from backend.constants import *
     from backend.player import Player
+    from backend.SB_info import SB_info
+    from backend.abilities import Ability, get_default_abilities
+    from backend.constants import *
+    from backend.schemas import BattleResponse, BattleState, CharacterState, BattleEvent
 
 import random
 import uuid
@@ -26,6 +30,9 @@ class BaseBattle:
         self.players = [] # サブクラスでPlayerオブジェクトを格納する
         self.START_CHARACTERS = "あいうえおかきくけこさしすせそたちつてとなにねのはひふへほまみむめやゆよらりるれろわ"
         self.winner_team = None # None: 進行中, 0: チーム1勝利, 1: チーム2勝利
+        self.last_actor_id = None
+        self.turn = 1
+        self.is_finished_flag = False
 
     def katakana_to_hiragana(self, text: str) -> str:
         """カタカナをひらがなに変換する"""
@@ -202,6 +209,10 @@ class BaseBattle:
         if hasattr(self, "team1") and player in self.team1: return 0
         if hasattr(self, "team2") and player in self.team2: return 1
         return -1
+
+    def get_player_label(self, player: Player) -> str:
+        """プレイヤーのラベル（ally/foeなど）を返す。デフォルトはID。"""
+        return player.id
 
     def _get_serializable_abilities(self):
         """現在のターンがCPUかどうか"""

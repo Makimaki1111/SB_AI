@@ -66,6 +66,7 @@ const battleState = {
 };
 
 let ui;
+const battleManager = new BattleManager({ mode: 'single' });
 
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
@@ -141,446 +142,8 @@ const websock_server = `${protocol}//${host}/ws`;
 let sock = null;
 let isManualClose = false;
 
-// onAccepted が実行中かどうかを示すフラグ
-let isProcessingAccepted = false;
-// 待機中の onAccepted データキュー
-let pendingAcceptedQueue = [];
-
-const initializeBattleScreen = () => {
-  ui.showBattleScreen();
-  ui.showMessage();
-  ui.hideCheckResult();
-  ui.hideAllyImage();
-  ui.hideFoeImage();
-  ui.showAllyWord("");
-  ui.showFoeWord("");
-  ui.setAllyName("");
-  ui.setFoeName("");
-  ui.updatePoisonStatus(false, false);
-  ui.abilityInfoContainer.hide();
-  ui.situationButton.hide();
-  // モーダルを閉じる
-  ui.hideSituationModal();
-  ui.hideAbilityModal();
-
-  ui.resetHP();
-  ui.stopTimer();
-  ui.resetSituationInfo();
-
-  battleState.roomId = null;
-  battleState.character = "";
-}
-
-const onMadeRoom = async (data) => {
-  battleState.roomId = data.room_id;
-  battleState.allAbilities = data.all_abilities;
-  ui.enableInput();
-  ui.clearInput();
-
-  battleState.ally.hp = data["ally"]["max_hp"];
-  battleState.ally.maxHp = data["ally"]["max_hp"];
-  battleState.ally.lives = data["state"]["ally_lives"];
-  battleState.foe.hp = data["foe"]["max_hp"];
-  battleState.foe.maxHp = data["foe"]["max_hp"];
-  battleState.foe.lives = data["state"]["foe_lives"];
-  battleState.allyMaxLives = data["state"]["ally_max_lives"] || 1;
-  battleState.foeMaxLives = data["state"]["foe_max_lives"] || 1;
-
-  battleState.ally.ability = data.ally.ability;
-  battleState.ally.abilityChangeCount = data.ally.ability_change_count;
-  battleState.ally.is_poison = data.ally.is_poison;
-  battleState.foe.ability = data.foe.ability || "secret";
-  battleState.foe.abilityChangeCount = data.foe.ability_change_count !== undefined ? data.foe.ability_change_count : 3;
-  battleState.foe.is_poison = data.foe.is_poison;
-
-  ui.setAllyHP(battleState.ally.hp, battleState.ally.maxHp);
-  ui.setFoeHP(battleState.foe.hp, battleState.foe.maxHp);
-  ui.setAllyName(data["ally"]["name"]);
-  ui.setFoeName(data["foe"]["name"]);
-  ui.updatePoisonStatus(battleState.ally.is_poison, battleState.foe.is_poison);
-  ui.updateLives(true, battleState.ally.lives, battleState.allyMaxLives);
-  ui.updateLives(false, battleState.foe.lives, battleState.foeMaxLives);
-  if (battleState.ally && typeof battleState.ally.abilityChangeCount !== 'undefined') { // Defensive check
-    ui.abilityInfoContainer.selector.css('display', 'flex');
-    ui.situationButton.show();
-    const currentAbilityName = battleState.allAbilities[battleState.ally.ability]?.name || battleState.ally.ability;
-    const foeAbilityName = battleState.allAbilities[battleState.foe.ability]?.name || battleState.foe.ability;
-    ui.updateAbilityInfo(currentAbilityName, battleState.ally.abilityChangeCount);
-
-    // モーダル内の自分と相手の特性情報も更新
-    ui.allyCurrentAbilityName.selector.text(currentAbilityName);
-    ui.allyCurrentAbilityDesc.selector.text(battleState.allAbilities[battleState.ally.ability]?.description || '');
-    ui.foeCurrentAbilityName.selector.text(foeAbilityName);
-    ui.foeCurrentAbilityDesc.selector.text(battleState.allAbilities[battleState.foe.ability]?.description || '');
-  }
-
-  ui.showMessage("マッチングした！")
-  stopManagedBGM();
-  playEventSound("start", "");
-  await sleep(1500);
-  startManagedBGM("resource/overflow.mp3");
-  if (data["state"]["is_my_turn"] === true) {
-    onAllyTurnStart(data);
-  } else {
-    onFoeTurnStart(data);
-  }
-}
-
-const onPreCheck = (data) => {
-  // 入力欄が空、送信直後（非表示）、または非表示状態なら表示しない
-  const currentText = ui.input.selector.val();
-  if (!currentText || !ui.input.selector.is(':visible')) {
-    ui.hideCheckResult();
-    return;
-  }
-  ui.showCheckResult(data);
-}
-
-const processEvent = async (events, is_my_turn) => {
-  if (!events || events.length === 0) return;
-  for (let i = 0; i < events.length; i++) {
-    const e = events[i];
-
-    // 特性変更イベントの場合は#messageに文章を表示しない
-    if (e["type"] !== "ability_changed") {
-      ui.showMessage(e["message"] || "");
-    }
-    playEventSound(e["type"], e["message"]);
-    if (e["type"] === "damage") {
-      const isAlly = (e["target"] === player1_id);
-      const damage = e["damage"] || 0;
-      
-      if (isAlly) {
-        battleState.ally.hp = Math.max(0, battleState.ally.hp - damage);
-      } else {
-        battleState.foe.hp = Math.max(0, battleState.foe.hp - damage);
-      }
-
-      const hpAnim = ui.updateHPs(battleState.ally.hp, battleState.ally.maxHp, battleState.foe.hp, battleState.foe.maxHp);
-
-      // ダメージ点滅エフェクト (毒ダメージの場合は点滅させない)
-      if (e["message"] !== "毒のダメージを受けた！" && damage > 0) {
-        ui.playDamageEffect(isAlly);
-      }
-
-      // HPが0になった場合のみ、アニメーション終了を待ってから気絶演出を開始
-      if (battleState.ally.hp <= 0 || battleState.foe.hp <= 0) {
-        await hpAnim;
-        if (battleState.ally.hp <= 0) ui.playKnockoutEffect(true);
-        if (battleState.foe.hp <= 0) ui.playKnockoutEffect(false);
-      }
-    } else if (e["type"] === "revive") {
-      const isAlly = (e["target"] === player1_id);
-      if (isAlly) {
-        battleState.ally.hp = e["hp"];
-        battleState.ally.lives = e["lives"];
-        battleState.ally.is_poison = false;
-      } else {
-        battleState.foe.hp = e["hp"];
-        battleState.foe.lives = e["lives"];
-        battleState.foe.is_poison = false;
-      }
-      ui.playReviveEffect(isAlly);
-      ui.updateHPs(battleState.ally.hp, battleState.ally.maxHp, battleState.foe.hp, battleState.foe.maxHp);
-      ui.updatePoisonStatus(battleState.ally.is_poison, battleState.foe.is_poison);
-      ui.updateLives(isAlly, isAlly ? battleState.ally.lives : battleState.foe.lives, isAlly ? battleState.allyMaxLives : battleState.foeMaxLives);
-    } else if (e["type"] === "cure") {
-      const isAlly = (e["target"] === player1_id);
-      const amount = e["amount"] || 0;
-      if (isAlly) {
-        battleState.ally.hp = Math.min(battleState.ally.maxHp, battleState.ally.hp + amount);
-        if (amount > 0) ui.playHealEffect(true);
-      } else {
-        battleState.foe.hp = Math.min(battleState.foe.maxHp, battleState.foe.hp + amount);
-        if (amount > 0) ui.playHealEffect(false);
-      }
-      ui.updateHPs(battleState.ally.hp, battleState.ally.maxHp, battleState.foe.hp, battleState.foe.maxHp);
-    } else if (e["type"] === "stat_down" || e["type"] === "stat_up") {
-      const isAlly = (e["target"] === player1_id);
-      if (e["stat_type"] === "defense") {
-        if (isAlly) battleState.ally.def = e["new_rank"];
-        else battleState.foe.def = e["new_rank"];
-      } else {
-        if (isAlly) battleState.ally.atk = e["new_rank"];
-        else battleState.foe.atk = e["new_rank"];
-      }
-      if (e["type"] === "stat_down") ui.playStatDownEffect(isAlly);
-      else ui.playStatUpEffect(isAlly);
-    } else if (e["type"] === "drain") {
-      // ダレイン処理も新形式に合わせる場合(今回は使用されませんが後方互換で残す)
-      const isAllyDmg = (e["target"] === player1_id);
-      const damage = e["damage"] || 0;
-      const cure = e["amount"] || 0;
-      if (isAllyDmg) {
-         battleState.ally.hp = Math.max(0, battleState.ally.hp - damage);
-         battleState.foe.hp = Math.min(battleState.foe.maxHp, battleState.foe.hp + cure);
-         if (cure > 0) ui.playHealEffect(false);
-      } else {
-         battleState.foe.hp = Math.max(0, battleState.foe.hp - damage);
-         battleState.ally.hp = Math.min(battleState.ally.maxHp, battleState.ally.hp + cure);
-         if (cure > 0) ui.playHealEffect(true);
-      }
-      ui.updateHPs(battleState.ally.hp, battleState.ally.maxHp, battleState.foe.hp, battleState.foe.maxHp);
-    } else if (e["type"] === "ability_trigger") {
-      if (e["new_ranks"]) {
-        for (const [p_id, ranks] of Object.entries(e["new_ranks"])) {
-            if (p_id === player1_id) {
-                battleState.ally.atk = ranks["attack_rank"];
-                battleState.ally.def = ranks["defense_rank"];
-            } else {
-                battleState.foe.atk = ranks["attack_rank"];
-                battleState.foe.def = ranks["defense_rank"];
-            }
-        }
-      }
-      // 毒付与イベントの場合、ここでUIを更新
-      if (e["poison_target"]) {
-        const isAlly = (e["poison_target"] === player1_id);
-        if (isAlly) battleState.ally.is_poison = true;
-        else battleState.foe.is_poison = true;
-        ui.updatePoisonStatus(battleState.ally.is_poison, battleState.foe.is_poison);
-      }
-    } else if (e["type"] === "cure_poison") {
-      const isAlly = (e["target"] === player1_id);
-      if (isAlly) battleState.ally.is_poison = false;
-      else battleState.foe.is_poison = false;
-      ui.updatePoisonStatus(battleState.ally.is_poison, battleState.foe.is_poison);
-    }
-
-    // 特性変更イベントの場合は待機時間を短くする
-    const waitTime = e["type"] === "ability_changed" ? 100 : 1000;
-    await sleep(waitTime);
-  }
-}
-
-const onAllyTurnStart = (data) => {
-  ui.setWaitMessage("あなたのターンです。");
-  ui.setInputText(`「${data["state"]["character"]}」からはじまることば`)
-  battleState.character = data["state"]["character"];
-  ui.enableInput();
-  ui.enableSubmitBtn();
-  ui.showInput();
-  ui.showSubmitBtn();
-  ui.hideMessage();
-  ui.focusInput();
-  if (!battleState.isVsCpu) {
-    // 受信時刻からの経過時間を考慮してタイマーを開始
-    const elapsed = (Date.now() - (data._receivedAt || Date.now())) / 1000;
-    ui.startTimer(Math.max(0, TURN_TIME_LIMIT - elapsed), TURN_TIME_LIMIT);
-  }
-}
-
-const onFoeTurnStart = (data) => {
-  ui.setWaitMessage("相手のターンです。");
-  if (!battleState.isVsCpu) {
-    // 受信時刻からの経過時間を考慮してタイマーを開始
-    const elapsed = (Date.now() - (data._receivedAt || Date.now())) / 1000;
-    ui.startTimer(Math.max(0, TURN_TIME_LIMIT - elapsed), TURN_TIME_LIMIT);
-  }
-  ui.showMessage();
-}
-
-const onAllyWin = () => {
-  stopManagedBGM();
-  playEventSound("end", "")
-  ui.showMessage("あいてとの勝負に勝った！");
-  ui.disableInput();
-  ui.showBackToTitleBtn();
-  $('#back-to-title-btn').show(); // 強制表示
-  ui.stopTimer();
-}
-
-const onAllyLose = () => {
-  stopManagedBGM();
-  playEventSound("end", "")
-  ui.showMessage("あいてとの勝負に負けた…");
-  ui.disableInput();
-  ui.showBackToTitleBtn();
-  $('#back-to-title-btn').show(); // 強制表示
-  ui.stopTimer();
-}
-
-const backToTitle = () => {
-  // iOS対策: 画面遷移時にAudioContextを確実に有効化する
-  sbUnlockAudioContext();
-
-  isManualClose = true;
-  if (sock) {
-    sock.close();
-    sock = null;
-  }
-
-  // ページ遷移
-  // シングルバトルのロビー(初期状態)に戻るためリロードする
-  // (ダブルバトルの backToLobby と同様の挙動)
-  window.location.reload();
-}
-
-const onOpponentDisconnected = (data) => {
-  stopManagedBGM();
-  playEventSound("end", "");
-  ui.hideMessage();
-  ui.setWaitMessage("あいてが切断しました", 0);
-  ui.disableInput();
-  ui.showBackToTitleBtn();
-  $('#back-to-title-btn').show(); // 強制表示
-  ui.stopTimer();
-}
-
-const onAccepted = async (data) => {
-  // 既に処理中ならデータを待機キューに入れて戻る
-  if (isProcessingAccepted) {
-    pendingAcceptedQueue.push(data);
-    return;
-  }
-
-  isProcessingAccepted = true;
-
-  // サーバーからの最新ステータスでローカルの状態を更新
-  battleState.ally.atk = data.state.ally_A;
-  battleState.ally.def = data.state.ally_B;
-  battleState.foe.atk = data.state.foe_A;
-  battleState.foe.def = data.state.foe_B;
-
-  // 毒状態の更新（イベント同期のため、新規毒発生時はここでは更新しない）
-  battleState.ally.is_poison = data.state.ally_poison;
-  battleState.foe.is_poison = data.state.foe_poison;
-  battleState.ally.lives = data.state.ally_lives;
-  battleState.foe.lives = data.state.foe_lives;
-  battleState.allyMaxLives = data.state.ally_max_lives || 1;
-  battleState.foeMaxLives = data.state.foe_max_lives || 1;
-
-  ui.updateLives(true, battleState.ally.lives, battleState.allyMaxLives);
-  ui.updateLives(false, battleState.foe.lives, battleState.foeMaxLives);
-
-  let showAllyPoison = battleState.ally.is_poison;
-  let showFoePoison = battleState.foe.is_poison;
-
-  // 今回のイベントで毒が発生する場合、初期表示では毒を隠す（イベントで表示する）
-  const poisonEvent = data.state.events.find(e => e.type === "ability_trigger" && e.poison_target);
-  if (poisonEvent) {
-    if (poisonEvent.poison_target === "ally") showAllyPoison = false;
-    if (poisonEvent.poison_target === "foe") showFoePoison = false;
-  }
-
-  // 毒が治った場合、初期表示では毒を表示しておく（イベントで消す）
-  const curePoisonEventAlly = data.state.events.find(e => e.type === "cure_poison" && e.player === "ally");
-  if (curePoisonEventAlly) showAllyPoison = true;
-
-  const curePoisonEventFoe = data.state.events.find(e => e.type === "cure_poison" && e.player === "foe");
-  if (curePoisonEventFoe) showFoePoison = true;
-
-  ui.updatePoisonStatus(showAllyPoison, showFoePoison);
-
-  // --- 特性変更のレスポンスか判定 (最新の変更を取得) ---
-  const abilityChangeEvent = [...data.state.events].reverse().find(e => e.type === 'ability_changed');
-  const isAbilityChange = !!abilityChangeEvent;
-
-  // 特性変更以外（通常の攻撃など）の場合は、結果表示のためにタイマーを止める
-  if (!isAbilityChange) {
-    ui.stopTimer();
-  }
-
-  if (isAbilityChange) {
-    // 特性情報を更新
-    if (battleState.ally && data.state && typeof data.state.ally_ability_change_count !== 'undefined') { // Defensive check
-      battleState.ally.ability = data.state.ally_ability;
-      battleState.ally.abilityChangeCount = data.state.ally_ability_change_count;
-      battleState.foe.ability = data.state.foe_ability || "secret";
-      battleState.foe.abilityChangeCount = data.state.foe_ability_change_count !== undefined ? data.state.foe_ability_change_count : 3;
-
-      const currentAbilityName = battleState.allAbilities[data.state.ally_ability]?.name || data.state.ally_ability;
-      const foeAbilityName = battleState.allAbilities[data.state.foe_ability]?.name || data.state.foe_ability;
-
-      ui.updateAbilityInfo(currentAbilityName, battleState.ally.abilityChangeCount);
-
-      // モーダル内の表示も更新
-      ui.allyCurrentAbilityName.selector.text(currentAbilityName);
-      ui.allyCurrentAbilityDesc.selector.text(battleState.allAbilities[data.state.ally_ability]?.description || '');
-      ui.foeCurrentAbilityName.selector.text(foeAbilityName);
-      ui.foeCurrentAbilityDesc.selector.text(battleState.allAbilities[battleState.foe.ability]?.description || '');
-
-      // 特性変更メッセージを表示 (自分のみ)
-      if (abilityChangeEvent.player === 'ally') {
-        sbPlaySound("resource/concent.mp3");
-        ui.showModalMessage('とくせいを変更した！', 2000);
-      }
-    }
-
-    // モーダル内の選択肢を再描画して、選択状態を更新
-    ui.populateAbilityModal(
-      battleState.allAbilities,
-      battleState.ally.ability,
-      battleState.ally.abilityChangeCount > 0,
-      (selectedAbilityId) => {
-        sendChangeAbility(selectedAbilityId);
-      },
-      () => { // 閉じるボタンのコールバック
-        ui.hideAbilityModal();
-        sbPlaySound("resource/pera.mp3");
-      }
-    );
-
-    // 特性変更イベントの処理（メッセージ表示はprocessEvent内で制御）
-    await processEvent(data.state.events, data.state.is_my_turn);
-
-    // 処理完了
-    isProcessingAccepted = false;
-    return;
-  }
-
-  // --- 以下は通常の攻撃レスポンスの処理 ---
-  // 通常の攻撃レスポンスの場合のみ、入力欄を隠す
-  ui.hideInput();
-  ui.hideSubmitBtn();
-
-  // タイムアウト（時間切れ）かどうか判定
-  const isTimeout = data.state.events.some(e => e.message && e.message.includes("時間切れ"));
-
-  // まず画像・単語表示はすぐ行う（タイムアウトでなく、かつ単語が存在する場合）
-  if (!isTimeout && data.word) {
-    if (data["state"]["is_my_turn"]) {
-      ui.showAllyImage(data);
-      ui.showAllyWord(data.word);
-      playIconSound(data.state.ally_type[0]);
-    } else {
-      ui.showFoeImage(data);
-      ui.showFoeWord(data.word);
-      playIconSound(data.state.foe_type[0]);
-    }
-  }
-
-  await sleep(1000);
-  await processEvent(data["state"]["events"], data["state"]["is_my_turn"]);
-
-  // イベント再生後に最終的なステータスを確実に同期する
-  battleState.ally.atk = data.state.ally_A;
-  battleState.ally.def = data.state.ally_B;
-  battleState.foe.atk = data.state.foe_A;
-  battleState.foe.def = data.state.foe_B;
-
-  if (data["state"]["ally_win"] === true) {
-    onAllyWin();
-  } else if (data["state"]["ally_win"] === false) {
-    onAllyLose();
-  } else {
-    if (data["state"]["is_my_turn"]) {
-      onFoeTurnStart(data);
-    } else {
-      onAllyTurnStart(data);
-    }
-  }
-
-  // 処理完了フラグをリセット
-  isProcessingAccepted = false;
-
-  // 待機キューにデータがあれば順に処理する
-  if (pendingAcceptedQueue.length > 0) {
-    await sleep(500);
-    const next = pendingAcceptedQueue.shift();
-    onAccepted(next);
-  }
-}
+// これらの古いイベントハンドラは BattleManager が処理するため、
+// 必要なヘルパー関数以外は削除または BattleManager への委譲に置き換えます。
 
 const onError = (data) => {
   ui.setWaitMessage(data.message, 2000);
@@ -659,7 +222,7 @@ function connectWebSocket(mode, roomId, p1MaxLives = 3, p2MaxLives = 3) {
 
     switch (data.type) {
       case "made_room":
-        onMadeRoom(data);
+        battleManager.initBattle(data, { p1: "ally", p2: "foe" });
         break;
       case "waiting":
         ui.showMessage(data.message);
@@ -669,16 +232,17 @@ function connectWebSocket(mode, roomId, p1MaxLives = 3, p2MaxLives = 3) {
         battleState.roomId = data.room_id;
         break;
       case "pre_check":
-        onPreCheck(data);
+        battleManager.handlePreCheck(data);
         break;
       case "accepted":
-        onAccepted(data);
+        battleManager.processTurnResult(data);
         break;
       case "error":
-        onError(data);
+        ui.setWaitMessage(data.message, 2000);
         return;
       case "opponent_disconnected":
-        onOpponentDisconnected(data);
+        ui.showMessage("相手が切断しました。");
+        ui.showBackToTitleBtn();
         break;
       default:
         console.warn("未対応のメッセージタイプ:", data.type);
@@ -757,16 +321,7 @@ function sendSubmitWord(room_id, player_id, word) {
 }
 
 function sendChangeAbility(abilityId) {
-  if (sock && sock.readyState === WebSocket.OPEN) {
-    sock.send(JSON.stringify({
-      type: "change_ability",
-      info: {
-        room_id: battleState.roomId,
-        player_id: player1_id,
-        ability_id: abilityId
-      }
-    }));
-  }
+  battleManager.sendChangeAbility(abilityId);
 }
 
 function preloadImages() {
@@ -814,6 +369,7 @@ function adjustWindowScale() {
 document.addEventListener("DOMContentLoaded", () => {
   // DOMの準備ができた後にUIインスタンスを生成
   ui = new UI();
+  battleManager.ui = ui;
 
   // 初期状態はタイトル画面を表示
   ui.showTitleScreen();
@@ -847,26 +403,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const text = ui.input.selector.val();
     if (text) {
-      const normalizedChar = (typeof wanakana !== 'undefined') ? wanakana.toHiragana(text.charAt(0)) : text.charAt(0);
-      if (normalizedChar !== battleState.character) {
-        // 開始文字不一致（UI表示なし）
-        // 「ん」で終わる（UI表示なし）
-      } else {
-        sendIncludeCheck(battleState.roomId, text);
-      }
-    } else {
+      battleManager.sendPreCheck(text);
+    }
+ else {
       ui.hideCheckResult();
     }
   });
 
   // 送信ボタン
   ui.submitButton.onClick(() => {
-    const text = ui.input.selector.val();
-    if (!text.trim() || !battleState.roomId) return;
-    ui.clearInput();
-    ui.hideCheckResult();
-    // playSound("resource/pera.mp3"); // 送信時の決定音は不要なためコメントアウト
-    sendSubmitWord(battleState.roomId, player1_id, text);
+    const word = ui.input.selector.val();
+    battleManager.submitWord(word);
   });
 
   // にげるボタン

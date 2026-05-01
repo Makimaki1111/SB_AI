@@ -1,18 +1,17 @@
 try:
-    from SB_info import SB_info
     from base_battle import BaseBattle
+    from player import Player, DoubleBattlePlayer
+    from SB_info import SB_info
+    from abilities import get_default_abilities
+    from constants import MAX_HP, ABILITY_CHANGE_COUNT_INIT
+    from schemas import BattleResponse, BattleState, CharacterState, BattleEvent
 except ImportError:
-    from backend.SB_info import SB_info
     from backend.base_battle import BaseBattle
-
-try:
-    from player import DoubleBattlePlayer
-    from abilities import get_default_abilities, IshokudogenAbility
-    from constants import *
-except ImportError:
-    from backend.player import DoubleBattlePlayer
-    from backend.abilities import get_default_abilities, IshokudogenAbility
-    from backend.constants import *
+    from backend.player import Player, DoubleBattlePlayer
+    from backend.SB_info import SB_info
+    from backend.abilities import get_default_abilities
+    from backend.constants import MAX_HP, ABILITY_CHANGE_COUNT_INIT
+    from backend.schemas import BattleResponse, BattleState, CharacterState, BattleEvent
 
 from collections import defaultdict
 from pydantic import BaseModel
@@ -217,30 +216,38 @@ class DoubleBattle(BaseBattle):
         return self.get_personalized_response(res, player_id)
 
 
-    def _make_response(self):
+    def _make_response(self) -> dict:
+        chars = {}
+        for p in self.players:
+            chars[p.id] = CharacterState(
+                name=p.name, hp=p.hp, max_hp=MAX_HP,
+                attack_rank=p.attack_rank, defense_rank=p.defense_rank,
+                types=p.types, is_poison=p.poison_turns > 0,
+                ability=p.ability, ability_change_count=p.ability_change_count,
+                lives=None, owner_id=p.owner_id
+            )
+        
         current_actor = self.get_current_actor()
-        return {
-            "type": "turn_result",
-            "room_id": self.room_id,
-            "mode": self.mode,
-            "is_cpu": self.is_cpu,
-            "turn": self.turn,
-            "current_actor_id": current_actor.id,
-            "current_owner_id": current_actor.owner_id,
-            "last_actor_id": self.last_actor_id,
-            "character": self.character,
-            "word": self.word,
-            "events": self.events,
-            "team1_win": self.winner_team == 0 if self.winner_team is not None else None,
-            "characters": {
-                "p1a": self._serialize_player(self.p1a),
-                "p1b": self._serialize_player(self.p1b),
-                "p2a": self._serialize_player(self.p2a),
-                "p2b": self._serialize_player(self.p2b),
-            }
-        }
+        state = BattleState(
+            room_id=self.room_id,
+            character=self.character,
+            is_my_turn=False, # ここでは仮定。get_personalized_response で上書き
+            turn=self.turn,
+            last_actor_id=self.last_actor_id,
+            word=self.word,
+            characters=chars,
+            winner_team=self.winner_team,
+            ally_win=None, # get_personalized_response で設定
+            current_actor_id=current_actor.id,
+            current_owner_id=current_actor.owner_id
+        )
+        
+        events = [BattleEvent(**e) for e in self.events if isinstance(e, dict)]
+        return BattleResponse(state=state, events=events).model_dump()
 
     def _serialize_player(self, p: DoubleBattlePlayer):
+        # CharacterState を使用するため不要になるが、互換性のために残すか削除を検討
+        pass
         return {
             "id": p.id, "name": p.name, "hp": p.hp, "maxHp": MAX_HP,
             "attack_rank": p.attack_rank, "defense_rank": p.defense_rank,
@@ -249,25 +256,33 @@ class DoubleBattle(BaseBattle):
         }
 
     def get_personalized_response(self, base_res: dict, request_player_id: str) -> dict:
-        import copy
-        new_res = copy.deepcopy(base_res)
+        new_res = base_res.copy()
+        state = new_res["state"]
+        
+        # 自分のターンかどうかを判定
+        current_actor = self.get_current_actor()
+        state["is_my_turn"] = (current_actor.owner_id == request_player_id)
+        
         is_t1 = any(p.owner_id == request_player_id for p in self.team1)
-        if "characters" in new_res:
-            chars = new_res["characters"]
-            for k, char_info in chars.items():
-                if char_info.get("owner_id") != request_player_id: char_info["owner_id"] = "opponent"
+        # 勝敗ラベルの付与
+        if self.winner_team is not None:
+            state["ally_win"] = (is_t1 and self.winner_team == 0) or (not is_t1 and self.winner_team == 1)
+        
+        # 敵の特性をマスク
+        for k, char_info in state["characters"].items():
+            if char_info["owner_id"] != request_player_id:
+                char_info["owner_id"] = "opponent"
                 if (is_t1 and k in ["p2a", "p2b"]) or (not is_t1 and k in ["p1a", "p1b"]):
                     char_info["ability"] = "secret"
                     char_info["ability_change_count"] = ABILITY_CHANGE_COUNT_INIT
-        if "current_owner_id" in new_res and new_res["current_owner_id"] != request_player_id:
-            new_res["current_owner_id"] = "opponent"
-        if "events" in new_res:
-            masked_events = []
-            for e in new_res["events"]:
-                if e.get("type") == "ability_changed":
-                    cid = e.get("char_id")
-                    if (is_t1 and cid in ["p2a", "p2b"]) or (not is_t1 and cid in ["p1a", "p1b"]): continue
-                masked_events.append(e)
-            new_res["events"] = masked_events
+        
+        # イベントのマスク
+        masked_events = []
+        for e in new_res["events"]:
+            if e.get("type") == "ability_changed":
+                cid = e.get("target") # schemas.py では target を使う方針
+                if (is_t1 and cid in ["p2a", "p2b"]) or (not is_t1 and cid in ["p1a", "p1b"]): continue
+            masked_events.append(e)
+        new_res["events"] = masked_events
         return new_res
 

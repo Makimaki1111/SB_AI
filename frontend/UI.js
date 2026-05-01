@@ -343,6 +343,139 @@ class UI{
         this.battleScreen.selector.css('display', 'flex'); // Flexboxレイアウトを維持
     }
 
+    // --- Unified Interface Methods ---
+    init(data, idToUiMap) {
+        this.showBattleScreen();
+        this.syncAll(data.state, idToUiMap);
+    }
+
+    async showStartMessage() {
+        this.showMessage("バトルスタート！");
+        if (typeof playEventSound === 'function') playEventSound("start", "");
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        this.hideMessage();
+    }
+
+    stopTimer() {
+        // 既存のタイマー停止処理 (script.jsにある場合はUIに移動を検討)
+        if (typeof uiStopTimer === 'function') uiStopTimer();
+    }
+
+    setWord(uiId, word) {
+        if (uiId === "ally") this.showAllyWord(word);
+        else this.showFoeWord(word);
+    }
+
+    setCharImage(uiId, types) {
+        // dummy data for showAllyImage/showFoeImage
+        const dummyData = { state: { [`${uiId}_type`]: types } };
+        if (uiId === "ally") this.showAllyImage(dummyData);
+        else this.showFoeImage(dummyData);
+    }
+
+    async applyDamage(uiId, damage, message) {
+        this.playDamageEffect(uiId === "ally");
+        // HP更新は syncAll で行うが、アニメーションのために一時的に減らすことも可能
+    }
+
+    async applyCure(uiId, amount) {
+        this.playHealEffect(uiId === "ally");
+    }
+
+    applyStatChange(uiId, statType, newRank) {
+        if (newRank > 0) this.playStatUpEffect(uiId === "ally");
+        else this.playStatDownEffect(uiId === "ally");
+    }
+
+    applyPoison(uiId) {
+        // 毒の視覚効果があればここで実行
+    }
+
+    onAbilityChanged(e) {
+        // 特性変更メッセージ
+        if (e.message) this.showModalMessage(e.message, 2000);
+    }
+
+    syncAll(state, idToUiMap) {
+        for (const [id, char] of Object.entries(state.characters)) {
+            const uiId = idToUiMap[id];
+            this.setName(uiId, char.name, char.is_poison);
+            this.setHP(uiId, char.hp, char.max_hp);
+            this.updateLives(uiId === "ally", char.lives || 0, state.ally_max_lives || 3);
+            
+            // ランクの同期
+            if (uiId === "ally") {
+                this.situationAllyA.selector.text(`${(1 + char.attack_rank * 0.5).toFixed(1)}倍`);
+                this.situationAllyB.selector.text(`${(1 + char.defense_rank * 0.5).toFixed(1)}倍`);
+            } else {
+                this.situationFoeA.selector.text(`${(1 + char.attack_rank * 0.5).toFixed(1)}倍`);
+                this.situationFoeB.selector.text(`${(1 + char.defense_rank * 0.5).toFixed(1)}倍`);
+            }
+        }
+        this.updatePoisonStatus(state.characters["p1"].is_poison, state.characters["p2"].is_poison);
+    }
+
+    onMyTurnStart(state) {
+        this.setWaitMessage("あなたのターンです。");
+        this.setInputText(`「${state.character}」からはじまることば`);
+        this.enableInput();
+        this.showInput();
+        this.showSubmitBtn();
+        this.focusInput();
+        // タイマー開始 (TURN_TIME_LIMITなどは外部定数)
+        if (typeof uiStartTimer === 'function') uiStartTimer(20, 20);
+    }
+
+    onOpponentTurnStart(state) {
+        this.setWaitMessage("相手のターンです。");
+        this.showMessage();
+        if (typeof uiStartTimer === 'function') uiStartTimer(20, 20);
+    }
+
+    onWin() {
+        if (typeof stopManagedBGM === 'function') stopManagedBGM();
+        if (typeof playEventSound === 'function') playEventSound("end", "");
+        this.showMessage("あいてとの勝負に勝った！");
+        this.disableInput();
+        this.showBackToTitleBtn();
+        this.stopTimer();
+    }
+
+    onLose() {
+        if (typeof stopManagedBGM === 'function') stopManagedBGM();
+        if (typeof playEventSound === 'function') playEventSound("end", "");
+        this.showMessage("あいてとの勝負に負けた…");
+        this.disableInput();
+        this.showBackToTitleBtn();
+        this.stopTimer();
+    }
+
+    updatePreCheck(data) {
+        this.showCheckResult(data);
+    }
+
+    // --- Helper methods adapted for unified call ---
+    setName(uiId, name, isPoison) {
+        if (uiId === "ally") {
+            this.allyName.selector.text(name);
+            this.allyNameText = name;
+        } else {
+            this.foeName.selector.text(name);
+            this.foeNameText = name;
+        }
+    }
+
+    setHP(uiId, hp, maxHp) {
+        const percent = (hp / maxHp) * 100;
+        if (uiId === "ally") {
+            this.allyHpBar.selector.css('width', `${percent}%`);
+            this.hpText.selector.text(`${hp}/${maxHp}`);
+        } else {
+            this.foeHpBar.selector.css('width', `${percent}%`);
+            this.foeHpText.selector.text(`${hp}/${maxHp}`);
+        }
+    }
+
     _setImageWithReplaceAndFade(selector, src, duration = 300) {
         if (!selector || selector.length === 0) return;
 

@@ -20,10 +20,8 @@ class RoomManager:
         self.connection_manager = connection_manager
         
         # ルーム管理
-        self.battle_rooms: Dict[str, Battle_info] = {}
-        self.double_battle_rooms: Dict[str, DoubleBattle_info] = {}
-        self.private_rooms: Dict[str, dict] = {}
-        self.double_private_rooms: Dict[str, dict] = {}
+        self.rooms: Dict[str, SingleBattle | DoubleBattle] = {}
+        self.private_waiting_rooms: Dict[str, dict] = {}
         
         # ユーザープロフィール
         self.user_profiles: Dict[str, dict] = {}
@@ -45,17 +43,13 @@ class RoomManager:
         self.MAX_ROOMS = 50
 
     def get_room(self, room_id: str) -> Optional[SingleBattle | DoubleBattle]:
-        """指定されたIDのルームを取得（シングル・ダブル両対応）"""
-        if room_id in self.battle_rooms:
-            return self.battle_rooms[room_id]
-        return self.double_battle_rooms.get(room_id)
+        """指定されたIDのルームを取得"""
+        return self.rooms.get(room_id)
 
     def remove_room(self, room_id: str):
         """ルームと関連するタイマーを削除"""
-        if room_id in self.battle_rooms:
-            del self.battle_rooms[room_id]
-        if room_id in self.double_battle_rooms:
-            del self.double_battle_rooms[room_id]
+        if room_id in self.rooms:
+            del self.rooms[room_id]
         
         self.cancel_timer(room_id)
 
@@ -131,15 +125,15 @@ class RoomManager:
 
     def create_private_room(self, websocket, player_id: str, p1_lives: int, p2_lives: int, is_double: bool = False) -> str:
         """プライベートルームを作成してIDを返す"""
-        target_dict = self.double_private_rooms if is_double else self.private_rooms
         while True:
             new_room_id = f"{secrets.randbelow(1000000):06d}"
-            if new_room_id not in self.private_rooms and new_room_id not in self.double_private_rooms: break
+            if new_room_id not in self.private_waiting_rooms: break
         
-        target_dict[new_room_id] = {
+        self.private_waiting_rooms[new_room_id] = {
             "socket": websocket, 
             "player_id": player_id, 
             "p1_max_lives": p1_lives,
-            "p2_max_lives": p2_lives
+            "p2_max_lives": p2_lives,
+            "is_double": is_double
         }
         return new_room_id

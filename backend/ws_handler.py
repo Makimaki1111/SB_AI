@@ -27,22 +27,16 @@ class WebSocketHandler:
 
     async def _try_reconnect(self, websocket, player_id: str) -> bool:
         """切断猶予期間中のルームがあれば再接続を試みる"""
-        for rid, room in self.room_manager.battle_rooms.items():
+        for rid, room in self.room_manager.rooms.items():
             if player_id in [p.id for p in getattr(room, 'players', [])] and not room.is_finished:
                 self.room_manager.cancel_grace_period(rid, player_id)
                 self.connection_manager.join_room(websocket, rid)
                 await websocket.send_text(json.dumps(room.make_init_response(player_id)))
-                await self.connection_manager.broadcast_battle_state(rid, room._make_response(), is_double=False, room_manager=self.room_manager)
-                return True
                 
-        for rid, room in self.room_manager.double_battle_rooms.items():
-            if player_id in [p.id for p in getattr(room, 'players', [])] and not room.is_finished:
-                self.room_manager.cancel_grace_period(rid, player_id)
-                self.connection_manager.join_room(websocket, rid)
-                await websocket.send_text(json.dumps(room.make_init_response(player_id)))
-                await self.connection_manager.broadcast_battle_state(rid, room._make_response(), is_double=True, room_manager=self.room_manager)
+                # is_double判定をクラス型で行う
+                is_double = isinstance(room, DoubleBattle)
+                await self.connection_manager.broadcast_battle_state(rid, room._make_response(), is_double=is_double, room_manager=self.room_manager)
                 return True
-                
         return False
 
     async def handle_message(self, websocket, data: str):
@@ -112,7 +106,7 @@ class WebSocketHandler:
             if target_waiter["player_id"] == player_id:
                 return
             
-            if len(self.room_manager.battle_rooms) + len(self.room_manager.double_battle_rooms) >= self.room_manager.MAX_ROOMS:
+            if len(self.room_manager.rooms) >= self.room_manager.MAX_ROOMS:
                 await websocket.send_text(json.dumps({"type": "error", "message": "サーバーが混雑しています"}))
                 return
 
@@ -128,7 +122,7 @@ class WebSocketHandler:
 
             bi = SingleBattle(p1_data["player_id"], p2_data["player_id"], sb_info=self.room_manager.sb_info, p1_profile=p1_profile, p2_profile=p2_profile, p1_max_lives=max_lives, p2_max_lives=max_lives)
             bi.init_character()
-            self.room_manager.battle_rooms[bi.room_id] = bi
+            self.room_manager.rooms[bi.room_id] = bi
             
             logger.info(f"Match started: room={bi.room_id}, p1={p1_data['player_id']}, p2={p2_data['player_id']}")
 
@@ -162,7 +156,7 @@ class WebSocketHandler:
             
             bi = DoubleBattle("1v1_double", [p1_data["player_id"]], [p2_data["player_id"]], sb_info=self.room_manager.sb_info, profiles=self.room_manager.user_profiles)
             bi.init_character()
-            self.room_manager.double_battle_rooms[bi.room_id] = bi
+            self.room_manager.rooms[bi.room_id] = bi
             
             self.connection_manager.join_room(p1_data["socket"], bi.room_id)
             self.connection_manager.join_room(p2_data["socket"], bi.room_id)
@@ -211,7 +205,7 @@ class WebSocketHandler:
         
         bi = SingleBattle(player_id, p2_id, sb_info=self.room_manager.sb_info, p1_profile=p1_profile, p2_profile=p2_profile, p1_max_lives=max_lives, p2_max_lives=max_lives, is_cpu=p2_id.startswith("cpu"))
         bi.init_character()
-        self.room_manager.battle_rooms[bi.room_id] = bi
+        self.room_manager.rooms[bi.room_id] = bi
         
         self.connection_manager.register_player(websocket, player_id)
         self.connection_manager.join_room(websocket, bi.room_id)
@@ -234,7 +228,7 @@ class WebSocketHandler:
         )
         bi.init_character()
         
-        self.room_manager.double_battle_rooms[bi.room_id] = bi
+        self.room_manager.rooms[bi.room_id] = bi
         self.connection_manager.register_player(websocket, player_id)
         self.connection_manager.join_room(websocket, bi.room_id)
         
@@ -245,48 +239,41 @@ class WebSocketHandler:
         room_id = info.get("room_id")
         self.connection_manager.register_player(websocket, player_id)
 
-        target_private_rooms = self.room_manager.double_private_rooms if is_double else self.room_manager.private_rooms
+        target_data = self.room_manager.private_waiting_rooms.get(room_id)
 
         if room_id: # 既存のルームに参加
-            if room_id in target_private_rooms:
-                if len(self.room_manager.battle_rooms) + len(self.room_manager.double_battle_rooms) >= self.room_manager.MAX_ROOMS:
+            if target_data:
+                if len(self.room_manager.rooms) >= self.room_manager.MAX_ROOMS:
                     await websocket.send_text(json.dumps({"type": "error", "message": "サーバーが混雑しています"}))
                     return
 
-                p1_data = target_private_rooms.pop(room_id)
-                if p1_data["player_id"] == player_id:
+                # 待機リストから削除
+                self.room_manager.private_waiting_rooms.pop(room_id)
+                if target_data["player_id"] == player_id:
                     return
 
+                p1_data = target_data
                 p2_data = {"socket": websocket, "player_id": player_id}
-                p1_profile = self.room_manager.user_profiles.get(p1_data["player_id"])
-                p2_profile = self.room_manager.user_profiles.get(p2_data["player_id"])
-
-                if is_double:
-                    bi = DoubleBattle_info(
-                        "1v1_double", [p1_data["player_id"]], [p2_data["player_id"]],
-                        sb_info=self.room_manager.sb_info, room_id=room_id,
-                        profiles=self.room_manager.user_profiles,
-                        is_cpu=False
-                    )
-                    bi.init_character()
-                    self.room_manager.double_battle_rooms[bi.room_id] = bi
+                
+                # ルーム作成
+                if p1_data.get("is_double"):
+                    bi = DoubleBattle(room_id, [p1_data["player_id"]], [player_id], sb_info=self.room_manager.sb_info, profiles=self.room_manager.user_profiles)
                 else:
-                    bi = SingleBattle(
-                        p1_data["player_id"], p2_data["player_id"], 
-                        sb_info=self.room_manager.sb_info, room_id=room_id, 
-                        p1_profile=p1_profile, p2_profile=p2_profile, 
-                        p1_max_lives=p1_data.get("p1_max_lives", STOCK_LIVES),
-                        p2_max_lives=p1_data.get("p2_max_lives", STOCK_LIVES)
-                    )
-                    bi.init_character()
-                    self.room_manager.battle_rooms[bi.room_id] = bi
+                    p1_profile = self.room_manager.user_profiles.get(p1_data["player_id"])
+                    p2_profile = self.room_manager.user_profiles.get(player_id)
+                    bi = SingleBattle(p1_data["player_id"], player_id, sb_info=self.room_manager.sb_info, room_id=room_id, p1_profile=p1_profile, p2_profile=p2_profile, p1_max_lives=p1_data["p1_max_lives"], p2_max_lives=p1_data["p2_max_lives"])
+                
+                bi.init_character()
+                self.room_manager.rooms[bi.room_id] = bi
                 
                 self.connection_manager.join_room(p1_data["socket"], bi.room_id)
                 self.connection_manager.join_room(p2_data["socket"], bi.room_id)
 
                 await p1_data["socket"].send_text(json.dumps(bi.make_init_response(p1_data["player_id"])))
                 await p2_data["socket"].send_text(json.dumps(bi.make_init_response(p2_data["player_id"])))
-                await self._start_turn_timer(bi.room_id, is_double=is_double)
+                
+                is_db = isinstance(bi, DoubleBattle)
+                await self._after_turn_action(bi.room_id, bi, is_double=is_db)
             else:
                 await websocket.send_text(json.dumps({"type": "error", "message": "ルームが見つかりません"}))
         else: # 新規作成

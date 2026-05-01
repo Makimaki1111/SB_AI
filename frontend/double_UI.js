@@ -347,6 +347,151 @@ class DoubleUI {
         }
     }
 
+    // --- Unified Interface Methods ---
+    init(data, idToUiMap) {
+        this.resetAll();
+        this.lobbyScreen.hide();
+        this.battleScreen.show();
+        this.syncAll(data.state, idToUiMap);
+    }
+
+    async showStartMessage() {
+        this.showMessage("バトルスタート！");
+        if (typeof playEventSound === 'function') playEventSound("start", "");
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        this.hideMessage();
+    }
+
+    // stopTimer is already implemented below
+
+    setWord(uiId, word) {
+        // UIId is same as charId in double battle
+        const dom = this.chars[uiId].word.selector;
+        if (word) {
+            dom.text(word);
+            dom.stop(true, false).css('opacity', 0).show();
+            this._adjustWordScale(dom);
+            dom.animate({ opacity: 1 }, 300);
+        } else {
+            dom.hide();
+        }
+    }
+
+    setCharImage(uiId, types) {
+        const char = this.chars[uiId];
+        if (!char || typeof type_to_image === "undefined") return;
+
+        if (!types || types.length === 0) {
+            char.img1.selector.hide().attr('src', '').css('opacity', '');
+            char.img2.selector.hide().attr('src', '').css('opacity', '');
+            return;
+        }
+
+        const fadeInImage = (selector, src) => {
+            selector.stop(true, false);
+            selector.hide().attr('src', '').css('opacity', '');
+            const img = new Image();
+            img.onload = () => {
+                selector.css({ opacity: 0, display: 'block' });
+                selector.attr('src', src);
+                selector.animate({ opacity: 1 }, 300, () => {
+                    selector.css('opacity', '');
+                });
+            };
+            img.src = src;
+        };
+
+        if (types.length === 2) {
+            const newImg1 = type_to_image[types[0]];
+            const newImg2 = type_to_image[types[1]];
+            if (newImg1) {
+                fadeInImage(char.img1.selector, "img/" + newImg1 + ".gif");
+                char.img2.selector.hide();
+                if (newImg2) {
+                    setTimeout(() => {
+                        if (this.chars[uiId]) fadeInImage(this.chars[uiId].img2.selector, "img/" + newImg2 + ".gif");
+                    }, 80);
+                }
+            }
+        } else {
+            const newImg = type_to_image[types[0]];
+            if (newImg) {
+                fadeInImage(char.img1.selector, "img/" + newImg + ".gif");
+                char.img2.selector.hide();
+            }
+        }
+    }
+
+    async applyDamage(uiId, damage, message) {
+        this.playEffect(uiId, "damage");
+    }
+
+    async applyCure(uiId, amount) {
+        this.playEffect(uiId, "heal");
+    }
+
+    applyStatChange(uiId, statType, newRank) {
+        if (newRank > 0) this.playEffect(uiId, "stat_up");
+        else if (newRank < 0) this.playEffect(uiId, "stat_down");
+    }
+
+    applyPoison(uiId) {
+        // Visual effect for poison?
+    }
+
+    onAbilityChanged(e) {
+        if (e.message) this.showModalMessage(e.message, 2000);
+    }
+
+    syncAll(state, idToUiMap) {
+        for (const [id, char] of Object.entries(state.characters)) {
+            const uiId = idToUiMap[id];
+            this.setName(uiId, char.name, char.is_poison);
+            this.setHP(uiId, char.hp, char.max_hp);
+            this.setCharVisibility(uiId, !char.is_defeated);
+        }
+        // Update situation info as well
+        this.updateSituationInfo({ chars: state.characters });
+    }
+
+    onMyTurnStart(state) {
+        this.setWaitMessage("あなたのターンです。");
+        this.setInputText(`「${state.character}」からはじまることば`);
+        this.enableInput();
+        this.showInputArea();
+        this.setTargetSelectionVisible(true);
+        this.startTimer(20, 20);
+    }
+
+    onOpponentTurnStart(state) {
+        this.setWaitMessage("相手のターンです。");
+        this.hideInputArea();
+        this.setTargetSelectionVisible(false);
+        this.startTimer(20, 20);
+    }
+
+    onWin() {
+        if (typeof stopManagedBGM === 'function') stopManagedBGM();
+        if (typeof playEventSound === 'function') playEventSound("end", "");
+        this.showMessage("あなたのチームの勝利です！");
+        this.disableInput();
+        this.showBackBtn();
+        this.stopTimer();
+    }
+
+    onLose() {
+        if (typeof stopManagedBGM === 'function') stopManagedBGM();
+        if (typeof playEventSound === 'function') playEventSound("end", "");
+        this.showMessage("あなたのチームの敗北です…");
+        this.disableInput();
+        this.showBackBtn();
+        this.stopTimer();
+    }
+
+    updatePreCheck(data) {
+        this.showCheckResult(data);
+    }
+
     setCharVisibility(id, visible) {
         if (visible) {
             this.chars[id].wrapper.show();

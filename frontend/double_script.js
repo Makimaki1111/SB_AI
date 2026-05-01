@@ -8,6 +8,7 @@ if (!player1_id) {
 const TURN_TIME_LIMIT = 30;
 let isProcessingTurnResult = false;
 const pendingTurnResults = [];
+const battleManager = new BattleManager({ mode: 'double' });
 
 const doubleBattleState = {
     roomId: null,
@@ -288,22 +289,11 @@ $(() => {
         backToLobby();
     });
 
-    // 入力中のタイプチェック (script.jsと同じ)
-    ui.input.selector.off('input').on('input', () => {
-        if (!doubleBattleState.roomId) {
-            ui.hideCheckResult();
-            return;
-        }
+    // 入力中のタイプチェック
+    ui.input.selector.on("input", () => {
         const text = ui.input.selector.val();
         if (text) {
-            const normalizedChar = (typeof wanakana !== 'undefined') ? wanakana.toHiragana(text.charAt(0)) : text.charAt(0);
-            if (normalizedChar !== doubleBattleState.character) {
-                // 開始文字不一致
-            } else {
-                sendIncludeCheckDouble(doubleBattleState.roomId, text);
-            }
-        } else {
-            ui.hideCheckResult();
+            battleManager.sendPreCheck(text);
         }
     });
 
@@ -387,401 +377,34 @@ function connectDoubleWebSocket(action, mode, roomId) {
         const data = JSON.parse(e.data);
         data._receivedAt = Date.now();
 
-        if (data.type === "double_room_created") {
-            $("#double-room-id-input").val(data.room_id);
-            doubleBattleState.roomId = data.room_id;
-            ui.showMessage(`ルームID: ${data.room_id}`);
-            ui.setWaitMessage("参加者待機中...");
-        } else if (data.type === "waiting_for_players") {
-            if (doubleBattleState.roomId) {
-                ui.showMessage(`ルームID: ${doubleBattleState.roomId}`);
-            }
-            const waitText = `待機中... (${data.current}/${data.required} 人)`;
-            ui.setWaitMessage(waitText);
-        } else if (data.type === "waiting") {
-            ui.setWaitMessage(data.message || "対戦相手を待っています...");
-        }
-        else if (data.type === "init_double_battle") {
-            await initDoubleBattle(data);
-        } else if (data.type === "turn_result") {
-            // 特性変更のみかどうか判定
-            const isOnlyAbilityChange = data.events && data.events.length > 0 && data.events.every(ev => ev.type === "ability_changed");
-
-            if (isOnlyAbilityChange) {
-                // 特性変更のみの場合は即時反映（キューに入れない）
-                handleTurnResult(data);
-            } else {
-                if (isProcessingTurnResult) {
-                    // 前のターン結果を処理中の場合はキューに入れる
-                    pendingTurnResults.push(data);
-                } else {
-                    isProcessingTurnResult = true;
-                    await handleTurnResult(data);
-                    isProcessingTurnResult = false;
-
-                    while (pendingTurnResults.length > 0) {
-                        await sleep(500);
-                        isProcessingTurnResult = true;
-                        const next = pendingTurnResults.shift();
-                        await handleTurnResult(next);
-                        isProcessingTurnResult = false;
-                    }
-                }
-            }
-        } else if (data.type === "error") {
-            // エラー表示をUIに反映
-            ui.setWaitMessage(data.message, 2000);
-
-            ui.enableInput();
-        } else if (data.type === "pre_check") {
-            // include_checkの結果
-            onDoublePreCheck(data);
+           switch (data.type) {
+            case "made_room":
+                doubleBattleState.roomId = data.room_id;
+                doubleBattleState.myTeam = (data.p1_id === player1_id) ? "team1" : "team2";
+                battleManager.initBattle(data, getUIIdMap());
+                break;
+            case "waiting":
+                ui.showMessage(data.message || "待機中...");
+                break;
+            case "pre_check":
+                battleManager.handlePreCheck(data);
+                break;
+            case "accepted":
+                battleManager.processTurnResult(data);
+                break;
+            case "error":
+                ui.showModalMessage(data.message, 3000);
+                break;
+            case "opponent_disconnected":
+                ui.showMessage("あいてが切断しました");
+                ui.showBackBtn();
+                break;
         }
     });
 
     ws.addEventListener("close", function () {
         console.log("Double WebSocket closed");
     });
-}
-
-async function initDoubleBattle(data) {
-    hasStartedDoubleBattle = true;
-    $('#double-lobby-screen').hide();
-    $('#double-battle-screen').show();
-
-    battleState = data; // store room state
-    doubleBattleState.roomId = data.room_id;
-    doubleBattleState.mode = data.mode;
-    doubleBattleState.isVsCpu = data.is_cpu || false;
-    doubleBattleState.lastFoeWord = null; // バトル開始時にリセット
-
-    // Determine myTeam based on owner_id
-    doubleBattleState.myTeam = 'team1';
-    for (let id of ['p1a', 'p1b', 'p2a', 'p2b']) {
-        if (data.characters[id] && data.characters[id].owner_id === player1_id) {
-            doubleBattleState.myTeam = id.startsWith('p1') ? 'team1' : 'team2';
-            break;
-        }
-    }
-
-    ui.resetAll();
-
-    // resetAll()で隠れてしまうため、再表示する
-    setBattleActionButtonsVisible(true);
-    ui.targetSelectionUi.selector.css('display', 'flex');
-
-    updateUIWithCharacters(data.characters);
-
-    ui.showMessage("バトルスタート！");
-    playEventSound("start", "");
-    requestBGM("resource/overflow.mp3");
-
-    // Ensure all characters are visible initially
-    $('.char-wrapper').show();
-
-    await sleep(1500);
-    ui.hideMessage();
-
-    handleTurnStart(data);
-}
-
-function updateUIWithCharacters(chars) {
-    const ids = ['p1a', 'p1b', 'p2a', 'p2b'];
-    for (let id of ids) {
-        if (chars[id]) {
-            doubleBattleState.chars[id] = chars[id];
-
-            const uiId = getUIId(id);
-            ui.setName(uiId, chars[id].name, chars[id].is_poison);
-            ui.setHP(uiId, chars[id].hp, chars[id].maxHp);
-            if (chars[id].is_defeated) {
-                ui.setCharVisibility(uiId, false);
-            }
-        }
-    }
-}
-
-async function handleTurnResult(data) {
-    const onlyAbilityChanged = !!(data.events && data.events.length > 0 && data.events.every(ev => ev.type === "ability_changed"));
-    
-    // ★即時反映: 特性変更のみなら先にステータス更新とモーダル更新を行う
-    if (onlyAbilityChanged) {
-        // updateUIWithCharacters(data.characters); // 全更新だとHPバーなどが干渉するため、特性のみ更新する
-        const ids = ['p1a', 'p1b', 'p2a', 'p2b'];
-        for (let id of ids) {
-            if (data.characters[id] && doubleBattleState.chars[id]) {
-                doubleBattleState.chars[id].ability = data.characters[id].ability;
-                doubleBattleState.chars[id].ability_change_count = data.characters[id].ability_change_count;
-            }
-        }
-
-        const abilityChangeEvent = [...data.events].reverse().find(e => e.type === 'ability_changed');
-        if (abilityChangeEvent) {
-            const changedUiId = getUIId(abilityChangeEvent.char_id || "");
-            const isOwnTeamChange = changedUiId === "p1a" || changedUiId === "p1b";
-            if (isOwnTeamChange) {
-                // 画面上の表示更新
-                ui.updateAbilityInfo(getUiCharsState(), doubleBattleState.allAbilities);
-                
-                // モーダルが開いていれば更新
-                if (ui.abilityModal.selector.is(':visible')) {
-                    ui.populateAbilityModal(getUiCharsState(), doubleBattleState.allAbilities, (charId, abilityId) => {
-                        sendChangeAbilityDouble(charId, abilityId);
-                    }, () => {
-                        ui.hideAbilityModal();
-                        if (typeof playSound === 'function') playSound("resource/pera.mp3");
-                    });
-                }
-                
-                // メッセージと効果音も即時再生
-                ui.showModalMessage(abilityChangeEvent.message || 'とくせいを変更した！', 2000);
-                
-                if (shouldPlayAbilityChangeSound(abilityChangeEvent) && typeof playSound === 'function') {
-                    playSound("resource/concent.mp3");
-                }
-            }
-        }
-    }
-
-    if (!onlyAbilityChanged) {
-        ui.stopTimer();
-        ui.hideInputArea();
-    }
-
-    const isTimeout = data.events && data.events.some(e => e.message && e.message.includes("時間切れ"));
-
-    // Show the played word if it was a valid turn AND not a timeout
-    if (!isTimeout && data.word && data.last_actor_id) {
-        const uiLastActorId = getUIId(data.last_actor_id);
-        ui.setWord(uiLastActorId, data.word);
-
-        // 相手チームの言葉を記録
-        if (doubleBattleState.myTeam === 'team1' && (uiLastActorId === 'p2a' || uiLastActorId === 'p2b')) {
-            doubleBattleState.lastFoeWord = data.word;
-        } else if (doubleBattleState.myTeam === 'team2' && (uiLastActorId === 'p1a' || uiLastActorId === 'p1b')) {
-            doubleBattleState.lastFoeWord = data.word;
-        }
-
-        const types = data.characters[data.last_actor_id].types || [];
-        ui.setCharImage(uiLastActorId, types);
-
-        // Play sound for the first type
-        if (types.length > 0) {
-            const firstType = types[0];
-            if (firstType && type_to_image[firstType] && typeof playSound === 'function') {
-                const soundName = type_to_image[firstType];
-                playSound(`resource/${soundName}.mp3`);
-            }
-        }
-
-        await sleep(1000); // 1秒「間」を作る
-    }
-
-    // process events sequentially to show animations (script.js の processEvent と同じタイミング)
-    if (data.events && data.events.length > 0) {
-        for (let e of data.events) {
-            if (e.type !== "ability_changed") {
-                ui.showMessage(e.message || "");
-            }
-            if (typeof playEventSound === 'function' && e.type !== "ability_changed") {
-                playEventSound(e.type, e.message);
-            }
-
-            if (e.type === "damage") {
-                if (e.damage !== undefined && doubleBattleState.chars[e.target]) {
-                    doubleBattleState.chars[e.target].hp = Math.max(0, doubleBattleState.chars[e.target].hp - e.damage);
-                    const targetChar = doubleBattleState.chars[e.target];
-                    ui.setHP(getUIId(e.target), targetChar.hp, targetChar.maxHp);
-                }
-                // ダメージ点滅エフェクト(毒ダメージの場合は点滅させない)
-                if (e.message !== "毒のダメージを受けた！") {
-                    ui.playEffect(getUIId(e.target), e.type);
-                }
-            } else if (e.type === "cure") {
-                if (e.amount !== undefined && doubleBattleState.chars[e.target]) {
-                    doubleBattleState.chars[e.target].hp = Math.min(doubleBattleState.chars[e.target].maxHp, doubleBattleState.chars[e.target].hp + e.amount);
-                    const targetChar = doubleBattleState.chars[e.target];
-                    ui.setHP(getUIId(e.target), targetChar.hp, targetChar.maxHp);
-                }
-                ui.playEffect(getUIId(e.target), "heal");
-            } else if (e.type === "stat_down") {
-                // ランク値の更新 (script.jsと同じ)
-                if (e.target && doubleBattleState.chars[e.target]) {
-                    if (e.stat_type === "defense") {
-                        doubleBattleState.chars[e.target].defense_rank = e.new_rank;
-                    } else {
-                        doubleBattleState.chars[e.target].attack_rank = e.new_rank;
-                    }
-                }
-                ui.playEffect(getUIId(e.target), "stat_down");
-            } else if (e.type === "stat_up") {
-                // ランク値の更新 (script.jsと同じ)
-                if (e.target && doubleBattleState.chars[e.target]) {
-                    if (e.stat_type === "defense") {
-                        doubleBattleState.chars[e.target].defense_rank = e.new_rank;
-                    } else {
-                        doubleBattleState.chars[e.target].attack_rank = e.new_rank;
-                    }
-                }
-                ui.playEffect(getUIId(e.target), "stat_up");
-            } else if (e.type === "drain") {
-                // ダメージ適用
-                if (e.damage !== undefined && doubleBattleState.chars[e.target]) {
-                    doubleBattleState.chars[e.target].hp = Math.max(0, doubleBattleState.chars[e.target].hp - e.damage);
-                    const targetChar = doubleBattleState.chars[e.target];
-                    ui.setHP(getUIId(e.target), targetChar.hp, targetChar.maxHp);
-                }
-                // 回復適用
-                if (e.amount !== undefined && doubleBattleState.chars[e.attacker]) {
-                    doubleBattleState.chars[e.attacker].hp = Math.min(doubleBattleState.chars[e.attacker].maxHp, doubleBattleState.chars[e.attacker].hp + e.amount);
-                    const atkChar = doubleBattleState.chars[e.attacker];
-                    ui.setHP(getUIId(e.attacker), atkChar.hp, atkChar.maxHp);
-                }
-                ui.playEffect(getUIId(e.attacker), "heal");
-            } else if (e.type === "ability_trigger") {
-                if (e.poison_target && doubleBattleState.chars[e.poison_target]) {
-                    doubleBattleState.chars[e.poison_target].is_poison = true;
-                    ui.updatePoisonStatus(e.poison_target, true);
-                }
-                // ランク一括変化 (持っている場合)
-                if (e.new_ranks) {
-                    for (const [charId, ranks] of Object.entries(e.new_ranks)) {
-                        if (doubleBattleState.chars[charId]) {
-                            doubleBattleState.chars[charId].attack_rank = ranks.attack_rank;
-                            doubleBattleState.chars[charId].defense_rank = ranks.defense_rank;
-                        }
-                    }
-                }
-            } else if (e.type === "cure_poison") {
-                // 毒解除
-                if (e.target && doubleBattleState.chars[e.target]) {
-                    doubleBattleState.chars[e.target].is_poison = false;
-                    ui.updatePoisonStatus(e.target, false);
-                }
-            }
-
-            // ★変更: 特性変更の場合は waitTime を 0 にして即時完了させる
-            const waitTime = e.type === "ability_changed" ? 0 : 1000;
-            await sleep(waitTime);
-        }
-    }
-
-    // ★変更: 特性変更のみの場合は既に更新済みなのでスキップ
-    if (!onlyAbilityChanged) {
-        updateUIWithCharacters(data.characters);
-    }
-
-    // 特性変更のみの場合は既に処理済みなのでスキップ
-    if (!onlyAbilityChanged) {
-        // 特性変更イベントの場合、最新の変更を取得するためにreverseしてfindする
-        const abilityChangeEvent = data.events && [...data.events].reverse().find(e => e.type === 'ability_changed');
-        if (abilityChangeEvent) {
-            const changedUiId = getUIId(abilityChangeEvent.char_id || "");
-            const isOwnTeamChange = changedUiId === "p1a" || changedUiId === "p1b";
-
-            if (isOwnTeamChange) {
-                ui.showModalMessage(abilityChangeEvent.message || 'とくせいを変更した！', 2000);
-            }
-
-            if (isOwnTeamChange && shouldPlayAbilityChangeSound(abilityChangeEvent) && typeof playSound === 'function') {
-                playSound("resource/concent.mp3");
-            }
-        }
-    }
-
-    // Processed one turn_result, so clear the intent flag to prevent replay.
-    window.__sbExpectConcentUntil = 0;
-
-    if (data.team1_win !== null) {
-        stopBGM();
-        playEventSound("end", "");
-        const isMyTeamWin = (doubleBattleState.myTeam === 'team1') ? !!data.team1_win : !data.team1_win;
-        if (isMyTeamWin) ui.showMessage("自分チームの勝利！");
-        else ui.showMessage("相手チームの勝利！");
-        ui.hideTimerContainer();
-        ui.disableInput();
-        ui.hideInput();
-        ui.hideSubmitBtn();
-        ui.showBackToTitleBtn();
-        return;
-    }
-
-    // 特性変更のみの通知ではターン進行・タイマーをリセットしない
-    if (onlyAbilityChanged) {
-        return;
-    }
-
-    // Next turn
-    handleTurnStart(data);
-}
-
-function handleTurnStart(data) {
-    if (data.team1_win !== null) return;
-
-    doubleBattleState.character = data.character;
-    ui.hideMessage(); // Ensure #message is hidden
-
-    // タイマーを開始(対人戦のみ)
-    if (!doubleBattleState.isVsCpu) {
-        let remaining = null;
-        if (typeof data.turn_deadline_ms === "number") {
-            remaining = Math.max(0, (data.turn_deadline_ms - Date.now()) / 1000);
-        } else {
-            const elapsed = (Date.now() - (data._receivedAt || Date.now())) / 1000;
-            remaining = Math.max(0, TURN_TIME_LIMIT - elapsed);
-        }
-        ui.startTimer(remaining, remaining);
-    }
-
-    // Check if it's my turn
-    if (data.current_owner_id === player1_id) {
-        doubleBattleState.isMyTurn = true;
-        doubleBattleState.currentActorUiId = getUIId(data.current_actor_id);
-        ui.setWaitMessage(`あなたのターンです (${doubleBattleState.chars[data.current_actor_id].name})`);
-        ui.setInputText(`「${data.character}」からはじまることば`);
-
-        ui.showInputArea();
-        ui.enableInput();
-
-        // Setup targeting UI
-        setupTargetingUI();
-    } else {
-        doubleBattleState.isMyTurn = false;
-        ui.hideInputArea();
-        ui.hideWaitMessage();
-        ui.showMessage(`待機中... (${doubleBattleState.chars[data.current_actor_id].name} のターン)`);
-    }
-}
-
-function setupTargetingUI() {
-    ui.setTargetSelectionVisible(true);
-    // highlight selected implicitly
-    $('.target-btn').removeClass('target-selected');
-
-    // Evaluate alive state using real backing data but mapped UI keys
-    const p2a_real = getRealId('p2a');
-    const p2b_real = getRealId('p2b');
-
-    let p2a_alive = doubleBattleState.chars[p2a_real] && !doubleBattleState.chars[p2a_real].is_defeated;
-    let p2b_alive = doubleBattleState.chars[p2b_real] && !doubleBattleState.chars[p2b_real].is_defeated;
-
-    if (p2a_alive && !p2b_alive) {
-        selectTarget('p2a');
-        $('#target-p2a-btn').prop('disabled', false).removeClass('grayed-out');
-        $('#target-p2b-btn').prop('disabled', true).addClass('grayed-out');
-    } else if (p2b_alive && !p2a_alive) {
-        selectTarget('p2b');
-        $('#target-p2a-btn').prop('disabled', true).addClass('grayed-out');
-        $('#target-p2b-btn').prop('disabled', false).removeClass('grayed-out');
-    } else if (p2a_alive && p2b_alive) {
-        $('#target-p2a-btn').prop('disabled', false).removeClass('grayed-out');
-        $('#target-p2b-btn').prop('disabled', false).removeClass('grayed-out');
-
-        // Retain previous target if valid
-        if (doubleBattleState.currentTargetId === p2a_real) selectTarget('p2a');
-        else if (doubleBattleState.currentTargetId === p2b_real) selectTarget('p2b');
-        else doubleBattleState.currentTargetId = null;
-    }
 }
 
 function selectTarget(uiTargetId) {
@@ -796,43 +419,11 @@ function selectTarget(uiTargetId) {
 
 // double_UI.js から呼ばれる関数
 function sendDoubleSubmitWord(word) {
-    if (!doubleBattleState.isMyTurn) return;
-    if (!word) {
-        ui.setWaitMessage("単語を入力してください", 2000);
-        ui.enableInput();
-        return;
-    }
-
-    const p2a_real = getRealId('p2a');
-    const p2b_real = getRealId('p2b');
-
-    const p2a_alive = doubleBattleState.chars[p2a_real] && !doubleBattleState.chars[p2a_real].is_defeated;
-    const p2b_alive = doubleBattleState.chars[p2b_real] && !doubleBattleState.chars[p2b_real].is_defeated;
-
-    if (p2a_alive && p2b_alive && !doubleBattleState.currentTargetId) {
-        ui.setWaitMessage("ターゲットを選択してください", 2000);
-        ui.enableInput();
-        return;
-    }
-
-    // どちらかが倒れている場合、自動的に残っている方をターゲットにする
     if (!doubleBattleState.currentTargetId) {
-        if (p2a_alive) doubleBattleState.currentTargetId = 'p2a';
-        else if (p2b_alive) doubleBattleState.currentTargetId = 'p2b';
+        ui.showModalMessage("ターゲットを選択してください", 2000);
+        return;
     }
-
-    sock.send(JSON.stringify({
-        type: "submit_word_double",
-        info: {
-            room_id: doubleBattleState.roomId,
-            player_id: player1_id,
-            word: word,
-            target_char_id: doubleBattleState.currentTargetId
-        }
-    }));
-    ui.disableInput();
-    ui.clearInput();
-    ui.hideCheckResult();
+    battleManager.submitWord(word, doubleBattleState.currentTargetId);
 }
 
 function backToLobby() {
@@ -858,43 +449,7 @@ function switchAbilityTab(charId) {
     document.getElementById('ability-tab-' + charId).style.display = 'block';
 }
 
-function sendChangeAbilityDouble(charId, abilityId) {
-    window.__sbExpectConcentUntil = Date.now() + 5000;
-    if (sock && sock.readyState === WebSocket.OPEN) {
-        const realCharId = getRealId(charId);
-        sock.send(JSON.stringify({
-            type: "change_ability_double",
-            info: {
-                room_id: doubleBattleState.roomId,
-                player_id: player1_id,
-                char_id: realCharId,
-                ability_id: abilityId
-            }
-        }));
-    }
-}
-
-function sendIncludeCheckDouble(roomId, word) {
-    if (sock && sock.readyState === WebSocket.OPEN) {
-        sock.send(JSON.stringify({
-            type: "include_check_double",
-            info: { room_id: roomId, word: word }
-        }));
-    }
-}
-
-function onDoublePreCheck(data) {
-  // 入力欄が空、送信直後（非表示）、または非表示状態なら表示しない
-  const currentText = ui.input.selector.val();
-  if (!currentText || !ui.input.selector.is(':visible')) {
-    ui.hideCheckResult();
-    return;
-  }
-  ui.showCheckResult(data);
-  if (doubleBattleState.currentTargetId) {
-    ui.updatePredictionMessage(doubleBattleState.currentTargetId);
-  }
-}
+// 状況確認モーダルの更新 (UI.js側で同期される)
 
 function preloadImages() {
     const images = [
