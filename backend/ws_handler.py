@@ -68,6 +68,25 @@ class WebSocketHandler:
             # エラーを返しておくとフロントエンドがフリーズしない
             await websocket.send_text(json.dumps({"type": "error", "message": f"Handler not found: {msg_type}"}))
 
+    async def _handle_pre_check(self, websocket, player_id, info):
+        # 入力中の単語チェック (script.js -> BattleManager -> ここ)
+        text = info.get("text", "")
+        room_id = info.get("room_id")
+        if not room_id: return
+        
+        room = self.room_manager.rooms.get(room_id)
+        if not room: return
+        
+        res = room.include_check(text)
+        await websocket.send_text(json.dumps({
+            "type": "pre_check",
+            "include": res["include"],
+            "used": res["used"],
+            "type1": res.get("type1"),
+            "type2": res.get("type2"),
+            "prediction": res.get("prediction")
+        }))
+
     # --- 個別メッセージハンドラ ---
 
     async def _handle_update_user_info(self, websocket, player_id, info):
@@ -183,6 +202,10 @@ class WebSocketHandler:
     async def _handle_join_double_room(self, websocket, player_id, info):
         # 既存のダブルバトルプライベートルームに参加
         await self._handle_join_private_room(websocket, player_id, info, is_double=True)
+
+    async def _handle_join_cpu_room(self, websocket, player_id, info):
+        # script.js からの CPU 戦開始リクエストを処理
+        await self._handle_make_new_battle(websocket, player_id, info)
 
     async def _handle_make_new_battle(self, websocket, player_id, info):
         if not player_id:

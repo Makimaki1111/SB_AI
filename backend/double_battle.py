@@ -201,7 +201,7 @@ class DoubleBattle(BaseBattle):
         self.events.append({
             "type": "ability_changed",
             "message": f"{char.name}の特性が「{self.abilities[new_ability_id].name}」に変わった！",
-            "char_id": char.id,
+            "target": char.id,
             "new_ability": new_ability_id,
             "new_ability_change_count": char.ability_change_count
         })
@@ -243,7 +243,7 @@ class DoubleBattle(BaseBattle):
         )
         
         events = [BattleEvent(**e) for e in self.events if isinstance(e, dict)]
-        return BattleResponse(state=state, events=events).model_dump()
+        return BattleResponse(state=state, events=events).model_dump(by_alias=True)
 
     def _serialize_player(self, p: DoubleBattlePlayer):
         # CharacterState を使用するため不要になるが、互換性のために残すか削除を検討

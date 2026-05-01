@@ -50,8 +50,8 @@ class SingleBattle(BaseBattle):
             self.player2.ability = p2_profile["ability"]
 
     def get_player_label(self, player) -> str:
-        """SingleBattleではally/foeを返す"""
-        return "ally" if player.id == self.player1.id else "foe"
+        """SingleBattleでも生のIDを返す (BattleManagerのidToUiMapと同期するため)"""
+        return player.id
 
     def get_current_actor(self) -> Player:
         return self.player1 if self.player1_turn else self.player2
@@ -188,7 +188,7 @@ class SingleBattle(BaseBattle):
         )
         
         events = [BattleEvent(**e) for e in self.events if isinstance(e, dict)]
-        return BattleResponse(state=state, events=events).model_dump()
+        return BattleResponse(state=state, events=events).model_dump(by_alias=True)
 
     def get_personalized_response(self, base_res: dict, player_id: str) -> dict:
         new_res = base_res.copy()
@@ -222,7 +222,7 @@ class SingleBattle(BaseBattle):
         self.events.append({
             "type": "ability_changed",
             "message": f"特性が「{self.abilities[new_ability_id].name}」に変わった！",
-            "player": "ally" if player.id == self.player1.id else "foe",
+            "target": self.get_player_label(player),
             "new_ability": new_ability_id,
             "new_ability_change_count": player.ability_change_count
         })

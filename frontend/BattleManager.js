@@ -105,7 +105,7 @@ class BattleManager {
             }
         }
 
-        this.ui.init(data, this.idToUiMap);
+        this.ui.init(data, this.idToUiMap, this);
         await this.ui.showStartMessage();
         this.handleTurnStart(data.state);
     }
@@ -216,6 +216,49 @@ class BattleManager {
 
     handlePreCheck(data) {
         this.ui.updatePreCheck(data);
+    }
+
+    /**
+     * Sends a word to the server
+     */
+    submitWord(word) {
+        if (!word || !this.sock || this.sock.readyState !== WebSocket.OPEN) return;
+        this.ui.disableInput();
+        this.ui.clearInput();
+        this.ui.hideCheckResult();
+        
+        const info = {
+            player_id: this.player1_id,
+            room_id: this.battleState?.room_id,
+            text: word
+        };
+        this.sock.send(JSON.stringify({ type: "submit_word", info }));
+    }
+
+    /**
+     * Sends pre-check request for type prediction
+     */
+    sendPreCheck(text) {
+        if (!text || !this.sock || this.sock.readyState !== WebSocket.OPEN) return;
+        const info = {
+            player_id: this.player1_id,
+            room_id: this.battleState?.room_id,
+            text: text
+        };
+        this.sock.send(JSON.stringify({ type: "pre_check", info }));
+    }
+
+    /**
+     * Sends ability change request
+     */
+    changeAbility(newAbilityId) {
+        if (!this.sock || this.sock.readyState !== WebSocket.OPEN) return;
+        const info = {
+            player_id: this.player1_id,
+            room_id: this.battleState?.room_id,
+            new_ability: newAbilityId
+        };
+        this.sock.send(JSON.stringify({ type: "change_ability", info }));
     }
 
     // --- Helpers ---

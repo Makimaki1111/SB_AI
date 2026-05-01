@@ -21,13 +21,13 @@ try:
     from connection_manager import ConnectionManager
     from room_manager import RoomManager
     from ws_handler import WebSocketHandler
-    from battle import get_all_abilities_info
+    from abilities import get_all_abilities_info
 except ImportError:
     from backend.SB_info import SB_info
     from backend.connection_manager import ConnectionManager
     from backend.room_manager import RoomManager
     from backend.ws_handler import WebSocketHandler
-    from backend.battle import get_all_abilities_info
+    from backend.abilities import get_all_abilities_info
 
 app = FastAPI()
 

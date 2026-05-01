@@ -277,6 +277,7 @@ class DoubleUI {
 
         this.backToTitleBtn = new UIObject($('#back-to-title-btn'));
         this.cancelBtn = new UIObject($('#cancel-battle-btn'));
+        this.actionsWrapper = new UIObject($('#actions-wrapper'));
 
         this.timerBar = $('#timer-bar');
         this.timerContainer = $('#timer-container');
@@ -443,6 +444,36 @@ class DoubleUI {
         if (e.message) this.showModalMessage(e.message, 2000);
     }
 
+    // --- Unified Interface Methods ---
+    init(data, idToUiMap, battleManager) {
+        this.battleManager = battleManager;
+        this.showBattleScreen();
+        this.actionsWrapper.show(); // ルーム情報が来たら表示
+
+        // ボタンイベントの紐付け
+        this.situationButton.selector.off('click').on('click', () => {
+            this.showSituationModal();
+        });
+        this.closeSituationModalBtn.selector.off('click').on('click', () => {
+            this.hideSituationModal();
+        });
+        
+        this.abilityInfoContainer.selector.off('click').on('click', () => {
+            const state = battleManager.battleState;
+            if (!state) return;
+            // ダブルバトルでは先頭の自分のキャラを参照（仮）
+            const myId = Object.keys(idToUiMap).find(id => state.characters[id].owner_id === battleManager.player1_id);
+            const char = state.characters[myId];
+            if (!char) return;
+            
+            const canChange = char.ability_change_count > 0;
+            // 本来は A/B 選択が必要だが、まずはモーダル表示まで
+            this.showAbilityModal();
+        });
+
+        this.syncAll(data.state, idToUiMap);
+    }
+
     syncAll(state, idToUiMap) {
         for (const [id, char] of Object.entries(state.characters)) {
             const uiId = idToUiMap[id];
@@ -450,8 +481,10 @@ class DoubleUI {
             this.setHP(uiId, char.hp, char.max_hp);
             this.setCharVisibility(uiId, !char.is_defeated);
         }
-        // Update situation info as well
+        // Update situation and ability info
         this.updateSituationInfo({ chars: state.characters });
+        const allAbilities = this.battleManager ? this.battleManager.allAbilities : {};
+        this.updateAbilityInfo(state.characters, allAbilities);
     }
 
     onMyTurnStart(state) {
@@ -471,21 +504,33 @@ class DoubleUI {
     }
 
     onWin() {
-        if (typeof stopManagedBGM === 'function') stopManagedBGM();
-        if (typeof playEventSound === 'function') playEventSound("end", "");
-        this.showMessage("あなたのチームの勝利です！");
-        this.disableInput();
+        this.showMessage("あなたの勝ちです！");
         this.showBackBtn();
-        this.stopTimer();
+        if (typeof playSound === 'function') playSound("resource/start.mp3");
     }
 
     onLose() {
-        if (typeof stopManagedBGM === 'function') stopManagedBGM();
-        if (typeof playEventSound === 'function') playEventSound("end", "");
-        this.showMessage("あなたのチームの敗北です…");
+        this.showMessage("あなたの負けです...");
+        this.showBackToTitleBtn();
+        if (typeof playSound === 'function') playSound("resource/end.mp3");
+    }
+
+    showBackToTitleBtn() {
+        this.backToTitleBtn.show();
+    }
+
+    // --- 画面遷移制御 ---
+    showBattleScreen() {
+        $('.double-lobby-screen').hide();
+        $('.double-battle-screen').show();
+        this.actionsWrapper.hide(); // ルーム情報が来るまで隠す
+        this.backToTitleBtn.hide();
         this.disableInput();
-        this.showBackBtn();
-        this.stopTimer();
+    }
+
+    showLobbyScreen() {
+        $('.double-battle-screen').hide();
+        $('.double-lobby-screen').show();
     }
 
     updatePreCheck(data) {
@@ -932,9 +977,13 @@ class DoubleUI {
 
         for (let id of ['p1a', 'p1b', 'p2a', 'p2b']) {
             if (chars[id]) {
-                $(`#s-${id}-name`).text(chars[id].name);
-                $(`#s-${id}-atk`).text(formatMultiplier(rankToPower(chars[id].attack_rank)));
-                $(`#s-${id}-def`).text(formatMultiplier(rankToPower(chars[id].defense_rank)));
+                const char = chars[id];
+                const atkRank = char.attack_rank !== undefined ? char.attack_rank : (char.atk !== undefined ? char.atk : 0);
+                const defRank = char.defense_rank !== undefined ? char.defense_rank : (char.def_ !== undefined ? char.def_ : 0);
+
+                $(`#s-${id}-name`).text(char.name);
+                $(`#s-${id}-atk`).text(formatMultiplier(rankToPower(atkRank)));
+                $(`#s-${id}-def`).text(formatMultiplier(rankToPower(defRank)));
             }
         }
     }
