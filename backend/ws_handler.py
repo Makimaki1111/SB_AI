@@ -25,6 +25,26 @@ class WebSocketHandler:
         self.TIME_LIMIT = 20
         self.DOUBLE_TIME_LIMIT = 30
 
+    async def _try_reconnect(self, websocket, player_id: str) -> bool:
+        """切断猶予期間中のルームがあれば再接続を試みる"""
+        for rid, room in self.room_manager.battle_rooms.items():
+            if player_id in [p.id for p in getattr(room, 'players', [])] and not room.is_finished:
+                self.room_manager.cancel_grace_period(rid, player_id)
+                self.connection_manager.join_room(websocket, rid)
+                await websocket.send_text(json.dumps(room.make_init_response(player_id)))
+                await self.connection_manager.broadcast_battle_state(rid, room._make_response(), is_double=False, room_manager=self.room_manager)
+                return True
+                
+        for rid, room in self.room_manager.double_battle_rooms.items():
+            if player_id in [p.id for p in getattr(room, 'players', [])] and not room.is_finished:
+                self.room_manager.cancel_grace_period(rid, player_id)
+                self.connection_manager.join_room(websocket, rid)
+                await websocket.send_text(json.dumps(room.make_init_response(player_id)))
+                await self.connection_manager.broadcast_battle_state(rid, room._make_response(), is_double=True, room_manager=self.room_manager)
+                return True
+                
+        return False
+
     async def handle_message(self, websocket, data: str):
         try:
             req = json.loads(data)
@@ -70,6 +90,11 @@ class WebSocketHandler:
         if not player_id:
             await websocket.send_text(json.dumps({"type": "error", "message": "プレイヤーIDが不明です。再接続してください。"}))
             return
+            
+        self.connection_manager.register_player(websocket, player_id)
+        if await self._try_reconnect(websocket, player_id):
+            return
+            
         try:
             max_lives = max(1, min(10, int(info.get("max_lives", STOCK_LIVES))))
         except (TypeError, ValueError):
@@ -125,6 +150,8 @@ class WebSocketHandler:
             await websocket.send_text(json.dumps({"type": "error", "message": "プレイヤーIDが不明です。再接続してください。"}))
             return
         self.connection_manager.register_player(websocket, player_id)
+        if await self._try_reconnect(websocket, player_id):
+            return
         
         if self.room_manager.waiting_player_double is not None:
             p1_data = self.room_manager.waiting_player_double
@@ -167,6 +194,10 @@ class WebSocketHandler:
         if not player_id:
             await websocket.send_text(json.dumps({"type": "error", "message": "プレイヤーIDが不明です。再接続してください。"}))
             return
+        self.connection_manager.register_player(websocket, player_id)
+        if await self._try_reconnect(websocket, player_id):
+            return
+            
         # シングルCPU戦などの開始
         p2_id = info.get("player2_id", "cpu_1")
         try:
@@ -344,8 +375,7 @@ class WebSocketHandler:
         # 決着がついた場合
         if room.is_finished:
             self.room_manager.cancel_timer(room_id)
-            # ルームの削除は一定時間後か、即座にか
-            # self.room_manager.remove_room(room_id)
+            self.room_manager.schedule_room_cleanup(room_id, delay=10)
             return
 
         # CPU戦の処理

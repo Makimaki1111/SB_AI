@@ -98,20 +98,20 @@ async def websocket_endpoint(websocket: WebSocket):
             data = await websocket.receive_text()
             await ws_handler.handle_message(websocket, data)
     except WebSocketDisconnect:
-        # 切断時のクリーンアップ
+        # 切断時のクリーンアップ（Grace Periodの開始）
+        pid = connection_manager.get_player_id(websocket)
         left_rooms = connection_manager.disconnect(websocket)
-        for rid in left_rooms:
-            room = room_manager.get_room(rid)
-            if room:
-                pid = connection_manager.socket_to_player_id.get(websocket, "unknown")
-                res = room.handle_disconnection(pid)
-                if res:
-                    is_double = hasattr(room, "team1_win")
-                    await connection_manager.broadcast_battle_state(rid, res, is_double=is_double, room_manager=room_manager)
+        if pid:
+            for rid in left_rooms:
+                room_manager.start_grace_period(rid, pid, delay=20)
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
         logger.error(traceback.format_exc())
-        connection_manager.disconnect(websocket)
+        pid = connection_manager.get_player_id(websocket)
+        left_rooms = connection_manager.disconnect(websocket)
+        if pid:
+            for rid in left_rooms:
+                room_manager.start_grace_period(rid, pid, delay=20)
 
 # --- 静的ファイルの配信設定 ---
 current_dir = os.path.dirname(os.path.abspath(__file__))
