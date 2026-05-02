@@ -696,18 +696,24 @@ function connectWebSocket(mode, roomId, p1MaxLives = 1, p2MaxLives = 1) {
 
 function sendFindMatch(player_id, maxLives = 1) {
   if (sock && sock.readyState === WebSocket.OPEN) {
+    const name = localStorage.getItem("sb_username") || "名無し";
+    const ability = localStorage.getItem("sb_ability") || "";
+    const ability_2 = localStorage.getItem("sb_ability_2") || "";
     sock.send(JSON.stringify({
       type: "find_match",
-      info: { player_id: player_id, max_lives: maxLives }
+      info: { player_id: player_id, max_lives: maxLives, name: name, ability: ability, ability_2: ability_2 }
     }));
   }
 }
 
 function sendMakeNewBattle(p1, p2, p1MaxLives = 1, p2MaxLives = 1) {
   if (sock && sock.readyState === WebSocket.OPEN) {
+    const name = localStorage.getItem("sb_username") || "名無し";
+    const ability = localStorage.getItem("sb_ability") || "";
+    const ability_2 = localStorage.getItem("sb_ability_2") || "";
     sock.send(JSON.stringify({
       type: "make_new_battle",
-      info: { player1_id: p1, player2_id: p2, p1_max_lives: p1MaxLives, p2_max_lives: p2MaxLives }
+      info: { player1_id: p1, player2_id: p2, p1_max_lives: p1MaxLives, p2_max_lives: p2MaxLives, name: name, ability: ability, ability_2: ability_2 }
     }));
   }
 }

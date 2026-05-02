@@ -360,25 +360,29 @@ function connectDoubleWebSocket(action, mode, roomId) {
             }));
         }
 
+        name = localStorage.getItem("sb_username") || "名無し";
+        ability = localStorage.getItem("sb_ability") || "";
+        const ability_2 = localStorage.getItem("sb_ability_2") || "";
+
         if (action === 'create') {
             ws.send(JSON.stringify({
                 type: "create_double_room",
-                info: { player_id: player1_id, mode: mode }
+                info: { player_id: player1_id, mode: mode, name: name, ability: ability, ability_2: ability_2 }
             }));
         } else if (action === 'join') {
             ws.send(JSON.stringify({
                 type: "join_double_room",
-                info: { player_id: player1_id, room_id: roomId }
+                info: { player_id: player1_id, room_id: roomId, name: name, ability: ability, ability_2: ability_2 }
             }));
         } else if (action === 'cpu') {
             ws.send(JSON.stringify({
                 type: "join_double_cpu_room",
-                info: { player_id: player1_id }
+                info: { player_id: player1_id, name: name, ability: ability, ability_2: ability_2 }
             }));
         } else if (action === 'match') {
             ws.send(JSON.stringify({
                 type: "find_match_double",
-                info: { player_id: player1_id }
+                info: { player_id: player1_id, name: name, ability: ability, ability_2: ability_2 }
             }));
         }
     });
@@ -827,7 +831,7 @@ function sendDoubleSubmitWord(word) {
             room_id: doubleBattleState.roomId,
             player_id: player1_id,
             word: word,
-            target_char_id: doubleBattleState.currentTargetId
+            target_id: doubleBattleState.currentTargetId
         }
     }));
     ui.disableInput();
