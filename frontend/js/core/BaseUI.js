@@ -1,127 +1,130 @@
-import { UIObject } from './UIObject.js';
-import { TYPE_TO_ICON, TYPE_SOUND_MAP, EVENT_SOUND_MAP, DAMAGE_MSG_MAP } from './Constants.js';
+import { TYPE_TO_IMAGE, TYPE_SOUND_MAP, EVENT_SOUND_MAP, DAMAGE_MSG_MAP } from './Constants.js';
 
+/**
+ * BaseUI クラス
+ * すべてのバトル画面に共通するUI操作（HPバー、メッセージ、入力等）を定義します
+ */
 export class BaseUI {
     constructor() {
-        this.titleScreen = new UIObject($('#title-screen'));
-        this.battleScreen = new UIObject($('#battle-screen'));
-        this.message = new UIObject($('#message'));
-        this.input = new UIObject($('#input'));
-        this.submitButton = new UIObject($('#submit'));
+        this.input = $('#word-input');
+        this.submitBtn = $('#submit-btn');
+        this.messageArea = $('#message');
+        this.waitMessage = $('#wait-message');
+        this.timerBar = $('#timer-bar');
+        this.timerContainer = $('#timer-container');
         
-        // 予測・判定表示用
-        this.includeImg = new UIObject($('#include-img'));
-        this.includeImg1 = new UIObject($('#include-img-1'));
-        this.includeImg2 = new UIObject($('#include-img-2'));
-        this.predictionMessage = new UIObject($('#prediction-message'));
+        // 画面全体
+        this.lobbyScreen = $('#title-screen');
+        this.battleScreen = $('#battle-screen');
 
         // 共通モーダル
-        this.abilityModal = new UIObject($('#ability-modal'));
-        this.situationModal = new UIObject($('#situation-modal'));
+        this.abilityModal = $('#ability-modal');
+        this.situationModal = $('#situation-modal');
     }
 
-    render(state, info, allAbilities) {
-        if (!state || !info) return;
-        for (const [id, charData] of Object.entries(state.characters)) {
-            const slot = info.id_to_ui_map[id];
-            if (slot) this.updateCharacter(slot, charData, allAbilities);
-        }
-        this.updateTurnDisplay(state.is_my_turn);
-    }
-
-    updateCharacter(slot, data, allAbilities) {
-        this.setHP(slot, data.hp, data.max_hp);
-        this.setName(slot, data.name);
-        this.updatePoison(slot, data.is_poison);
-    }
-
-    showTitleScreen() {
-        this.battleScreen.hide();
-        this.titleScreen.show();
-    }
-
+    // --- 画面遷移 ---
+    
     showBattleScreen() {
-        this.titleScreen.hide();
-        this.battleScreen.selector.css('display', 'flex');
+        this.lobbyScreen.hide();
+        this.battleScreen.css('display', 'flex'); // Flexレイアウトを維持
     }
 
-    setHP(slot, hp, maxHp) {
-        const percentage = Math.max(0, (hp / maxHp) * 100);
-        const selector = this._getSlotSelector(slot, 'hp-bar');
-        $(selector).css('width', percentage + '%');
+    showLobbyScreen() {
+        this.battleScreen.hide();
+        this.lobbyScreen.show();
     }
 
-    setName(slot, name) {
-        const selector = this._getSlotSelector(slot, 'name');
-        $(selector).text(name);
-    }
-
-    updatePoison(slot, isPoison) {
-        const selector = this._getSlotSelector(slot, 'name-container');
-        if (isPoison) $(selector).addClass('poisoned');
-        else $(selector).removeClass('poisoned');
-    }
-
-    updateTurnDisplay(isMyTurn) {
-        if (isMyTurn) this.enableInput();
-        else this.disableInput();
-    }
-
-    enableInput() {
-        this.input.selector.prop('disabled', false);
-        this.submitButton.selector.prop('disabled', false);
-        this.input.selector.focus();
-    }
-
-    disableInput() {
-        this.input.selector.prop('disabled', true);
-        this.submitButton.selector.prop('disabled', true);
-    }
-
-    showMessage(msg) {
-        this.message.text(msg);
-    }
-
-    clearInput() {
-        this.input.val('');
-    }
-
-    showCheckResult(data) {
-        this.hideCheckResult();
-        if (!data.include) return;
-
-        if (data.used) {
-            this.includeImg.selector.attr('src', 'img/god.gif').show();
-            return;
-        }
-
-        const types = [];
-        if (data.type1) types.push(data.type1);
-        if (data.type2) types.push(data.type2);
-
-        if (types.length === 0) {
-            this.includeImg.selector.attr('src', 'img/unaware.gif').show();
-        } else if (types.length === 1) {
-            const src = `img/${TYPE_TO_ICON[types[0]]}.gif`;
-            this.includeImg.selector.attr('src', src).show();
+    // --- 基本操作 ---
+    
+    showMessage(msg = "", duration = 0) {
+        if (!msg) {
+            this.messageArea.hide();
         } else {
-            const src1 = `img/${TYPE_TO_ICON[types[0]]}.gif`;
-            const src2 = `img/${TYPE_TO_ICON[types[1]]}.gif`;
-            this.includeImg1.selector.attr('src', src1).show();
-            this.includeImg2.selector.attr('src', src2).show();
-        }
-
-        if (data.prediction) {
-            this.predictionMessage.text(data.prediction).show();
+            this.messageArea.text(msg).show();
+            if (duration > 0) {
+                setTimeout(() => this.messageArea.hide(), duration);
+            }
         }
     }
 
-    hideCheckResult() {
-        this.includeImg.selector.hide().attr('src', '');
-        this.includeImg1.selector.hide().attr('src', '');
-        this.includeImg2.selector.hide().attr('src', '');
-        this.predictionMessage.selector.hide().text('');
+    setWaitMessage(msg, duration = 0) {
+        if (!msg) {
+            this.waitMessage.hide();
+        } else {
+            this.waitMessage.text(msg).show();
+            if (duration > 0) {
+                setTimeout(() => this.waitMessage.hide(), duration);
+            }
+        }
     }
+
+    // --- 入力制御 ---
+
+    enableInput() { this.input.prop('disabled', false); }
+    disableInput() { this.input.prop('disabled', true); }
+    focusInput() { this.input.focus(); }
+    clearInput() { this.input.val(''); }
+    
+    showInputArea() {
+        this.input.show();
+        this.submitBtn.show();
+    }
+    
+    hideInputArea() {
+        this.input.hide();
+        this.submitBtn.hide();
+    }
+
+    // --- タイマー制御 ---
+
+    startTimer(remaining, total) {
+        this.timerContainer.show();
+        const percent = (remaining / total) * 100;
+        this.timerBar.css('width', percent + '%');
+        
+        // 旧来のCSSアニメーションによる減少（もしCSSで制御している場合）
+        this.timerBar.stop().css('width', percent + '%').animate(
+            { width: '0%' }, 
+            remaining * 1000, 
+            'linear'
+        );
+    }
+
+    stopTimer() {
+        this.timerBar.stop();
+        this.timerContainer.hide();
+    }
+
+    // --- キャラクターUI更新 (抽象化されたスロットIDを使用) ---
+
+    setHP(slotId, hp, maxHp) {
+        const percent = Math.max(0, (hp / maxHp) * 100);
+        const hpBar = $(`#${slotId}-hp-bar`);
+        const hpText = $(`#${slotId}-hp-text`);
+        
+        if (hpBar.length) {
+            hpBar.stop().animate({ width: percent + '%' }, 500);
+            // 色の変化
+            if (percent < 20) hpBar.css('background-color', '#ff4d4d');
+            else if (percent < 50) hpBar.css('background-color', '#ffd11a');
+            else hpBar.css('background-color', '#4CAF50');
+        }
+        
+        if (hpText.length) {
+            hpText.text(`${Math.ceil(hp)} / ${maxHp}`);
+        }
+    }
+
+    setName(slotId, name, isPoison = false) {
+        const nameElem = $(`#${slotId}-name`);
+        if (nameElem.length) {
+            let displayName = name;
+            if (isPoison) displayName += " [毒]";
+            nameElem.text(displayName);
+        }
+    }
+
+    // --- 演出・エフェクト (職人技の移植) ---
 
     _setImageWithReplaceAndFade(selector, src, duration = 300) {
         if (!selector || selector.length === 0) return;
@@ -137,45 +140,57 @@ export class BaseUI {
         const img = new Image();
         img.onload = () => {
             selector.css({ opacity: 0, display: 'block' }).attr('src', src);
-            selector.animate({ opacity: 1 }, duration, () => {
-                selector.css('opacity', '');
-            });
+            selector.animate({ opacity: 1 }, duration, () => selector.css('opacity', ''));
         };
         img.src = src;
     }
 
-    // --- 演出・音声関連 ---
+    _adjustWordScale(element) {
+        const maxWidth = 180;
+        const domElement = element.get ? element.get(0) : element;
+        if (!domElement) return;
 
-    /**
-     * イベントに応じたSE再生
-     */
+        if (domElement.scrollWidth > maxWidth) {
+            const scale = maxWidth / domElement.scrollWidth;
+            const isFoe = domElement.classList.contains('foe-word');
+            domElement.style.transform = `translateX(${isFoe ? '50%' : '-50%'}) scaleX(${scale})`;
+        } else {
+            const isFoe = domElement.classList.contains('foe-word');
+            domElement.style.transform = `translateX(${isFoe ? '50%' : '-50%'}) scaleX(1)`;
+        }
+    }
+
+    playEffect(slotId, type) {
+        // スロット名からラッパーを取得
+        const wrapper = $(`#${slotId}-wrapper`);
+        if (!wrapper.length) return;
+
+        if (type === 'damage') {
+            wrapper.addClass('damage-shake');
+            setTimeout(() => wrapper.removeClass('damage-shake'), 500);
+        } else if (type === 'heal') {
+            wrapper.addClass('heal-flash');
+            setTimeout(() => wrapper.removeClass('heal-flash'), 500);
+        }
+    }
+
+    // --- 音声再生 ---
+
+    playIconSound(typeName) {
+        const soundPath = TYPE_SOUND_MAP[typeName];
+        if (soundPath && typeof window.playSound === 'function') {
+            window.playSound(soundPath);
+        }
+    }
+
     playEventSound(type, message) {
         let path = EVENT_SOUND_MAP[type];
         if (DAMAGE_MSG_MAP[message]) {
             path = DAMAGE_MSG_MAP[message];
         }
-        if (path && window.playSound) {
+        if (path && typeof window.playSound === 'function') {
             window.playSound(path);
         }
-    }
-
-    /**
-     * 属性に応じたSE再生
-     */
-    playIconSound(type) {
-        const path = TYPE_SOUND_MAP[type];
-        if (path && window.playSound) {
-            window.playSound(path);
-        }
-    }
-
-    /**
-     * スロット名（ally/foe/p1a等）からHTML要素を特定するためのセレクタを生成
-     * ID (#slot-type) を優先し、なければクラス (.slot-type) を探す
-     */
-    _getSlotSelector(slot, type) {
-        const id = `#${slot}-${type}`;
-        if ($(id).length > 0) return id;
-        return `.${slot}-${type}`;
     }
 }
+

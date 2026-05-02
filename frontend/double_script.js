@@ -360,8 +360,8 @@ function connectDoubleWebSocket(action, mode, roomId) {
             }));
         }
 
-        name = localStorage.getItem("sb_username") || "名無し";
-        ability = localStorage.getItem("sb_ability") || "";
+        const name = localStorage.getItem("sb_username") || "名無し";
+        const ability = localStorage.getItem("sb_ability") || "";
         const ability_2 = localStorage.getItem("sb_ability_2") || "";
 
         if (action === 'create') {
