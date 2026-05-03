@@ -12,7 +12,7 @@ function App() {
           <Routes>
             <Route path="/" element={<TitleView />} />
             <Route path="/battle/single" element={<BattleView />} />
-            {/* ダブルバトルなどは後ほど追加 */}
+            <Route path="/battle/double" element={<BattleView />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

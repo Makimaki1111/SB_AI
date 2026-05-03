@@ -71,23 +71,23 @@ export const TitleView: React.FC = () => {
             <div className={styles.carouselRow}>{renderRow(false)}</div>
           </div>
 
-          <div className={styles.buttonContainer}>
+          <div className={styles.menuButtons}>
             <button 
-              className={styles.specialButton} 
+              className={styles.menuButton} 
               onClick={() => handleStartBattle('/battle/single?mode=stock')}
             >
               <span>特殊ルール</span>
             </button>
             
             <button 
-              className={styles.doubleButton}
+              className={styles.menuButton}
               onClick={() => handleStartBattle('/battle/double')}
             >
               <span>ダブルバトル</span>
             </button>
 
             <button 
-              className={styles.settingsButton}
+              className={styles.menuButton}
               onClick={() => setIsSettingsOpen(true)}
             >
               <span>設定</span>

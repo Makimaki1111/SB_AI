@@ -10,16 +10,22 @@
 }
 
 .phoneBox {
-  width: 450px;
+  width: 95%;
   max-width: 450px;
   aspect-ratio: 10 / 16;
   background-color: #fce5cd;
   border-radius: 16px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
   position: relative;
+  overflow: hidden;
+  transition: width 0.3s ease;
+}
+
+@media (max-width: 450px) {
+  .phoneBox {
+    width: 100%;
+    border-radius: 0;
+  }
 }
 
 /* 上半分：バトル演出エリア */
@@ -109,12 +115,21 @@
 }
 
 /* フッターボタンエリア */
+.actionsWrapper {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  min-height: 5rem;
+  padding: 0 10px;
+}
+
 .footerArea {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 6rem;
-  gap: 20px;
+  min-height: 4rem;
+  border-top: 1px solid rgba(0,0,0,0.05);
+  width: 100%;
 }
 
 .actionBtn {
@@ -171,13 +186,102 @@
   text-align: center;
 }
 
-.backBtn {
-  margin-top: 20px;
-  padding: 12px 24px;
-  background: linear-gradient(180deg, #ffd77a, #ffb84d);
-  border: none;
-  border-radius: 10px;
+.footerArea {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 6rem;
+  border-top: 1px solid rgba(0,0,0,0.05);
+  width: 100%;
+}
+
+.cancelBattleBtn {
+  padding: 10px 24px;
+  font-size: 1.1rem;
   font-weight: 700;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  background: white;
+  color: #666;
   cursor: pointer;
-  box-shadow: 0 4px 0 #e69d2e;
+  transition: all 0.2s;
+}
+
+.cancelBattleBtn:active {
+  background: #f5f5f5;
+  transform: scale(0.98);
+}
+
+/* 状況確認モーダル */
+.situationModalWrapper {
+  background: white;
+  width: 90%;
+  max-width: 380px;
+  border-radius: 20px;
+  padding: 25px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  text-align: center;
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+}
+
+.situationCardsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.sCard {
+  border-radius: 15px;
+  padding: 12px;
+  text-align: left;
+}
+
+.foeCard {
+  background: rgba(255, 242, 242, 0.8);
+  border: 1px solid #ff4757;
+}
+
+.allyCard {
+  background: rgba(242, 255, 242, 0.8);
+  border: 1px solid #2ed573;
+}
+
+.sCardHeader {
+  font-weight: 800;
+  font-size: 1rem;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  padding-bottom: 4px;
+}
+
+.sStatGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.sStatItem {
+  display: flex;
+  flex-direction: column;
+}
+
+.sStatLabel {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.sStatValue {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #333;
+}
+
+@media (max-width: 420px) {
+  .footerArea {
+    min-height: 8rem;
+  }
+  .actionBtn {
+    width: 48%; /* モバイルでは少し大きく */
+  }
 }

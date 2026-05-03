@@ -23,34 +23,34 @@ export const HPBar: React.FC<HPBarProps> = ({
   isAlly 
 }) => {
   const hpPercentage = maxHp > 0 ? (hp / maxHp) * 100 : 0;
-  const barColor = hpPercentage > 50 ? '#00FF00' : hpPercentage > 20 ? '#FFFF00' : '#FF0000';
+  const barColor = hpPercentage > 50 ? '#00FF00' : hpPercentage > 20 ? '#FFCC00' : '#FF0000';
 
   return (
-    <div className={`${styles.balloon} ${isAlly ? styles.left : styles.right}`}>
+    <div className={`${styles.balloon} ${isAlly ? styles.right : styles.left}`}>
       <div className={styles.header}>
-        <span className={styles.name}>{name}</span>
-        {isPoison && <span className={styles.poison}>どく</span>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <span className={styles.name}>{name}</span>
+          {!isAlly && (
+            <div className={styles.livesContainer}>
+              {Array.from({ length: maxLives }).map((_, i) => (
+                <div 
+                  key={i} 
+                  className={`${styles.lifeDot} ${i >= lives ? styles.lost : ''}`} 
+                />
+              ))}
+            </div>
+          )}
+        </div>
         <span className={styles.hpText}>{hp}/{maxHp}</span>
       </div>
       
       <div className={styles.barContainer}>
-        <div className={styles.barBackground}>
-          <motion.div 
-            className={styles.hpBar} 
-            initial={{ width: `${hpPercentage}%`, backgroundColor: barColor }}
-            animate={{ width: `${hpPercentage}%`, backgroundColor: barColor }}
-            transition={{ duration: 0.6, ease: "easeInOut" }}
-          />
-        </div>
-      </div>
-
-      <div className={styles.livesContainer}>
-        {Array.from({ length: maxLives }).map((_, i) => (
-          <div 
-            key={i} 
-            className={`${styles.lifeDot} ${i >= lives ? styles.lost : ''}`} 
-          />
-        ))}
+        <motion.div 
+          className={styles.hpBar} 
+          initial={{ width: `${hpPercentage}%`, backgroundColor: barColor }}
+          animate={{ width: `${hpPercentage}%`, backgroundColor: barColor }}
+          transition={{ duration: 0.6, ease: "easeInOut" }}
+        />
       </div>
     </div>
   );
