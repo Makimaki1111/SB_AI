@@ -69,7 +69,8 @@ async def protect_assets_middleware(request: Request, call_next):
         request_host = request.headers.get("host")
         if request_host:
             referer_netloc = urlparse(referer).netloc
-            if referer_netloc != request_host:
+            allowed_hosts = [request_host, "localhost:5173", "shiritori-battle.render.com"]
+            if referer_netloc not in allowed_hosts:
                 return Response(status_code=403, content="Access Denied")
 
     response = await call_next(request)
@@ -96,6 +97,7 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_text()
+            print(f"MAIN DEBUG: Received data in endpoint: {data[:100]}") # ログの最優先出力
             await ws_handler.handle_message(websocket, data)
     except WebSocketDisconnect:
         # 切断時のクリーンアップ（Grace Periodの開始）

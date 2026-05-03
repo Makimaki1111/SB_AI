@@ -1,0 +1,208 @@
+.container {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #ffffff;
+  overflow: hidden;
+}
+
+.phoneBox {
+  width: 450px;
+  max-width: 450px;
+  aspect-ratio: 10 / 16;
+  background-color: #fce5cd;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 0;
+  box-sizing: border-box;
+}
+
+.subtitle {
+  position: absolute;
+  top: 40px;
+  font-family: 'M PLUS 1p', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: #444;
+  margin: 0;
+  width: 100%;
+  text-align: center;
+}
+
+.title {
+  position: absolute;
+  top: 70px;
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-size: 2.0rem;
+  font-weight: 800;
+  color: #222;
+  margin: 0;
+  width: 100%;
+  text-align: center;
+}
+
+.carouselContainer {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 15px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.carouselRow {
+  width: 100%;
+  display: flex;
+}
+
+.track {
+  display: flex;
+  gap: 15px;
+  animation: scrollLeft 25s linear infinite;
+}
+
+.reverse {
+  animation: scrollRight 35s linear infinite;
+}
+
+@keyframes scrollLeft {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes scrollRight {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+
+.item {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.item img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.buttonContainer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+  padding-bottom: 40px;
+}
+
+.specialButton, .doubleButton, .settingsButton {
+  width: 70%;
+  padding: 12px 20px;
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 800;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(180deg, #ffd77a, #ffb84d);
+  color: #333;
+  box-shadow: 0 4px 0 #e69d2e;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.1s;
+}
+
+.specialButton:active, .doubleButton:active, .settingsButton:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #e69d2e;
+}
+
+/* 設定モーダル */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #fffaf0; /* 本家設定モーダルの色 */
+  padding: 25px;
+  border-radius: 20px;
+  width: 85%;
+  max-width: 380px;
+  border: 2px solid #ccc;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+}
+
+.modalTitle {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.field {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.field label {
+  display: block;
+  font-weight: 800;
+  margin-bottom: 8px;
+  color: #555;
+}
+
+.field input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  box-sizing: border-box;
+}
+
+.closeButton {
+  width: 100%;
+  padding: 12px;
+  background: #2ed573;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.2rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #26af5f;
+}
+
+.closeButton:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #26af5f;
+}

@@ -147,53 +147,72 @@ class SingleBattle(BaseBattle):
         
         # BaseBattleの共通フローに委譲
         self.execute_attack_flow(current_player, target_player, word, types, ability_obj)
-
+        
+        # 単語を記録し、次の文字を更新
+        self.record_used_word(word, player_id)
+        
+        # ターン終了時の効果（毒など）
         self._process_end_of_turn_effects(current_player, target_player)
         self._check_win_condition()
         
+        # ターンを交代
         if not self.is_finished:
             self.player1_turn = not self.player1_turn
-            
+            self.turn += 1
+            self.last_actor_id = player_id
+        
         ret = self._make_response()
-        self.word, self.events = "", []
+        # イベントをリセット（次のターンのために）
+        self.events = []
         return ret
 
     def _make_response(self) -> dict:
-        chars = {
-            self.player1.id: CharacterState(
-                name=self.player1.name, hp=self.player1.hp, max_hp=MAX_HP,
-                attack_rank=self.player1.attack_rank, defense_rank=self.player1.defense_rank,
-                types=self.player1.types, is_poison=self.player1.poison_turns > 0,
-                ability=self.player1.ability, ability_change_count=self.player1.ability_change_count,
-                lives=self.player1_lives, owner_id=self.player1.id
-            ),
-            self.player2.id: CharacterState(
-                name=self.player2.name, hp=self.player2.hp, max_hp=MAX_HP,
-                attack_rank=self.player2.attack_rank, defense_rank=self.player2.defense_rank,
-                types=self.player2.types, is_poison=self.player2.poison_turns > 0,
-                ability=self.player2.ability, ability_change_count=self.player2.ability_change_count,
-                lives=self.player2_lives, owner_id=self.player2.id
+        print("DEBUG: Starting _make_response")
+        try:
+            chars = {
+                self.player1.id: CharacterState(
+                    name=self.player1.name, hp=self.player1.hp, max_hp=MAX_HP,
+                    attack_rank=self.player1.attack_rank, defense_rank=self.player1.defense_rank,
+                    types=self.player1.types, is_poison=self.player1.poison_turns > 0,
+                    ability=self.player1.ability, ability_change_count=self.player1.ability_change_count,
+                    lives=self.player1_lives, owner_id=self.player1.id
+                ),
+                self.player2.id: CharacterState(
+                    name=self.player2.name, hp=self.player2.hp, max_hp=MAX_HP,
+                    attack_rank=self.player2.attack_rank, defense_rank=self.player2.defense_rank,
+                    types=self.player2.types, is_poison=self.player2.poison_turns > 0,
+                    ability=self.player2.ability, ability_change_count=self.player2.ability_change_count,
+                    lives=self.player2_lives, owner_id=self.player2.id
+                )
+            }
+            print("DEBUG: CharacterState instantiated")
+            
+            state = BattleState(
+                room_id=self.room_id,
+                character=self.character,
+                is_my_turn=False,
+                turn=self.turn,
+                last_actor_id=self.last_actor_id,
+                word=self.word,
+                characters=chars,
+                winner_team=self.winner_team,
+                ally_win=None,
+                ally_max_lives=self.p1_max_lives,
+                foe_max_lives=self.p2_max_lives,
+                current_actor_id=self.player1.id if self.player1_turn else self.player2.id,
+                current_owner_id=self.player1.id if self.player1_turn else self.player2.id
             )
-        }
-        
-        state = BattleState(
-            room_id=self.room_id,
-            character=self.character,
-            is_my_turn=False, # get_personalized_response で設定
-            turn=self.turn,
-            last_actor_id=self.last_actor_id,
-            word=self.word,
-            characters=chars,
-            winner_team=self.winner_team,
-            ally_win=None, # get_personalized_response で設定
-            ally_max_lives=self.p1_max_lives,
-            foe_max_lives=self.p2_max_lives,
-            current_actor_id=self.player1.id if self.player1_turn else self.player2.id,
-            current_owner_id=self.player1.id if self.player1_turn else self.player2.id
-        )
-        
-        events = [BattleEvent(**e) for e in self.events if isinstance(e, dict)]
-        return BattleResponse(state=state, events=events).model_dump(by_alias=True)
+            print("DEBUG: BattleState instantiated")
+            
+            events = [BattleEvent(**e) for e in self.events if isinstance(e, dict)]
+            print(f"DEBUG: Events instantiated (count: {len(events)})")
+            
+            res = BattleResponse(state=state, events=events).model_dump(by_alias=True)
+            print("DEBUG: _make_response completed successfully")
+            return res
+        except Exception as e:
+            print(f"DEBUG: ERROR in _make_response: {e}")
+            raise e
 
     def get_personalized_response(self, base_res: dict, player_id: str) -> dict:
         new_res = base_res.copy()

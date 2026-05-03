@@ -1,0 +1,183 @@
+.container {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: white;
+  overflow: hidden;
+  font-family: "M PLUS 1p", sans-serif;
+}
+
+.phoneBox {
+  width: 450px;
+  max-width: 450px;
+  aspect-ratio: 10 / 16;
+  background-color: #fce5cd;
+  border-radius: 16px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* 上半分：バトル演出エリア */
+.topImage {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.bgImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 下半分：操作・情報エリア */
+.content {
+  flex: 2;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.actionArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.inputWrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 5.3em;
+}
+
+/* タイマー */
+.timerContainer {
+  width: 100%;
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.timerBar {
+  width: 100%;
+  height: 100%;
+  background-color: #00FF00;
+}
+
+/* メッセージエリア（絶対配置オーバーレイ） */
+.message {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #333333;
+  color: white;
+  text-align: left;
+  padding: 10px 1rem 0 1rem;
+  font-size: 1.2em;
+  z-index: 20;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  line-height: 1.4;
+  box-sizing: border-box;
+}
+
+.waitMessage {
+  background-color: #fce5cd;
+  width: fit-content;
+  border-radius: 5px 5px 0 0;
+  font-style: italic;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  z-index: 30;
+  padding: 2px 6px;
+  font-size: 0.80rem;
+}
+
+/* フッターボタンエリア */
+.footerArea {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 6rem;
+  gap: 20px;
+}
+
+.actionBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
+
+.actionBtnIcon {
+  width: 24px;
+  height: 24px;
+  fill: #333;
+}
+
+.actionBtnText {
+  margin: 4px 0 0 0;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+/* 特性・状況確認モーダル（既存のものを流用） */
+.modalOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* ゲームオーバー */
+.gameOverOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 3000;
+}
+
+.gameOverBox {
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+  text-align: center;
+}
+
+.backBtn {
+  margin-top: 20px;
+  padding: 12px 24px;
+  background: linear-gradient(180deg, #ffd77a, #ffb84d);
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #e69d2e;
+}

@@ -1,0 +1,46 @@
+.ellipse {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.ellipseLeft {
+  bottom: -40px;
+  left: 22%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 80px;
+}
+
+.ellipseRight {
+  bottom: 100px;
+  right: 8%;
+  width: 180px;
+  height: 40px;
+}
+
+.allyWord, .foeWord {
+  position: absolute;
+  font-family: 'M PLUS 1p', sans-serif;
+  font-weight: bold;
+  color: #2A2A2A;
+  font-size: 32px;
+  letter-spacing: -2px;
+  white-space: nowrap;
+  z-index: 1;
+  text-align: center;
+  transform-origin: center;
+}
+
+.allyWord {
+  top: 180px;
+  left: 25%;
+  transform: translateX(-50%);
+}
+
+.foeWord {
+  top: 82px;
+  right: 29%;
+  transform: translateX(50%);
+}

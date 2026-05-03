@@ -40,16 +40,19 @@ class WebSocketHandler:
         return False
 
     async def handle_message(self, websocket, data: str):
+        print(f"DEBUG: Received raw data: {data}") # 確実にターミナルに出力
         try:
             req = json.loads(data)
         except json.JSONDecodeError:
+            print("DEBUG: JSON Decode Error")
             await websocket.send_text(json.dumps({"type": "error", "message": "Invalid JSON"}))
             return
 
-        if not isinstance(req, dict):
+        msg_type = req.get("type")
+        if msg_type == "ping":
+            await websocket.send_text(json.dumps({"type": "pong"}))
             return
 
-        msg_type = req.get("type")
         info = req.get("info", {})
         player_id = info.get("player_id")
         
@@ -62,10 +65,13 @@ class WebSocketHandler:
         handler = getattr(self, handler_name, None)
         
         if handler:
-            await handler(websocket, player_id, info)
+            try:
+                await handler(websocket, player_id, info)
+            except Exception as e:
+                logger.error(f"Error handling message {msg_type}: {e}", exc_info=True)
+                await websocket.send_text(json.dumps({"type": "error", "message": f"Internal server error: {str(e)}"}))
         else:
             logger.warning(f"No handler for message type: {msg_type}")
-            # エラーを返しておくとフロントエンドがフリーズしない
             await websocket.send_text(json.dumps({"type": "error", "message": f"Handler not found: {msg_type}"}))
 
     async def _handle_pre_check(self, websocket, player_id, info):
@@ -214,40 +220,61 @@ class WebSocketHandler:
         await self._handle_make_new_battle(websocket, player_id, info)
 
     async def _handle_make_new_battle(self, websocket, player_id, info):
+        logger.info(f"🚀 Starting _handle_make_new_battle for player_id: {player_id}")
         if not player_id:
+            logger.error("❌ player_id is missing")
             await websocket.send_text(json.dumps({"type": "error", "message": "プレイヤーIDが不明です。再接続してください。"}))
             return
+        
         self.connection_manager.register_player(websocket, player_id)
         
-        # プレイヤー情報を更新
         name = info.get("name", "じぶん")
         ability = info.get("ability")
         ability_2 = info.get("ability_2")
+        logger.info(f"👤 Player info: name={name}, ability={ability}")
         self.room_manager.update_user_info(player_id, name, ability, ability_2)
 
         if await self._try_reconnect(websocket, player_id):
+            logger.info("♻️ Reconnected to existing room")
             return
             
-        # シングルCPU戦などの開始
         p2_id = info.get("player2_id", "cpu_1")
         try:
             max_lives = max(1, min(10, int(info.get("max_lives", STOCK_LIVES))))
         except (TypeError, ValueError):
             max_lives = STOCK_LIVES
         
+        logger.info(f"🎮 Creating SingleBattle against {p2_id} with {max_lives} lives")
         p1_profile = self.room_manager.user_profiles.get(player_id)
-        # CPUの場合はプロファイルを適当に作るか、Noneにする
         p2_profile = {"name": "CPU", "ability": "random"} if p2_id.startswith("cpu") else None
         
-        bi = SingleBattle(player_id, p2_id, sb_info=self.room_manager.sb_info, p1_profile=p1_profile, p2_profile=p2_profile, p1_max_lives=max_lives, p2_max_lives=max_lives, is_cpu=p2_id.startswith("cpu"))
-        bi.init_character()
-        self.room_manager.rooms[bi.room_id] = bi
-        
-        self.connection_manager.register_player(websocket, player_id)
-        self.connection_manager.join_room(websocket, bi.room_id)
-        
-        await websocket.send_text(json.dumps(bi.make_init_response(player_id)))
-        await self._after_turn_action(bi.room_id, bi, is_double=False)
+        try:
+            bi = SingleBattle(
+                player1_id=player_id, 
+                player2_id=p2_id, 
+                sb_info=self.room_manager.sb_info, 
+                p1_profile=p1_profile, 
+                p2_profile=p2_profile, 
+                p1_max_lives=max_lives, 
+                p2_max_lives=max_lives, 
+                is_cpu=p2_id.startswith("cpu")
+            )
+            logger.info(f"✅ SingleBattle instance created. Room ID: {bi.room_id}")
+            bi.init_character()
+            self.room_manager.rooms[bi.room_id] = bi
+            
+            self.connection_manager.register_player(websocket, player_id)
+            self.connection_manager.join_room(websocket, bi.room_id)
+            
+            init_res = bi.make_init_response(player_id)
+            logger.info("📤 Sending initial response")
+            await websocket.send_text(json.dumps(init_res))
+            
+            logger.info("🔄 Triggering _after_turn_action")
+            await self._after_turn_action(bi.room_id, bi, is_double=False)
+        except Exception as e:
+            logger.error(f"💥 Critical error in _handle_make_new_battle: {e}", exc_info=True)
+            await websocket.send_text(json.dumps({"type": "error", "message": f"ルーム作成エラー: {str(e)}"}))
 
     async def _handle_join_double_cpu_room(self, websocket, player_id, info):
         if not player_id:

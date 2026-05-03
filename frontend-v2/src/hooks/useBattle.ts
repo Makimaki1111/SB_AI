@@ -1,24 +1,47 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { BattleState, BattleResponse, SocketMessage, CharacterState } from '../types/battle';
+import type { BattleState, BattleResponse, SocketMessage } from '../types/battle';
 
 export const useBattle = (url: string) => {
-  const [socket, setSocket] = useState<WebSocket | null>(null);
+  const socketRef = useRef<WebSocket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
   const [battleState, setBattleState] = useState<BattleState | null>(null);
   const [allAbilities, setAllAbilities] = useState<Record<string, any>>({});
   const [uiMapping, setUiMapping] = useState<Record<string, string>>({});
   
-  // 接続処理
   useEffect(() => {
+    console.log('🔌 Effect: Creating WebSocket for', url);
     const ws = new WebSocket(url);
+    socketRef.current = ws;
+    // デバッグ用: グローバルに保存
+    (window as any).lastSocket = ws;
     
     ws.onopen = () => {
-      console.log('Connected to Battle Server');
-      // 初期化メッセージなどを送る場合はここ
+      console.log('✅ WebSocket Connected to:', url, 'ReadyState:', ws.readyState);
+      setIsConnected(true);
+    };
+
+    ws.onclose = (event) => {
+      console.log('❌ WebSocket Disconnected:', event.code, event.reason);
+      setIsConnected(false);
+      if (socketRef.current === ws) {
+        socketRef.current = null;
+      }
+    };
+
+    ws.onerror = (err) => {
+      console.error('⚠️ WebSocket Error Detailed:', err);
+      setIsConnected(false);
     };
     
     ws.onmessage = (event) => {
-      const data: BattleResponse = JSON.parse(event.data);
+      console.log('📩 Message received:', event.data);
+      const data = JSON.parse(event.data);
       
+      if (data.type === 'error') {
+        console.error('❌ Server Error:', data.message);
+        return;
+      }
+
       // 型安全なデータ更新
       if (data.state) {
         setBattleState(data.state);
@@ -30,28 +53,44 @@ export const useBattle = (url: string) => {
         setUiMapping(data.info.id_to_ui_map);
       }
       
-      // イベント処理（ダメージ演出など）のロジックをここに集約可能
-      data.events.forEach(e => {
-        console.log(`Battle Event: ${e.type} - ${e.message}`);
-      });
+      if (data.events) {
+        data.events.forEach((e: any) => {
+          console.log(`Battle Event: ${e.type} - ${e.message}`);
+        });
+      }
     };
     
-    setSocket(ws);
-    return () => ws.close();
+    return () => {
+      console.log('🧹 Cleaning up WebSocket:', url);
+      ws.onopen = null;
+      ws.onmessage = null;
+      ws.onerror = null;
+      ws.onclose = null;
+      ws.close();
+      if (socketRef.current === ws) {
+        socketRef.current = null;
+      }
+    };
   }, [url]);
 
-  // 単語送信メソッド
-  const submitWord = useCallback((word: string) => {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      const msg: SocketMessage = {
-        type: "submit_word",
-        info: { word }
-      };
-      socket.send(JSON.stringify(msg));
+  const sendMessage = (msg: SocketMessage) => {
+    // Refがダメならグローバルから拾う（非常手段）
+    const socket = socketRef.current || (window as any).lastSocket;
+    
+    if (!socket) {
+      console.warn('⚠️ sendMessage: No socket available (Ref and Global are null)');
+      return;
     }
-  }, [socket]);
+    
+    console.log('🔍 sendMessage: Current state:', socket.readyState);
+    if (socket.readyState === WebSocket.OPEN) {
+      console.log('📤 Sending to server:', msg.type);
+      socket.send(JSON.stringify(msg));
+    } else {
+      console.warn(`⚠️ sendMessage: WebSocket is not OPEN (readyState: ${socket.readyState})`);
+    }
+  };
 
-  // UIスロットからキャラクター情報を取得するヘルパー
   const getCharacterBySlot = (slot: "ally" | "foe") => {
     if (!battleState || !uiMapping) return null;
     const id = Object.keys(uiMapping).find(key => uiMapping[key] === slot);
@@ -63,7 +102,7 @@ export const useBattle = (url: string) => {
     ally: getCharacterBySlot("ally"),
     foe: getCharacterBySlot("foe"),
     allAbilities,
-    submitWord,
-    isConnected: socket?.readyState === WebSocket.OPEN
+    sendMessage,
+    isConnected
   };
 };

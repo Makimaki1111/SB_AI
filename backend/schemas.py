@@ -5,55 +5,58 @@ class BattleEvent(BaseModel):
     """バトル中に発生する個別のイベント（ダメージ、回復、特性発動など）"""
     model_config = ConfigDict(populate_by_name=True)
     
-    type: str = Field(..., description="イベントの種類: damage, cure, revive, stat_change, ability_trigger, ability_changed, message")
+    type: str = Field(..., description="イベントの種類")
     message: str = Field("", description="表示用メッセージ")
-    target: Optional[str] = Field(None, description="対象の絶対ID (p1, p2, p1a など)")
-    attacker: Optional[str] = Field(None, description="行動者の絶対ID")
-    damage: Optional[int] = None
-    amount: Optional[int] = None # 回復量など
-    stat_type: Optional[str] = None # attack, defense
-    new_rank: Optional[int] = None
-    hp: Optional[int] = None # revive時のHP
-    lives: Optional[int] = None # revive時の残機
-    new_ability: Optional[str] = None
-    new_ability_change_count: Optional[int] = None
-    poison_target: Optional[str] = None
-    new_ranks: Optional[Dict[str, Dict[str, int]]] = None # 一括ランク変化用
+    target: Any = None
+    attacker: Any = None
+    damage: Any = None
+    amount: Any = None
+    stat_type: Any = None
+    new_rank: Any = None
+    hp: Any = None
+    lives: Any = None
+    new_ability: Any = None
+    new_ability_change_count: Any = None
+    poison_target: Any = None
+    new_ranks: Any = None
 
 class CharacterState(BaseModel):
     """個別のキャラクターの状態"""
     model_config = ConfigDict(populate_by_name=True)
 
-    name: str
-    hp: int
-    max_hp: int
-    atk: int = Field(..., alias="attack_rank")
-    def_: int = Field(..., alias="defense_rank")
-    types: List[str]
-    is_poison: bool
-    ability: str
-    ability_change_count: int
-    lives: Optional[int] = None
-    owner_id: str
+    name: str = ""
+    hp: int = 0
+    max_hp: int = 0
+    atk: int = Field(0, alias="attack_rank")
+    def_: int = Field(0, alias="defense_rank")
+    types: Any = []
+    is_poison: bool = False
+    ability: str = ""
+    ability_change_count: int = 0
+    lives: Any = None
+    owner_id: str = ""
 
 class BattleState(BaseModel):
     """バトル全体の現在の状態"""
-    room_id: str
-    character: str
-    is_my_turn: bool
-    turn: int
-    last_actor_id: Optional[str] = None
-    word: Optional[str] = ""
-    characters: Dict[str, CharacterState] = {}
-    winner_team: Optional[int] = None # 0: Team1, 1: Team2
-    ally_win: Optional[bool] = None # フロントエンド向け勝敗判定
-    ally_max_lives: Optional[int] = None
-    foe_max_lives: Optional[int] = None
-    current_actor_id: Optional[str] = None
-    current_owner_id: Optional[str] = None
+    room_id: str = ""
+    character: str = ""
+    is_my_turn: bool = False
+    turn: int = 1
+    last_actor_id: Any = None
+    word: Any = ""
+    characters: Any = {}
+    winner_team: Any = None
+    ally_win: Any = None
+    ally_max_lives: Any = None
+    foe_max_lives: Any = None
+    current_actor_id: Any = None
+    current_owner_id: Any = None
 
 class BattleResponse(BaseModel):
     """サーバーからクライアントへ送る標準レスポンス"""
-    type: str = "accepted"
-    state: BattleState
-    events: List[BattleEvent] = []
+    type: str = "battle_state"
+    state: Optional[Any] = None
+    events: List[Any] = []
+    all_abilities: Optional[Dict[str, Any]] = None
+    info: Optional[Dict[str, Any]] = None
+    message: Optional[str] = None
