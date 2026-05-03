@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import styles from './TitleView.module.css';
@@ -17,21 +17,12 @@ export const TitleView: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [tempName, setTempName] = useState(username);
 
-  // レガシー版の adjustWindowScale を再現
-  React.useEffect(() => {
-    const adjustScale = () => {
-      const el = document.getElementById('phone-box');
-      if (!el) return;
-      const originalWidth = 450;
-      const originalHeight = 720;
-      const scaleX = (window.innerWidth * 0.96) / originalWidth;
-      const scaleY = (window.innerHeight * 0.96) / originalHeight;
-      const scale = Math.min(scaleX, scaleY, 1.0);
-      el.style.transform = scale < 1 ? `scale(${scale})` : 'none';
-    };
-    window.addEventListener('resize', adjustScale);
-    adjustScale();
-    return () => window.removeEventListener('resize', adjustScale);
+  // カルーセルのアイテムをシャッフルした状態で生成 (無限ループのために2倍にする)
+  const shuffledRows = useMemo(() => {
+    return [0, 1, 2].map(() => {
+      const shuffled = [...CAROUSEL_IMAGES].sort(() => Math.random() - 0.5);
+      return [...shuffled, ...shuffled, ...shuffled]; // 途切れ防止に3セット
+    });
   }, []);
 
   const handleStartBattle = (path: string) => {
@@ -43,15 +34,18 @@ export const TitleView: React.FC = () => {
   };
 
   const handleSaveSettings = () => {
-    setUsername(tempName);
+    const trimmed = tempName.trim().substring(0, 8);
+    if (trimmed) {
+      setUsername(trimmed);
+      localStorage.setItem("sb_username", trimmed);
+    }
     setIsSettingsOpen(false);
   };
 
-  // カルーセルのアイテムを生成 (無限ループのために2倍にする)
-  const renderRow = (reverse = false) => (
+  const renderRow = (rowIndex: number, reverse = false) => (
     <div className={`${styles.track} ${reverse ? styles.reverse : ''}`}>
-      {[...CAROUSEL_IMAGES, ...CAROUSEL_IMAGES].map((img, i) => (
-        <div key={i} className={styles.item}>
+      {shuffledRows[rowIndex].map((img, i) => (
+        <div key={`${rowIndex}-${i}`} className={styles.item}>
           <img src={`/img/${img}`} alt="" />
         </div>
       ))}
@@ -66,9 +60,9 @@ export const TitleView: React.FC = () => {
           <h1 className={styles.title}>しりとりの対戦バトル</h1>
 
           <div className={styles.carouselContainer}>
-            <div className={styles.carouselRow}>{renderRow(false)}</div>
-            <div className={styles.carouselRow}>{renderRow(true)}</div>
-            <div className={styles.carouselRow}>{renderRow(false)}</div>
+            <div className={styles.carouselRow}>{renderRow(0, false)}</div>
+            <div className={styles.carouselRow}>{renderRow(1, true)}</div>
+            <div className={styles.carouselRow}>{renderRow(2, false)}</div>
           </div>
 
           <div className={styles.menuButtons}>
@@ -80,14 +74,14 @@ export const TitleView: React.FC = () => {
             </button>
             
             <button 
-              className={styles.menuButton}
+              className={`${styles.menuButton} ${styles.doubleButton}`}
               onClick={() => handleStartBattle('/battle/double')}
             >
               <span>ダブルバトル</span>
             </button>
 
             <button 
-              className={styles.menuButton}
+              className={`${styles.menuButton} ${styles.settingsButton}`}
               onClick={() => setIsSettingsOpen(true)}
             >
               <span>設定</span>
@@ -96,21 +90,34 @@ export const TitleView: React.FC = () => {
         </div>
 
         {isSettingsOpen && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.modal}>
+          <div className={styles.modalOverlay} onClick={() => setIsSettingsOpen(false)}>
+            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
               <h2 className={styles.modalTitle}>設定</h2>
               <div className={styles.field}>
-                <label>名前</label>
+                <label className={styles.label}>名前</label>
                 <input 
                   type="text" 
+                  id="username-input"
+                  className={styles.input}
                   value={tempName} 
                   onChange={(e) => setTempName(e.target.value)}
-                  placeholder="名無し"
+                  placeholder="名前を入力(8文字以内)"
+                  maxLength={8}
                 />
               </div>
-              <button className={styles.closeButton} onClick={handleSaveSettings}>
-                閉じる
-              </button>
+              <div className={styles.field}>
+                <label className={styles.label}>BGM音量</label>
+                <input type="range" className={styles.range} min="0" max="1" step="0.05" defaultValue="0.3" />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>SE音量</label>
+                <input type="range" className={styles.range} min="0" max="1" step="0.05" defaultValue="0.5" />
+              </div>
+              <div className={styles.modalActions}>
+                <button className={styles.closeButton} onClick={handleSaveSettings}>
+                  閉じる
+                </button>
+              </div>
             </div>
           </div>
         )}

@@ -6,128 +6,107 @@
   align-items: center;
   background: white;
   overflow: hidden;
-  font-family: "M PLUS 1p", sans-serif;
+  font-family: 'M PLUS 1p', sans-serif;
 }
 
 .phoneBox {
-  width: 95%;
-  max-width: 450px;
+  width: min(96vw, 60vh);
   aspect-ratio: 10 / 16;
   background-color: #fce5cd;
-  border-radius: 16px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border-radius: 4cqw;
+  box-shadow: 0 0 10cqw rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
-  transition: width 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  container-type: size;
 }
 
-@media (max-width: 450px) {
-  .phoneBox {
-    width: 100%;
-    border-radius: 0;
-  }
-}
-
-/* 上半分：バトル演出エリア */
 .topImage {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
 }
 
 .bgImage {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  opacity: 0.8;
 }
 
-/* 下半分：操作・情報エリア */
-.content {
-  flex: 2;
-  padding: 0;
+.gameArea {
+  flex: 1;
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 1rem;
+}
+
+.content {
+  margin-top: auto;
+  padding: 4cqw;
+  display: flex;
+  flex-direction: column;
+  gap: 2cqw;
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(5px);
 }
 
 .actionArea {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  position: relative;
+  width: 100%;
 }
 
 .inputWrapper {
-  position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 5.3em;
+  gap: 3cqw;
+  align-items: center;
 }
 
-/* タイマー */
 .timerContainer {
-  width: 100%;
-  height: 8px;
-  background-color: #e0e0e0;
-  border-radius: 4px;
+  width: 90%;
+  height: 2cqw;
+  background: #eee;
+  border-radius: 1cqw;
   overflow: hidden;
-  flex-shrink: 0;
 }
 
 .timerBar {
-  width: 100%;
   height: 100%;
-  background-color: #00FF00;
+  transition: width 0.1s linear;
 }
 
-/* メッセージエリア（絶対配置オーバーレイ） */
 .message {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: #333333;
-  color: white;
-  text-align: left;
-  padding: 10px 1rem 0 1rem;
-  font-size: 1.2em;
-  z-index: 20;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  line-height: 1.4;
-  box-sizing: border-box;
+  height: 6cqw;
+  font-size: 3.5cqw;
+  font-weight: 800;
+  color: #333;
+  text-align: center;
 }
 
 .waitMessage {
-  background-color: #fce5cd;
-  width: fit-content;
-  border-radius: 5px 5px 0 0;
-  font-style: italic;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  z-index: 30;
-  padding: 2px 6px;
-  font-size: 0.80rem;
+  height: 4cqw;
+  font-size: 3cqw;
+  color: #666;
 }
 
-/* フッターボタンエリア */
 .actionsWrapper {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  min-height: 5rem;
-  padding: 0 10px;
+  min-height: 15cqw;
+  padding: 0 2cqw;
 }
 
 .footerArea {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 4rem;
+  min-height: 12cqw;
   border-top: 1px solid rgba(0,0,0,0.05);
   width: 100%;
 }
@@ -136,22 +115,35 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 1cqw;
   cursor: pointer;
+  padding: 2cqw;
 }
 
 .actionBtnIcon {
-  width: 24px;
-  height: 24px;
-  fill: #333;
+  width: 7cqw;
+  height: 7cqw;
+  fill: #555;
 }
 
 .actionBtnText {
-  margin: 4px 0 0 0;
-  font-size: 0.8rem;
+  font-size: 2.8cqw;
   font-weight: bold;
+  color: #555;
 }
 
-/* 特性・状況確認モーダル（既存のものを流用） */
+.cancelBattleBtn {
+  padding: 2cqw 6cqw;
+  font-size: 4cqw;
+  font-weight: 700;
+  border-radius: 2.5cqw;
+  border: 1px solid #ddd;
+  background: white;
+  color: #666;
+  cursor: pointer;
+}
+
+/* モーダル */
 .modalOverlay {
   position: absolute;
   top: 0;
@@ -165,123 +157,38 @@
   align-items: center;
 }
 
-/* ゲームオーバー */
-.gameOverOverlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 3000;
-}
-
-.gameOverBox {
-  background: white;
-  padding: 30px;
-  border-radius: 20px;
-  text-align: center;
-}
-
-.footerArea {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 6rem;
-  border-top: 1px solid rgba(0,0,0,0.05);
-  width: 100%;
-}
-
-.cancelBattleBtn {
-  padding: 10px 24px;
-  font-size: 1.1rem;
-  font-weight: 700;
-  border-radius: 10px;
-  border: 1px solid #ddd;
-  background: white;
-  color: #666;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.cancelBattleBtn:active {
-  background: #f5f5f5;
-  transform: scale(0.98);
-}
-
-/* 状況確認モーダル */
 .situationModalWrapper {
   background: white;
   width: 90%;
-  max-width: 380px;
-  border-radius: 20px;
-  padding: 25px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  border-radius: 4cqw;
+  padding: 5cqw;
+  box-shadow: 0 2cqw 6cqw rgba(0,0,0,0.3);
   text-align: center;
-  font-family: 'M PLUS Rounded 1c', sans-serif;
 }
 
 .situationCardsContainer {
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  margin-bottom: 20px;
+  gap: 3cqw;
+  margin-bottom: 4cqw;
 }
 
 .sCard {
-  border-radius: 15px;
-  padding: 12px;
+  border-radius: 3cqw;
+  padding: 3cqw;
   text-align: left;
 }
 
-.foeCard {
-  background: rgba(255, 242, 242, 0.8);
-  border: 1px solid #ff4757;
-}
-
-.allyCard {
-  background: rgba(242, 255, 242, 0.8);
-  border: 1px solid #2ed573;
-}
+.foeCard { background: rgba(255, 242, 242, 0.8); border: 0.3cqw solid #ff4757; }
+.allyCard { background: rgba(242, 255, 242, 0.8); border: 0.3cqw solid #2ed573; }
 
 .sCardHeader {
-  font-weight: 800;
-  font-size: 1rem;
-  margin-bottom: 8px;
-  border-bottom: 1px solid rgba(0,0,0,0.1);
-  padding-bottom: 4px;
-}
-
-.sStatGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.sStatItem {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2cqw;
 }
 
-.sStatLabel {
-  font-size: 0.75rem;
-  color: #666;
-}
-
-.sStatValue {
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: #333;
-}
-
-@media (max-width: 420px) {
-  .footerArea {
-    min-height: 8rem;
-  }
-  .actionBtn {
-    width: 48%; /* モバイルでは少し大きく */
-  }
-}
+.sCardName { font-size: 4cqw; font-weight: 800; }
+.sCardAbility { font-size: 3cqw; color: #777; }
+.sCardDesc { font-size: 3.2cqw; color: #555; line-height: 1.4; }
