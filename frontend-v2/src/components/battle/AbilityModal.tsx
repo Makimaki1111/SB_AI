@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import styles from './AbilityModal.module.css';
 
 const TYPE_TO_IMAGE: Record<string, string> = {
@@ -32,80 +31,80 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
   const [localSelectedId, setLocalSelectedId] = useState(currentAbilityId);
   const [displayDesc, setDisplayDesc] = useState("");
 
-  const abilities = Object.entries(allAbilities)
-    .filter(([id]) => id !== 'secret')
-    .map(([id, info]) => ({ id, ...info }));
-
   useEffect(() => {
     if (isOpen) {
       setLocalSelectedId(currentAbilityId);
       const info = allAbilities[currentAbilityId];
-      setDisplayDesc(info ? info.description : "ランダムに決定されます");
+      setDisplayDesc(info ? info.desc || info.description : "ランダムに決定されます");
     }
   }, [isOpen, currentAbilityId, allAbilities]);
 
   if (!isOpen) return null;
 
   const handleSelect = (id: string, desc: string) => {
+    if (!canChange) return;
     setLocalSelectedId(id);
     setDisplayDesc(desc);
-    // 音声再生（オプション）
+  };
+
+  const handleConfirm = () => {
+    onSelect(localSelectedId);
+    onClose();
+  };
+
+  const getIconPath = (id: string, info: any) => {
+    if (id === 'random' || id === '') return '/img/unaware.gif';
+    const gifName = TYPE_TO_IMAGE[info.icon_type] || 'normal';
+    return `/img/${gifName}.gif`;
   };
 
   return (
-    <AnimatePresence>
-      <div className={styles.overlay}>
-        <motion.div 
-          className={styles.modalWrapper}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.9 }}
-        >
-          <h3 className={styles.modalTitle}>とくせいを選択</h3>
-          
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.modalBody} onClick={(e) => e.stopPropagation()}>
+        <h2 className={styles.modalTitle}>とくせいを選択</h2>
+        
+        <div className={styles.descriptionArea}>
           <div className={styles.descriptionBox}>
             {displayDesc}
           </div>
+        </div>
 
-          <div className={styles.abilitiesList}>
-            {/* ランダム */}
-            <div 
-              className={`${styles.skillItem} ${localSelectedId === "" ? styles.selected : ""}`}
-              onClick={() => handleSelect("", "ランダムに決定されます")}
-            >
-              <img src="/img/unaware.gif" className={styles.skillIcon} alt="" />
-              <br />
-              <span className={styles.skillName}>ランダム</span>
+        <div className={styles.abilityGrid}>
+          {/* ランダム */}
+          <div 
+            className={`${styles.gridItem} ${localSelectedId === 'random' || localSelectedId === '' ? styles.selected : ""}`}
+            onClick={() => handleSelect('random', 'ランダムに決定されます')}
+          >
+            <img src="/img/unaware.gif" className={styles.abilityIcon} alt="" />
+            <div className={styles.abilityName}>
+              <span>ランダム</span>
             </div>
-
-            {/* 各特性 */}
-            {abilities.map((ab) => {
-              const iconName = TYPE_TO_IMAGE[ab.icon_type] || 'normal';
-              return (
-                <div 
-                  key={ab.id}
-                  className={`${styles.skillItem} ${localSelectedId === ab.id ? styles.selected : ""}`}
-                  onClick={() => handleSelect(ab.id, ab.description)}
-                >
-                  <img src={`/img/${iconName}.gif`} className={styles.skillIcon} alt="" />
-                  <br />
-                  <span className={styles.skillName}>{ab.name}</span>
-                </div>
-              );
-            })}
           </div>
 
+          {/* 各特性 */}
+          {Object.entries(allAbilities).map(([id, info]: [string, any]) => (
+            <div 
+              key={id}
+              className={`${styles.gridItem} ${localSelectedId === id ? styles.selected : ""}`}
+              onClick={() => handleSelect(id, info.desc || info.description)}
+            >
+              <img src={getIconPath(id, info)} className={styles.abilityIcon} alt="" />
+              <div className={styles.abilityName}>
+                <span>{info.name}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className={styles.footer}>
           <button 
             className={styles.decideBtn}
-            onClick={() => {
-              onSelect(localSelectedId);
-              onClose();
-            }}
+            onClick={handleConfirm}
           >
             決定
           </button>
-        </motion.div>
+        </div>
       </div>
-    </AnimatePresence>
+    </div>
   );
 };

@@ -82,7 +82,7 @@
 
 .track {
   display: flex;
-  width: fit-content;
+  width: max-content;
   gap: 3.3cqw;
   animation: scroll 40s linear infinite;
 }

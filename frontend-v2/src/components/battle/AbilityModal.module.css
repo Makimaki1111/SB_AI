@@ -1,122 +1,156 @@
 .overlay {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 2000;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 3000;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-family: "M PLUS Rounded 1c", sans-serif;
+  padding: 4cqw;
+  box-sizing: border-box;
 }
 
-.modalWrapper {
-  background: white;
-  width: 90%;
-  max-width: 420px;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+.modalBody {
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 4.4cqw;
+  box-shadow: 0 0.8cqw 3.3cqw rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  max-height: 80vh;
+  overflow: hidden;
   box-sizing: border-box;
 }
 
 .modalTitle {
-  margin: 0;
   text-align: center;
-  font-size: 1.2rem;
+  margin: 0;
+  padding: 4.4cqw 0;
+  font-size: 5.5cqw;
   font-weight: 800;
+  color: #222;
+  border-bottom: 0.2cqw solid #ddd;
+}
+
+.descriptionArea {
+  padding: 2.2cqw 4.4cqw;
+  background: #fff;
 }
 
 .descriptionBox {
-  font-size: 0.9rem;
-  color: #666;
+  padding: 2.5cqw 4cqw;
   background: #f5f5f5;
-  padding: 10px;
-  border-radius: 8px;
-  min-height: 3.5rem;
-  text-align: left;
-  line-height: 1.4;
+  border: 0.2cqw solid #e0e0e0;
+  border-radius: 1.5cqw;
+  min-height: 12cqw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.2cqw;
+  color: #444;
+  text-align: center;
+  line-height: 1.5;
 }
 
-.abilitiesList {
+.abilityGrid {
+  flex: 1;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  justify-content: center;
+  gap: 1cqw;
+  padding: 2cqw 1cqw;
   overflow-y: auto;
-  padding: 5px;
-  flex: 1;
+  overflow-x: hidden; /* 横スクロールを禁止 */
+  align-content: start;
+}
+
+.gridItem {
+  /* 横スクロールが出ないよう、20%から余白分を引く指定に変更 */
+  width: calc(20% - 1.2cqw); 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1cqw 0.2cqw; /* 縦パディングを1.5 -> 1に縮小 */
+  margin: 0.5cqw; /* マージンを0.9 -> 0.5に縮小 */
+  border-radius: 1.5cqw;
+  cursor: pointer;
+  box-sizing: border-box;
+  background-color: #efe8e8;
+  border: 0.2cqw solid white;
+  position: relative; /* 名前のはみ出し制御用 */
+}
+
+.gridItem:hover {
+  background: #e0e0e0;
+}
+
+.selected {
+  background-color: #e8f5e9 !important;
+  border: 0.5cqw solid #4CAF50 !important;
+}
+
+.abilityIcon {
+  width: 9cqw;
+  height: 9cqw;
+  object-fit: contain;
+  margin-bottom: 0.5cqw; /* 余白を0.8 -> 0.5に縮小 */
+}
+
+.abilityName {
+  width: 100%;
+  text-align: center;
+  display: flex;
   justify-content: center;
 }
 
-.skillItem {
-  text-align: center;
-  line-height: 60%;
-  width: 64px;
-  padding: 2px;
-  border: 1px solid white;
-  box-sizing: border-box;
-  background-color: #efe8e8;
-  border-radius: 10px;
-  cursor: pointer;
-  margin: 4px;
-  transition: all 0.2s;
-}
-
-.skillItem:hover {
-  border-color: #448ec6;
-  background-color: #e0f0ff;
-}
-
-.skillItem.selected {
-  background-color: #c8e6c9;
-  border: 2px solid #4CAF50;
-}
-
-.skillIcon {
-  width: 48px;
-  height: 48px;
-  object-fit: contain;
-  margin-top: 4px;
-}
-
-.skillName {
-  font-size: 10px;
-  word-break: keep-all;
-  padding-left: 5px;
-  padding-right: 5px;
-  border-radius: 10px;
-  background-color: white;
-  letter-spacing: -1px;
+.abilityName span {
   display: inline-block;
-  margin-top: 4px;
-  margin-bottom: 4px;
+  font-size: 2cqw; /* 2.2 -> 2 に微細化 */
+  font-weight: 700;
   color: #333;
+  background-color: white;
+  border-radius: 2.2cqw;
+  padding: 0 1.1cqw;
+  white-space: nowrap !important;
+  letter-spacing: -0.1cqw;
+  margin-top: 0.4cqw; /* 0.9 -> 0.4に縮小 */
+  /* はみ出しても gridItem から極端に飛び出さないように最大幅を制限 */
+  max-width: 110%; 
+  overflow: hidden;
+  text-overflow: clip;
 }
 
-.skillItem.selected .skillName {
+.selected .abilityName span {
   background-color: #e8f5e9;
-  font-weight: bold;
+}
+
+.footer {
+  display: flex;
+  justify-content: center;
+  padding: 3cqw 0 6cqw 0;
+  background: #fff;
+  border-top: 0.2cqw solid #ddd;
 }
 
 .decideBtn {
-  padding: 12px;
+  width: 60%;
+  padding: 3cqw 0;
+  border-radius: 2.2cqw;
+  border: none;
   background: #4CAF50;
   color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: bold;
+  font-weight: 800;
+  font-size: 4.5cqw;
   cursor: pointer;
-  font-size: 1rem;
-  box-shadow: 0 4px 0 #3d8b40;
+  box-shadow: none !important;
+  border-bottom: 1.1cqw solid #2e7d32 !important; 
+  transition: transform 0.05s;
 }
 
 .decideBtn:active {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 #3d8b40;
+  transform: translateY(0.5cqw);
+  border-bottom-width: 0.3cqw !important;
 }

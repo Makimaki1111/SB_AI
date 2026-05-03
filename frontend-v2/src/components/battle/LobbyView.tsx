@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import styles from './LobbyView.module.css';
-import { useUser } from '../../context/UserContext';
-import { useLocation } from 'react-router-dom';
 
 const TYPE_TO_IMAGE: Record<string, string> = {
   "ノーマル": "normal", "感情": "emote", "食べ物": "food", "植物": "plant",
@@ -14,128 +12,90 @@ const TYPE_TO_IMAGE: Record<string, string> = {
 };
 
 interface LobbyViewProps {
-  onStartMatch: (mode: 'player' | 'cpu' | 'room', roomId?: string) => void;
+  onStartMatch: (mode: 'player' | 'cpu' | 'room') => void;
   onOpenAbilityModal: () => void;
   onBackToTitle: () => void;
   selectedAbility: string;
   allAbilities: Record<string, any>;
+  mode?: 'stock' | 'normal';
 }
 
 export const LobbyView: React.FC<LobbyViewProps> = ({ 
   onStartMatch, 
-  onOpenAbilityModal,
+  onOpenAbilityModal, 
   onBackToTitle,
   selectedAbility,
-  allAbilities
+  allAbilities,
+  mode = 'normal'
 }) => {
-  const { username } = useUser();
-  const location = useLocation();
-  const [roomInput, setRoomInput] = useState('');
-  const [showHelp, setShowHelp] = useState(false);
-  
-  const queryParams = new URLSearchParams(location.search);
-  const isStockMode = queryParams.get('mode') === 'stock';
-  
-  const isRandom = !selectedAbility || selectedAbility === "";
-  const abilityInfo = isRandom 
-    ? { name: 'ランダム', description: '対戦開始時にランダムに特性が決定されます。', icon_type: 'random' }
-    : (allAbilities[selectedAbility] || { name: '選択中...', description: '', icon_type: 'ノーマル' });
-  
-  const iconName = isRandom ? 'unaware' : (TYPE_TO_IMAGE[abilityInfo.icon_type] || 'normal');
+  const [showBalloon, setShowBalloon] = React.useState(false);
+
+  // 本家仕様: 選択中の特性データを取得。
+  const selectedAbilityData = allAbilities[selectedAbility] || { 
+    name: 'ランダム', 
+    description: 'ランダムに決定されます',
+    icon_type: 'ノーマル' 
+  };
+
+  // 本家仕様: 特性アイコンのパス。タイプ名からGIF名を導出
+  const getIconPath = (data: any) => {
+    if (selectedAbility === 'random' || !allAbilities[selectedAbility]) {
+      return '/img/unaware.gif'; // 本家の「ランダム」アイコン
+    }
+    const gifName = TYPE_TO_IMAGE[data.icon_type] || 'normal';
+    return `/img/${gifName}.gif`;
+  };
 
   return (
-    <div className={styles.lobbyContent} onClick={() => setShowHelp(false)}>
+    <div className={styles.lobbyContent}>
       <button className={styles.backButton} onClick={onBackToTitle}>
-        ←もどる
+        ← タイトルへ
       </button>
 
       <div className={styles.titleContainer}>
         <h1 className={styles.lobbyTitle}>
-          {isStockMode ? '特殊ルール' : 'シングルバトル'}
+          {mode === 'stock' ? '特殊ルール(ストック制)' : 'シングルバトル'}
         </h1>
-        {isStockMode && (
-          <span 
-            className={styles.helpBtn}
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowHelp(!showHelp);
-            }}
-          >
-            ?
-          </span>
-        )}
+        <button className={styles.helpBtn} onClick={() => setShowBalloon(!showBalloon)}>?</button>
       </div>
 
-      {showHelp && (
-        <div className={styles.helpBalloon} onClick={(e) => e.stopPropagation()}>
-          <div className={styles.helpTitle}>特殊ルールの説明</div>
-          相手のHPを<span style={{ color: '#ff4d4d', fontWeight: 800, fontSize: '1.1rem' }}>複数回</span>0にしたら<br />プレイヤーの勝ちとなります。
-          <div style={{ marginTop: 12, fontSize: '0.75rem', color: '#999', fontWeight: 'bold' }}>(タップして閉じる)</div>
+      {showBalloon && (
+        <div className={styles.helpBalloon} onClick={() => setShowBalloon(false)}>
+          <div>HPがなくなるとストックを消費して復活します。先に相手のストックをすべてなくした方の勝ちです！</div>
+          <div className={styles.balloonTail}></div>
         </div>
       )}
-      
-      <div 
-        className={styles.abilityCard} 
-        onClick={onOpenAbilityModal}
-      >
+
+      {/* 本家風のとくせいカード */}
+      <div className={styles.abilityCard} onClick={onOpenAbilityModal}>
         <div className={styles.abilityIconWrapper}>
-          <img src={`/img/${iconName}.gif`} alt="" className={styles.abilityIcon} />
+          <img src={getIconPath(selectedAbilityData)} alt="" className={styles.abilityIcon} />
         </div>
         <div className={styles.abilityInfo}>
-          <div className={styles.abilityName}>{abilityInfo.name}</div>
-          <div className={styles.abilityDesc}>{abilityInfo.description}</div>
+          <div className={styles.abilityName}>{selectedAbilityData.name}</div>
+          <div className={styles.abilityDesc}>{selectedAbilityData.desc || selectedAbilityData.description}</div>
         </div>
       </div>
 
       <div className={styles.buttonContainer}>
-        <button 
-          className={styles.lobbyButton} 
-          onClick={() => onStartMatch('player')}
-        >
-          ランダムマッチ
+        <button className={styles.lobbyButton} onClick={() => onStartMatch('player')}>
+          対人戦 (ランダム)
         </button>
-        
-        <button 
-          className={styles.lobbyButton} 
-          onClick={() => onStartMatch('cpu')}
-        >
+
+        <button className={styles.lobbyButton} onClick={() => onStartMatch('cpu')}>
           コンピュータ戦
         </button>
 
         <hr className={styles.separator} />
 
-        <div className={styles.roomActions}>
-          <button 
-            className={styles.lobbyButton}
-            onClick={() => onStartMatch('room')}
-          >
-            ルーム作成
-          </button>
+        <button className={styles.lobbyButton} onClick={() => onStartMatch('room')}>
+          ルームを作成する
+        </button>
 
-          <div className={styles.joinBox}>
-            <input 
-              type="text" 
-              className={styles.roomInput} 
-              placeholder="ルームID" 
-              value={roomInput}
-              onChange={(e) => setRoomInput(e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-            />
-            <button 
-              className={styles.joinButton}
-              onClick={(e) => {
-                e.stopPropagation();
-                onStartMatch('room', roomInput);
-              }}
-            >
-              参加する
-            </button>
-          </div>
+        <div className={styles.joinBox}>
+          <input type="text" placeholder="ルームID" className={styles.roomInput} />
+          <button className={styles.joinButton}>参加する</button>
         </div>
-      </div>
-
-      <div className={styles.playerName}>
-        プレイヤー: {username || "ななし"}
       </div>
     </div>
   );
