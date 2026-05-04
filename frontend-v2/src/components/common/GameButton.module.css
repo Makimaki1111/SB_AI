@@ -1,0 +1,56 @@
+.baseButton {
+  display: inline-block;
+  width: 72%;
+  max-width: 75.5cqw; /* 340px / 450px */
+  padding: 3.1cqw 4.8cqw; /* 14px 22px / 450px */
+  font-size: 5.2cqw;
+  font-weight: 700;
+  border-radius: 2.6cqw; /* 12px / 450px */
+  border: none;
+  color: #222;
+  cursor: pointer;
+  text-align: center;
+  transition: transform 120ms ease-in-out;
+  text-decoration: none;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.baseButton:hover {
+  transform: translateY(-0.4cqw); /* 2px / 450px */
+}
+
+.baseButton:active {
+  transform: translateY(0.2cqw);
+}
+
+.baseButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* バリエーション: オレンジ (基本) */
+.orange {
+  background: linear-gradient(180deg, #ffd77a, #ffb84d);
+  box-shadow: 0 1.3cqw 2.6cqw rgba(0, 0, 0, 0.12);
+}
+
+/* バリエーション: ピンク (ダブルバトルなど) */
+.pink {
+  background: linear-gradient(180deg, #ff9a9e, #fecfef);
+  box-shadow: 0 1.3cqw 2.6cqw rgba(0, 0, 0, 0.12);
+}
+
+/* バリエーション: グレー (設定など) */
+.grey {
+  background: linear-gradient(180deg, #f0f0f0, #d4d4d4);
+  color: #333;
+  box-shadow: 0 1.3cqw 2.6cqw rgba(0, 0, 0, 0.1);
+}
+
+/* バリエーション: グリーン (参加するボタンなど) */
+.green {
+  background: linear-gradient(180deg, #81c784, #4caf50);
+  color: white;
+  box-shadow: 0 1.3cqw 2.6cqw rgba(0, 0, 0, 0.1);
+}

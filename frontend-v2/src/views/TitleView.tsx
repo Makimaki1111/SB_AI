@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import styles from './TitleView.module.css';
+import { GameButton } from '../components/common/GameButton';
 
 const CAROUSEL_IMAGES = [
   'animal.gif', 'art.gif', 'body.gif', 'bug.gif', 'cloth.gif', 
@@ -66,26 +67,25 @@ export const TitleView: React.FC = () => {
           </div>
 
           <div className={styles.menuButtons}>
-            <button 
-              className={styles.menuButton} 
+            <GameButton 
               onClick={() => handleStartBattle('/battle/single?mode=stock')}
             >
-              <span>特殊ルール</span>
-            </button>
+              特殊ルール
+            </GameButton>
             
-            <button 
-              className={`${styles.menuButton} ${styles.doubleButton}`}
+            <GameButton 
+              variant="pink"
               onClick={() => handleStartBattle('/battle/double')}
             >
-              <span>ダブルバトル</span>
-            </button>
+              ダブルバトル
+            </GameButton>
 
-            <button 
-              className={`${styles.menuButton} ${styles.settingsButton}`}
+            <GameButton 
+              variant="grey"
               onClick={() => setIsSettingsOpen(true)}
             >
-              <span>設定</span>
-            </button>
+              設定
+            </GameButton>
           </div>
         </div>
 

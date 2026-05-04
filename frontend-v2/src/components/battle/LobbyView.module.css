@@ -152,28 +152,6 @@
   margin-top: 4cqw;
 }
 
-.lobbyButton {
-  display: inline-block;
-  width: 72%;
-  max-width: 340px;
-  padding: 3.1cqw 4.8cqw;
-  font-size: 5.3cqw;
-  font-weight: 700;
-  border-radius: 2.6cqw;
-  border: none;
-  /* タイトルの「特殊ルール」ボタンから質感を移植 */
-  background: linear-gradient(180deg, #ffd77a, #ffb84d);
-  color: #222;
-  box-shadow: 0 1.3cqw 2.6cqw rgba(0, 0, 0, 0.12); /* 立体感 */
-  cursor: pointer;
-  text-align: center;
-  transition: transform 120ms ease-in-out;
-}
-
-.lobbyButton:hover {
-  transform: translateY(-0.4cqw);
-}
-
 .separator {
   width: 80%;
   border: none;
@@ -198,30 +176,6 @@
   border: 1px solid #ccc;
   font-size: 3.8cqw;
   box-sizing: border-box;
-}
-
-.joinButton {
-  height: 100%;
-  padding: 0 4.4cqw;
-  border-radius: 1.7cqw;
-  border: none;
-  background: linear-gradient(180deg, #81c784, #4caf50);
-  color: white;
-  font-weight: 700;
-  font-size: 3.8cqw;
-  cursor: pointer;
-  /* タイトルの質感に合わせて影を追加 */
-  box-shadow: 0 1.3cqw 2.6cqw rgba(0, 0, 0, 0.1);
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  transition: transform 120ms ease-in-out;
-}
-
-.joinButton:hover {
-  transform: translateY(-0.2cqw);
 }
 
 .playerName {

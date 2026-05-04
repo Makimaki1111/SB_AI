@@ -1,5 +1,6 @@
 import React from 'react';
 import styles from './LobbyView.module.css';
+import { GameButton } from '../common/GameButton';
 
 const TYPE_TO_IMAGE: Record<string, string> = {
   "ノーマル": "normal", "感情": "emote", "食べ物": "food", "植物": "plant",
@@ -78,23 +79,35 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
       </div>
 
       <div className={styles.buttonContainer}>
-        <button className={styles.lobbyButton} onClick={() => onStartMatch('player')}>
+        <GameButton 
+          onClick={() => onStartMatch('player')}
+        >
           対人戦 (ランダム)
-        </button>
+        </GameButton>
 
-        <button className={styles.lobbyButton} onClick={() => onStartMatch('cpu')}>
+        <GameButton onClick={() => onStartMatch('cpu')}>
           コンピュータ戦
-        </button>
+        </GameButton>
 
         <hr className={styles.separator} />
 
-        <button className={styles.lobbyButton} onClick={() => onStartMatch('room')}>
+        <GameButton onClick={() => onStartMatch('room')}>
           ルームを作成する
-        </button>
+        </GameButton>
 
         <div className={styles.joinBox}>
-          <input type="text" placeholder="ルームID" className={styles.roomInput} />
-          <button className={styles.joinButton}>参加する</button>
+          <input 
+            type="text" 
+            placeholder="ルームID" 
+            className={styles.roomInput} 
+          />
+          <GameButton 
+            className={styles.joinButton} 
+            variant="green"
+            onClick={() => onStartMatch('room')}
+          >
+            参加する
+          </GameButton>
         </div>
       </div>
     </div>
