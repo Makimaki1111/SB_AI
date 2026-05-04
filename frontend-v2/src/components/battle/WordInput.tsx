@@ -3,11 +3,12 @@ import styles from './WordInput.module.css';
 
 interface WordInputProps {
   onSend: (word: string) => void;
+  onChange: (word: string) => void;
   disabled: boolean;
   initialChar: string;
 }
 
-export const WordInput: React.FC<WordInputProps> = ({ onSend, disabled, initialChar }) => {
+export const WordInput: React.FC<WordInputProps> = ({ onSend, onChange, disabled, initialChar }) => {
   const [word, setWord] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -18,6 +19,12 @@ export const WordInput: React.FC<WordInputProps> = ({ onSend, disabled, initialC
     }
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setWord(val);
+    onChange(val);
+  };
+
   return (
     <form className={styles.inputArea} onSubmit={handleSubmit}>
       <div className={styles.inputWrapper}>
@@ -26,7 +33,7 @@ export const WordInput: React.FC<WordInputProps> = ({ onSend, disabled, initialC
           type="text"
           className={styles.input}
           value={word}
-          onChange={(e) => setWord(e.target.value)}
+          onChange={handleChange}
           placeholder={initialChar ? `${initialChar}から始まる言葉` : '入力...'}
           disabled={disabled}
           autoComplete="off"

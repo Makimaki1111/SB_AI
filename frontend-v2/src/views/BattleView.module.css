@@ -57,21 +57,25 @@
 .inputWrapper {
   display: flex;
   flex-direction: column;
-  gap: 3cqw;
+  gap: 0;
   align-items: center;
+  position: relative;
+  min-height: 15cqw;
 }
 
 .timerContainer {
-  width: 90%;
-  height: 2cqw;
-  background: #eee;
-  border-radius: 1cqw;
+  width: 100%;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .timerBar {
+  width: 100%;
   height: 100%;
-  transition: width 0.1s linear;
+  transition: width 0.1s linear, background-color 0.3s ease;
 }
 
 .message {
@@ -80,12 +84,74 @@
   font-weight: 800;
   color: #333;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .waitMessage {
-  height: 4cqw;
-  font-size: 3cqw;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  background-color: #fce5cd;
+  padding: 0.5cqw 1.5cqw;
+  border-radius: 1cqw 1cqw 0 0;
+  font-size: 2.8cqw;
+  font-style: italic;
   color: #666;
+  z-index: 30;
+}
+
+.messageOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #333333;
+  color: white;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 4cqw;
+  font-size: 4cqw;
+  line-height: 1.4;
+  z-index: 40;
+  box-sizing: border-box;
+}
+
+.predictionContainer {
+  position: absolute;
+  bottom: 100%;
+  right: 12cqw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  z-index: 20;
+  margin-bottom: -4cqw;
+}
+
+.predictionImages {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 15cqw;
+}
+
+.predictionImg {
+  height: 15cqw;
+  opacity: 0.8;
+}
+
+.predictionMsg {
+  font-size: 3cqw;
+  font-weight: bold;
+  color: #333;
+  opacity: 0.7;
+  white-space: nowrap;
+  text-shadow: 0 0 0.5cqw white;
+  margin-top: -3cqw;
 }
 
 .actionsWrapper {
@@ -109,21 +175,55 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1cqw;
+  justify-content: center;
+  width: 45%;
+  height: 22cqw;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 4cqw;
   cursor: pointer;
-  padding: 2cqw;
+  transition: all 0.2s ease;
+  box-shadow: 0 1cqw 2.5cqw rgba(0,0,0,0.08);
+}
+
+.actionBtn:hover {
+  transform: translateY(-0.5cqw);
+  box-shadow: 0 1.5cqw 3cqw rgba(0,0,0,0.12);
+}
+
+.actionBtn:active {
+  transform: translateY(0);
+}
+
+.situationBtn {
+  background: rgba(255, 242, 242, 0.9);
+  border-bottom: 0.8cqw solid #ff4757;
+}
+
+.abilityBtn {
+  background: rgba(242, 255, 242, 0.9);
+  border-bottom: 0.8cqw solid #2ed573;
 }
 
 .actionBtnIcon {
   width: 7cqw;
   height: 7cqw;
-  fill: #555;
+  margin-bottom: 1cqw;
+}
+
+.situationBtn .actionBtnIcon {
+  fill: #ff4757;
+}
+
+.abilityBtn .actionBtnIcon {
+  fill: #2ed573;
 }
 
 .actionBtnText {
-  font-size: 2.8cqw;
-  font-weight: bold;
-  color: #555;
+  font-size: 3cqw;
+  font-weight: 800;
+  color: #333;
+  letter-spacing: 0.1cqw;
 }
 
 .cancelBattleBtn {
@@ -208,6 +308,28 @@
   font-weight: 800;
   color: var(--color-danger);
   animation: matchPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.ellipse {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.ellipseLeft {
+  bottom: -40px;
+  left: 22%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 80px;
+}
+
+.ellipseRight {
+  bottom: 100px;
+  right: 8%;
+  width: 180px;
+  height: 40px;
 }
 
 @keyframes matchPop {

@@ -8,11 +8,12 @@ import { WordInput } from '../components/battle/WordInput';
 
 import { LobbyView } from '../components/battle/LobbyView';
 import { AbilityModal } from '../components/battle/AbilityModal';
+import { BattleEffects } from '../components/battle/BattleEffects';
 import { GameLayout } from '../components/layout/GameLayout';
 import { GameModal } from '../components/common/GameModal';
 import { StatCard } from '../components/battle/StatCard';
 import { StockSelectionModal } from '../components/battle/StockSelectionModal';
-import { API_BASE_URL, WS_BASE_URL } from '../constants/game';
+import { API_BASE_URL, WS_BASE_URL, TYPE_TO_IMAGE } from '../constants/game';
 import type { AbilityData } from '../types/battle';
 import styles from './BattleView.module.css';
 
@@ -23,7 +24,22 @@ export const BattleView: React.FC = () => {
   const location = useLocation();
   const isDouble = location.pathname.includes('double');
   const { username } = useUser();
-  const { ally, foe, battleState, isConnected, sendMessage } = useBattle(WS_BASE_URL);
+  const { 
+    ally, 
+    foe, 
+    battleState, 
+    isConnected, 
+    prediction,
+    displayMessage,
+    isProcessing,
+    allyEffect,
+    foeEffect,
+    timer,
+    allyWord,
+    foeWord,
+    sendMessage,
+    sendIncludeCheck 
+  } = useBattle(WS_BASE_URL);
   
   const [isLobby, setIsLobby] = React.useState(true);
   const [isAbilityModalOpen, setIsAbilityModalOpen] = React.useState(false);
@@ -214,70 +230,114 @@ export const BattleView: React.FC = () => {
             mode={isDouble ? 'double' : isStock ? 'stock' : 'single'}
           />
         ) : (
-          <div className={styles.battleContainer}>
-            <div className={styles.topImage}>
-              <img src="/img/ground.jpg" className={styles.bgImage} alt="背景画像" />
-              
-              {/* 相手セクション */}
-              <HPBar 
-                hp={foe?.hp ?? 0} 
-                maxHp={foe?.max_hp ?? 100} 
-                name={foe?.name ?? "あいて"} 
-                isPoison={foe?.is_poison ?? false}
-                lives={foe?.lives ?? 0}
-                maxLives={battleState?.foe_max_lives ?? 2}
-                isAlly={false}
-              />
-              <CharacterAvatar type={foe?.types[0] ?? "ノーマル"} isAlly={false} />
-              <WordDisplay word={battleState?.word || null} isAlly={false} />
+            <div className={styles.battleContainer}>
+              <div className={styles.topImage}>
+                <img src="/img/ground.jpg" className={styles.bgImage} alt="背景画像" />
+                
+                {/* 背景要素 (地面) */}
+                <div className={`${styles.ellipse} ${styles.ellipseRight}`} />
+                <div className={`${styles.ellipse} ${styles.ellipseLeft}`} />
 
-              {/* 自分セクション */}
-              <CharacterAvatar type={ally?.types[0] ?? "ノーマル"} isAlly={true} />
-              <WordDisplay word={null} isAlly={true} />
-              <HPBar 
-                hp={ally?.hp ?? 0} 
-                maxHp={ally?.max_hp ?? 100} 
-                name={username || ally?.name || "じぶん"} 
-                isPoison={ally?.is_poison ?? false}
-                lives={ally?.lives ?? 0}
-                maxLives={battleState?.ally_max_lives ?? 2}
-                isAlly={true}
-              />
-            </div>
+                {/* 相手セクション */}
+                <HPBar 
+                  hp={foe?.hp ?? 0} 
+                  maxHp={foe?.max_hp ?? 100} 
+                  name={foe?.name ?? "あいて"} 
+                  isPoison={foe?.is_poison ?? false}
+                  lives={foe?.lives ?? 0}
+                  maxLives={battleState?.foe_max_lives ?? 2}
+                  isAlly={false}
+                />
+                <CharacterAvatar 
+                  type={foe?.types[0] ?? "ノーマル"} 
+                  isAlly={false} 
+                  isBlinking={foeEffect === 'blink'}
+                />
+                <BattleEffects trigger={foeEffect} side="foe" />
+                <WordDisplay word={foeWord} isAlly={false} />
+
+                {/* 自分セクション */}
+                <CharacterAvatar 
+                  type={ally?.types[0] ?? "ノーマル"} 
+                  isAlly={true} 
+                  isBlinking={allyEffect === 'blink'}
+                />
+                <BattleEffects trigger={allyEffect} side="ally" />
+                <WordDisplay word={allyWord} isAlly={true} />
+                <HPBar 
+                  hp={ally?.hp ?? 0} 
+                  maxHp={ally?.max_hp ?? 100} 
+                  name={username || ally?.name || "じぶん"} 
+                  isPoison={ally?.is_poison ?? false}
+                  lives={ally?.lives ?? 0}
+                  maxLives={battleState?.ally_max_lives ?? 2}
+                  isAlly={true}
+                />
+              </div>
 
             <div className={styles.content}>
               <div className={styles.actionArea}>
                 <div className={styles.inputWrapper}>
                   <div className={styles.timerContainer}>
-                    <div className={styles.timerBar} style={{ width: '100%', backgroundColor: '#00FF00' }} />
+                    <div 
+                      className={styles.timerBar} 
+                      style={{ 
+                        width: `${(timer.remaining / timer.total) * 100}%`,
+                        backgroundColor: timer.remaining > 10 ? '#00FF00' : timer.remaining > 5 ? '#FFFF00' : '#FF0000'
+                      }} 
+                    />
                   </div>
                   <WordInput 
                     onSend={handleSubmitWord} 
-                    disabled={!battleState?.is_my_turn}
+                    onChange={sendIncludeCheck}
+                    disabled={!battleState?.is_my_turn || isProcessing}
                     initialChar={battleState?.character || ''}
                   />
+                  {prediction && prediction.include && (
+                    <div className={styles.predictionContainer}>
+                      <div className={styles.predictionImages}>
+                        {prediction.used ? (
+                          <img src="/img/god.gif" alt="Used" className={styles.predictionImg} />
+                        ) : (
+                          <>
+                            {prediction.type1 && <img src={`/img/${TYPE_TO_IMAGE[prediction.type1] || 'normal'}.gif`} alt="Type 1" className={styles.predictionImg} />}
+                            {prediction.type2 && <img src={`/img/${TYPE_TO_IMAGE[prediction.type2] || 'normal'}.gif`} alt="Type 2" className={styles.predictionImg} />}
+                          </>
+                        )}
+                      </div>
+                      {prediction.prediction && <div className={styles.predictionMsg}>{prediction.prediction}</div>}
+                    </div>
+                  )}
+                  {displayMessage && (
+                    <div className={styles.messageOverlay}>
+                      {displayMessage}
+                    </div>
+                  )}
                   <div className={styles.message}>
                     {battleState?.message}
-                  </div>
-                  <div className={styles.waitMessage}>
-                    {battleState?.is_my_turn ? "" : "あいてのターンです..."}
                   </div>
                 </div>
               </div>
 
               <div className={styles.actionsWrapper}>
-                <div className={styles.actionBtn} onClick={() => setIsSituationModalOpen(true)}>
-                  <svg viewBox="0 0 24 24" className={styles.actionBtnIcon}>
-                    <path d="M3 13.125C3 12.5037 3.50368 12 4.125 12H6.75C7.37132 12 7.875 12.5037 7.875 13.125V18.375C7.875 18.9963 7.37132 19.5 6.75 19.5H4.125C3.50368 19.5 3 18.9963 3 18.375V13.125ZM10.125 7.125C10.125 6.50368 10.6287 6 11.25 6H13.875C14.4963 6 15 6.50368 15 7.125V18.375C15 18.9963 14.4963 19.5 13.875 19.5H11.25C10.6287 19.5 10.125 18.9963 10.125 18.375V7.125ZM17.25 3.375C17.25 2.75368 17.7537 2.25 18.375 2.25H21C21.6213 2.25 22.125 2.75368 22.125 3.375V18.375C22.125 18.9963 21.6213 19.5 21 19.5H18.375C17.7537 19.5 17.25 18.9963 17.25 18.375V3.375Z" />
-                  </svg>
-                  <p className={styles.actionBtnText}>状況</p>
-                </div>
-                <div className={styles.actionBtn} onClick={() => handleOpenAbilityModal(0)}>
-                  <svg viewBox="0 0 24 24" className={styles.actionBtnIcon}>
-                    <path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-                  </svg>
-                  <p className={styles.actionBtnText}>特性</p>
-                </div>
+                  <div 
+                    className={`${styles.actionBtn} ${styles.situationBtn}`} 
+                    onClick={() => setIsSituationModalOpen(true)}
+                  >
+                    <svg className={styles.actionBtnIcon} viewBox="0 0 24 24">
+                      <path d="M13,9H11V7H13M13,17H11V11H13M12,2A10,10,0,0,0,2,12A10,10,0,0,0,12,22A10,10,0,0,0,22,12A10,10,0,0,0,12,2Z" />
+                    </svg>
+                    <span className={styles.actionBtnText}>状況</span>
+                  </div>
+                  <div 
+                    className={`${styles.actionBtn} ${styles.abilityBtn}`}
+                    onClick={() => setIsAbilityModalOpen(true)}
+                  >
+                    <svg className={styles.actionBtnIcon} viewBox="0 0 24 24">
+                      <path d="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z" />
+                    </svg>
+                    <span className={styles.actionBtnText}>特性</span>
+                  </div>
               </div>
 
               <div className={styles.footerArea}>

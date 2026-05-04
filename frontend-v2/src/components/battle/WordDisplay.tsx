@@ -29,15 +29,12 @@ export const WordDisplay: React.FC<WordDisplayProps> = ({ word, isAlly }) => {
     : `translateX(50%) scaleX(${scale})`;
 
   return (
-    <>
-      <div className={`${styles.ellipse} ${isAlly ? styles.ellipseLeft : styles.ellipseRight}`} />
-      <div 
-        ref={textRef}
-        className={isAlly ? styles.allyWord : styles.foeWord}
-        style={{ transform: transformStyle }}
-      >
-        {word}
-      </div>
-    </>
+    <div 
+      ref={textRef}
+      className={isAlly ? styles.allyWord : styles.foeWord}
+      style={{ transform: transformStyle }}
+    >
+      {word}
+    </div>
   );
 };

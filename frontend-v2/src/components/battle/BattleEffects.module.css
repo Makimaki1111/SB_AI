@@ -1,0 +1,41 @@
+.container {
+  position: absolute;
+  width: 220px;
+  height: 150px;
+  pointer-events: none;
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.ally {
+  top: 80px;
+  left: 0;
+}
+
+.foe {
+  top: 5px;
+  right: 20px;
+}
+
+.particle {
+  position: absolute;
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  font-size: 24px;
+  user-select: none;
+  text-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+}
+
+.heal {
+  color: #4CAF50;
+}
+
+.stat_up {
+  color: #FF4500;
+}
+
+.stat_down {
+  color: #1E90FF;
+}
