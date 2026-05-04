@@ -6,287 +6,10 @@
   overflow: hidden;
 }
 
-.battleContainer {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  position: relative;
-  background: white; /* 背景画像の下地 */
-}
-
-.topImage {
-  position: relative;
-  width: 100%;
-  height: 60cqw;
-  flex-shrink: 0;
-  z-index: 1;
-  overflow: hidden;
-}
-
-.bgImage {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.8;
-}
-
-.gameArea {
-  flex: 1;
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-}
-
-.content {
-  flex: 1;
-  padding: 4cqw;
-  display: flex;
-  flex-direction: column;
-  gap: 2cqw;
-  background: white;
-  position: relative;
-  z-index: 10;
-  border-top: 0.2cqw solid #eee;
-}
-
-.actionArea {
-  width: 100%;
-}
-
-.inputWrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  align-items: center;
-  position: relative;
-  min-height: 15cqw;
-}
-
-.timerContainer {
-  width: 100%;
-  height: 8px;
-  background: #e0e0e0;
-  border-radius: 4px;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.timerBar {
-  width: 100%;
-  height: 100%;
-  transition: width 0.1s linear, background-color 0.3s ease;
-}
-
-.message {
-  height: 6cqw;
-  font-size: 3.5cqw;
-  font-weight: 800;
-  color: #333;
-  text-align: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.waitMessage {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  background-color: #fce5cd;
-  padding: 0.5cqw 1.5cqw;
-  border-radius: 1cqw 1cqw 0 0;
-  font-size: 2.8cqw;
-  font-style: italic;
-  color: #666;
-  z-index: 30;
-}
-
-.messageOverlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: #333333;
-  color: white;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  padding: 4cqw;
+.loading {
   font-size: 4cqw;
-  line-height: 1.4;
-  z-index: 40;
-  box-sizing: border-box;
-}
-
-.predictionContainer {
-  position: absolute;
-  bottom: 100%;
-  right: 12cqw;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  pointer-events: none;
-  z-index: 20;
-  margin-bottom: -4cqw;
-}
-
-.predictionImages {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 15cqw;
-}
-
-.predictionImg {
-  height: 15cqw;
-  opacity: 0.8;
-}
-
-.predictionMsg {
-  font-size: 3cqw;
   font-weight: bold;
-  color: #333;
-  opacity: 0.7;
-  white-space: nowrap;
-  text-shadow: 0 0 0.5cqw white;
-  margin-top: -3cqw;
-}
-
-.actionsWrapper {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  min-height: 15cqw;
-  padding: 0 2cqw;
-}
-
-.footerArea {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 12cqw;
-  border-top: 1px solid rgba(0,0,0,0.05);
-  width: 100%;
-}
-
-.actionBtn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 45%;
-  height: 22cqw;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(0,0,0,0.1);
-  border-radius: 4cqw;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 1cqw 2.5cqw rgba(0,0,0,0.08);
-}
-
-.actionBtn:hover {
-  transform: translateY(-0.5cqw);
-  box-shadow: 0 1.5cqw 3cqw rgba(0,0,0,0.12);
-}
-
-.actionBtn:active {
-  transform: translateY(0);
-}
-
-.situationBtn {
-  background: rgba(255, 242, 242, 0.9);
-  border-bottom: 0.8cqw solid #ff4757;
-}
-
-.abilityBtn {
-  background: rgba(242, 255, 242, 0.9);
-  border-bottom: 0.8cqw solid #2ed573;
-}
-
-.actionBtnIcon {
-  width: 7cqw;
-  height: 7cqw;
-  margin-bottom: 1cqw;
-}
-
-.situationBtn .actionBtnIcon {
-  fill: #ff4757;
-}
-
-.abilityBtn .actionBtnIcon {
-  fill: #2ed573;
-}
-
-.actionBtnText {
-  font-size: 3cqw;
-  font-weight: 800;
-  color: #333;
-  letter-spacing: 0.1cqw;
-}
-
-.cancelBattleBtn {
-  padding: 2cqw 6cqw;
-  font-size: 4cqw;
-  font-weight: 700;
-  border-radius: 2.5cqw;
-  border: 1px solid #ddd;
-  background: white;
   color: #666;
-  cursor: pointer;
-}
-
-/* モーダル (GameModal / StatCard に移行済み) */
-.situationCardsContainer {
-  display: flex;
-  flex-direction: column;
-  gap: 3cqw;
-  margin-bottom: 2cqw;
-}
-
-.backBtn {
-  padding: 2.2cqw 6.6cqw;
-  border-radius: 2.2cqw;
-  border: none;
-  background: #666;
-  color: white;
-  font-weight: 700;
-  font-size: 3.8cqw;
-  cursor: pointer;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 1.1cqw;
-  margin-bottom: 3.3cqw;
-  text-align: left;
-}
-
-.field label {
-  font-weight: 700;
-  font-size: 3.5cqw;
-}
-
-.field input[type="text"] {
-  width: 100%;
-  padding: 2.2cqw;
-  border-radius: 1.7cqw;
-  border: 1px solid #ccc;
-  font-size: 3.5cqw;
-  box-sizing: border-box;
-}
-
-.closeButton {
-  padding: 2.2cqw 4.4cqw;
-  border-radius: 1.7cqw;
-  border: none;
-  background: #4CAF50;
-  color: white;
-  font-weight: 700;
-  font-size: 3.5cqw;
-  cursor: pointer;
 }
 
 .matchOverlay {
@@ -310,29 +33,25 @@
   animation: matchPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.ellipse {
-  position: absolute;
-  background: white;
-  border-radius: 50%;
-  z-index: 1;
-}
-
-.ellipseLeft {
-  bottom: -40px;
-  left: 22%;
-  transform: translateX(-50%);
-  width: 70%;
-  height: 80px;
-}
-
-.ellipseRight {
-  bottom: 100px;
-  right: 8%;
-  width: 180px;
-  height: 40px;
-}
-
 @keyframes matchPop {
   0% { transform: scale(0.5); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
+}
+
+.situationCardsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 3cqw;
+  margin-bottom: 2cqw;
+}
+
+.backBtn {
+  padding: 2.2cqw 6.6cqw;
+  border-radius: 2.2cqw;
+  border: none;
+  background: #666;
+  color: white;
+  font-weight: 700;
+  font-size: 3.8cqw;
+  cursor: pointer;
 }
