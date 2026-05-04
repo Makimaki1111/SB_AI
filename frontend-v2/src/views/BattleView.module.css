@@ -55,3 +55,73 @@
   font-size: 3.8cqw;
   cursor: pointer;
 }
+
+.resultOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.resultCard {
+  background: white;
+  padding: 8cqw;
+  border-radius: 6cqw;
+  text-align: center;
+  box-shadow: 0 4cqw 8cqw rgba(0,0,0,0.3);
+  transform: scale(0);
+  animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  animation-delay: 0.2s;
+  width: 80%;
+}
+
+.resultTitle {
+  font-size: 10cqw;
+  font-weight: 900;
+  margin-bottom: 6cqw;
+  background: linear-gradient(45deg, #FFD700, #FFA500);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.resultActions {
+  display: flex;
+  justify-content: center;
+}
+
+.resultBtn {
+  padding: 4cqw 10cqw;
+  font-size: 5cqw;
+  font-weight: 800;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 3cqw;
+  cursor: pointer;
+  box-shadow: 0 1cqw 2cqw rgba(0,0,0,0.2);
+  transition: transform 0.2s;
+}
+
+.resultBtn:active {
+  transform: scale(0.95);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes popIn {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}

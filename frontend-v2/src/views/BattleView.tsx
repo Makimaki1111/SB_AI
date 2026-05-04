@@ -151,6 +151,20 @@ export const BattleView: React.FC = () => {
     } else {
       localStorage.setItem('sb_ability_2', abilityId);
     }
+
+    // 対戦中ならサーバーへ送信
+    if (!isLobby && battleState?.room_id) {
+      sendMessage({
+        type: 'change_ability',
+        info: { 
+          room_id: battleState.room_id, 
+          player_id: playerId, 
+          ability_id: abilityId,
+          char_id: isDouble ? (targetAbilityIndex === 0 ? 'p1' : 'p2') : 'p1'
+        }
+      });
+    }
+
     setIsAbilityModalOpen(false);
   };
 
@@ -203,25 +217,47 @@ export const BattleView: React.FC = () => {
             mode={isDouble ? 'double' : isStock ? 'stock' : 'single'}
           />
         ) : (
-          <BattleArena 
-            battleState={battleState}
-            ally={ally}
-            foe={foe}
-            prediction={prediction}
-            displayMessage={displayMessage}
-            isProcessing={isProcessing}
-            allyEffect={allyEffect}
-            foeEffect={foeEffect}
-            timer={timer}
-            allyWord={allyWord}
-            foeWord={foeWord}
-            username={username || "ななし"}
-            onSendWord={handleSubmitWord}
-            onSendIncludeCheck={sendIncludeCheck}
-            onOpenSituation={() => setIsSituationModalOpen(true)}
-            onOpenAbility={() => handleOpenAbilityModal(0)}
-            onRunAway={handleRunAway}
-          />
+          <>
+            <BattleArena 
+              battleState={battleState}
+              ally={ally}
+              foe={foe}
+              prediction={prediction}
+              displayMessage={displayMessage}
+              isProcessing={isProcessing}
+              allyEffect={allyEffect}
+              foeEffect={foeEffect}
+              timer={timer}
+              allyWord={allyWord}
+              foeWord={foeWord}
+              username={username || "ななし"}
+              onSendWord={handleSubmitWord}
+              onSendIncludeCheck={sendIncludeCheck}
+              onOpenSituation={() => setIsSituationModalOpen(true)}
+              onOpenAbility={() => handleOpenAbilityModal(0)}
+              onRunAway={handleRunAway}
+            />
+
+            {/* リザルトオーバーレイ */}
+            {battleState?.status === 'finished' && (
+              <div className={styles.resultOverlay}>
+                <div className={styles.resultCard}>
+                  <h2 className={styles.resultTitle}>
+                    {battleState.ally_win === true ? 'YOU WIN!' : 
+                     battleState.ally_win === false ? 'YOU LOSE...' : 'DRAW'}
+                  </h2>
+                  <div className={styles.resultActions}>
+                    <button 
+                      className={styles.resultBtn}
+                      onClick={() => window.location.reload()}
+                    >
+                      ロビーへ戻る
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         <StockSelectionModal 

@@ -108,7 +108,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
             <WordInput 
               onSend={onSendWord} 
               onChange={onSendIncludeCheck}
-              disabled={!battleState?.is_my_turn || isProcessing}
+              disabled={(battleState?.is_my_turn === false) || isProcessing || battleState?.status === 'finished'}
               initialChar={battleState?.character || ''}
             />
             {prediction && prediction.include && (

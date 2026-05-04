@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import type { BattleState, SocketMessage, AbilityData, BattleResponse } from '../types/battle';
+import { SoundManager } from '../utils/SoundManager';
 
 export const useBattle = (url: string) => {
   const socketRef = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [battleState, setBattleState] = useState<BattleState | null>(null);
-  const [allAbilities, setAllAbilities] = useState<Record<string, AbilityData>>({});
   const [uiMapping, setUiMapping] = useState<Record<string, string>>({});
   const [prediction, setPrediction] = useState<{include: boolean, type1?: string, type2?: string, used?: boolean, prediction?: string} | null>(null);
   const [displayMessage, setDisplayMessage] = useState<string | null>(null);
@@ -15,46 +15,59 @@ export const useBattle = (url: string) => {
   const [timer, setTimer] = useState({ remaining: 20, total: 20 });
   const [allyWord, setAllyWord] = useState<string | null>(null);
   const [foeWord, setFoeWord] = useState<string | null>(null);
+  const soundManager = SoundManager.getInstance();
   
+  // WebSocket接続管理
   useEffect(() => {
     console.log('🔌 Effect: Creating WebSocket for', url);
     const ws = new WebSocket(url);
     socketRef.current = ws;
-    // デバッグ用: グローバルに保存
-    (window as any).lastSocket = ws;
     
     ws.onopen = () => {
-      console.log('✅ WebSocket Connected to:', url, 'ReadyState:', ws.readyState);
+      console.log('✅ WebSocket Connected');
       setIsConnected(true);
     };
 
-    ws.onclose = (event) => {
-      console.log('❌ WebSocket Disconnected:', event.code, event.reason);
+    ws.onclose = () => {
+      console.log('❌ WebSocket Disconnected');
       setIsConnected(false);
-      if (socketRef.current === ws) {
-        socketRef.current = null;
-      }
     };
 
     ws.onerror = (err) => {
-      console.error('⚠️ WebSocket Error Detailed:', err);
+      console.error('⚠️ WebSocket Error:', err);
       setIsConnected(false);
     };
     
     ws.onmessage = (event) => {
-      const data: BattleResponse = JSON.parse(event.data);
-      console.log('📥 Message received:', data.type);
-
-      if (data.type === 'pre_check') {
-        setPrediction((data as any).info);
-        return;
-      }
-
-      if (data.type === 'accepted' || data.type === 'made_room') {
-        processBattleUpdate(data);
+      try {
+        const data: BattleResponse = JSON.parse(event.data);
+        if (data.type === 'pre_check') {
+          setPrediction((data as any).info);
+          return;
+        }
+        if (['accepted', 'made_room', 'update', 'battle_end', 'timeout'].includes(data.type)) {
+          processBattleUpdate(data);
+        }
+      } catch (err) {
+        console.error('Failed to parse WebSocket message:', err);
       }
     };
-    
+
+    return () => {
+      if (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN) {
+        ws.onopen = null;
+        ws.onmessage = null;
+        ws.onerror = null;
+        ws.onclose = null;
+        ws.close();
+      }
+    };
+  }, [url]);
+
+  // タイマー管理
+  useEffect(() => {
+    if (battleState?.status === 'finished') return;
+
     const timerInterval = setInterval(() => {
       setTimer(prev => ({
         ...prev,
@@ -62,117 +75,105 @@ export const useBattle = (url: string) => {
       }));
     }, 100);
 
-    return () => {
-      console.log('🧹 Cleaning up WebSocket:', url);
-      clearInterval(timerInterval);
-      ws.onopen = null;
-      ws.onmessage = null;
-      ws.onerror = null;
-      ws.onclose = null;
-      ws.close();
-      if (socketRef.current === ws) {
-        socketRef.current = null;
-      }
-    };
-  }, [url]);
+    return () => clearInterval(timerInterval);
+  }, [battleState?.status]);
+
+  // 決着時のSE
+  useEffect(() => {
+    if (battleState?.status === 'finished') {
+      soundManager.play('end');
+    }
+  }, [battleState?.status]);
 
   const processBattleUpdate = async (data: BattleResponse) => {
     setIsProcessing(true);
-    
-    // 初期情報の設定
-    if (data.all_abilities) setAllAbilities(data.all_abilities);
-    if (data.info?.id_to_ui_map) setUiMapping(data.info.id_to_ui_map);
+    try {
+      if (data.info?.id_to_ui_map) setUiMapping(data.info.id_to_ui_map);
 
-    // タイマーのリセット/開始
-    if (data.state.is_my_turn !== battleState?.is_my_turn || data.type === 'made_room') {
-      setTimer({ remaining: 20, total: 20 });
-    }
-
-    // イベントを順番に処理
-    for (const event of data.events) {
-      if (event.message) {
-        setDisplayMessage(event.message);
+      // 単語の更新
+      if (data.state.word) {
+        if (data.state.is_my_turn) setFoeWord(data.state.word);
+        else setAllyWord(data.state.word);
       }
-      
-      if (event.type === 'damage') {
-        if ((event as any).ally_damage > 0) {
-          setAllyEffect('blink');
-          setFoeWord(data.state.word || null); // 相手が打った言葉
-          setTimeout(() => setAllyEffect(null), 1000);
-        }
-        if ((event as any).foe_damage > 0) {
-          setFoeEffect('blink');
-          setAllyWord(data.state.word || null); // 自分が打った言葉
-          setTimeout(() => setFoeEffect(null), 1000);
-        }
-      } else if (event.type === 'cure' || event.type === 'drain') {
-        if ((event as any).ally_cure > 0) {
-          setAllyEffect('heal');
-          setTimeout(() => setAllyEffect(null), 1000);
-        }
-        if ((event as any).foe_cure > 0) {
-          setFoeEffect('heal');
-          setTimeout(() => setFoeEffect(null), 1000);
-        }
-      } else if (event.type === 'stat_up') {
-        if ((event as any).player === 'ally') {
-          setAllyEffect('stat_up');
-          setTimeout(() => setAllyEffect(null), 1000);
-        } else {
-          setFoeEffect('stat_up');
-          setTimeout(() => setFoeEffect(null), 1000);
-        }
-      } else if (event.type === 'stat_down') {
-        if ((event as any).player === 'ally') {
-          setAllyEffect('stat_down');
-          setTimeout(() => setAllyEffect(null), 1000);
-        } else {
-          setFoeEffect('stat_down');
-          setTimeout(() => setFoeEffect(null), 1000);
-        }
+
+      // タイマーリセット
+      if (data.state.is_my_turn !== battleState?.is_my_turn || data.type === 'made_room') {
+        setTimer({ remaining: 20, total: 20 });
+        if (data.state.is_my_turn) soundManager.play('start');
       }
-      
-      console.log('🎬 Processing Event:', event.type, event.message);
 
-      // イベントの種類に応じて待機時間を調整
-      const waitTime = event.type === 'ability_changed' ? 100 : 1000;
-      await new Promise(resolve => setTimeout(resolve, waitTime));
+      const events = data.events || [];
+      for (const event of events) {
+        if (event.message) setDisplayMessage(event.message);
+        
+        if (event.type === 'damage') {
+          if ((event as any).ally_damage > 0) {
+            setAllyEffect('blink');
+            soundManager.play('middmg');
+            setTimeout(() => setAllyEffect(null), 1000);
+          }
+          if ((event as any).foe_damage > 0) {
+            setFoeEffect('blink');
+            soundManager.play('middmg');
+            setTimeout(() => setFoeEffect(null), 1000);
+          }
+        } else if (event.type === 'cure' || event.type === 'drain') {
+          const side = (event as any).ally_cure > 0 ? 'ally' : 'foe';
+          soundManager.play('heal');
+          if (side === 'ally') {
+            setAllyEffect('heal');
+            setTimeout(() => setAllyEffect(null), 1000);
+          } else {
+            setFoeEffect('heal');
+            setTimeout(() => setFoeEffect(null), 1000);
+          }
+        } else if (event.type === 'stat_up' || event.type === 'stat_down') {
+          const effect = event.type === 'stat_up' ? 'up' : 'down';
+          soundManager.play(effect);
+          const side = (event as any).player === 'ally' ? 'ally' : 'foe';
+          if (side === 'ally') {
+            setAllyEffect(effect);
+            setTimeout(() => setAllyEffect(null), 1000);
+          } else {
+            setFoeEffect(effect);
+            setTimeout(() => setFoeEffect(null), 1000);
+          }
+        }
+        await new Promise(resolve => setTimeout(resolve, 800));
+      }
+      setBattleState(data.state);
+    } catch (err) {
+      console.error('Error in processBattleUpdate:', err);
+    } finally {
+      setIsProcessing(false);
+      setDisplayMessage(null);
     }
-
-    // 最終的なステータスに同期
-    setBattleState(data.state);
-    setDisplayMessage(null);
-    setIsProcessing(false);
   };
 
   const sendMessage = (msg: SocketMessage) => {
-    const socket = socketRef.current || (window as any).lastSocket;
-    if (socket?.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify(msg));
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify(msg));
     }
   };
 
   const sendIncludeCheck = (word: string) => {
     if (!battleState?.room_id) return;
     sendMessage({
-      type: 'include_check' as any,
-      info: { room_id: battleState.room_id, word }
+      type: 'include_check',
+      info: { word, room_id: battleState.room_id }
     });
   };
 
-  const getCharacterBySlot = (slot: "ally" | "foe") => {
-    if (!battleState || !uiMapping) return null;
-    const id = Object.keys(uiMapping).find(key => uiMapping[key] === slot);
-    return id ? battleState.characters[id] : null;
-  };
+  const ally = battleState?.characters ? 
+    Object.values(battleState.characters).find(c => uiMapping[c.id] === 'ally') || null : null;
+  const foe = battleState?.characters ? 
+    Object.values(battleState.characters).find(c => uiMapping[c.id] === 'foe') || null : null;
 
-  return { 
-    isConnected, 
-    battleState, 
-    ally: getCharacterBySlot("ally"),
-    foe: getCharacterBySlot("foe"),
-    allAbilities, 
-    uiMapping, 
+  return {
+    ally,
+    foe,
+    battleState,
+    isConnected,
     prediction,
     displayMessage,
     isProcessing,
