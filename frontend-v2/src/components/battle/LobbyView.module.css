@@ -96,8 +96,7 @@
   border-radius: 4.4cqw;
   cursor: pointer;
   display: flex;
-  /* 本家仕様: 影を消す */
-  box-shadow: none !important;
+  box-shadow: 0 1.3cqw 2.6cqw rgba(0, 0, 0, 0.08); /* カードも少し浮かせる */
   box-sizing: border-box;
   overflow: hidden;
   min-height: 25cqw;
@@ -162,13 +161,17 @@
   font-weight: 700;
   border-radius: 2.6cqw;
   border: none;
+  /* タイトルの「特殊ルール」ボタンから質感を移植 */
   background: linear-gradient(180deg, #ffd77a, #ffb84d);
   color: #222;
-  /* 本家仕様: ふわっとした影を消し、物理的な厚み(Solid Border)のみにする */
-  box-shadow: none !important;
-  border-bottom: 1.1cqw solid #ffb84d !important;
+  box-shadow: 0 1.3cqw 2.6cqw rgba(0, 0, 0, 0.12); /* 立体感 */
   cursor: pointer;
   text-align: center;
+  transition: transform 120ms ease-in-out;
+}
+
+.lobbyButton:hover {
+  transform: translateY(-0.4cqw);
 }
 
 .separator {
@@ -207,13 +210,18 @@
   font-weight: 700;
   font-size: 3.8cqw;
   cursor: pointer;
-  /* 本家仕様: 影を消す */
-  box-shadow: none !important;
+  /* タイトルの質感に合わせて影を追加 */
+  box-shadow: 0 1.3cqw 2.6cqw rgba(0, 0, 0, 0.1);
   white-space: nowrap;
   display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+  transition: transform 120ms ease-in-out;
+}
+
+.joinButton:hover {
+  transform: translateY(-0.2cqw);
 }
 
 .playerName {
