@@ -104,3 +104,37 @@
 
 /* モーダル (本家に合わせる) */
 /* モーダル (GameModalに移行済み) */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1cqw;
+}
+
+.label {
+  font-weight: 700;
+  font-size: 3.5cqw;
+}
+
+.input {
+  width: 100%;
+  padding: 2.2cqw;
+  border-radius: 1.7cqw;
+  border: 1px solid #ccc;
+  font-size: 3.5cqw;
+  box-sizing: border-box;
+}
+
+.range {
+  width: 100%;
+}
+
+.closeButton {
+  padding: 2.2cqw 4.4cqw;
+  border-radius: 1.7cqw;
+  border: none;
+  background: #4CAF50;
+  color: white;
+  font-weight: 700;
+  font-size: 3.5cqw;
+  cursor: pointer;
+}

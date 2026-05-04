@@ -123,3 +123,53 @@
 }
 
 /* モーダル (GameModal / StatCard に移行済み) */
+.situationCardsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 3cqw;
+  margin-bottom: 2cqw;
+}
+
+.backBtn {
+  padding: 2.2cqw 6.6cqw;
+  border-radius: 2.2cqw;
+  border: none;
+  background: #666;
+  color: white;
+  font-weight: 700;
+  font-size: 3.8cqw;
+  cursor: pointer;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1cqw;
+  margin-bottom: 3.3cqw;
+  text-align: left;
+}
+
+.field label {
+  font-weight: 700;
+  font-size: 3.5cqw;
+}
+
+.field input[type="text"] {
+  width: 100%;
+  padding: 2.2cqw;
+  border-radius: 1.7cqw;
+  border: 1px solid #ccc;
+  font-size: 3.5cqw;
+  box-sizing: border-box;
+}
+
+.closeButton {
+  padding: 2.2cqw 4.4cqw;
+  border-radius: 1.7cqw;
+  border: none;
+  background: #4CAF50;
+  color: white;
+  font-weight: 700;
+  font-size: 3.5cqw;
+  cursor: pointer;
+}
