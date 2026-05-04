@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import type { BattleState, BattleResponse, SocketMessage } from '../types/battle';
+import { useState, useEffect, useRef } from 'react';
+import type { BattleState, SocketMessage, AbilityData } from '../types/battle';
 
 export const useBattle = (url: string) => {
   const socketRef = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [battleState, setBattleState] = useState<BattleState | null>(null);
-  const [allAbilities, setAllAbilities] = useState<Record<string, any>>({});
+  const [allAbilities, setAllAbilities] = useState<Record<string, AbilityData>>({});
   const [uiMapping, setUiMapping] = useState<Record<string, string>>({});
   
   useEffect(() => {

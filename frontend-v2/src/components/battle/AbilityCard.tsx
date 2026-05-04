@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from './AbilityCard.module.css';
-import { TYPE_TO_IMAGE } from '../../constants/gameConstants';
-import { AbilityData } from '../../types/battle';
+import { TYPE_TO_IMAGE } from '../../constants/game';
+import type { AbilityData } from '../../types/battle';
 
 interface AbilityCardProps {
   ability: AbilityData;

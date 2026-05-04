@@ -1,7 +1,7 @@
 import React from 'react';
 import { GameButton } from '../common/GameButton';
 import { AbilityCard } from './AbilityCard';
-import { AbilityData } from '../../types/battle';
+import type { AbilityData } from '../../types/battle';
 import styles from './LobbyView.module.css';
 
 interface LobbyViewProps {

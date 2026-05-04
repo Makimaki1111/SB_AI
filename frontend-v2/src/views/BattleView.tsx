@@ -12,8 +12,8 @@ import { GameLayout } from '../components/layout/GameLayout';
 import { GameModal } from '../components/common/GameModal';
 import { StatCard } from '../components/battle/StatCard';
 import { StockSelectionModal } from '../components/battle/StockSelectionModal';
-import { API_BASE_URL, WS_BASE_URL } from '../constants/gameConstants';
-import { AbilityData } from '../types/battle';
+import { API_BASE_URL, WS_BASE_URL } from '../constants/game';
+import type { AbilityData } from '../types/battle';
 import styles from './BattleView.module.css';
 
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -29,9 +29,7 @@ export const BattleView: React.FC = () => {
   const [isAbilityModalOpen, setIsAbilityModalOpen] = React.useState(false);
   const [targetAbilityIndex, setTargetAbilityIndex] = React.useState(0); // ダブルバトル用
   const [isSituationModalOpen, setIsSituationModalOpen] = React.useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
   const [isStockModalOpen, setIsStockModalOpen] = React.useState(false);
-  const [tempName, setTempName] = React.useState(username);
   
   const [selectedAbilities, setSelectedAbilities] = React.useState<string[]>(() => {
     const a1 = localStorage.getItem('sb_ability') || 'ikaku';
@@ -42,11 +40,6 @@ export const BattleView: React.FC = () => {
   const [matchingMessage, setMatchingMessage] = React.useState<string | null>(null);
   const [allAbilities, setAllAbilities] = React.useState<Record<string, AbilityData>>({});
 
-  const { setUsername } = useUser();
-  const handleSaveSettings = () => {
-    setUsername(tempName);
-    setIsSettingsOpen(false);
-  };
 
   // 特性リストを事前に取得
   React.useEffect(() => {
@@ -174,7 +167,7 @@ export const BattleView: React.FC = () => {
       sendMessage({
         type: 'run_away',
         info: { room_id: battleState.room_id, player_id: playerId }
-      } as any);
+      });
     }
     window.location.reload();
   };
@@ -187,7 +180,7 @@ export const BattleView: React.FC = () => {
         room_id: battleState?.room_id,
         player_id: playerId 
       }
-    } as any);
+    });
   };
 
   if (!isConnected) {

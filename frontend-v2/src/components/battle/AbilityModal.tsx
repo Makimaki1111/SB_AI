@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './AbilityModal.module.css';
-import { TYPE_TO_IMAGE } from '../../constants/gameConstants';
-import { AbilityData } from '../../types/battle';
+import { TYPE_TO_IMAGE } from '../../constants/game';
+import type { AbilityData } from '../../types/battle';
 
 interface AbilityModalProps {
   isOpen: boolean;
@@ -44,7 +44,7 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
     onClose();
   };
 
-  const getIconPath = (id: string, info: any) => {
+  const getIconPath = (id: string, info: AbilityData) => {
     if (id === 'random' || id === '') return '/img/unaware.gif';
     const gifName = TYPE_TO_IMAGE[info.icon_type] || 'normal';
     return `/img/${gifName}.gif`;

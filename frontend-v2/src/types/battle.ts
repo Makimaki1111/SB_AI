@@ -1,51 +1,51 @@
-/**
- * しりとりバトルの型定義ファイル
- * バックエンド (backend/schemas.py) の Pydantic モデルと同期しています。
- */
-
-export type AbilityId = string;
+export interface AbilityData {
+  id?: string;
+  name: string;
+  description: string;
+  desc?: string; // 互換性のため
+  icon_type: string;
+  remain_count?: number;
+}
 
 export interface CharacterState {
+  id: string;
+  owner_id: string;
   name: string;
   hp: number;
   max_hp: number;
-  attack_rank: number;
-  defense_rank: number;
-  types: string[];
-  is_poison: boolean;
-  ability: AbilityId;
+  ability: string;
+  ability_name: string;
+  ability_desc: string;
   ability_change_count: number;
-  lives: number | null;
-  owner_id: string;
+  lives?: number;
+  max_lives?: number;
+  types: string[];
+  is_poison?: boolean;
 }
 
 export interface BattleState {
   room_id: string;
-  character: string;
-  is_my_turn: boolean;
   turn: number;
-  last_actor_id: string | null;
-  word: string | null;
+  status: 'waiting' | 'active' | 'finished';
   characters: Record<string, CharacterState>;
-  winner_team: number | null;
-  ally_win: boolean | null;
-  ally_max_lives: number | null;
-  foe_max_lives: number | null;
-  current_actor_id: string | null;
-  current_owner_id: string | null;
+  last_word: string;
+  last_char: string;
+  timer: number;
+  max_timer: number;
+  all_abilities?: Record<string, AbilityData>;
+  ally_win?: boolean;
+  ally_stats?: { attack: number; defense: number };
+  foe_stats?: { attack: number; defense: number };
+  is_my_turn?: boolean;
+  character?: string;
+  message?: string;
+  word?: string | null;
+  foe_max_lives?: number;
+  ally_max_lives?: number;
 }
 
-export type EventType = 
-  | "damage" 
-  | "cure" 
-  | "revive" 
-  | "stat_change" 
-  | "ability_trigger" 
-  | "ability_changed" 
-  | "message";
-
 export interface BattleEvent {
-  type: EventType;
+  type: string;
   message: string;
   target?: string | null;
   attacker?: string | null;
@@ -55,27 +55,27 @@ export interface BattleEvent {
   new_rank?: number | null;
   hp?: number | null;
   lives?: number | null;
-  new_ability?: AbilityId | null;
+  new_ability?: string | null;
   new_ability_change_count?: number | null;
   poison_target?: string | null;
-  new_ranks?: Record<string, Record<string, number>> | null;
 }
 
 export interface BattleResponse {
   type: string;
   state: BattleState;
   events: BattleEvent[];
-  all_abilities?: Record<AbilityId, { name: string; description: string }>;
+  all_abilities?: Record<string, AbilityData>;
   info?: {
     player_ids: string[];
-    id_to_ui_map: Record<string, "ally" | "foe" | "p1a" | "p1b" | "p2a" | "p2b">;
+    id_to_ui_map: Record<string, string>;
   };
 }
 
-// 通信メッセージの型
 export type SocketMessageType = 
   | "find_match"
+  | "find_match_double"
   | "make_new_battle"
+  | "join_double_cpu_room"
   | "submit_word"
   | "submit_word_double"
   | "change_ability"
@@ -86,3 +86,6 @@ export interface SocketMessage {
   type: SocketMessageType;
   info: Record<string, any>;
 }
+
+export type GameMode = 'single' | 'stock' | 'double';
+export type MatchType = 'player' | 'cpu' | 'room';
