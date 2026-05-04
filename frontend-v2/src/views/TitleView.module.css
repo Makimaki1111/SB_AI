@@ -1,27 +1,4 @@
-.container {
-  height: 100vh;
-  width: 100vw;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: white;
-  overflow: hidden;
-  font-family: 'M PLUS 1p', sans-serif;
-}
-
-.phoneBox {
-  width: min(96vw, 60vh); 
-  aspect-ratio: 10 / 16;
-  background-color: #fce5cd;
-  border-radius: 3.5cqw; /* 16px/450px * 100 */
-  box-shadow: 0 0 2.2cqw rgba(0, 0, 0, 0.1); /* 10px/450px */
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  container-type: size;
-}
-
+/* メインコンテンツ (GameLayout内部) */
 .content {
   flex: 1;
   display: flex;

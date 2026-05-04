@@ -9,6 +9,7 @@ const WS_URL = 'ws://127.0.0.1:8000/ws';
 
 import { LobbyView } from '../components/battle/LobbyView';
 import { AbilityModal } from '../components/battle/AbilityModal';
+import { GameLayout } from '../components/layout/GameLayout';
 import styles from './BattleView.module.css';
 
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -149,18 +150,17 @@ export const BattleView: React.FC = () => {
 
   if (!isConnected) {
     return (
-      <div className={styles.container}>
-        <div className={styles.phoneBox} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+      <GameLayout>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
           <div className={styles.loading}>サーバーに接続中...</div>
         </div>
-      </div>
+      </GameLayout>
     );
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.phoneBox} id="phone-box">
-        {isLobby ? (
+    <GameLayout id="phone-box">
+      {isLobby ? (
           <LobbyView 
             onStartMatch={handleStartMatch}
             onOpenAbilityModal={() => setIsAbilityModalOpen(true)}
@@ -340,7 +340,6 @@ export const BattleView: React.FC = () => {
           allAbilities={allAbilities}
           canChange={isLobby || (Object.values(battleState?.characters || {}).find(c => c.owner_id === "player1")?.ability_change_count ?? 0) > 0}
         />
-      </div>
-    </div>
+      </GameLayout>
   );
 };

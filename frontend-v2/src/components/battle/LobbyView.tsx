@@ -1,16 +1,7 @@
 import React from 'react';
 import styles from './LobbyView.module.css';
 import { GameButton } from '../common/GameButton';
-
-const TYPE_TO_IMAGE: Record<string, string> = {
-  "ノーマル": "normal", "感情": "emote", "食べ物": "food", "植物": "plant",
-  "社会": "society", "時間": "time", "工作": "work", "芸術": "art",
-  "機械": "mech", "遊び": "play", "暴力": "violence", "服飾": "cloth",
-  "動物": "animal", "地名": "place", "人物": "person", "人体": "body",
-  "理科": "science", "暴言": "insult", "虫": "bug", "数学": "math",
-  "医療": "health", "宗教": "religion", "スポーツ": "sports",
-  "物語": "tale", "天気": "weather"
-};
+import { AbilityCard } from './AbilityCard';
 
 interface LobbyViewProps {
   onStartMatch: (mode: 'player' | 'cpu' | 'room') => void;
@@ -38,14 +29,6 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
     icon_type: 'ノーマル' 
   };
 
-  // 本家仕様: 特性アイコンのパス。タイプ名からGIF名を導出
-  const getIconPath = (data: any) => {
-    if (selectedAbility === 'random' || !allAbilities[selectedAbility]) {
-      return '/img/unaware.gif'; // 本家の「ランダム」アイコン
-    }
-    const gifName = TYPE_TO_IMAGE[data.icon_type] || 'normal';
-    return `/img/${gifName}.gif`;
-  };
 
   return (
     <div className={styles.lobbyContent}>
@@ -68,15 +51,10 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
       )}
 
       {/* 本家風のとくせいカード */}
-      <div className={styles.abilityCard} onClick={onOpenAbilityModal}>
-        <div className={styles.abilityIconWrapper}>
-          <img src={getIconPath(selectedAbilityData)} alt="" className={styles.abilityIcon} />
-        </div>
-        <div className={styles.abilityInfo}>
-          <div className={styles.abilityName}>{selectedAbilityData.name}</div>
-          <div className={styles.abilityDesc}>{selectedAbilityData.desc || selectedAbilityData.description}</div>
-        </div>
-      </div>
+      <AbilityCard 
+        ability={selectedAbilityData} 
+        onClick={onOpenAbilityModal} 
+      />
 
       <div className={styles.buttonContainer}>
         <GameButton 

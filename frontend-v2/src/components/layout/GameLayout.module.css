@@ -1,0 +1,24 @@
+.container {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f0f0f0;
+  overflow: hidden;
+  font-family: 'M PLUS 1p', sans-serif;
+}
+
+.phoneBox {
+  /* タイトル画面で approved された比率とサイズを 100% 維持 */
+  width: min(96vw, 60vh); 
+  aspect-ratio: 10 / 16;
+  background-color: #fce5cd;
+  border-radius: 3.5cqw; 
+  box-shadow: 0 0 2.2cqw rgba(0, 0, 0, 0.1); 
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  container-type: size; /* これが内部の cqw 計算の生命線 */
+}

@@ -1,26 +1,3 @@
-.container {
-  height: 100vh;
-  width: 100vw;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: white;
-  overflow: hidden;
-  font-family: 'M PLUS 1p', sans-serif;
-}
-
-.phoneBox {
-  width: min(96vw, 60vh);
-  aspect-ratio: 10 / 16;
-  background-color: #fce5cd;
-  border-radius: 4cqw;
-  box-shadow: 0 0 10cqw rgba(0, 0, 0, 0.1);
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  container-type: size;
-}
 
 .topImage {
   position: absolute;

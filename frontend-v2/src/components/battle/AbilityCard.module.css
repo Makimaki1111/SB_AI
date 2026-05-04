@@ -1,0 +1,62 @@
+.abilityCard {
+  width: 90%;
+  margin: 2cqw 0;
+  background: #fff;
+  border: 0.4cqw solid #eee;
+  border-radius: 4.4cqw;
+  cursor: pointer;
+  display: flex;
+  box-shadow: 0 1.3cqw 2.6cqw rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+  overflow: hidden;
+  min-height: 25cqw;
+  flex-shrink: 0;
+  transition: transform 0.1s ease-in-out;
+}
+
+.abilityCard:hover {
+  transform: scale(1.02);
+}
+
+.abilityCard:active {
+  transform: scale(0.98);
+}
+
+.iconWrapper {
+  width: 40%;
+  background: #f9f9f9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.icon {
+  width: 17cqw;
+  height: 17cqw;
+  object-fit: contain;
+}
+
+.info {
+  width: 60%;
+  padding: 2.6cqw 3cqw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: left;
+}
+
+.name {
+  font-size: 4.8cqw;
+  font-weight: 800;
+  color: #333;
+  margin-bottom: 0.5cqw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.desc {
+  font-size: 3.1cqw;
+  color: #999;
+  line-height: 1.3;
+}
