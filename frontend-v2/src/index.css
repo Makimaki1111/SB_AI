@@ -15,6 +15,32 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+:root {
+  /* Colors */
+  --color-primary: #ffb84d;
+  --color-primary-light: #ffd77a;
+  --color-primary-dark: #ff8f00;
+  --color-success: #4caf50;
+  --color-success-dark: #2e7d32;
+  --color-danger: #ff4d4d;
+  --color-text-main: #222;
+  --color-text-sub: #555;
+  --color-text-muted: #888;
+  --color-bg-light: #f9f9f9;
+  --color-border: #eee;
+  
+  /* Layout */
+  --phone-width: min(96vw, 60vh);
+  --phone-aspect: 10 / 16;
+  --radius-main: 3.5cqw;
+  --radius-button: 2.6cqw;
+  --shadow-main: 0 0.8cqw 2.2cqw rgba(0, 0, 0, 0.1);
+  --shadow-button: 0 1.3cqw 2.6cqw rgba(0, 0, 0, 0.12);
+  
+  /* Fonts */
+  --font-main: "M PLUS 1p", sans-serif;
+}
+
 body {
   margin: 0;
   display: flex;

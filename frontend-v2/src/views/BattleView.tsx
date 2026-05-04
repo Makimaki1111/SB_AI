@@ -5,7 +5,6 @@ import { HPBar } from '../components/battle/HPBar';
 import { CharacterAvatar } from '../components/battle/CharacterAvatar';
 import { WordDisplay } from '../components/battle/WordDisplay';
 import { WordInput } from '../components/battle/WordInput';
-const WS_URL = 'ws://127.0.0.1:8000/ws';
 
 import { LobbyView } from '../components/battle/LobbyView';
 import { AbilityModal } from '../components/battle/AbilityModal';
@@ -13,6 +12,8 @@ import { GameLayout } from '../components/layout/GameLayout';
 import { GameModal } from '../components/common/GameModal';
 import { StatCard } from '../components/battle/StatCard';
 import { StockSelectionModal } from '../components/battle/StockSelectionModal';
+import { API_BASE_URL, WS_BASE_URL } from '../constants/gameConstants';
+import { AbilityData } from '../types/battle';
 import styles from './BattleView.module.css';
 
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -22,7 +23,7 @@ export const BattleView: React.FC = () => {
   const location = useLocation();
   const isDouble = location.pathname.includes('double');
   const { username } = useUser();
-  const { ally, foe, battleState, isConnected, sendMessage } = useBattle(WS_URL);
+  const { ally, foe, battleState, isConnected, sendMessage } = useBattle(WS_BASE_URL);
   
   const [isLobby, setIsLobby] = React.useState(true);
   const [isAbilityModalOpen, setIsAbilityModalOpen] = React.useState(false);
@@ -39,7 +40,7 @@ export const BattleView: React.FC = () => {
   });
 
   const [matchingMessage, setMatchingMessage] = React.useState<string | null>(null);
-  const [allAbilities, setAllAbilities] = React.useState<Record<string, any>>({});
+  const [allAbilities, setAllAbilities] = React.useState<Record<string, AbilityData>>({});
 
   const { setUsername } = useUser();
   const handleSaveSettings = () => {
@@ -49,7 +50,7 @@ export const BattleView: React.FC = () => {
 
   // 特性リストを事前に取得
   React.useEffect(() => {
-    fetch('http://127.0.0.1:8000/abilities')
+    fetch(`${API_BASE_URL}/abilities`)
       .then(res => res.json())
       .then(data => setAllAbilities(data))
       .catch(err => console.error("Failed to fetch abilities:", err));

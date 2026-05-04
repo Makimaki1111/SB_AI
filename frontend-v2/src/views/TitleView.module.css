@@ -12,9 +12,9 @@
 
 .subtitle {
   position: absolute;
-  top: 8.8cqw; /* 40px/450px */
-  font-size: 3.8cqw; /* 約17px */
-  color: #333;
+  top: 8.8cqw; 
+  font-size: 3.8cqw; 
+  color: var(--color-text-sub);
   margin: 0;
   z-index: 10;
   text-align: center;
@@ -23,10 +23,10 @@
 
 .title {
   position: absolute;
-  top: 15.5cqw; /* 70px/450px */
-  font-size: 8.9cqw; /* 約40px/450px */
+  top: 15.5cqw; 
+  font-size: 8.9cqw; 
   font-weight: 800;
-  color: #222;
+  color: var(--color-text-main);
   margin: 0;
   z-index: 10;
   text-align: center;
@@ -130,9 +130,9 @@
 
 .closeButton {
   padding: 2.2cqw 4.4cqw;
-  border-radius: 1.7cqw;
+  border-radius: var(--radius-button);
   border: none;
-  background: #4CAF50;
+  background: var(--color-success);
   color: white;
   font-weight: 700;
   font-size: 3.5cqw;

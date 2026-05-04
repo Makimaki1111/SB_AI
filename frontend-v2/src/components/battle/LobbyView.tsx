@@ -1,14 +1,15 @@
 import React from 'react';
-import styles from './LobbyView.module.css';
 import { GameButton } from '../common/GameButton';
 import { AbilityCard } from './AbilityCard';
+import { AbilityData } from '../../types/battle';
+import styles from './LobbyView.module.css';
 
 interface LobbyViewProps {
   onStartMatch: (mode: 'player' | 'cpu' | 'room', options?: any) => void;
   onOpenAbilityModal: (index?: number) => void;
   onBackToTitle: () => void;
   selectedAbilities: string[]; // 配列に変更 [ability1, ability2]
-  allAbilities: Record<string, any>;
+  allAbilities: Record<string, AbilityData>;
   mode?: 'single' | 'stock' | 'double';
 }
 

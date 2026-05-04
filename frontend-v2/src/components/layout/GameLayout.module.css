@@ -6,19 +6,19 @@
   align-items: center;
   background: #f0f0f0;
   overflow: hidden;
-  font-family: 'M PLUS 1p', sans-serif;
+  font-family: var(--font-main);
 }
 
 .phoneBox {
-  /* タイトル画面で approved された比率とサイズを 100% 維持 */
-  width: min(96vw, 60vh); 
-  aspect-ratio: 10 / 16;
-  background-color: #fce5cd;
-  border-radius: 3.5cqw; 
-  box-shadow: 0 0 2.2cqw rgba(0, 0, 0, 0.1); 
+  /* デザインシステムから変数を参照 */
+  width: var(--phone-width); 
+  aspect-ratio: var(--phone-aspect);
+  background-color: #fce5cd; /* スマホ筐体の色は一旦固定（本家再現） */
+  border-radius: var(--radius-main); 
+  box-shadow: var(--shadow-main); 
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  container-type: size; /* これが内部の cqw 計算の生命線 */
+  container-type: size; 
 }

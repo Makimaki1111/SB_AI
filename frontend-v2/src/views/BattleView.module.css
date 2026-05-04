@@ -200,13 +200,13 @@
   justify-content: center;
   align-items: center;
   z-index: 3000;
-  pointer-events: none; /* 下の要素を触れるように */
+  pointer-events: none; 
 }
 
 .matchMessage {
   font-size: 6cqw;
   font-weight: 800;
-  color: #ff4d4d;
+  color: var(--color-danger);
   animation: matchPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
