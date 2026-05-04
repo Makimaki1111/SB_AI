@@ -10,6 +10,8 @@ const WS_URL = 'ws://127.0.0.1:8000/ws';
 import { LobbyView } from '../components/battle/LobbyView';
 import { AbilityModal } from '../components/battle/AbilityModal';
 import { GameLayout } from '../components/layout/GameLayout';
+import { GameModal } from '../components/common/GameModal';
+import { StatCard } from '../components/battle/StatCard';
 import styles from './BattleView.module.css';
 
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -263,74 +265,63 @@ export const BattleView: React.FC = () => {
           </div>
         )}
 
-        {isSettingsOpen && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.modal}>
-              <h2 className={styles.modalTitle}>設定</h2>
-              <div className={styles.field}>
-                <label>名前</label>
-                <input 
-                  type="text" 
-                  value={tempName} 
-                  onChange={(e) => setTempName(e.target.value)}
-                  placeholder="名無し"
-                />
-              </div>
-              <div className={styles.field}>
-                <label>BGM音量</label>
-                <input type="range" min="0" max="100" defaultValue="50" style={{ width: '100%' }} />
-              </div>
-              <div className={styles.field}>
-                <label>SE音量</label>
-                <input type="range" min="0" max="100" defaultValue="80" style={{ width: '100%' }} />
-              </div>
-              <button className={styles.closeButton} onClick={handleSaveSettings}>
-                閉じる
-              </button>
-            </div>
+        <GameModal
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          title="設定"
+          footer={
+            <button className={styles.closeButton} onClick={handleSaveSettings}>
+              閉じる
+            </button>
+          }
+        >
+          <div className={styles.field}>
+            <label>名前</label>
+            <input 
+              type="text" 
+              value={tempName} 
+              onChange={(e) => setTempName(e.target.value)}
+              placeholder="名無し"
+            />
           </div>
-        )}
+          <div className={styles.field}>
+            <label>BGM音量</label>
+            <input type="range" min="0" max="100" defaultValue="50" style={{ width: '100%' }} />
+          </div>
+          <div className={styles.field}>
+            <label>SE音量</label>
+            <input type="range" min="0" max="100" defaultValue="80" style={{ width: '100%' }} />
+          </div>
+        </GameModal>
 
         {/* 状況確認モーダル */}
-        {isSituationModalOpen && (
-          <div className={styles.modalOverlay} onClick={() => setIsSituationModalOpen(false)}>
-            <div className={styles.situationModalWrapper} onClick={(e) => e.stopPropagation()}>
-              <h2 style={{ marginTop: 0, marginBottom: 15, fontSize: '1.4rem', color: '#333' }}>じょうきょう</h2>
-              <div className={styles.situationCardsContainer}>
-                {/* 相手のカード */}
-                <div className={`${styles.sCard} ${styles.foeCard}`}>
-                  <div className={styles.sCardHeader}>あいて</div>
-                  <div className={styles.sStatGrid}>
-                    <div className={styles.sStatItem}>
-                      <span className={styles.sStatLabel}>こうげき</span>
-                      <span className={styles.sStatValue}>{battleState?.foe_stats?.attack || 1.0}倍</span>
-                    </div>
-                    <div className={styles.sStatItem}>
-                      <span className={styles.sStatLabel}>ぼうぎょ</span>
-                      <span className={styles.sStatValue}>{battleState?.foe_stats?.defense || 1.0}倍</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 自分のカード */}
-                <div className={`${styles.sCard} ${styles.allyCard}`}>
-                  <div className={styles.sCardHeader}>じぶん</div>
-                  <div className={styles.sStatGrid}>
-                    <div className={styles.sStatItem}>
-                      <span className={styles.sStatLabel}>こうげき</span>
-                      <span className={styles.sStatValue}>{battleState?.ally_stats?.attack || 1.0}倍</span>
-                    </div>
-                    <div className={styles.sStatItem}>
-                      <span className={styles.sStatLabel}>ぼうぎょ</span>
-                      <span className={styles.sStatValue}>{battleState?.ally_stats?.defense || 1.0}倍</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <button className={styles.backBtn} onClick={() => setIsSituationModalOpen(false)}>とじる</button>
-            </div>
+        <GameModal
+          isOpen={isSituationModalOpen}
+          onClose={() => setIsSituationModalOpen(false)}
+          title="じょうきょう"
+          footer={
+            <button className={styles.backBtn} onClick={() => setIsSituationModalOpen(false)}>とじる</button>
+          }
+        >
+          <div className={styles.situationCardsContainer}>
+            <StatCard 
+              type="foe"
+              name="あいて"
+              stats={{
+                attack: battleState?.foe_stats?.attack || 1.0,
+                defense: battleState?.foe_stats?.defense || 1.0
+              }}
+            />
+            <StatCard 
+              type="ally"
+              name="じぶん"
+              stats={{
+                attack: battleState?.ally_stats?.attack || 1.0,
+                defense: battleState?.ally_stats?.defense || 1.0
+              }}
+            />
           </div>
-        )}
+        </GameModal>
 
         <AbilityModal 
           isOpen={isAbilityModalOpen}

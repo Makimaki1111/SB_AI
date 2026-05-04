@@ -4,6 +4,7 @@ import { useUser } from '../context/UserContext';
 import styles from './TitleView.module.css';
 import { GameButton } from '../components/common/GameButton';
 import { GameLayout } from '../components/layout/GameLayout';
+import { GameModal } from '../components/common/GameModal';
 
 const CAROUSEL_IMAGES = [
   'animal.gif', 'art.gif', 'body.gif', 'bug.gif', 'cloth.gif', 
@@ -89,38 +90,37 @@ export const TitleView: React.FC = () => {
         </div>
       </div>
 
-      {isSettingsOpen && (
-        <div className={styles.modalOverlay} onClick={() => setIsSettingsOpen(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h2 className={styles.modalTitle}>設定</h2>
-            <div className={styles.field}>
-              <label className={styles.label}>名前</label>
-              <input 
-                type="text" 
-                id="username-input"
-                className={styles.input}
-                value={tempName} 
-                onChange={(e) => setTempName(e.target.value)}
-                placeholder="名前を入力(8文字以内)"
-                maxLength={8}
-              />
-            </div>
-            <div className={styles.field}>
-              <label className={styles.label}>BGM音量</label>
-              <input type="range" className={styles.range} min="0" max="1" step="0.05" defaultValue="0.3" />
-            </div>
-            <div className={styles.field}>
-              <label className={styles.label}>SE音量</label>
-              <input type="range" className={styles.range} min="0" max="1" step="0.05" defaultValue="0.5" />
-            </div>
-            <div className={styles.modalActions}>
-              <button className={styles.closeButton} onClick={handleSaveSettings}>
-                閉じる
-              </button>
-            </div>
-          </div>
+      <GameModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        title="設定"
+        footer={
+          <button className={styles.closeButton} onClick={handleSaveSettings}>
+            閉じる
+          </button>
+        }
+      >
+        <div className={styles.field}>
+          <label className={styles.label}>名前</label>
+          <input 
+            type="text" 
+            id="username-input"
+            className={styles.input}
+            value={tempName} 
+            onChange={(e) => setTempName(e.target.value)}
+            placeholder="名前を入力(8文字以内)"
+            maxLength={8}
+          />
         </div>
-      )}
+        <div className={styles.field}>
+          <label className={styles.label}>BGM音量</label>
+          <input type="range" className={styles.range} min="0" max="1" step="0.05" defaultValue="0.3" />
+        </div>
+        <div className={styles.field}>
+          <label className={styles.label}>SE音量</label>
+          <input type="range" className={styles.range} min="0" max="1" step="0.05" defaultValue="0.5" />
+        </div>
+      </GameModal>
     </GameLayout>
   );
 };
