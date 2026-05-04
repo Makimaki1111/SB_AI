@@ -131,9 +131,6 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                 {displayMessage}
               </div>
             )}
-            <div className={styles.message}>
-              {battleState?.message}
-            </div>
           </div>
         </div>
 

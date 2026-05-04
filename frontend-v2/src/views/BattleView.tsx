@@ -32,6 +32,7 @@ export const BattleView: React.FC = () => {
     timer,
     allyWord,
     foeWord,
+    allAbilities: battleAbilities,
     sendMessage,
     sendIncludeCheck 
   } = useBattle(WS_BASE_URL);
@@ -63,8 +64,8 @@ export const BattleView: React.FC = () => {
   // マッチング成功時の演出
   React.useEffect(() => {
     if (battleState && isLobby) {
-      if (battleState.all_abilities) {
-        setAllAbilities(battleState.all_abilities);
+      if (battleAbilities && Object.keys(battleAbilities).length > 0) {
+        setAllAbilities(battleAbilities);
       }
       setMatchingMessage("マッチングした！");
       const timer = setTimeout(() => {
@@ -279,16 +280,16 @@ export const BattleView: React.FC = () => {
               type="foe"
               name="あいて"
               stats={{
-                attack: battleState?.foe_stats?.attack || 1.0,
-                defense: battleState?.foe_stats?.defense || 1.0
+                attack: foe?.attack_rank || 1.0,
+                defense: foe?.defense_rank || 1.0
               }}
             />
             <StatCard 
               type="ally"
               name="じぶん"
               stats={{
-                attack: battleState?.ally_stats?.attack || 1.0,
-                defense: battleState?.ally_stats?.defense || 1.0
+                attack: ally?.attack_rank || 1.0,
+                defense: ally?.defense_rank || 1.0
               }}
             />
           </div>

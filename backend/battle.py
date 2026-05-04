@@ -208,7 +208,8 @@ class SingleBattle(BaseBattle):
             print(f"DEBUG: Events instantiated (count: {len(events)})")
             
             res = BattleResponse(state=state, events=events).model_dump(by_alias=True)
-            print("DEBUG: _make_response completed successfully")
+            res["type"] = "battle_end" if self.is_finished else "update"
+            print(f"DEBUG: _make_response completed (type: {res['type']})")
             return res
         except Exception as e:
             print(f"DEBUG: ERROR in _make_response: {e}")

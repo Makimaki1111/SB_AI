@@ -8,40 +8,35 @@ export interface AbilityData {
 }
 
 export interface CharacterState {
-  id: string;
-  owner_id: string;
   name: string;
   hp: number;
   max_hp: number;
+  attack_rank: number;
+  defense_rank: number;
   ability: string;
-  ability_name: string;
-  ability_desc: string;
   ability_change_count: number;
   lives?: number;
-  max_lives?: number;
   types: string[];
   is_poison?: boolean;
+  owner_id?: string;
+  id?: string; // keyから補完される場合がある
 }
 
 export interface BattleState {
   room_id: string;
   turn: number;
-  status: 'waiting' | 'active' | 'finished';
   characters: Record<string, CharacterState>;
-  last_word: string;
-  last_char: string;
-  timer: number;
-  max_timer: number;
-  all_abilities?: Record<string, AbilityData>;
-  ally_win?: boolean;
-  ally_stats?: { attack: number; defense: number };
-  foe_stats?: { attack: number; defense: number };
-  is_my_turn?: boolean;
-  character?: string;
-  message?: string;
-  word?: string | null;
-  foe_max_lives?: number;
-  ally_max_lives?: number;
+  word: string | null;
+  character: string; // 次の文字 or 開始文字
+  is_my_turn: boolean;
+  winner_team: number | null;
+  ally_win: boolean | null;
+  ally_max_lives: number;
+  foe_max_lives: number;
+  current_actor_id?: string;
+  current_owner_id?: string;
+  last_actor_id?: string;
+  status?: 'waiting' | 'active' | 'finished'; // フロントエンドで算出/管理
 }
 
 export interface BattleEvent {
@@ -50,14 +45,19 @@ export interface BattleEvent {
   target?: string | null;
   attacker?: string | null;
   damage?: number | null;
+  ally_damage?: number | null;
+  foe_damage?: number | null;
+  ally_cure?: number | null;
+  foe_cure?: number | null;
   amount?: number | null;
-  stat_type?: "attack" | "defense" | null;
+  stat_type?: string | null;
   new_rank?: number | null;
   hp?: number | null;
   lives?: number | null;
   new_ability?: string | null;
   new_ability_change_count?: number | null;
   poison_target?: string | null;
+  player?: 'ally' | 'foe'; // stat_up 等の対象
 }
 
 export interface BattleResponse {
