@@ -6,7 +6,7 @@ import random
 from collections import defaultdict
 
 class SB_info:
-    def __init__(self, measure_memory=False):
+    def __init__(self, measure_memory=False, db_path=None):
         if measure_memory:
             tracemalloc.start() # メモリ計測開始
         self.typed_heads = set()
@@ -18,7 +18,7 @@ class SB_info:
         dic_dir = os.path.join(base_dir, "dic")
         
         # SQLiteデータベースのパス
-        self.db_path = os.path.join(dic_dir, "dictionary.db")
+        self.db_path = db_path or os.path.join(dic_dir, "dictionary.db")
         
         self.conn = None
         should_rebuild = True
@@ -64,25 +64,28 @@ class SB_info:
                 )
             ''')
 
-            with open(os.path.join(dic_dir, "notype.csv"), 'r', encoding='utf-8-sig') as typed_file:
-                    reader = csv.reader(typed_file)
-                    data = ((row[0], "", "") for row in reader if row)
-                    self.conn.executemany("INSERT OR IGNORE INTO words (word, type1, type2) VALUES (?, ?, ?)", data)
+            with open(os.path.join(dic_dir, "notype.csv"), 'r', encoding='utf-8-sig') as f:
+                data = []
+                for line in f:
+                    word = line.strip().lstrip('\ufeff')
+                    if word:
+                        data.append((word, "", ""))
+                self.conn.executemany("INSERT OR IGNORE INTO words (word, type1, type2) VALUES (?, ?, ?)", data)
         
-            with open(os.path.join(dic_dir, "typed.csv"), 'r', encoding='utf-8-sig') as typed_file:
-                    reader = csv.reader(typed_file)
-                    
-                    def typed_data_generator(reader_obj):
-                        for row in reader_obj:
-                            if row:
-                                word, *types = row[0].split()
-                                t1 = types[0] if len(types) > 0 else ""
-                                t2 = types[1] if len(types) > 1 else ""
-                                self.typed_heads.add(word[0])
-                                self.typed_word_map[word[0]].append(word)
-                                yield (word, t1, t2)
+            with open(os.path.join(dic_dir, "typed.csv"), 'r', encoding='utf-8-sig') as f:
+                data = []
+                for line in f:
+                    line = line.strip().lstrip('\ufeff')
+                    if not line: continue
+                    parts = line.split()
+                    word = parts[0]
+                    t1 = parts[1] if len(parts) > 1 else ""
+                    t2 = parts[2] if len(parts) > 2 else ""
+                    self.typed_heads.add(word[0])
+                    self.typed_word_map[word[0]].append(word)
+                    data.append((word, t1, t2))
 
-                    self.conn.executemany("INSERT OR REPLACE INTO words (word, type1, type2) VALUES (?, ?, ?)", typed_data_generator(reader))
+                self.conn.executemany("INSERT OR REPLACE INTO words (word, type1, type2) VALUES (?, ?, ?)", data)
             
             self.conn.commit()
         
