@@ -109,7 +109,6 @@ class LeechSeedAbility(Ability):
             event = {
                 "type": "ability_trigger",
                 "message": "相手に種を植え付けた！",
-                "poison_target": battle.get_player_label(opponent),
                 "attacker": battle.get_player_label(player),
                 "target": battle.get_player_label(opponent)
             }
@@ -251,8 +250,7 @@ class DokubariAbility(Ability):
                 "type": "ability_trigger",
                 "message": "毒を受けた！",
                 "target": battle.get_player_label(opponent),
-                "attacker": battle.get_player_label(player),
-                "poison_target": battle.get_player_label(opponent)
+                "attacker": battle.get_player_label(player)
             }
             battle.events.append(event)
 

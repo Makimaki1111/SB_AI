@@ -56,13 +56,13 @@ class ConnectionManager:
         for connection in list(self.room_connections.get(room_id, [])):
             await self.safe_send_text(connection, message)
 
-    async def broadcast_battle_state(self, room_id: str, base_response: dict, is_double: bool = False, room_manager = None):
+    async def broadcast_battle_state(self, room_id: str, base_response: dict, is_double: bool = False, room_manager = None, time_limit: int = None):
         """
         ルーム内の全員に戦況を送信する。
         各プレイヤーの視点に合わせてデータをパーソナライズする。
         """
         if not room_manager:
-            # フォールバック（基本的には呼ばれないはず）
+            # フォールバック
             await self.broadcast(json.dumps(base_response), room_id)
             return
 
@@ -72,9 +72,6 @@ class ConnectionManager:
         for connection in list(self.room_connections.get(room_id, [])):
             pid = self.socket_to_player_id.get(connection)
             # パーソナライズされたレスポンスを生成
-            personalized_res = room.get_personalized_response(base_response, pid) if pid else base_response
-            
-            # ダブルバトルの場合はタイマー情報などを付加する場合があるが、
-            # 現在の設計では room.get_personalized_response 内で完結させるのが理想
+            personalized_res = room.get_personalized_response(base_response, pid, time_limit=time_limit) if pid else base_response
             
             await self.safe_send_text(connection, json.dumps(personalized_res))

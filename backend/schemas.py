@@ -7,18 +7,18 @@ class BattleEvent(BaseModel):
     
     type: str = Field(..., description="イベントの種類")
     message: str = Field("", description="表示用メッセージ")
-    target: Any = None
-    attacker: Any = None
-    damage: Any = None
-    amount: Any = None
-    stat_type: Any = None
-    new_rank: Any = None
-    hp: Any = None
-    lives: Any = None
-    new_ability: Any = None
-    new_ability_change_count: Any = None
-    poison_target: Any = None
-    new_ranks: Any = None
+    target: Optional[str] = Field(None, description="対象のプレイヤーID")
+    attacker: Optional[str] = Field(None, description="攻撃側のプレイヤーID")
+    damage: Optional[int] = Field(None, description="ダメージ量")
+    amount: Optional[int] = Field(None, description="回復量や変化量")
+    stat_type: Optional[str] = Field(None, description="変化したステータス名(attack/defense)")
+    new_rank: Optional[int] = Field(None, description="変化後のランク値")
+    hp: Optional[int] = Field(None, description="変化後のHP")
+    lives: Optional[int] = Field(None, description="変化後のストック数")
+    new_ability: Optional[str] = Field(None, description="変更後の特性ID")
+    new_ability_change_count: Optional[int] = Field(None, description="残り特性変更回数")
+    new_ranks: Optional[Dict[str, Dict[str, int]]] = Field(None, description="複数のステータスが変化した場合のマップ")
+    predictions: Optional[Dict[str, str]] = Field(None, description="ダブルバトル等の複数対象への相性予測")
 
 class CharacterState(BaseModel):
     """個別のキャラクターの状態"""
@@ -29,11 +29,11 @@ class CharacterState(BaseModel):
     max_hp: int = 0
     atk: int = Field(0, alias="attack_rank")
     def_: int = Field(0, alias="defense_rank")
-    types: Any = []
+    types: List[str] = []
     is_poison: bool = False
     ability: str = ""
     ability_change_count: int = 0
-    lives: Any = None
+    lives: Optional[int] = None
     owner_id: str = ""
 
 class BattleState(BaseModel):
@@ -42,21 +42,37 @@ class BattleState(BaseModel):
     character: str = ""
     is_my_turn: bool = False
     turn: int = 1
-    last_actor_id: Any = None
-    word: Any = ""
-    characters: Any = {}
-    winner_team: Any = None
-    ally_win: Any = None
-    ally_max_lives: Any = None
-    foe_max_lives: Any = None
-    current_actor_id: Any = None
-    current_owner_id: Any = None
+    last_actor_id: Optional[str] = None
+    word: Optional[str] = ""
+    characters: Dict[str, CharacterState] = {}
+    winner_team: Optional[int] = None
+    ally_win: Optional[bool] = None
+    ally_max_lives: Optional[int] = None
+    foe_max_lives: Optional[int] = None
+    current_actor_id: Optional[str] = None
+    current_owner_id: Optional[str] = None
+
+class AbilityDisplay(BaseModel):
+    """特性の表示用データ"""
+    name: str
+    description: str
+    icon_type: str
+    remain_count: Optional[int] = None
+
+class ResponseInfo(BaseModel):
+    """レスポンスに付随する追加情報"""
+    player_ids: List[str] = []
+    id_to_ui_map: Dict[str, str] = {}
+    time_limit: Optional[int] = None
+    total_time: Optional[int] = None
+    # 既存の動的フィールド（pre_check用など）も許容
+    model_config = ConfigDict(extra='allow')
 
 class BattleResponse(BaseModel):
     """サーバーからクライアントへ送る標準レスポンス"""
-    type: str = "battle_state"
-    state: Optional[Any] = None
-    events: List[Any] = []
-    all_abilities: Optional[Dict[str, Any]] = None
-    info: Optional[Dict[str, Any]] = None
+    type: str = "update"
+    state: Optional[BattleState] = None
+    events: List[BattleEvent] = []
+    all_abilities: Optional[Dict[str, AbilityDisplay]] = None
+    info: Optional[ResponseInfo] = None
     message: Optional[str] = None

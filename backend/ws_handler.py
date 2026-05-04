@@ -157,8 +157,8 @@ class WebSocketHandler:
             self.connection_manager.join_room(p1_data["socket"], bi.room_id)
             self.connection_manager.join_room(p2_data["socket"], bi.room_id)
 
-            await p1_data["socket"].send_text(json.dumps(bi.make_init_response(p1_data["player_id"])))
-            await p2_data["socket"].send_text(json.dumps(bi.make_init_response(p2_data["player_id"])))
+            await p1_data["socket"].send_text(json.dumps(bi.make_init_response(p1_data["player_id"], time_limit=self.TIME_LIMIT)))
+            await p2_data["socket"].send_text(json.dumps(bi.make_init_response(p2_data["player_id"], time_limit=self.TIME_LIMIT)))
             
             await self._start_turn_timer(bi.room_id, is_double=False)
         else:
@@ -192,8 +192,8 @@ class WebSocketHandler:
             self.connection_manager.join_room(p1_data["socket"], bi.room_id)
             self.connection_manager.join_room(p2_data["socket"], bi.room_id)
 
-            await p1_data["socket"].send_text(json.dumps(bi.make_init_response(p1_data["player_id"])))
-            await p2_data["socket"].send_text(json.dumps(bi.make_init_response(p2_data["player_id"])))
+            await p1_data["socket"].send_text(json.dumps(bi.make_init_response(p1_data["player_id"], time_limit=self.DOUBLE_TIME_LIMIT)))
+            await p2_data["socket"].send_text(json.dumps(bi.make_init_response(p2_data["player_id"], time_limit=self.DOUBLE_TIME_LIMIT)))
             await self._start_turn_timer(bi.room_id, is_double=True)
         else:
             self.room_manager.waiting_player_double = {"socket": websocket, "player_id": player_id}
@@ -266,7 +266,7 @@ class WebSocketHandler:
             self.connection_manager.register_player(websocket, player_id)
             self.connection_manager.join_room(websocket, bi.room_id)
             
-            init_res = bi.make_init_response(player_id)
+            init_res = bi.make_init_response(player_id, time_limit=self.TIME_LIMIT)
             logger.info("📤 Sending initial response")
             await websocket.send_text(json.dumps(init_res))
             
@@ -303,7 +303,7 @@ class WebSocketHandler:
         self.connection_manager.register_player(websocket, player_id)
         self.connection_manager.join_room(websocket, bi.room_id)
         
-        await websocket.send_text(json.dumps(bi.make_init_response(player_id)))
+        await websocket.send_text(json.dumps(bi.make_init_response(player_id, time_limit=self.DOUBLE_TIME_LIMIT)))
         await self._after_turn_action(bi.room_id, bi, is_double=True)
 
     async def _handle_join_private_room(self, websocket, player_id, info, is_double=False):
@@ -340,8 +340,8 @@ class WebSocketHandler:
                 self.connection_manager.join_room(p1_data["socket"], bi.room_id)
                 self.connection_manager.join_room(p2_data["socket"], bi.room_id)
 
-                await p1_data["socket"].send_text(json.dumps(bi.make_init_response(p1_data["player_id"])))
-                await p2_data["socket"].send_text(json.dumps(bi.make_init_response(p2_data["player_id"])))
+                await p1_data["socket"].send_text(json.dumps(bi.make_init_response(p1_data["player_id"], time_limit=limit)))
+                await p2_data["socket"].send_text(json.dumps(bi.make_init_response(p2_data["player_id"], time_limit=limit)))
                 
                 is_db = isinstance(bi, DoubleBattle)
                 await self._after_turn_action(bi.room_id, bi, is_double=is_db)
@@ -370,7 +370,8 @@ class WebSocketHandler:
             return
 
         is_double = hasattr(room, "team1_win")
-        await self.connection_manager.broadcast_battle_state(room_id, res, is_double=is_double, room_manager=self.room_manager)
+        limit = self.DOUBLE_TIME_LIMIT if is_double else self.TIME_LIMIT
+        await self.connection_manager.broadcast_battle_state(room_id, res, is_double=is_double, room_manager=self.room_manager, time_limit=limit)
 
         # ターン終了後の処理 (タイマー、CPU戦など)
         await self._after_turn_action(room_id, room, is_double)
@@ -440,8 +441,8 @@ class WebSocketHandler:
         # CPU戦の処理
         if room.is_cpu_turn:
             await asyncio.sleep(1)
-            cpu_res = room.execute_cpu_turn()
-            await self.connection_manager.broadcast_battle_state(room_id, cpu_res, is_double=is_double, room_manager=self.room_manager)
+            limit = self.DOUBLE_TIME_LIMIT if is_double else self.TIME_LIMIT
+            await self.connection_manager.broadcast_battle_state(room_id, cpu_res, is_double=is_double, room_manager=self.room_manager, time_limit=limit)
             if room.is_finished:
                 return
 
@@ -465,7 +466,8 @@ class WebSocketHandler:
             if not room: return
 
             res = room.timeout()
-            await self.connection_manager.broadcast_battle_state(room_id, res, is_double=is_double, room_manager=self.room_manager)
+            limit = self.DOUBLE_TIME_LIMIT if is_double else self.TIME_LIMIT
+            await self.connection_manager.broadcast_battle_state(room_id, res, is_double=is_double, room_manager=self.room_manager, time_limit=limit)
             
             await self._after_turn_action(room_id, room, is_double)
         except asyncio.CancelledError:

@@ -80,11 +80,11 @@ class SingleBattle(BaseBattle):
         return self.is_finished
 
 
-    def make_init_response(self, player_id: str) -> dict:
+    def make_init_response(self, player_id: str, time_limit: int = None) -> dict:
         res = self._make_response()
         res["type"] = "made_room"
         res["all_abilities"] = self._get_serializable_abilities()
-        return self.get_personalized_response(res, player_id)
+        return self.get_personalized_response(res, player_id, time_limit=time_limit)
 
     def _is_used(self, word: str) -> bool:
         return word in self.used
@@ -215,8 +215,9 @@ class SingleBattle(BaseBattle):
             print(f"DEBUG: ERROR in _make_response: {e}")
             raise e
 
-    def get_personalized_response(self, base_res: dict, player_id: str) -> dict:
-        new_res = base_res.copy()
+    def get_personalized_response(self, base_res: dict, player_id: str, time_limit: int = None) -> dict:
+        import copy
+        new_res = copy.deepcopy(base_res)
         state = new_res["state"]
         
         is_p1 = (player_id == self.player1.id)
@@ -243,7 +244,9 @@ class SingleBattle(BaseBattle):
 
         new_res["info"] = {
             "player_ids": player_ids,
-            "id_to_ui_map": id_to_ui_map
+            "id_to_ui_map": id_to_ui_map,
+            "time_limit": time_limit,
+            "total_time": time_limit
         }
         
         return new_res

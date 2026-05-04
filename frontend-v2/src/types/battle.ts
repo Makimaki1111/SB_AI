@@ -15,11 +15,11 @@ export interface CharacterState {
   defense_rank: number;
   ability: string;
   ability_change_count: number;
-  lives?: number;
+  lives?: number | null;
   types: string[];
-  is_poison?: boolean;
-  owner_id?: string;
-  id?: string; // keyから補完される場合がある
+  is_poison: boolean;
+  owner_id: string;
+  id?: string;
 }
 
 export interface BattleState {
@@ -27,16 +27,16 @@ export interface BattleState {
   turn: number;
   characters: Record<string, CharacterState>;
   word: string | null;
-  character: string; // 次の文字 or 開始文字
+  character: string; 
   is_my_turn: boolean;
   winner_team: number | null;
   ally_win: boolean | null;
-  ally_max_lives: number;
-  foe_max_lives: number;
-  current_actor_id?: string;
-  current_owner_id?: string;
-  last_actor_id?: string;
-  status?: 'waiting' | 'active' | 'finished'; // フロントエンドで算出/管理
+  ally_max_lives: number | null;
+  foe_max_lives: number | null;
+  current_actor_id?: string | null;
+  current_owner_id?: string | null;
+  last_actor_id?: string | null;
+  status?: 'waiting' | 'active' | 'finished';
 }
 
 export interface BattleEvent {
@@ -45,10 +45,6 @@ export interface BattleEvent {
   target?: string | null;
   attacker?: string | null;
   damage?: number | null;
-  ally_damage?: number | null;
-  foe_damage?: number | null;
-  ally_cure?: number | null;
-  foe_cure?: number | null;
   amount?: number | null;
   stat_type?: string | null;
   new_rank?: number | null;
@@ -56,8 +52,8 @@ export interface BattleEvent {
   lives?: number | null;
   new_ability?: string | null;
   new_ability_change_count?: number | null;
-  poison_target?: string | null;
-  player?: 'ally' | 'foe'; // stat_up 等の対象
+  new_ranks?: Record<string, Record<string, number>> | null;
+  predictions?: Record<string, string> | null;
 }
 
 export interface BattleResponse {
@@ -68,6 +64,16 @@ export interface BattleResponse {
   info?: {
     player_ids: string[];
     id_to_ui_map: Record<string, string>;
+    word?: string;
+    room_id?: string;
+    include?: boolean;
+    used?: boolean;
+    type1?: string;
+    type2?: string;
+    prediction?: string;
+    predictions?: Record<string, string>;
+    time_limit?: number;
+    total_time?: number;
   };
 }
 
@@ -80,11 +86,13 @@ export type SocketMessageType =
   | "submit_word_double"
   | "change_ability"
   | "include_check"
-  | "run_away";
+  | "run_away"
+  | "ping"
+  | "update_user_info";
 
 export interface SocketMessage {
   type: SocketMessageType;
-  info: Record<string, any>;
+  info: Record<string, string | number | boolean | undefined>;
 }
 
 export type GameMode = 'single' | 'stock' | 'double';

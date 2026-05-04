@@ -114,11 +114,8 @@ class DoubleBattle(BaseBattle):
     def _patch_ability_events(self, current_actor, target_actor):
         """特性イベントのフォーマットをダブルバトル用に調整"""
         for event in self.events:
-            if "player" in event and event["player"] in ("ally", "foe"):
-                event["target"] = current_actor.id if event["player"] == "ally" else target_actor.id
-                del event["player"]
-            if "poison_target" in event and event["poison_target"] in ("ally", "foe"):
-                event["poison_target"] = current_actor.id if event["poison_target"] == "ally" else target_actor.id
+            if "target" in event and event["target"] in ("ally", "foe"):
+                event["target"] = current_actor.id if event["target"] == "ally" else target_actor.id
             if "new_ranks" in event:
                 old = event["new_ranks"]
                 if "ally_atk" in old:
@@ -215,11 +212,11 @@ class DoubleBattle(BaseBattle):
         self.events = []
         return res
 
-    def make_init_response(self, player_id: str) -> dict:
+    def make_init_response(self, player_id: str, time_limit: int = None) -> dict:
         res = self._make_response()
-        res["type"] = "init_double_battle"
+        res["type"] = "made_room"
         res["all_abilities"] = self._get_serializable_abilities()
-        return self.get_personalized_response(res, player_id)
+        return self.get_personalized_response(res, player_id, time_limit=time_limit)
 
 
     def _make_response(self) -> dict:
@@ -249,7 +246,9 @@ class DoubleBattle(BaseBattle):
         )
         
         events = [BattleEvent(**e) for e in self.events if isinstance(e, dict)]
-        return BattleResponse(state=state, events=events).model_dump(by_alias=True)
+        res = BattleResponse(state=state, events=events).model_dump(by_alias=True)
+        res["type"] = "battle_end" if self.is_finished else "update"
+        return res
 
     def _serialize_player(self, p: DoubleBattlePlayer):
         # CharacterState を使用するため不要になるが、互換性のために残すか削除を検討
@@ -261,8 +260,9 @@ class DoubleBattle(BaseBattle):
             "is_defeated": p.is_defeated, "is_poison": p.poison_turns > 0, "owner_id": p.owner_id
         }
 
-    def get_personalized_response(self, base_res: dict, request_player_id: str) -> dict:
-        new_res = base_res.copy()
+    def get_personalized_response(self, base_res: dict, request_player_id: str, time_limit: int = None) -> dict:
+        import copy
+        new_res = copy.deepcopy(base_res)
         state = new_res["state"]
         
         # 自分のターンかどうかを判定
@@ -305,7 +305,9 @@ class DoubleBattle(BaseBattle):
 
         new_res["info"] = {
             "player_ids": player_ids,
-            "id_to_ui_map": id_to_ui_map
+            "id_to_ui_map": id_to_ui_map,
+            "time_limit": time_limit,
+            "total_time": time_limit
         }
         
         return new_res

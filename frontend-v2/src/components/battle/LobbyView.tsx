@@ -5,10 +5,10 @@ import type { AbilityData } from '../../types/battle';
 import styles from './LobbyView.module.css';
 
 interface LobbyViewProps {
-  onStartMatch: (mode: 'player' | 'cpu' | 'room', options?: any) => void;
+  onStartMatch: (mode: 'player' | 'cpu' | 'room', options?: Record<string, string | number | boolean>) => void;
   onOpenAbilityModal: (index?: number) => void;
   onBackToTitle: () => void;
-  selectedAbilities: string[]; // 配列に変更 [ability1, ability2]
+  selectedAbilities: string[];
   allAbilities: Record<string, AbilityData>;
   mode?: 'single' | 'stock' | 'double';
 }

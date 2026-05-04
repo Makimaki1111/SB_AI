@@ -10,7 +10,7 @@ interface Particle {
 }
 
 interface BattleEffectsProps {
-  trigger: string | null;
+  trigger: 'heal' | 'stat_up' | 'stat_down' | 'up' | 'down' | string | null;
   side: 'ally' | 'foe';
 }
 
@@ -21,11 +21,12 @@ export const BattleEffects: React.FC<BattleEffectsProps> = ({ trigger, side }) =
     if (!trigger) return;
 
     // 回復、能力変化などの演出をトリガー
-    if (['heal', 'stat_up', 'stat_down'].includes(trigger)) {
+    if (trigger === 'heal' || trigger === 'stat_up' || trigger === 'stat_down' || trigger === 'up' || trigger === 'down') {
+      const type = (trigger === 'up' ? 'stat_up' : trigger === 'down' ? 'stat_down' : trigger) as Particle['type'];
       const newParticles: Particle[] = Array.from({ length: 5 }).map((_, i) => ({
         id: Date.now() + i,
-        type: trigger as any,
-        x: Math.random() * 80 - 40, // 散らばり
+        type: type,
+        x: Math.random() * 80 - 40,
         y: Math.random() * 40 - 20,
       }));
       setParticles(prev => [...prev, ...newParticles]);

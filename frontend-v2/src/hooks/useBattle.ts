@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import type { BattleState, CharacterState, SocketMessage, AbilityData, BattleResponse } from '../types/battle';
+import type { BattleState, SocketMessage, AbilityData, BattleResponse } from '../types/battle';
 import { SoundManager } from '../utils/SoundManager';
 
 export const useBattle = (url: string) => {
@@ -14,7 +14,7 @@ export const useBattle = (url: string) => {
   const [battleState, setBattleState] = useState<BattleState | null>(null);
   const [allAbilities, setAllAbilities] = useState<Record<string, AbilityData>>({});
   const [uiMapping, setUiMapping] = useState<Record<string, string>>({});
-  const [prediction, setPrediction] = useState<{include: boolean, type1?: string, type2?: string, used?: boolean, prediction?: string} | null>(null);
+  const [prediction, setPrediction] = useState<{include: boolean, type1?: string, type2?: string, used?: boolean, prediction?: string, predictions?: Record<string, string>} | null>(null);
   const [displayMessage, setDisplayMessage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [allyEffect, setAllyEffect] = useState<string | null>(null);
@@ -35,15 +35,19 @@ export const useBattle = (url: string) => {
   const processQueue = async () => {
     if (isHandlingQueue.current || messageQueue.current.length === 0) return;
     isHandlingQueue.current = true;
+    setIsProcessing(true); // キュー処理開始時にセット
+    
     while (messageQueue.current.length > 0) {
       const data = messageQueue.current.shift();
       if (data) await handleBattleUpdate(data);
     }
+    
+    setIsProcessing(false); // 全ての演出終了後に解除
     isHandlingQueue.current = false;
   };
 
   const handleBattleUpdate = async (data: BattleResponse) => {
-    setIsProcessing(true);
+    // setIsProcessing(true); // 個別の更新では行わない
     try {
       if (data.all_abilities) setAllAbilities(data.all_abilities);
       if (data.info?.id_to_ui_map) {
@@ -51,81 +55,101 @@ export const useBattle = (url: string) => {
         uiMappingRef.current = data.info.id_to_ui_map;
       }
 
-      // 単語の更新
       if (data.state.word) {
         if (data.state.is_my_turn) setFoeWord(data.state.word);
         else setAllyWord(data.state.word);
       }
 
-      // ターンの切り替わりでタイマーリセット
       const currentBattleState = battleStateRef.current;
       if (data.state.is_my_turn !== currentBattleState?.is_my_turn || data.type === 'made_room') {
-        setTimer({ remaining: 20, total: 20 });
+        const total = data.info?.total_time || 20;
+        const limit = data.info?.time_limit || 20;
+        setTimer({ remaining: limit, total: total });
         if (data.state.is_my_turn) soundManager.play('start');
       }
 
-      // 演出前でも基本ステートを一度更新（gif画像の即時反映などのため）
-      const initialVisualState = {
+      const prevState = currentBattleState || data.state;
+      const initialVisualState: BattleState = {
         ...data.state,
+        characters: { ...prevState.characters }, 
         status: data.state.winner_team !== null ? 'finished' : 'active'
       };
-      setBattleState(initialVisualState as any);
+      setBattleState(initialVisualState);
+
+      const currentUiMap = data.info?.id_to_ui_map || uiMappingRef.current;
+      const allyId = Object.keys(currentUiMap).find(id => currentUiMap[id] === 'ally');
+      const foeId = Object.keys(currentUiMap).find(id => currentUiMap[id] === 'foe');
 
       const events = data.events || [];
+      let tempCharacters = { ...initialVisualState.characters };
+
       for (const event of events) {
         if (event.message) setDisplayMessage(event.message);
         
-        // 演出に合わせて個別のステート（HPなど）を微調整
-        if (event.type === 'damage') {
-          const allyDmg = (event as any).ally_damage || 0;
-          const foeDmg = (event as any).foe_damage || 0;
+        const targetSide = event.target === allyId ? 'ally' : event.target === foeId ? 'foe' : null;
+        const targetId = event.target;
+
+        if (event.type === 'damage' || event.type === 'drain') {
+          if (event.type === 'damage') soundManager.play('middmg');
+          else soundManager.play('heal');
+
+          if (targetSide === 'ally') setAllyEffect('blink');
+          else if (targetSide === 'foe') setFoeEffect('blink');
           
-          if (allyDmg > 0) {
-            setAllyEffect('blink');
-            soundManager.play('middmg');
-            setTimeout(() => setAllyEffect(null), 1000);
+          if (targetId && tempCharacters[targetId] && event.hp !== undefined && event.hp !== null) {
+            tempCharacters[targetId] = { ...tempCharacters[targetId], hp: event.hp };
+            setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
           }
-          if (foeDmg > 0) {
-            setFoeEffect('blink');
-            soundManager.play('middmg');
-            setTimeout(() => setFoeEffect(null), 1000);
+
+          if (event.type === 'drain' && event.attacker) {
+            const attackerSide = event.attacker === allyId ? 'ally' : event.attacker === foeId ? 'foe' : null;
+            if (attackerSide === 'ally') setAllyEffect('heal');
+            else if (attackerSide === 'foe') setFoeEffect('heal');
           }
-        } else if (event.type === 'cure' || event.type === 'drain') {
-          const target = (event as any).target || ((event as any).ally_cure > 0 ? 'ally' : 'foe');
+          
+          await new Promise(resolve => setTimeout(resolve, 800));
+          setAllyEffect(null);
+          setFoeEffect(null);
+        } else if (event.type === 'cure') {
           soundManager.play('heal');
-          if (target === 'ally') {
-            setAllyEffect('heal');
-            setTimeout(() => setAllyEffect(null), 1000);
-          } else {
-            setFoeEffect('heal');
-            setTimeout(() => setFoeEffect(null), 1000);
+          if (targetSide === 'ally') setAllyEffect('heal');
+          else if (targetSide === 'foe') setFoeEffect('heal');
+
+          if (targetId && tempCharacters[targetId] && event.hp !== undefined && event.hp !== null) {
+            tempCharacters[targetId] = { ...tempCharacters[targetId], hp: event.hp };
+            setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
           }
+          await new Promise(resolve => setTimeout(resolve, 800));
+          setAllyEffect(null);
+          setFoeEffect(null);
         } else if (event.type === 'stat_up' || event.type === 'stat_down') {
           const effect = event.type === 'stat_up' ? 'up' : 'down';
           soundManager.play(effect);
-          const side = (event as any).player === 'ally' ? 'ally' : 'foe';
-          if (side === 'ally') {
-            setAllyEffect(effect);
-            setTimeout(() => setAllyEffect(null), 1000);
-          } else {
-            setFoeEffect(effect);
-            setTimeout(() => setFoeEffect(null), 1000);
+          if (targetSide === 'ally') setAllyEffect(effect);
+          else if (targetSide === 'foe') setFoeEffect(effect);
+
+          if (targetId && tempCharacters[targetId] && event.new_rank !== undefined && event.new_rank !== null) {
+            const field = event.stat_type === 'defense' ? 'defense_rank' : 'attack_rank';
+            tempCharacters[targetId] = { ...tempCharacters[targetId], [field]: event.new_rank };
+            setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
           }
+          await new Promise(resolve => setTimeout(resolve, 800));
+          setAllyEffect(null);
+          setFoeEffect(null);
+        } else {
+          await new Promise(resolve => setTimeout(resolve, 400));
         }
-        await new Promise(resolve => setTimeout(resolve, 800));
       }
 
-      // 最終ステート確定
-      const finalState = {
+      const finalState: BattleState = {
         ...data.state,
         status: data.state.winner_team !== null ? 'finished' : 'active'
       };
-      setBattleState(finalState as any);
-      battleStateRef.current = finalState as any;
+      setBattleState(finalState);
+      battleStateRef.current = finalState;
     } catch (err) {
       console.error('Error in handleBattleUpdate:', err);
     } finally {
-      setIsProcessing(false);
       setDisplayMessage(null);
     }
   };
@@ -142,8 +166,15 @@ export const useBattle = (url: string) => {
     ws.onmessage = (event) => {
       try {
         const data: BattleResponse = JSON.parse(event.data);
-        if (data.type === 'pre_check') {
-          setPrediction((data as any).info);
+        if (data.type === 'pre_check' && data.info) {
+          setPrediction({
+            include: data.info.include ?? false,
+            used: data.info.used ?? false,
+            type1: data.info.type1,
+            type2: data.info.type2,
+            prediction: data.info.prediction,
+            predictions: data.info.predictions
+          });
           return;
         }
         if (['accepted', 'made_room', 'update', 'battle_end', 'timeout'].includes(data.type)) {
