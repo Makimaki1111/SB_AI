@@ -58,24 +58,54 @@
   align-items: center;
   font-weight: bold;
   flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.helpBtn:hover {
+  background: rgba(0,0,0,0.2);
 }
 
 .helpBalloon {
   position: absolute;
-  top: 28cqw;
+  top: 27cqw;
   left: 50%;
   transform: translateX(-50%);
-  width: 80%;
-  background: white;
-  border-radius: 2.2cqw;
-  padding: 2.5cqw 3.5cqw;
-  box-shadow: 0 0 1.5cqw rgba(0, 0, 0, 0.2);
+  width: 85%;
+  background: rgba(255,255,255,0.98);
+  border: 0.2cqw solid #ddd;
+  border-radius: 3.5cqw;
+  padding: 3.5cqw;
+  box-shadow: 0 2.2cqw 6.6cqw rgba(0,0,0,0.15);
   z-index: 1000;
-  font-size: 3.5cqw;
+  font-size: 3.3cqw;
   color: #333;
   line-height: 1.5;
   text-align: center;
   cursor: pointer;
+  backdrop-filter: blur(5px);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.balloonTitle {
+  font-weight: 800;
+  margin-bottom: 1.7cqw;
+  color: #ff8f00;
+  font-size: 3.5cqw;
+  border-bottom: 0.2cqw solid #eee;
+  padding-bottom: 1.1cqw;
+}
+
+.highlight {
+  color: #ff4d4d;
+  font-weight: 800;
+  font-size: 4cqw;
+}
+
+.balloonHint {
+  margin-top: 2.6cqw;
+  font-size: 2.7cqw;
+  color: #999;
+  font-weight: 700;
 }
 
 .balloonTail {
@@ -86,6 +116,62 @@
   border-left: 1.5cqw solid transparent;
   border-right: 1.5cqw solid transparent;
   border-bottom: 1.5cqw solid white;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, -10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* モードセレクター (ダブルバトル用) */
+.modeSelector {
+  display: flex;
+  justify-content: center;
+  gap: 2.6cqw;
+  margin: 2cqw 0 4cqw 0;
+  width: 100%;
+}
+
+.modeTab {
+  padding: 2cqw 4cqw;
+  border-radius: 2.2cqw;
+  font-size: 3.5cqw;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 0.4cqw solid #eee;
+}
+
+.modeTab.active {
+  background: #fff9f0;
+  border-color: #ffb84d;
+  color: #ff8f00;
+  box-shadow: 0 0.8cqw 1.7cqw rgba(255,184,77,0.2);
+}
+
+.modeTab.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f5f5f5;
+}
+
+/* 特性カードの配置 */
+.abilityCardsSingle {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.abilityCardsDouble {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2cqw;
+}
+
+.doubleCard {
+  min-height: 20cqw !important;
 }
 
 /* 特性カード (AbilityCardに移行済み) */

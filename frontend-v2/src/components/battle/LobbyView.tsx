@@ -4,63 +4,93 @@ import { GameButton } from '../common/GameButton';
 import { AbilityCard } from './AbilityCard';
 
 interface LobbyViewProps {
-  onStartMatch: (mode: 'player' | 'cpu' | 'room') => void;
-  onOpenAbilityModal: () => void;
+  onStartMatch: (mode: 'player' | 'cpu' | 'room', options?: any) => void;
+  onOpenAbilityModal: (index?: number) => void;
   onBackToTitle: () => void;
-  selectedAbility: string;
+  selectedAbilities: string[]; // 配列に変更 [ability1, ability2]
   allAbilities: Record<string, any>;
-  mode?: 'stock' | 'normal';
+  mode?: 'single' | 'stock' | 'double';
 }
 
 export const LobbyView: React.FC<LobbyViewProps> = ({ 
   onStartMatch, 
   onOpenAbilityModal, 
   onBackToTitle,
-  selectedAbility,
+  selectedAbilities,
   allAbilities,
-  mode = 'normal'
+  mode = 'single'
 }) => {
   const [showBalloon, setShowBalloon] = React.useState(false);
+  const isDouble = mode === 'double';
+  const isStock = mode === 'stock';
 
   // 本家仕様: 選択中の特性データを取得。
-  const selectedAbilityData = allAbilities[selectedAbility] || { 
-    name: 'ランダム', 
-    description: 'ランダムに決定されます',
-    icon_type: 'ノーマル' 
+  const getAbilityData = (index: number) => {
+    const id = selectedAbilities[index];
+    return allAbilities[id] || { 
+      name: 'ランダム', 
+      description: 'ランダムに決定されます',
+      icon_type: 'ノーマル' 
+    };
   };
 
 
   return (
     <div className={styles.lobbyContent}>
       <button className={styles.backButton} onClick={onBackToTitle}>
-        ← タイトルへ
+        ← もどる
       </button>
 
       <div className={styles.titleContainer}>
         <h1 className={styles.lobbyTitle}>
-          {mode === 'stock' ? '特殊ルール(ストック制)' : 'シングルバトル'}
+          {isStock ? '特殊ルール' : isDouble ? 'ダブルバトル' : 'シングルバトル'}
         </h1>
-        <button className={styles.helpBtn} onClick={() => setShowBalloon(!showBalloon)}>?</button>
+        {isStock && (
+          <button 
+            className={styles.helpBtn} 
+            onClick={(e) => { e.stopPropagation(); setShowBalloon(!showBalloon); }}
+          >
+            ?
+          </button>
+        )}
       </div>
 
-      {showBalloon && (
+      {showBalloon && isStock && (
         <div className={styles.helpBalloon} onClick={() => setShowBalloon(false)}>
-          <div>HPがなくなるとストックを消費して復活します。先に相手のストックをすべてなくした方の勝ちです！</div>
+          <div className={styles.balloonTitle}>特殊ルールの説明</div>
+          <div>相手のHPを<span className={styles.highlight}>複数回</span>0にしたらプレイヤーの勝ちとなります。</div>
+          <div className={styles.balloonHint}>(タップして閉じる)</div>
           <div className={styles.balloonTail}></div>
         </div>
       )}
 
-      {/* 本家風のとくせいカード */}
-      <AbilityCard 
-        ability={selectedAbilityData} 
-        onClick={onOpenAbilityModal} 
-      />
+      {isDouble && (
+        <div className={styles.modeSelector}>
+          <div className={`${styles.modeTab} ${styles.active}`}>1人2役</div>
+          <div className={`${styles.modeTab} ${styles.disabled}`}>4人対戦 (未開発)</div>
+        </div>
+      )}
+
+      <div className={isDouble ? styles.abilityCardsDouble : styles.abilityCardsSingle}>
+        <AbilityCard 
+          ability={getAbilityData(0)} 
+          onClick={() => onOpenAbilityModal(0)} 
+          className={isDouble ? styles.doubleCard : ''}
+          label={isDouble ? "1人目" : undefined}
+        />
+        {isDouble && (
+          <AbilityCard 
+            ability={getAbilityData(1)} 
+            onClick={() => onOpenAbilityModal(1)} 
+            className={styles.doubleCard}
+            label="2人目"
+          />
+        )}
+      </div>
 
       <div className={styles.buttonContainer}>
-        <GameButton 
-          onClick={() => onStartMatch('player')}
-        >
-          対人戦 (ランダム)
+        <GameButton onClick={() => onStartMatch('player')}>
+          ランダムマッチ
         </GameButton>
 
         <GameButton onClick={() => onStartMatch('cpu')}>
@@ -70,7 +100,7 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
         <hr className={styles.separator} />
 
         <GameButton onClick={() => onStartMatch('room')}>
-          ルームを作成する
+          ルーム作成
         </GameButton>
 
         <div className={styles.joinBox}>
@@ -84,7 +114,7 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
             variant="green"
             onClick={() => onStartMatch('room')}
           >
-            参加する
+            参加
           </GameButton>
         </div>
       </div>

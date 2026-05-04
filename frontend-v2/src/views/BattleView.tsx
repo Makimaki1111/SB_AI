@@ -12,6 +12,7 @@ import { AbilityModal } from '../components/battle/AbilityModal';
 import { GameLayout } from '../components/layout/GameLayout';
 import { GameModal } from '../components/common/GameModal';
 import { StatCard } from '../components/battle/StatCard';
+import { StockSelectionModal } from '../components/battle/StockSelectionModal';
 import styles from './BattleView.module.css';
 
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -25,10 +26,18 @@ export const BattleView: React.FC = () => {
   
   const [isLobby, setIsLobby] = React.useState(true);
   const [isAbilityModalOpen, setIsAbilityModalOpen] = React.useState(false);
+  const [targetAbilityIndex, setTargetAbilityIndex] = React.useState(0); // ダブルバトル用
   const [isSituationModalOpen, setIsSituationModalOpen] = React.useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
+  const [isStockModalOpen, setIsStockModalOpen] = React.useState(false);
   const [tempName, setTempName] = React.useState(username);
-  const [selectedAbility, setSelectedAbility] = React.useState(localStorage.getItem('sb_ability') || 'ikaku');
+  
+  const [selectedAbilities, setSelectedAbilities] = React.useState<string[]>(() => {
+    const a1 = localStorage.getItem('sb_ability') || 'ikaku';
+    const a2 = localStorage.getItem('sb_ability_2') || 'ikaku';
+    return [a1, a2];
+  });
+
   const [matchingMessage, setMatchingMessage] = React.useState<string | null>(null);
   const [allAbilities, setAllAbilities] = React.useState<Record<string, any>>({});
 
@@ -71,11 +80,21 @@ export const BattleView: React.FC = () => {
   });
 
   const handleStartMatch = (mode: 'player' | 'cpu' | 'room') => {
+    const isStockMode = location.search.includes('mode=stock');
+    
+    // ストック制のルーム作成時は、まずモーダルを開く
+    if (isStockMode && mode === 'room') {
+      setIsStockModalOpen(true);
+      return;
+    }
+
     const commonInfo = {
       player_id: playerId,
       name: username || "ななし",
-      ability: selectedAbility,
-      ability_2: ""
+      ability: selectedAbilities[0],
+      ability_2: isDouble ? selectedAbilities[1] : "",
+      ally_max_lives: isStockMode ? 2 : 1, // デフォルト
+      foe_max_lives: isStockMode ? 2 : 1
     };
 
     if (isDouble) {
@@ -115,6 +134,40 @@ export const BattleView: React.FC = () => {
     }
   };
 
+  const handleConfirmStockMatch = (allyStock: number, foeStock: number) => {
+    setIsStockModalOpen(false);
+    sendMessage({
+      type: "make_new_battle",
+      info: { 
+        player_id: playerId,
+        name: username || "ななし",
+        ability: selectedAbilities[0],
+        ability_2: "",
+        mode: "cpu", // ルーム作成からの開始は一旦CPU戦に準拠（要件に合わせて調整可）
+        ally_max_lives: allyStock,
+        foe_max_lives: foeStock
+      }
+    });
+  };
+
+  const handleOpenAbilityModal = (index?: number) => {
+    setTargetAbilityIndex(index || 0);
+    setIsAbilityModalOpen(true);
+  };
+
+  const handleSelectAbility = (abilityId: string) => {
+    const newAbilities = [...selectedAbilities];
+    newAbilities[targetAbilityIndex] = abilityId;
+    setSelectedAbilities(newAbilities);
+    
+    if (targetAbilityIndex === 0) {
+      localStorage.setItem('sb_ability', abilityId);
+    } else {
+      localStorage.setItem('sb_ability_2', abilityId);
+    }
+    setIsAbilityModalOpen(false);
+  };
+
   const handleRunAway = () => {
     if (battleState?.room_id) {
       sendMessage({
@@ -136,20 +189,6 @@ export const BattleView: React.FC = () => {
     } as any);
   };
 
-  const handleAbilitySelect = (abilityId: string) => {
-    setSelectedAbility(abilityId);
-    localStorage.setItem('sb_ability', abilityId);
-    if (!isLobby && battleState) {
-      sendMessage({
-        type: "change_ability",
-        info: { 
-          ability_id: abilityId,
-          room_id: battleState.room_id
-        }
-      } as any);
-    }
-  };
-
   if (!isConnected) {
     return (
       <GameLayout>
@@ -160,15 +199,25 @@ export const BattleView: React.FC = () => {
     );
   }
 
+  const isStock = location.search.includes('mode=stock');
+
   return (
     <GameLayout id="phone-box">
-      {isLobby ? (
+      <div className={styles.battleArea}>
+        {matchingMessage && (
+          <div className={styles.matchOverlay}>
+            <div className={styles.matchMessage}>{matchingMessage}</div>
+          </div>
+        )}
+
+        {isLobby ? (
           <LobbyView 
             onStartMatch={handleStartMatch}
-            onOpenAbilityModal={() => setIsAbilityModalOpen(true)}
+            onOpenAbilityModal={handleOpenAbilityModal}
             onBackToTitle={() => navigate('/')}
-            selectedAbility={selectedAbility}
+            selectedAbilities={selectedAbilities}
             allAbilities={allAbilities}
+            mode={isDouble ? 'double' : isStock ? 'stock' : 'single'}
           />
         ) : (
           <div className={styles.battleContainer}>
@@ -229,7 +278,7 @@ export const BattleView: React.FC = () => {
                   </svg>
                   <p className={styles.actionBtnText}>状況</p>
                 </div>
-                <div className={styles.actionBtn} onClick={() => setIsAbilityModalOpen(true)}>
+                <div className={styles.actionBtn} onClick={() => handleOpenAbilityModal(0)}>
                   <svg viewBox="0 0 24 24" className={styles.actionBtnIcon}>
                     <path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
                   </svg>
@@ -249,52 +298,14 @@ export const BattleView: React.FC = () => {
           </div>
         )}
 
-        {/* マッチング・決着オーバーレイ */}
-        {matchingMessage && (
-          <div className={styles.matchingOverlay}>
-            <div className={styles.matchingText}>{matchingMessage}</div>
-          </div>
-        )}
+        {/* ストック選択モーダル (本家仕様) */}
+        <StockSelectionModal 
+          isOpen={isStockModalOpen}
+          onClose={() => setIsStockModalOpen(false)}
+          onConfirm={handleConfirmStockMatch}
+        />
 
-        {!isLobby && typeof battleState?.ally_win === 'boolean' && (
-          <div className={styles.gameOverOverlay}>
-            <div className={styles.gameOverBox}>
-              <h2>{battleState.ally_win ? 'YOU WIN!' : 'YOU LOSE...'}</h2>
-              <button onClick={() => window.location.reload()}>タイトルへ</button>
-            </div>
-          </div>
-        )}
-
-        <GameModal
-          isOpen={isSettingsOpen}
-          onClose={() => setIsSettingsOpen(false)}
-          title="設定"
-          footer={
-            <button className={styles.closeButton} onClick={handleSaveSettings}>
-              閉じる
-            </button>
-          }
-        >
-          <div className={styles.field}>
-            <label>名前</label>
-            <input 
-              type="text" 
-              value={tempName} 
-              onChange={(e) => setTempName(e.target.value)}
-              placeholder="名無し"
-            />
-          </div>
-          <div className={styles.field}>
-            <label>BGM音量</label>
-            <input type="range" min="0" max="100" defaultValue="50" style={{ width: '100%' }} />
-          </div>
-          <div className={styles.field}>
-            <label>SE音量</label>
-            <input type="range" min="0" max="100" defaultValue="80" style={{ width: '100%' }} />
-          </div>
-        </GameModal>
-
-        {/* 状況確認モーダル */}
+        {/* 状況確認モーダル (GameModal / StatCard 使用) */}
         <GameModal
           isOpen={isSituationModalOpen}
           onClose={() => setIsSituationModalOpen(false)}
@@ -326,11 +337,12 @@ export const BattleView: React.FC = () => {
         <AbilityModal 
           isOpen={isAbilityModalOpen}
           onClose={() => setIsAbilityModalOpen(false)}
-          onSelect={handleAbilitySelect}
-          currentAbilityId={selectedAbility}
+          onSelect={handleSelectAbility}
+          currentAbilityId={selectedAbilities[targetAbilityIndex]}
           allAbilities={allAbilities}
           canChange={isLobby || (Object.values(battleState?.characters || {}).find(c => c.owner_id === "player1")?.ability_change_count ?? 0) > 0}
         />
-      </GameLayout>
+      </div>
+    </GameLayout>
   );
 };

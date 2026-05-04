@@ -1,0 +1,100 @@
+.stockSelectionContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 3.3cqw;
+  padding: 1cqw 0;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5cqw;
+  text-align: left;
+}
+
+.label {
+  font-weight: 800;
+  font-size: 3.5cqw;
+  color: #555;
+  margin-bottom: 0.8cqw;
+  display: block;
+}
+
+.optionsGrid {
+  display: flex;
+  justify-content: center;
+  gap: 1.5cqw;
+}
+
+.optionBtn {
+  flex: 1;
+  height: 10cqw;
+  border-radius: 2.2cqw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 4cqw;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 0.4cqw solid #eee;
+  background: white;
+  color: #666;
+}
+
+.optionBtn.selected {
+  border-color: #ffb84d;
+  background: #fff9f0;
+  color: #ff8f00;
+  box-shadow: 0 0.8cqw 1.7cqw rgba(255,184,77,0.15);
+}
+
+.divider {
+  width: 100%;
+  height: 0.2cqw;
+  background: #eee;
+  margin: 1.1cqw 0;
+}
+
+.modalActions {
+  display: flex;
+  gap: 2.2cqw;
+  width: 100%;
+}
+
+.cancelBtn {
+  flex: 1;
+  padding: 2.6cqw;
+  border-radius: 2.6cqw;
+  border: 0.4cqw solid #eee;
+  background: white;
+  color: #666;
+  font-weight: 700;
+  font-size: 3.5cqw;
+  cursor: pointer;
+}
+
+.confirmBtn {
+  flex: 1;
+  padding: 2.6cqw;
+  border-radius: 2.6cqw;
+  border: none;
+  background: linear-gradient(180deg, #ffd77a, #ffb84d);
+  color: #222;
+  font-weight: 800;
+  font-size: 3.5cqw;
+  cursor: pointer;
+  box-shadow: 0 0.8cqw 2.2cqw rgba(255,184,77,0.3);
+}
+
+.confirmBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.errorMsg {
+  color: #ff4d4d;
+  font-size: 2.6cqw;
+  font-weight: bold;
+}

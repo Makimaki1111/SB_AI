@@ -45,6 +45,13 @@
   text-align: left;
 }
 
+.label {
+  font-size: 2.7cqw;
+  color: #888;
+  font-weight: 700;
+  margin-bottom: 0.4cqw;
+}
+
 .name {
   font-size: 4.8cqw;
   font-weight: 800;

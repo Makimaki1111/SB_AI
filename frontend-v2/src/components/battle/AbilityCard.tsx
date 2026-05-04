@@ -22,9 +22,10 @@ interface AbilityCardProps {
   ability: AbilityData;
   onClick?: () => void;
   className?: string;
+  label?: string;
 }
 
-export const AbilityCard: React.FC<AbilityCardProps> = ({ ability, onClick, className = '' }) => {
+export const AbilityCard: React.FC<AbilityCardProps> = ({ ability, onClick, className = '', label }) => {
   const getIconPath = (data: AbilityData) => {
     const typeKey = data.icon_type || 'ノーマル';
     const filename = TYPE_TO_IMAGE[typeKey] || 'normal';
@@ -37,6 +38,7 @@ export const AbilityCard: React.FC<AbilityCardProps> = ({ ability, onClick, clas
         <img src={getIconPath(ability)} alt="" className={styles.icon} />
       </div>
       <div className={styles.info}>
+        {label && <div className={styles.label}>{label}</div>}
         <div className={styles.name}>{ability.name}</div>
         <div className={styles.desc}>{ability.desc || ability.description}</div>
       </div>

@@ -1,11 +1,26 @@
+.battleArea {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.battleContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+  background: white; /* 背景画像の下地 */
+}
 
 .topImage {
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: relative;
   width: 100%;
-  height: 55cqw; /* 100%から55cqwに縮小してボタンエリアを空ける */
+  height: 60cqw;
+  flex-shrink: 0;
   z-index: 1;
+  overflow: hidden;
 }
 
 .bgImage {
@@ -24,15 +39,15 @@
 }
 
 .content {
-  margin-top: auto;
+  flex: 1;
   padding: 4cqw;
   display: flex;
   flex-direction: column;
   gap: 2cqw;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(5px);
-  position: relative; /* z-indexを有効にするため */
-  z-index: 10; /* 画像より前面に持ってくる */
+  background: white;
+  position: relative;
+  z-index: 10;
+  border-top: 0.2cqw solid #eee;
 }
 
 .actionArea {
@@ -172,4 +187,30 @@
   font-weight: 700;
   font-size: 3.5cqw;
   cursor: pointer;
+}
+
+.matchOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 3000;
+  pointer-events: none; /* 下の要素を触れるように */
+}
+
+.matchMessage {
+  font-size: 6cqw;
+  font-weight: 800;
+  color: #ff4d4d;
+  animation: matchPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes matchPop {
+  0% { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
 }
