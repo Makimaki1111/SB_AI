@@ -87,9 +87,9 @@
   background: #e0e0e0;
 }
 
-.selected {
-  background-color: #e8f5e9 !important;
-  border: 0.5cqw solid #4CAF50 !important;
+.gridItem.selected {
+  background-color: #e8f5e9;
+  border: 0.5cqw solid #4CAF50;
 }
 
 .abilityIcon {
@@ -114,7 +114,7 @@
   background-color: white;
   border-radius: 2.2cqw;
   padding: 0 1.1cqw;
-  white-space: nowrap !important;
+  white-space: nowrap;
   letter-spacing: -0.1cqw;
   margin-top: 0.4cqw; /* 0.9 -> 0.4に縮小 */
   /* はみ出しても gridItem から極端に飛び出さないように最大幅を制限 */
@@ -145,12 +145,13 @@
   font-weight: 800;
   font-size: 4.5cqw;
   cursor: pointer;
-  box-shadow: none !important;
-  border-bottom: 1.1cqw solid #2e7d32 !important; 
+  cursor: pointer;
+  box-shadow: none;
+  border-bottom: 1.1cqw solid #2e7d32; 
   transition: transform 0.05s;
 }
 
 .decideBtn:active {
   transform: translateY(0.5cqw);
-  border-bottom-width: 0.3cqw !important;
+  border-bottom-width: 0.3cqw;
 }

@@ -170,8 +170,8 @@
   gap: 2cqw;
 }
 
-.doubleCard {
-  min-height: 20cqw !important;
+.lobbyContent .doubleCard {
+  min-height: 20cqw;
 }
 
 /* 特性カード (AbilityCardに移行済み) */
@@ -210,6 +210,14 @@
   border: 1px solid #ccc;
   font-size: 3.8cqw;
   box-sizing: border-box;
+}
+
+.lobbyContent .joinButton {
+  height: 100%;
+  margin: 0;
+  font-size: 3.5cqw;
+  padding: 0 4cqw;
+  white-space: nowrap;
 }
 
 .playerName {
