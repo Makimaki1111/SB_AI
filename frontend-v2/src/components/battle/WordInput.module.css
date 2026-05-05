@@ -14,14 +14,18 @@
 
 .input {
   width: 80%;
-  height: 30px;
-  border-radius: 20px;
-  font-size: 1.2rem; /* Matches 1.4em relatively */
+  height: 6.6cqw; /* 30px / 450px */
+  border-radius: 4.4cqw; /* 20px / 450px */
+  font-size: 5cqw; /* ~22.4px (1.4em) / 450px */
   border: none;
   background-color: #E6ECF0;
-  padding-left: 15px;
+  padding-top: 1.3cqw; /* 6px / 450px */
+  padding-bottom: 0.8cqw; /* 4px / 450px */
+  padding-left: 3.3cqw; /* 15px / 450px */
   font-family: inherit;
   outline: none;
+  font-weight: 400;
+  box-sizing: content-box; /* Crucial to match legacy padding + height behavior */
 }
 
 .submitBtn {
