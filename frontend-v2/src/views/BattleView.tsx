@@ -7,6 +7,7 @@ import { BattleArena } from '../components/battle/BattleArena';
 import { GameLayout } from '../components/layout/GameLayout';
 import { SituationModal } from '../components/battle/SituationModal';
 import { StockSelectionModal } from '../components/battle/StockSelectionModal';
+import { GameButton } from '../components/common/GameButton';
 import { API_BASE_URL, WS_BASE_URL } from '../constants/game';
 import type { AbilityData } from '../types/battle';
 import styles from './BattleView.module.css';
@@ -258,21 +259,14 @@ export const BattleView: React.FC = () => {
             />
 
             {battleState?.status === 'finished' && (
-              <div className={styles.resultOverlay}>
-                <div className={styles.resultCard}>
-                  <h2 className={styles.resultTitle}>
-                    {battleState.ally_win === true ? 'YOU WIN!' : 
-                     battleState.ally_win === false ? 'YOU LOSE...' : 'DRAW'}
-                  </h2>
-                  <div className={styles.resultActions}>
-                    <button 
-                      className={styles.resultBtn}
-                      onClick={() => window.location.reload()}
-                    >
-                      ロビーへ戻る
-                    </button>
-                  </div>
-                </div>
+              <div className={styles.simpleResultArea}>
+                <GameButton 
+                  variant="orange"
+                  className={styles.lobbyReturnBtn}
+                  onClick={() => window.location.reload()}
+                >
+                  ロビーへ戻る
+                </GameButton>
               </div>
             )}
           </>

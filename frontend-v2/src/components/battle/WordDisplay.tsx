@@ -13,11 +13,11 @@ interface WordDisplayProps {
  * 単語表示コンポーネント。
  * 透明な状態で計測を完了させ、確定した倍率でフェードインを開始する。
  */
-export const WordDisplay: React.FC<WordDisplayProps> = ({ 
-  word, 
-  isAlly, 
+export const WordDisplay: React.FC<WordDisplayProps> = ({
+  word,
+  isAlly,
   isBlinking,
-  isKnockout 
+  isKnockout
 }) => {
   const [displayWord, setDisplayWord] = useState<string | null>(null);
   const [scale, setScale] = useState(1);
@@ -47,7 +47,7 @@ export const WordDisplay: React.FC<WordDisplayProps> = ({
       if (scrollWidth > maxWidth) {
         newScale = maxWidth / scrollWidth;
       }
-      
+
       // 3. 計測済みの倍率をセットして表示を確定
       setScale(newScale);
       setDisplayWord(word);
@@ -59,13 +59,13 @@ export const WordDisplay: React.FC<WordDisplayProps> = ({
   return (
     <>
       {/* 計測用の隠し要素 (常に存在し、スタイルを本番に合わせる) */}
-      <div 
-        ref={measureRef} 
-        className={isAlly ? styles.allyWord : styles.foeWord} 
-        style={{ 
-          opacity: 0, 
-          pointerEvents: 'none', 
-          visibility: 'hidden', 
+      <div
+        ref={measureRef}
+        className={isAlly ? styles.allyWord : styles.foeWord}
+        style={{
+          opacity: 0,
+          pointerEvents: 'none',
+          visibility: 'hidden',
           position: 'absolute',
           display: 'block'
         }}
@@ -74,27 +74,27 @@ export const WordDisplay: React.FC<WordDisplayProps> = ({
       {/* 本番用の表示要素 */}
       <AnimatePresence mode="popLayout">
         {displayWord && (
-          <motion.div 
+          <motion.div
             key={displayWord}
             className={`${isAlly ? styles.allyWord : styles.foeWord} ${isBlinking ? styles.blinking : ''}`}
-            initial={{ 
-              opacity: 0, 
-              x: xPos, 
+            initial={{
+              opacity: 0,
+              x: xPos,
               scaleX: scale, // 計測済みの倍率
-              y: 0 
+              y: 0
             }}
-            animate={isKnockout ? { 
-              opacity: 0, 
+            animate={isKnockout ? {
+              opacity: 0,
               y: 100,
               x: xPos,
               scaleX: scale
-            } : { 
-              opacity: 1, 
+            } : {
+              opacity: 1,
               y: 0,
               x: xPos,
               scaleX: scale
             }}
-            transition={{ 
+            transition={{
               duration: isKnockout ? 0.8 : 0.3,
               ease: isKnockout ? "easeIn" : "easeOut"
             }}

@@ -6,7 +6,7 @@ export const useBattle = (url: string) => {
   const socketRef = useRef<WebSocket | null>(null);
   const battleStateRef = useRef<BattleState | null>(null);
   const uiMappingRef = useRef<Record<string, string>>({});
-  
+
   const messageQueue = useRef<BattleResponse[]>([]);
   const isHandlingQueue = useRef(false);
 
@@ -14,7 +14,7 @@ export const useBattle = (url: string) => {
   const [battleState, setBattleState] = useState<BattleState | null>(null);
   const [allAbilities, setAllAbilities] = useState<Record<string, AbilityData>>({});
   const [uiMapping, setUiMapping] = useState<Record<string, string>>({});
-  const [prediction, setPrediction] = useState<{include: boolean, type1?: string, type2?: string, used?: boolean, prediction?: string, predictions?: Record<string, string>} | null>(null);
+  const [prediction, setPrediction] = useState<{ include: boolean, type1?: string, type2?: string, used?: boolean, prediction?: string, predictions?: Record<string, string> } | null>(null);
   const [displayMessage, setDisplayMessage] = useState<string | null>(null);
   const [waitMessage, setWaitMessage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -25,7 +25,7 @@ export const useBattle = (url: string) => {
   const [foeWord, setFoeWord] = useState<string | null>(null);
   const [knockoutStates, setKnockoutStates] = useState<Record<string, boolean>>({});
   const soundManager = SoundManager.getInstance();
-  
+
   useEffect(() => {
     battleStateRef.current = battleState;
   }, [battleState]);
@@ -38,7 +38,7 @@ export const useBattle = (url: string) => {
     if (isHandlingQueue.current || messageQueue.current.length === 0) return;
     isHandlingQueue.current = true;
     setIsProcessing(true);
-    
+
     while (messageQueue.current.length > 0) {
       const data = messageQueue.current.shift();
       if (data) {
@@ -46,7 +46,7 @@ export const useBattle = (url: string) => {
         await handleBattleUpdate(data);
       }
     }
-    
+
     setIsProcessing(false);
     isHandlingQueue.current = false;
   };
@@ -62,7 +62,7 @@ export const useBattle = (url: string) => {
       const currentBattleState = battleStateRef.current;
       const prevState = currentBattleState || data.state;
       const isInitialMadeRoom = data.type === 'made_room';
-      
+
       // 1. 初期化 (対戦開始時)
       if (isInitialMadeRoom) {
         setAllyWord(null);
@@ -76,7 +76,7 @@ export const useBattle = (url: string) => {
 
       // 2. 演出開始前の表示更新 (単語、画像、黒い箱、タイプ音)
       if (data.state.word) {
-        setDisplayMessage(''); 
+        setDisplayMessage('');
         // 重要な修正: 直前のターンの持ち主に基づいて単語の表示場所を決定する
         // (自分が打ったら相手のターンになるため、prevState.is_my_turn が true なら自分の単語)
         if (prevState.is_my_turn) {
@@ -84,7 +84,7 @@ export const useBattle = (url: string) => {
         } else {
           setFoeWord(data.state.word);
         }
-        
+
         const attackerSide = prevState.is_my_turn ? 'ally' : 'foe';
         const attackerId = Object.keys(data.info?.id_to_ui_map || {}).find(id => data.info?.id_to_ui_map[id] === attackerSide);
         const attackerState = data.state.characters[attackerId || ''];
@@ -139,7 +139,7 @@ export const useBattle = (url: string) => {
         const targetId = event.target;
 
         setDisplayMessage(event.message || ''); // 本家再現: メッセージが空でもボックスを出す
-        
+
         // メッセージ連動型サウンド再生 (本家再現)
         if (event.message?.includes('効果はばつぐんだ')) soundManager.play('effective');
         else if (event.message?.includes('効果はいまひとつ')) soundManager.play('noneffective');
@@ -160,7 +160,7 @@ export const useBattle = (url: string) => {
             if (targetSide === 'ally') setAllyEffect('blink');
             else if (targetSide === 'foe') setFoeEffect('blink');
           }
-          
+
           if (targetId && tempCharacters[targetId] && event.hp !== undefined && event.hp !== null) {
             tempCharacters[targetId] = { ...tempCharacters[targetId], hp: event.hp };
             setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
@@ -171,7 +171,7 @@ export const useBattle = (url: string) => {
             if (attackerSide === 'ally') setAllyEffect('heal');
             else if (attackerSide === 'foe') setFoeEffect('heal');
           }
-          
+
           await new Promise(resolve => setTimeout(resolve, 1000)); // 点滅時間に合わせて待機
           setAllyEffect(null);
           setFoeEffect(null);
@@ -190,8 +190,8 @@ export const useBattle = (url: string) => {
           if (targetId) {
             setKnockoutStates(prev => ({ ...prev, [targetId]: false }));
             if (tempCharacters[targetId] && event.hp !== undefined) {
-               tempCharacters[targetId] = { ...tempCharacters[targetId], hp: event.hp };
-               setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
+              tempCharacters[targetId] = { ...tempCharacters[targetId], hp: event.hp };
+              setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
             }
           }
           await new Promise(resolve => setTimeout(resolve, 1000));
@@ -223,22 +223,21 @@ export const useBattle = (url: string) => {
       };
       setBattleState(finalState);
       battleStateRef.current = finalState;
-      
+
       // ターン開始メッセージの設定 (本家再現)
-      if (finalState.status !== 'finished') {
+      if (finalState.status === 'finished') {
+        const resultMsg = finalState.ally_win === true ? 'あなたの勝ちです！' : 
+                         finalState.ally_win === false ? 'あなたの負けです...' : '引き分けです';
+        setDisplayMessage(resultMsg);
+        setWaitMessage(null);
+      } else {
         const turnMsg = finalState.is_my_turn ? 'あなたのターンです。' : '相手のターンです。';
         setWaitMessage(turnMsg);
-        
-        // 相手のターンならメッセージボックスで入力を隠す
         if (!finalState.is_my_turn) {
           setDisplayMessage('相手のターンです。');
         } else {
-          setDisplayMessage(null); // 入力可能にする
+          setDisplayMessage(null);
         }
-      } else {
-        // 決着がついた時はメッセージをクリアする (黒い箱を消す)
-        setDisplayMessage(null);
-        setWaitMessage(null);
       }
     } catch (err) {
       console.error('Error in handleBattleUpdate:', err);
@@ -249,27 +248,27 @@ export const useBattle = (url: string) => {
     console.log(`Connecting to WebSocket at: ${url}`);
     const ws = new WebSocket(url);
     socketRef.current = ws;
-    
+
     ws.onopen = () => {
       console.log('✅ WebSocket Connected');
       setIsConnected(true);
     };
-    
+
     ws.onclose = (event) => {
       console.log(`❌ WebSocket Closed: ${event.code} ${event.reason}`);
       setIsConnected(false);
     };
-    
+
     ws.onerror = (err) => {
       console.error('⚠️ WebSocket Error details:', err);
       setIsConnected(false);
     };
-    
+
     ws.onmessage = (event) => {
       try {
         const data: BattleResponse = JSON.parse(event.data);
         console.log(`Received message type: ${data.type}`);
-        
+
         if (data.type === 'pre_check' && data.info) {
           setPrediction({
             include: data.info.include ?? false,
@@ -289,7 +288,7 @@ export const useBattle = (url: string) => {
         console.error('Failed to parse WebSocket message:', err);
       }
     };
-    
+
     return () => {
       if (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN) {
         console.log('Cleanup: Closing WebSocket');
@@ -335,14 +334,14 @@ export const useBattle = (url: string) => {
     });
   };
 
-  const ally = (battleState?.characters && uiMapping) ? 
+  const ally = (battleState?.characters && uiMapping) ?
     Object.entries(battleState.characters).find(([id, _]) => uiMapping[id] === 'ally')?.[1] || null : null;
-  const foe = (battleState?.characters && uiMapping) ? 
+  const foe = (battleState?.characters && uiMapping) ?
     Object.entries(battleState.characters).find(([id, _]) => uiMapping[id] === 'foe')?.[1] || null : null;
-  
-  const allyId = (battleState?.characters && uiMapping) ? 
+
+  const allyId = (battleState?.characters && uiMapping) ?
     Object.keys(uiMapping).find(id => uiMapping[id] === 'ally') || null : null;
-  const foeId = (battleState?.characters && uiMapping) ? 
+  const foeId = (battleState?.characters && uiMapping) ?
     Object.keys(uiMapping).find(id => uiMapping[id] === 'foe') || null : null;
 
   return {

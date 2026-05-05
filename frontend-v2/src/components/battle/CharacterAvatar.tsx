@@ -19,17 +19,13 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
   isBlinking,
   isKnockout 
 }) => {
-  // 最後に有効だったタイプをキャッシュする
   const lastValidTypesRef = useRef<string[]>([]);
-  
-  // 有効なタイプを抽出
   const currentValidTypes = (types || []).filter(t => t && t.trim() !== '');
   
   if (currentValidTypes.length > 0) {
     lastValidTypesRef.current = currentValidTypes;
   }
 
-  // 表示するタイプを決定
   const displayTypes = (isKnockout || currentValidTypes.length === 0) 
     ? lastValidTypesRef.current 
     : currentValidTypes;
@@ -38,23 +34,29 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
 
   const isDual = displayTypes.length >= 2;
 
+  // variants を使用してアニメーションの状態を定義
+  const containerVariants = {
+    alive: {
+      opacity: 1,
+      y: 0,
+    },
+    knockout: {
+      opacity: 0,
+      y: 250,
+    }
+  };
+
   return (
     <motion.div 
       className={`${styles.avatarGroup} ${isAlly ? styles.allyGroup : styles.foeGroup} ${isBlinking ? styles.blinking : ''}`}
-      initial={false}
-      animate={isKnockout ? { 
-        opacity: 0, 
-        y: 200, 
-      } : { 
-        opacity: 1, 
-        y: 0,
-      }}
+      initial="alive"
+      animate={isKnockout ? "knockout" : "alive"}
+      variants={containerVariants}
       transition={{ 
-        duration: 0.8,
-        ease: "easeIn"
+        duration: isKnockout ? 0.8 : 0.3,
+        ease: isKnockout ? "easeIn" : "easeOut"
       }}
     >
-      {/* AnimatePresenceを除去することで、古い画像は一瞬で消えるようになる */}
       {displayTypes.map((type, index) => {
         const iconName = TYPE_TO_IMAGE[type] || 'normal';
         const imageUrl = `/img/${iconName}.gif`;
@@ -65,7 +67,7 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
 
         return (
           <motion.div 
-            key={`${index}-${imageUrl}`} // 画像が変わった時だけフェードイン
+            key={`${index}-${imageUrl}`}
             className={`${styles.iconContainer} ${positionClass}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
