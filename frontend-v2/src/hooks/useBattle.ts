@@ -135,20 +135,24 @@ export const useBattle = (url: string) => {
 
       // 3. イベントループ
       for (const event of events) {
+        const targetSide = event.target === allyId ? 'ally' : event.target === foeId ? 'foe' : null;
+        const targetId = event.target;
+
         setDisplayMessage(event.message || ''); // 本家再現: メッセージが空でもボックスを出す
         
         // メッセージ連動型サウンド再生 (本家再現)
         if (event.message?.includes('効果はばつぐんだ')) soundManager.play('effective');
         else if (event.message?.includes('効果はいまひとつ')) soundManager.play('noneffective');
         else if (event.message?.includes('ふつうのダメージ')) soundManager.play('middmg');
+        else if (event.message?.includes('はたおれた！') && targetId) {
+          setKnockoutStates(prev => ({ ...prev, [targetId]: true }));
+          soundManager.play('end');
+        }
         else if (event.type === 'damage') soundManager.play('middmg');
         else if (event.type === 'cure' || event.type === 'drain') soundManager.play('heal');
         else if (event.type === 'stat_up') soundManager.play('up');
         else if (event.type === 'stat_down') soundManager.play('down');
         else if (event.type === 'revive') soundManager.play('start');
-
-        const targetSide = event.target === allyId ? 'ally' : event.target === foeId ? 'foe' : null;
-        const targetId = event.target;
 
         if (event.type === 'damage' || event.type === 'drain') {
           // 本家再現: ダメージ更新と点滅を同時に開始
@@ -160,11 +164,6 @@ export const useBattle = (url: string) => {
           if (targetId && tempCharacters[targetId] && event.hp !== undefined && event.hp !== null) {
             tempCharacters[targetId] = { ...tempCharacters[targetId], hp: event.hp };
             setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
-            
-            if (event.hp <= 0) {
-              setKnockoutStates(prev => ({ ...prev, [targetId]: true }));
-              soundManager.play('end');
-            }
           }
 
           if (event.type === 'drain' && event.attacker) {
@@ -212,6 +211,7 @@ export const useBattle = (url: string) => {
         } else if (event.type === 'ability_changed') {
           await new Promise(resolve => setTimeout(resolve, 100)); // 本家: 100ms
         } else {
+          // メッセージ表示等の汎用待機
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
