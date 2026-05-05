@@ -5,7 +5,6 @@ import { LobbyView } from '../components/battle/LobbyView';
 import { AbilityModal } from '../components/battle/AbilityModal';
 import { BattleArena } from '../components/battle/BattleArena';
 import { GameLayout } from '../components/layout/GameLayout';
-import { GameModal } from '../components/common/GameModal';
 import { SituationModal } from '../components/battle/SituationModal';
 import { StockSelectionModal } from '../components/battle/StockSelectionModal';
 import { API_BASE_URL, WS_BASE_URL } from '../constants/game';
@@ -293,8 +292,10 @@ export const BattleView: React.FC = () => {
           onClose={() => setIsAbilityModalOpen(false)}
           onSelect={handleSelectAbility}
           currentAbilityId={selectedAbilities[targetAbilityIndex]}
+          allyAbilityId={ally?.ability || ''}
           allAbilities={allAbilities}
           canChange={canChangeAbility}
+          abilityChangeCount={ally?.ability_change_count ?? 0}
         />
       </div>
     </GameLayout>

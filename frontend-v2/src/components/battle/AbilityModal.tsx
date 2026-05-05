@@ -2,24 +2,27 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import styles from './AbilityModal.module.css';
 import { TYPE_TO_IMAGE } from '../../constants/game';
 import type { AbilityData } from '../../types/battle';
-import { motion, AnimatePresence, useAnimation } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface AbilityModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (abilityId: string) => void;
-  currentAbilityId: string;
+  currentAbilityId: string; // 選んでいる最中のID
+  allyAbilityId: string;   // 実際に今装備しているID
   allAbilities: Record<string, AbilityData>;
   canChange: boolean;
+  abilityChangeCount: number;
 }
 
 export const AbilityModal: React.FC<AbilityModalProps> = ({
   isOpen,
   onClose,
   onSelect,
-  currentAbilityId,
+  allyAbilityId,
   allAbilities,
-  canChange
+  canChange,
+  abilityChangeCount
 }) => {
   const abilitiesList = useMemo(() => {
     return Object.entries(allAbilities)
@@ -31,18 +34,18 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
   const [dragX, setDragX] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // 初期位置の設定
+  // 初期位置の設定 (選んでいる最中のものではなく、実際に装備しているものに合わせる)
   useEffect(() => {
     if (isOpen) {
-      const idx = abilitiesList.findIndex(a => a.id === currentAbilityId);
+      const idx = abilitiesList.findIndex(a => a.id === allyAbilityId);
       if (idx !== -1) setCurrentIndex(idx);
     }
-  }, [isOpen, currentAbilityId, abilitiesList]);
+  }, [isOpen, allyAbilityId, abilitiesList]);
 
   if (!isOpen) return null;
 
   const N = abilitiesList.length;
-  const spacing = 90; // 本家の85より少し広めに
+  const spacing = 90;
 
   const handleDrag = (_: any, info: any) => {
     setDragX(info.offset.x);
@@ -55,7 +58,6 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
     if (Math.abs(info.offset.x) > moveThreshold || Math.abs(info.velocity.x) > velocityThreshold) {
       const direction = info.offset.x > 0 ? -1 : 1;
       let nextIndex = currentIndex + direction;
-      // ループ対応
       if (nextIndex < 0) nextIndex = N - 1;
       if (nextIndex >= N) nextIndex = 0;
       setCurrentIndex(nextIndex);
@@ -76,6 +78,7 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
   };
 
   const currentInfo = abilitiesList[currentIndex] || { name: '---', description: '' };
+  const allyAbilityInfo = allAbilities[allyAbilityId] || { name: '---', description: '特性がありません' };
 
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -86,13 +89,24 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
       >
-        <h2 className={styles.modalTitle}>とくせいを選択</h2>
+        {/* 現在の特性表示セクション */}
+        <div className={styles.statusSection}>
+          <div className={styles.sideStatus}>
+            <span className={styles.sideLabel}>現在のとくせい</span>
+            <div className={styles.currentAbilityName}>{allyAbilityInfo.name}</div>
+            <div className={styles.currentAbilityDesc}>{allyAbilityInfo.description}</div>
+          </div>
+        </div>
+
+        <div className={styles.divider}>
+          <span>タップしてとくせいを変える</span>
+          <span className={styles.remainCount}>(あと{abilityChangeCount}回)</span>
+        </div>
         
-        {/* 現在/選択中の情報表示 */}
+        {/* 選んでいる最中の情報表示 */}
         <div className={styles.infoSection}>
-          <span className={styles.sectionLabel}>選択中のとくせい</span>
           <h3 className={styles.abilityNameDisplay}>{currentInfo.name}</h3>
-          <p className={styles.abilityDescDisplay}>{currentInfo.desc || currentInfo.description}</p>
+          <p className={styles.abilityDescDisplay}>{currentInfo.description}</p>
         </div>
 
         {/* 円弧状カルーセル */}
@@ -105,16 +119,13 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
             onDragEnd={handleDragEnd}
           >
             {abilitiesList.map((ab, i) => {
-              // 最短距離での差分計算 (ループ対応)
               let diff = i - currentIndex;
               diff = diff - Math.round(diff / N) * N;
-              
-              // ドラッグ量を加味 (ピクセルからインデックスへの変換)
               const offsetIndex = diff + (dragX / spacing);
               const absDiff = Math.abs(offsetIndex);
               
               const x = offsetIndex * spacing;
-              const y = absDiff * absDiff * 4; // 円弧の深さ
+              const y = absDiff * absDiff * 4;
               const scale = Math.max(0.6, 1 - absDiff * 0.2);
               const opacity = Math.max(0, 1 - absDiff * 0.35);
               const zIndex = Math.round(100 - absDiff * 10);

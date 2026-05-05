@@ -14,10 +14,11 @@
 
 .modalBody {
   width: 90%;
-  max-width: 400px;
+  max-width: 420px;
+  height: 520px; /* Reduced since opponent section was removed */
   background: rgba(255, 255, 255, 0.95);
   border-radius: 24px;
-  padding: 24px 16px;
+  padding: 20px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -25,52 +26,95 @@
   text-align: center;
   color: #333;
   position: relative;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
-.modalTitle {
-  margin: 0 0 16px 0;
-  font-size: 1.4rem;
-  color: #444;
+/* 本家再現のステータスセクション */
+.statusSection {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.sideStatus {
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 12px;
+  padding: 10px;
+  text-align: left;
+}
+
+.sideLabel {
+  font-size: 0.75rem;
   font-weight: 800;
+  color: #888;
+  margin-bottom: 2px;
+  display: block;
+}
+
+.currentAbilityName {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #333;
+}
+
+.currentAbilityDesc {
+  font-size: 0.8rem;
+  color: #666;
+  line-height: 1.3;
+  margin-top: 2px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.divider {
+  width: 100%;
+  padding: 8px 0;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #444;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.remainCount {
+  color: #ff5722;
 }
 
 .infoSection {
   width: 100%;
-  margin-bottom: 8px;
-  padding-bottom: 12px;
-  border-bottom: 1px dashed #ddd;
-  min-height: 100px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.sectionLabel {
-  font-size: 0.8rem;
-  color: #888;
   margin-bottom: 4px;
 }
 
 .abilityNameDisplay {
-  font-size: 1.25rem;
-  font-weight: bold;
+  font-size: 1.3rem;
+  font-weight: 900;
   color: #ff9800;
-  margin: 4px 0;
+  margin: 0 0 4px 0;
 }
 
 .abilityDescDisplay {
-  font-size: 0.9rem;
-  color: #666;
+  font-size: 0.85rem;
+  color: #555;
   line-height: 1.4;
   margin: 0;
-  min-height: 2.8rem;
+  height: 3.8rem;
+  overflow-y: auto;
 }
 
 .carouselContainer {
   position: relative;
   width: 100%;
-  height: 140px;
-  margin: 10px 0;
+  height: 120px;
+  margin: 5px 0;
   overflow: hidden;
   cursor: grab;
   touch-action: none;
@@ -92,8 +136,8 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 80px;
-  height: 80px;
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   background: white;
   border: 4px solid #ddd;
@@ -119,20 +163,21 @@
 .footer {
   display: flex;
   gap: 16px;
-  margin-top: 16px;
+  margin-top: auto;
+  padding-top: 12px;
   width: 100%;
   justify-content: center;
 }
 
 .closeBtn, .decideBtn {
-  padding: 12px 28px;
+  padding: 10px 24px;
   border-radius: 30px;
   border: none;
   font-weight: bold;
   font-size: 1rem;
   cursor: pointer;
   transition: transform 0.2s, opacity 0.2s;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .closeBtn {
@@ -156,8 +201,4 @@
 .closeBtn:hover, .decideBtn:hover:not(.disabled) {
   transform: translateY(-2px);
   opacity: 0.9;
-}
-
-.closeBtn:active, .decideBtn:active:not(.disabled) {
-  transform: translateY(0);
 }
