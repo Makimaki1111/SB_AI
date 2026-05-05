@@ -13,14 +13,15 @@
   transition: all 0.3s ease;
 }
 
+/* 本家の正確な座標 (10px / 450px = 2.2cqw) */
 .left {
-  top: 4.4cqw;
-  left: 2cqw;
+  top: 2.2cqw;
+  left: -1.7cqw; /* -8px / 450px */
 }
 
 .right {
-  bottom: 6.6cqw;
-  right: 2cqw;
+  bottom: 2.2cqw;
+  right: -1.7cqw; /* -8px / 450px */
 }
 
 .header {

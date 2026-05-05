@@ -73,7 +73,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
           isAlly={false}
         />
         <CharacterAvatar 
-          type={foe?.types[0] ?? "ノーマル"} 
+          types={foe?.types || []} 
           isAlly={false} 
           isBlinking={foeEffect === 'blink'}
           isKnockout={foeId ? knockoutStates[foeId] : false}
@@ -83,7 +83,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
 
         {/* 自分セクション */}
         <CharacterAvatar 
-          type={ally?.types[0] ?? "ノーマル"} 
+          types={ally?.types || []} 
           isAlly={true} 
           isBlinking={allyEffect === 'blink'}
           isKnockout={allyId ? knockoutStates[allyId] : false}

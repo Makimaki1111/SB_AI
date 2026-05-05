@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  width: 100%; /* phoneBoxの幅いっぱいに広げる */
+  width: 100%;
   position: relative;
   background: #fce5cd;
   overflow: hidden;
@@ -10,7 +10,7 @@
 }
 
 .topImage {
-  flex: 1;
+  flex: 1; /* 本家仕様: 1/3 */
   position: relative;
   width: 100%;
   z-index: 1;
@@ -25,7 +25,7 @@
 }
 
 .content {
-  flex: 1.8;
+  flex: 2; /* 本家仕様: 2/3 */
   display: flex;
   flex-direction: column;
   background: transparent;
@@ -45,7 +45,7 @@
 
 .timerContainer {
   width: 100%;
-  height: 0.8cqw; /* 高さをコンテナ幅に同期 */
+  height: 0.8cqw;
   min-height: 4px;
   background: #e0e0e0;
   overflow: hidden;
@@ -178,7 +178,7 @@
   transform: translateY(-0.2cqw);
 }
 
-/* 地面の楕円 */
+/* 地面の楕円 (垂直方向もcqwで管理) */
 .ellipse {
   position: absolute;
   background: white;
@@ -187,7 +187,7 @@
 }
 
 .ellipseLeft {
-  bottom: -4cqw;
+  bottom: -8.8cqw; /* -40px / 450px */
   left: 22%;
   transform: translateX(-50%);
   width: 70%;
@@ -195,7 +195,7 @@
 }
 
 .ellipseRight {
-  bottom: 22cqw;
+  bottom: 22.2cqw; /* 100px / 450px */
   right: 8%;
   width: 40cqw;
   height: 9cqw;

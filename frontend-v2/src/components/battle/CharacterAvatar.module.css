@@ -1,40 +1,68 @@
-.avatarContainer {
+/* キャラクター(タイプ画像)グループの基本定義 */
+.avatarGroup {
   position: absolute;
-  width: 35cqw; /* コンテナ幅の35% */
-  aspect-ratio: 1 / 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
   z-index: 11;
   background: transparent;
 }
 
-/* 比率に基づいた配置 (cqwを使用) */
-.ally {
-  bottom: 8cqw;
-  left: 15%;
+/* 自分側の配置 (本家 top: 100px) */
+.allyGroup {
+  top: 22.2cqw; /* 100px / 450px */
 }
 
-.foe {
-  top: 15%;
-  right: 15%;
+/* 相手側の配置 (本家 top: 5px) */
+.foeGroup {
+  top: 1.1cqw; /* 5px / 450px */
+}
+
+/* 各アイコンのコンテナ (本家 100x100) */
+.iconContainer {
+  position: absolute;
+  width: 22.2cqw; 
+  aspect-ratio: 1 / 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .avatarImg {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  display: block;
 }
 
+/* --- 個別配置 (自分) --- */
+.allyGroup .single {
+  left: 14.4%; /* 65px / 450px */
+}
+
+.allyGroup .type1 {
+  left: 2.2%; /* 10px / 450px */
+}
+
+.allyGroup .type2 {
+  left: 26.6%; /* 120px / 450px */
+}
+
+/* --- 個別配置 (相手) --- */
+.foeGroup .single {
+  right: 17.7%; /* 80px / 450px */
+}
+
+.foeGroup .type1 {
+  right: 28.8%; /* 130px / 450px */
+}
+
+.foeGroup .type2 {
+  right: 8.8%; /* 40px / 450px */
+}
+
+/* --- 演出 --- */
 .blinking {
   animation: blink 0.15s infinite;
-}
-
-.knockout {
-  opacity: 0;
-  transition: opacity 0.5s ease;
 }
 
 @keyframes blink {
