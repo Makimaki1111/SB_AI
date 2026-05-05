@@ -20,6 +20,9 @@ interface BattleArenaProps {
   timer: { remaining: number; total: number };
   allyWord: string | null;
   foeWord: string | null;
+  knockoutStates: Record<string, boolean>;
+  allyId: string | null;
+  foeId: string | null;
   username: string;
   onSendWord: (word: string) => void;
   onSendIncludeCheck: (word: string) => void;
@@ -40,6 +43,9 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
   timer,
   allyWord,
   foeWord,
+  knockoutStates,
+  allyId,
+  foeId,
   username,
   onSendWord,
   onSendIncludeCheck,
@@ -70,6 +76,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
           type={foe?.types[0] ?? "ノーマル"} 
           isAlly={false} 
           isBlinking={foeEffect === 'blink'}
+          isKnockout={foeId ? knockoutStates[foeId] : false}
         />
         <BattleEffects trigger={foeEffect} side="foe" />
         <WordDisplay word={foeWord} isAlly={false} />
@@ -79,6 +86,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
           type={ally?.types[0] ?? "ノーマル"} 
           isAlly={true} 
           isBlinking={allyEffect === 'blink'}
+          isKnockout={allyId ? knockoutStates[allyId] : false}
         />
         <BattleEffects trigger={allyEffect} side="ally" />
         <WordDisplay word={allyWord} isAlly={true} />
@@ -95,16 +103,18 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
 
       <div className={styles.content}>
         <div className={styles.actionArea}>
+          {/* タイマーを最上部に配置 */}
+          <div className={styles.timerContainer}>
+            <div 
+              className={styles.timerBar} 
+              style={{ 
+                width: `${(timer.remaining / (timer.total || 1)) * 100}%`,
+                backgroundColor: timer.remaining > 10 ? '#00FF00' : timer.remaining > 5 ? '#FFFF00' : '#FF0000'
+              }} 
+            />
+          </div>
+
           <div className={styles.inputWrapper}>
-            <div className={styles.timerContainer}>
-              <div 
-                className={styles.timerBar} 
-                style={{ 
-                  width: `${(timer.remaining / (timer.total || 1)) * 100}%`,
-                  backgroundColor: timer.remaining > 10 ? '#00FF00' : timer.remaining > 5 ? '#FFFF00' : '#FF0000'
-                }} 
-              />
-            </div>
             <WordInput 
               onSend={onSendWord} 
               onChange={onSendIncludeCheck}

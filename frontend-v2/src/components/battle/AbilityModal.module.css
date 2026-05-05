@@ -1,157 +1,163 @@
 .overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+}
+
+.modalBody {
+  width: 90%;
+  max-width: 400px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24px;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  text-align: center;
+  color: #333;
+  position: relative;
+}
+
+.modalTitle {
+  margin: 0 0 16px 0;
+  font-size: 1.4rem;
+  color: #444;
+  font-weight: 800;
+}
+
+.infoSection {
+  width: 100%;
+  margin-bottom: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed #ddd;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.sectionLabel {
+  font-size: 0.8rem;
+  color: #888;
+  margin-bottom: 4px;
+}
+
+.abilityNameDisplay {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #ff9800;
+  margin: 4px 0;
+}
+
+.abilityDescDisplay {
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.4;
+  margin: 0;
+  min-height: 2.8rem;
+}
+
+.carouselContainer {
+  position: relative;
+  width: 100%;
+  height: 140px;
+  margin: 10px 0;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+}
+
+.carouselContainer:active {
+  cursor: grabbing;
+}
+
+.carouselTrack {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 3000;
+}
+
+.carouselItem {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: white;
+  border: 4px solid #ddd;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 4cqw;
-  box-sizing: border-box;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  transition: border-color 0.3s, box-shadow 0.3s, background-color 0.3s;
 }
 
-.modalBody {
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.98);
-  border-radius: 4.4cqw;
-  box-shadow: 0 0.8cqw 3.3cqw rgba(0, 0, 0, 0.2);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-sizing: border-box;
+.carouselItem.selected {
+  border-color: #ff9800;
+  background: #fff8e1;
+  box-shadow: 0 0 20px rgba(255, 152, 0, 0.4);
 }
 
-.modalTitle {
-  text-align: center;
-  margin: 0;
-  padding: 4.4cqw 0;
-  font-size: 5.5cqw;
-  font-weight: 800;
-  color: #222;
-  border-bottom: 0.2cqw solid #ddd;
-}
-
-.descriptionArea {
-  padding: 2.2cqw 4.4cqw;
-  background: #fff;
-}
-
-.descriptionBox {
-  padding: 2.5cqw 4cqw;
-  background: #f5f5f5;
-  border: 0.2cqw solid #e0e0e0;
-  border-radius: 1.5cqw;
-  min-height: 12cqw;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 3.2cqw;
-  color: #444;
-  text-align: center;
-  line-height: 1.5;
-}
-
-.abilityGrid {
-  flex: 1;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1cqw;
-  padding: 2cqw 1cqw;
-  overflow-y: auto;
-  overflow-x: hidden; /* 横スクロールを禁止 */
-  align-content: start;
-}
-
-.gridItem {
-  /* 横スクロールが出ないよう、20%から余白分を引く指定に変更 */
-  width: calc(20% - 1.2cqw); 
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 1cqw 0.2cqw; /* 縦パディングを1.5 -> 1に縮小 */
-  margin: 0.5cqw; /* マージンを0.9 -> 0.5に縮小 */
-  border-radius: 1.5cqw;
-  cursor: pointer;
-  box-sizing: border-box;
-  background-color: #efe8e8;
-  border: 0.2cqw solid white;
-  position: relative; /* 名前のはみ出し制御用 */
-}
-
-.gridItem:hover {
-  background: #e0e0e0;
-}
-
-.gridItem.selected {
-  background-color: #e8f5e9;
-  border: 0.5cqw solid #4CAF50;
-}
-
-.abilityIcon {
-  width: 9cqw;
-  height: 9cqw;
+.carouselItem img {
+  width: 75%;
+  height: 75%;
   object-fit: contain;
-  margin-bottom: 0.5cqw; /* 余白を0.8 -> 0.5に縮小 */
-}
-
-.abilityName {
-  width: 100%;
-  text-align: center;
-  display: flex;
-  justify-content: center;
-}
-
-.abilityName span {
-  display: inline-block;
-  font-size: 2cqw; /* 2.2 -> 2 に微細化 */
-  font-weight: 700;
-  color: #333;
-  background-color: white;
-  border-radius: 2.2cqw;
-  padding: 0 1.1cqw;
-  white-space: nowrap;
-  letter-spacing: -0.1cqw;
-  margin-top: 0.4cqw; /* 0.9 -> 0.4に縮小 */
-  /* はみ出しても gridItem から極端に飛び出さないように最大幅を制限 */
-  max-width: 110%; 
-  overflow: hidden;
-  text-overflow: clip;
-}
-
-.selected .abilityName span {
-  background-color: #e8f5e9;
 }
 
 .footer {
   display: flex;
+  gap: 16px;
+  margin-top: 16px;
+  width: 100%;
   justify-content: center;
-  padding: 3cqw 0 6cqw 0;
-  background: #fff;
-  border-top: 0.2cqw solid #ddd;
+}
+
+.closeBtn, .decideBtn {
+  padding: 12px 28px;
+  border-radius: 30px;
+  border: none;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s, opacity 0.2s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.closeBtn {
+  background: #f0f0f0;
+  color: #666;
 }
 
 .decideBtn {
-  width: 60%;
-  padding: 3cqw 0;
-  border-radius: 2.2cqw;
-  border: none;
-  background: #4CAF50;
+  background: linear-gradient(135deg, #ff9800, #ff5722);
   color: white;
-  font-weight: 800;
-  font-size: 4.5cqw;
-  cursor: pointer;
-  cursor: pointer;
-  box-shadow: none;
-  border-bottom: 1.1cqw solid #2e7d32; 
-  transition: transform 0.05s;
+  min-width: 100px;
 }
 
-.decideBtn:active {
-  transform: translateY(0.5cqw);
-  border-bottom-width: 0.3cqw;
+.decideBtn.disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.7;
+}
+
+.closeBtn:hover, .decideBtn:hover:not(.disabled) {
+  transform: translateY(-2px);
+  opacity: 0.9;
+}
+
+.closeBtn:active, .decideBtn:active:not(.disabled) {
+  transform: translateY(0);
 }

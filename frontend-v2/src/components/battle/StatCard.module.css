@@ -1,46 +1,126 @@
 .sCard {
-  border-radius: 3cqw;
-  padding: 3cqw;
-  text-align: left;
+  flex: 1;
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px 12px;
+  border: 2px solid #eee;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
-.foeCard { 
-  background: rgba(255, 242, 242, 0.9); 
-  border: 0.4cqw solid #ff4757; 
+.foeCard {
+  border-color: #ffcdd2;
 }
 
-.allyCard { 
-  background: rgba(242, 255, 242, 0.9); 
-  border: 0.4cqw solid #2ed573; 
+.allyCard {
+  border-color: #c8e6c9;
 }
 
 .sCardHeader {
   font-weight: 800;
-  font-size: 4cqw;
-  margin-bottom: 2cqw;
-  color: #333;
+  font-size: 0.95rem;
+  color: #555;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 6px;
+  text-align: center;
+}
+
+.mainStats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hpSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.hpText {
+  font-size: 0.9rem;
+  font-weight: bold;
+  font-family: monospace;
+}
+
+.miniHPBar {
+  width: 100%;
+  height: 6px;
+  background: #eee;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.miniHPFill {
+  height: 100%;
+  transition: width 0.5s ease;
+}
+
+.livesSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.livesDots {
+  display: flex;
+  gap: 6px;
+}
+
+.lifeDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid #fff;
+  box-shadow: 0 0 2px rgba(0,0,0,0.2);
+}
+
+.lifeDot.alive {
+  background-color: #ff9800;
+  box-shadow: 0 0 6px rgba(255, 152, 0, 0.6);
+}
+
+.lifeDot.dead {
+  background-color: #9e9e9e;
+}
+
+.divider {
+  height: 1px;
+  background: #f0f0f0;
 }
 
 .sStatGrid {
-  display: flex;
-  justify-content: space-between;
-  gap: 2cqw;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 
 .sStatItem {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  align-items: center;
 }
 
 .sStatLabel {
-  font-size: 2.7cqw;
-  color: #666;
-  margin-bottom: 0.4cqw;
+  font-size: 0.7rem;
+  color: #888;
+  margin-bottom: 2px;
 }
 
 .sStatValue {
-  font-size: 4.4cqw;
-  font-weight: 800;
-  color: #222;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.sStatValue.up {
+  color: #e91e63;
+}
+
+.sStatValue.down {
+  color: #2196f3;
 }

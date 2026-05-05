@@ -14,13 +14,11 @@
 }
 
 .left {
-  /* 相手側 (本家基準) */
   top: 10px;
   left: -8px;
 }
 
 .right {
-  /* 自分側 (本家基準) */
   bottom: 10px;
   right: -8px;
 }
@@ -49,10 +47,24 @@
   border-radius: 3px;
   margin-top: 2px;
   overflow: hidden;
+  position: relative;
 }
 
 .hpBar {
+  position: absolute;
+  top: 0;
+  left: 0;
   height: 100%;
+  z-index: 2;
+}
+
+.whiteBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background-color: white;
+  z-index: 1;
 }
 
 .poison {
@@ -62,9 +74,4 @@
   padding: 0 6px;
   font-size: 10px;
   line-height: 1.2;
-}
-
-/* 状況確認モーダル用の残機ドット (balloon内には表示しない仕様だが、構造として維持) */
-.lives {
-  display: none;
 }

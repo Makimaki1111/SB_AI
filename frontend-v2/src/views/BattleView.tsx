@@ -19,6 +19,16 @@ export const BattleView: React.FC = () => {
   const location = useLocation();
   const isDouble = location.pathname.includes('double');
   const { username } = useUser();
+  
+  // 動的なWebSocket URLの決定 (開発環境と本番環境の両対応)
+  const dynamicWsUrl = React.useMemo(() => {
+    if (WS_BASE_URL.includes('127.0.0.1') || WS_BASE_URL.includes('localhost')) {
+       // ローカル時はそのまま、あるいは必要なら window.location.hostname を使う
+       return WS_BASE_URL;
+    }
+    return WS_BASE_URL; // 本番環境などは定数に従う
+  }, []);
+
   const { 
     ally, 
     foe, 
@@ -32,14 +42,17 @@ export const BattleView: React.FC = () => {
     timer,
     allyWord,
     foeWord,
+    knockoutStates,
+    allyId,
+    foeId,
     allAbilities: battleAbilities,
     sendMessage,
     sendIncludeCheck 
-  } = useBattle(WS_BASE_URL);
+  } = useBattle(dynamicWsUrl);
   
   const [isLobby, setIsLobby] = React.useState(true);
   const [isAbilityModalOpen, setIsAbilityModalOpen] = React.useState(false);
-  const [targetAbilityIndex, setTargetAbilityIndex] = React.useState(0); // ダブルバトル用
+  const [targetAbilityIndex, setTargetAbilityIndex] = React.useState(0);
   const [isSituationModalOpen, setIsSituationModalOpen] = React.useState(false);
   const [isStockModalOpen, setIsStockModalOpen] = React.useState(false);
   
@@ -52,8 +65,10 @@ export const BattleView: React.FC = () => {
   const [matchingMessage, setMatchingMessage] = React.useState<string | null>(null);
   const [allAbilities, setAllAbilities] = React.useState<Record<string, AbilityData>>({});
 
+  // Hookのルールを守るため、すべての変数定義を早期リターンの前に配置
+  const isStock = location.search.includes('mode=stock');
+  const canChangeAbility = isLobby || (ally?.ability_change_count ?? 0) > 0;
 
-  // 特性リストを事前に取得
   React.useEffect(() => {
     fetch(`${API_BASE_URL}/abilities`)
       .then(res => res.json())
@@ -61,7 +76,6 @@ export const BattleView: React.FC = () => {
       .catch(err => console.error("Failed to fetch abilities:", err));
   }, []);
 
-  // マッチング成功時の演出
   React.useEffect(() => {
     if (battleState && isLobby) {
       if (battleAbilities && Object.keys(battleAbilities).length > 0) {
@@ -153,7 +167,6 @@ export const BattleView: React.FC = () => {
       localStorage.setItem('sb_ability_2', abilityId);
     }
 
-    // 対戦中ならサーバーへ送信
     if (!isLobby && battleState?.room_id) {
       sendMessage({
         type: 'change_ability',
@@ -186,13 +199,10 @@ export const BattleView: React.FC = () => {
     });
   };
 
-  const isStock = location.search.includes('mode=stock');
-  const canChangeAbility = isLobby || (ally?.ability_change_count ?? 0) > 0;
-
   if (!isConnected) {
     return (
       <GameLayout>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', background: '#fce5cd' }}>
           <div className={styles.loading}>サーバーに接続中...</div>
         </div>
       </GameLayout>
@@ -231,6 +241,9 @@ export const BattleView: React.FC = () => {
               timer={timer}
               allyWord={allyWord}
               foeWord={foeWord}
+              knockoutStates={knockoutStates}
+              allyId={allyId}
+              foeId={foeId}
               username={username || "ななし"}
               onSendWord={handleSubmitWord}
               onSendIncludeCheck={sendIncludeCheck}
@@ -239,7 +252,6 @@ export const BattleView: React.FC = () => {
               onRunAway={handleRunAway}
             />
 
-            {/* リザルトオーバーレイ */}
             {battleState?.status === 'finished' && (
               <div className={styles.resultOverlay}>
                 <div className={styles.resultCard}>
@@ -278,18 +290,26 @@ export const BattleView: React.FC = () => {
           <div className={styles.situationCardsContainer}>
             <StatCard 
               type="foe"
-              name="あいて"
+              name={foe?.name || "あいて"}
+              hp={foe?.hp ?? 0}
+              maxHp={foe?.max_hp ?? 100}
+              lives={foe?.lives ?? 0}
+              maxLives={battleState?.foe_max_lives ?? 1}
               stats={{
-                attack: foe?.attack_rank || 1.0,
-                defense: foe?.defense_rank || 1.0
+                attack: foe?.attack_rank || 0,
+                defense: foe?.defense_rank || 0
               }}
             />
             <StatCard 
               type="ally"
-              name="じぶん"
+              name={username || ally?.name || "じぶん"}
+              hp={ally?.hp ?? 0}
+              maxHp={ally?.max_hp ?? 100}
+              lives={ally?.lives ?? 0}
+              maxLives={battleState?.ally_max_lives ?? 1}
               stats={{
-                attack: ally?.attack_rank || 1.0,
-                defense: ally?.defense_rank || 1.0
+                attack: ally?.attack_rank || 0,
+                defense: ally?.defense_rank || 0
               }}
             />
           </div>

@@ -42,7 +42,26 @@ export const EVENT_SOUND_MAP = {
 };
 
 /**
- * APIエンドポイント
+ * API/WebSocketエンドポイントの解決
+ * ブラウザ環境では、window.location.hostnameを使用してバックエンドに接続する
  */
-export const API_BASE_URL = 'http://127.0.0.1:8000';
-export const WS_BASE_URL = 'ws://127.0.0.1:8000/ws';
+const getBaseUrl = () => {
+  if (typeof window === 'undefined') return '127.0.0.1:8000';
+  const hostname = window.location.hostname;
+  
+  // localhostや空の場合は127.0.0.1を明示的に使用（IPv6/IPv4の解決問題を回避）
+  if (!hostname || hostname === 'localhost' || hostname === '127.0.0.1') {
+    return '127.0.0.1:8000';
+  }
+  
+  // それ以外（Render.comなどの本番環境やLAN内他PCからのアクセス）は同じホストの8000ポート（または適宜調整）
+  // 注意: 本番環境では通常ポート80/443になるため、環境変数等での制御が望ましいが、一旦開発優先
+  return `${hostname}:8000`;
+};
+
+const baseUrl = getBaseUrl();
+const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'https' : 'http';
+const wsProtocol = protocol === 'https' ? 'wss' : 'ws';
+
+export const API_BASE_URL = `${protocol}://${baseUrl}`;
+export const WS_BASE_URL = `${wsProtocol}://${baseUrl}/ws`;

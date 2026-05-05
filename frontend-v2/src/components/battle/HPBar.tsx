@@ -1,5 +1,6 @@
 import React from 'react';
 import styles from './HPBar.module.css';
+import { motion } from 'framer-motion';
 
 interface HPBarProps {
   hp: number;
@@ -10,8 +11,6 @@ interface HPBarProps {
   maxLives: number;
   isAlly: boolean;
 }
-
-import { motion } from 'framer-motion';
 
 export const HPBar: React.FC<HPBarProps> = ({ 
   hp, 
@@ -30,21 +29,20 @@ export const HPBar: React.FC<HPBarProps> = ({
       <div className={styles.header}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
           <span className={styles.name}>{name}</span>
-          {!isAlly && (
-            <div className={styles.livesContainer}>
-              {Array.from({ length: maxLives }).map((_, i) => (
-                <div 
-                  key={i} 
-                  className={`${styles.lifeDot} ${i >= lives ? styles.lost : ''}`} 
-                />
-              ))}
-            </div>
-          )}
+          {isPoison && <span className={styles.poison}>どく</span>}
         </div>
         <span className={styles.hpText}>{hp}/{maxHp}</span>
       </div>
       
       <div className={styles.barContainer}>
+        {/* ダメージ演出用の白い残像バー */}
+        <motion.div 
+          className={styles.whiteBar}
+          initial={{ width: `${hpPercentage}%` }}
+          animate={{ width: `${hpPercentage}%` }}
+          transition={{ duration: 1.2, ease: "easeOut", delay: 0.3 }}
+        />
+        {/* メインのHPバー */}
         <motion.div 
           className={styles.hpBar} 
           initial={{ width: `${hpPercentage}%`, backgroundColor: barColor }}

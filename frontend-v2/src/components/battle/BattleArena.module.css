@@ -3,74 +3,65 @@
   flex-direction: column;
   height: 100%;
   position: relative;
-  background: white;
+  background: #fce5cd;
+  overflow: hidden;
+  font-family: "M PLUS 1p", sans-serif;
 }
 
 .topImage {
   position: relative;
-  width: 100%;
-  height: 60cqw;
+  width: 450px; /* 本家の基本幅 */
+  height: 380px; 
   flex-shrink: 0;
   z-index: 1;
   overflow: hidden;
+  margin: 0 auto;
 }
 
 .bgImage {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0.8;
 }
 
 .content {
   flex: 1;
-  padding: 4cqw;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 2cqw;
-  background: white;
+  background: transparent;
   position: relative;
   z-index: 10;
-  border-top: 0.2cqw solid #eee;
+  width: 450px;
+  margin: 0 auto;
 }
 
 .actionArea {
   width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .inputWrapper {
   display: flex;
   flex-direction: column;
-  gap: 0;
   align-items: center;
   position: relative;
-  min-height: 15cqw;
+  min-height: 80px;
+  padding-top: 20px;
 }
 
 .timerContainer {
   width: 100%;
   height: 8px;
   background: #e0e0e0;
-  border-radius: 4px;
   overflow: hidden;
-  flex-shrink: 0;
 }
 
 .timerBar {
-  width: 100%;
   height: 100%;
-  transition: width 0.1s linear, background-color 0.3s ease;
-}
-
-.message {
-  height: 6cqw;
-  font-size: 3.5cqw;
-  font-weight: 800;
-  color: #333;
-  text-align: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  transition: width 0.1s linear;
 }
 
 .messageOverlay {
@@ -79,71 +70,54 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.7); /* 少し透過させる */
+  background-color: #333333;
   color: white;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2cqw;
-  font-size: 3.5cqw;
-  font-weight: bold;
-  line-height: 1.4;
+  padding: 15px 25px;
+  font-size: 1.3em;
   z-index: 40;
   box-sizing: border-box;
-  pointer-events: none; /* 下の要素を触れるようにする */
-  border-radius: 2cqw;
-  text-shadow: 0 0 1cqw rgba(0,0,0,0.5);
+  pointer-events: none;
 }
 
 .predictionContainer {
   position: absolute;
   bottom: 100%;
-  right: 12cqw;
+  right: 60px;
   display: flex;
   flex-direction: column;
   align-items: center;
   pointer-events: none;
   z-index: 20;
-  margin-bottom: -4cqw;
 }
 
 .predictionImages {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 15cqw;
+  height: 80px;
 }
 
 .predictionImg {
-  height: 15cqw;
-  opacity: 0.8;
+  height: 80px;
 }
 
 .predictionMsg {
-  font-size: 3cqw;
+  font-size: 0.9rem;
   font-weight: bold;
   color: #333;
-  opacity: 0.7;
-  white-space: nowrap;
-  text-shadow: 0 0 0.5cqw white;
-  margin-top: -3cqw;
+  text-shadow: 0 0 2px white;
 }
 
 .actionsWrapper {
   display: flex;
-  justify-content: space-around;
-  align-items: center;
-  min-height: 15cqw;
-  padding: 0 2cqw;
+  justify-content: center;
+  gap: 20px;
+  padding: 10px;
 }
 
 .footerArea {
   display: flex;
   justify-content: center;
-  align-items: center;
-  min-height: 12cqw;
-  border-top: 1px solid rgba(0,0,0,0.05);
-  width: 100%;
+  padding: 15px 0;
 }
 
 .actionBtn {
@@ -151,58 +125,30 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 45%;
-  height: 22cqw;
+  width: 180px;
+  height: 100px;
   background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(0,0,0,0.1);
-  border-radius: 4cqw;
+  border: none;
+  border-radius: 20px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 1cqw 2.5cqw rgba(0,0,0,0.08);
+  box-shadow: 0 8px 15px rgba(0,0,0,0.1);
 }
 
-.actionBtn:hover {
-  transform: translateY(-0.5cqw);
-  box-shadow: 0 1.5cqw 3cqw rgba(0,0,0,0.12);
-}
+.situationBtn { border-bottom: 5px solid #ff4757; }
+.abilityBtn { border-bottom: 5px solid #2ed573; }
 
-.situationBtn {
-  background: rgba(255, 242, 242, 0.9);
-  border-bottom: 0.8cqw solid #ff4757;
-}
+.actionBtnIcon { width: 32px; height: 32px; margin-bottom: 5px; }
+.situationBtn .actionBtnIcon { fill: #ff4757; }
+.abilityBtn .actionBtnIcon { fill: #2ed573; }
 
-.abilityBtn {
-  background: rgba(242, 255, 242, 0.9);
-  border-bottom: 0.8cqw solid #2ed573;
-}
-
-.actionBtnIcon {
-  width: 7cqw;
-  height: 7cqw;
-  margin-bottom: 1cqw;
-}
-
-.situationBtn .actionBtnIcon {
-  fill: #ff4757;
-}
-
-.abilityBtn .actionBtnIcon {
-  fill: #2ed573;
-}
-
-.actionBtnText {
-  font-size: 3cqw;
-  font-weight: 800;
-  color: #333;
-  letter-spacing: 0.1cqw;
-}
+.actionBtnText { font-size: 1.1rem; font-weight: 800; color: #333; }
 
 .cancelBattleBtn {
-  padding: 2cqw 6cqw;
-  font-size: 4cqw;
+  padding: 12px 40px;
+  font-size: 1.1rem;
   font-weight: 700;
-  border-radius: 2.5cqw;
-  border: 1px solid #ddd;
+  border-radius: 50px;
+  border: 1px solid #ccc;
   background: white;
   color: #666;
   cursor: pointer;
@@ -215,17 +161,17 @@
   z-index: 1;
 }
 
+/* 本家の正確な座標 */
 .ellipseLeft {
-  bottom: -40px;
-  left: 22%;
-  transform: translateX(-50%);
-  width: 70%;
-  height: 80px;
+  top: 310px;
+  left: -140px;
+  width: 620px;
+  height: 160px;
 }
 
 .ellipseRight {
-  bottom: 100px;
-  right: 8%;
-  width: 180px;
-  height: 40px;
+  top: 140px;
+  left: 300px;
+  width: 340px;
+  height: 80px;
 }

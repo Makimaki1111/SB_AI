@@ -22,6 +22,7 @@ export const useBattle = (url: string) => {
   const [timer, setTimer] = useState({ remaining: 20, total: 20 });
   const [allyWord, setAllyWord] = useState<string | null>(null);
   const [foeWord, setFoeWord] = useState<string | null>(null);
+  const [knockoutStates, setKnockoutStates] = useState<Record<string, boolean>>({});
   const soundManager = SoundManager.getInstance();
   
   useEffect(() => {
@@ -35,19 +36,21 @@ export const useBattle = (url: string) => {
   const processQueue = async () => {
     if (isHandlingQueue.current || messageQueue.current.length === 0) return;
     isHandlingQueue.current = true;
-    setIsProcessing(true); // キュー処理開始時にセット
+    setIsProcessing(true);
     
     while (messageQueue.current.length > 0) {
       const data = messageQueue.current.shift();
-      if (data) await handleBattleUpdate(data);
+      if (data) {
+        console.log(`Processing queue item: ${data.type}`);
+        await handleBattleUpdate(data);
+      }
     }
     
-    setIsProcessing(false); // 全ての演出終了後に解除
+    setIsProcessing(false);
     isHandlingQueue.current = false;
   };
 
   const handleBattleUpdate = async (data: BattleResponse) => {
-    // setIsProcessing(true); // 個別の更新では行わない
     try {
       if (data.all_abilities) setAllAbilities(data.all_abilities);
       if (data.info?.id_to_ui_map) {
@@ -99,6 +102,11 @@ export const useBattle = (url: string) => {
           if (targetId && tempCharacters[targetId] && event.hp !== undefined && event.hp !== null) {
             tempCharacters[targetId] = { ...tempCharacters[targetId], hp: event.hp };
             setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
+            
+            if (event.hp <= 0) {
+              setKnockoutStates(prev => ({ ...prev, [targetId]: true }));
+              soundManager.play('end');
+            }
           }
 
           if (event.type === 'drain' && event.attacker) {
@@ -122,6 +130,15 @@ export const useBattle = (url: string) => {
           await new Promise(resolve => setTimeout(resolve, 800));
           setAllyEffect(null);
           setFoeEffect(null);
+        } else if (event.type === 'revive') {
+          if (targetId) {
+            setKnockoutStates(prev => ({ ...prev, [targetId]: false }));
+            if (tempCharacters[targetId] && event.hp !== undefined) {
+               tempCharacters[targetId] = { ...tempCharacters[targetId], hp: event.hp };
+               setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
+            }
+          }
+          await new Promise(resolve => setTimeout(resolve, 800));
         } else if (event.type === 'stat_up' || event.type === 'stat_down') {
           const effect = event.type === 'stat_up' ? 'up' : 'down';
           soundManager.play(effect);
@@ -155,17 +172,30 @@ export const useBattle = (url: string) => {
   };
 
   useEffect(() => {
+    console.log(`Connecting to WebSocket at: ${url}`);
     const ws = new WebSocket(url);
     socketRef.current = ws;
-    ws.onopen = () => setIsConnected(true);
-    ws.onclose = () => setIsConnected(false);
-    ws.onerror = (err) => {
-      console.error('⚠️ WebSocket Error:', err);
+    
+    ws.onopen = () => {
+      console.log('✅ WebSocket Connected');
+      setIsConnected(true);
+    };
+    
+    ws.onclose = (event) => {
+      console.log(`❌ WebSocket Closed: ${event.code} ${event.reason}`);
       setIsConnected(false);
     };
+    
+    ws.onerror = (err) => {
+      console.error('⚠️ WebSocket Error details:', err);
+      setIsConnected(false);
+    };
+    
     ws.onmessage = (event) => {
       try {
         const data: BattleResponse = JSON.parse(event.data);
+        console.log(`Received message type: ${data.type}`);
+        
         if (data.type === 'pre_check' && data.info) {
           setPrediction({
             include: data.info.include ?? false,
@@ -185,8 +215,10 @@ export const useBattle = (url: string) => {
         console.error('Failed to parse WebSocket message:', err);
       }
     };
+    
     return () => {
       if (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN) {
+        console.log('Cleanup: Closing WebSocket');
         ws.onopen = null;
         ws.onmessage = null;
         ws.onerror = null;
@@ -213,7 +245,10 @@ export const useBattle = (url: string) => {
 
   const sendMessage = (msg: SocketMessage) => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+      console.log(`Sending message: ${msg.type}`);
       socketRef.current.send(JSON.stringify(msg));
+    } else {
+      console.warn(`Cannot send message. Socket state: ${socketRef.current?.readyState}`);
     }
   };
 
@@ -226,10 +261,15 @@ export const useBattle = (url: string) => {
     });
   };
 
-  const ally = battleState?.characters && uiMapping ? 
+  const ally = (battleState?.characters && uiMapping) ? 
     Object.entries(battleState.characters).find(([id, _]) => uiMapping[id] === 'ally')?.[1] || null : null;
-  const foe = battleState?.characters && uiMapping ? 
+  const foe = (battleState?.characters && uiMapping) ? 
     Object.entries(battleState.characters).find(([id, _]) => uiMapping[id] === 'foe')?.[1] || null : null;
+  
+  const allyId = (battleState?.characters && uiMapping) ? 
+    Object.keys(uiMapping).find(id => uiMapping[id] === 'ally') || null : null;
+  const foeId = (battleState?.characters && uiMapping) ? 
+    Object.keys(uiMapping).find(id => uiMapping[id] === 'foe') || null : null;
 
   return {
     ally,
@@ -245,6 +285,9 @@ export const useBattle = (url: string) => {
     timer,
     allyWord,
     foeWord,
+    knockoutStates,
+    allyId,
+    foeId,
     sendMessage,
     sendIncludeCheck
   };

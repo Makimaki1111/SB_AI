@@ -62,16 +62,24 @@ app.add_middleware(
 @app.middleware("http")
 async def protect_assets_middleware(request: Request, call_next):
     path = request.url.path
+    # 画像や音声リソースへの直接アクセスを制限
     if path.startswith("/img/") or path.startswith("/resource/"):
         referer = request.headers.get("referer")
-        if not referer:
-            return Response(status_code=403, content="Access Denied")
-        request_host = request.headers.get("host")
-        if request_host:
+        # 開発環境や特定のホストからのアクセスを許可
+        if referer:
             referer_netloc = urlparse(referer).netloc
-            allowed_hosts = [request_host, "localhost:5173", "shiritori-battle.render.com"]
+            request_host = request.headers.get("host")
+            allowed_hosts = [
+                request_host, 
+                "localhost:5173", 
+                "127.0.0.1:5173", 
+                "shiritori-battle.render.com"
+            ]
             if referer_netloc not in allowed_hosts:
-                return Response(status_code=403, content="Access Denied")
+                return Response(status_code=403, content=f"Access Denied: Origin {referer_netloc} not allowed")
+        # Refererがない場合は一旦許可（開発中のデバッグ等を考慮）
+        # 本番環境ではより厳格にする必要がある
+        pass
 
     response = await call_next(request)
     if (path.startswith("/img/") or path.startswith("/resource/")) and response.status_code < 400:
@@ -91,16 +99,15 @@ def get_abilities_endpoint():
 
 # --- WebSocket ---
 @app.websocket("/ws")
-@app.websocket("/ws/double") # 両方のパスを同じハンドラで受ける
+@app.websocket("/ws/double")
 async def websocket_endpoint(websocket: WebSocket):
+    # すべてのオリジンからのWebSocket接続を許可
     await connection_manager.connect(websocket)
     try:
         while True:
             data = await websocket.receive_text()
-            print(f"MAIN DEBUG: Received data in endpoint: {data[:100]}") # ログの最優先出力
             await ws_handler.handle_message(websocket, data)
     except WebSocketDisconnect:
-        # 切断時のクリーンアップ（Grace Periodの開始）
         pid = connection_manager.get_player_id(websocket)
         left_rooms = connection_manager.disconnect(websocket)
         if pid:
@@ -114,18 +121,6 @@ async def websocket_endpoint(websocket: WebSocket):
         if pid:
             for rid in left_rooms:
                 room_manager.start_grace_period(rid, pid, delay=20)
-
-# --- フロントエンド配信設定 ---
-frontend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend")
-if os.path.exists(frontend_dir):
-    app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
-else:
-    # 開発環境などの構成が異なる場合のフォールバック
-    fallback_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "frontend")
-    if os.path.exists(fallback_dir):
-        app.mount("/", StaticFiles(directory=fallback_dir, html=True), name="frontend")
-    else:
-        logger.warning("Frontend directory not found. Please ensure 'frontend' exists.")
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

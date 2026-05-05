@@ -1,32 +1,37 @@
 .avatarContainer {
   position: absolute;
-  width: 100px;
-  height: 100px;
+  width: 150px; /* サイズを少し大きく */
+  height: 150px;
   display: flex;
   justify-content: center;
   align-items: center;
   pointer-events: none;
   z-index: 11;
+  border: none; /* 枠線を明示的に消去 */
+  outline: none;
+  background: transparent;
 }
 
+/* 接地感が出るように位置を調整 */
 .ally {
-  top: 100px;
-  left: 65px;
+  top: 190px;
+  left: 60px;
 }
 
 .foe {
-  top: 5px;
-  right: 80px;
+  top: 50px;
+  right: 60px;
 }
 
 .avatarImg {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  display: block;
 }
 
 .blinking {
-  animation: blink 0.2s 5;
+  animation: blink 0.15s infinite;
 }
 
 @keyframes blink {
