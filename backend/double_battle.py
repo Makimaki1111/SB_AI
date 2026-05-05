@@ -107,8 +107,10 @@ class DoubleBattle(BaseBattle):
     def _check_win_condition(self):
         t1_dead = all(p.is_defeated for p in self.team1)
         t2_dead = all(p.is_defeated for p in self.team2)
-        if t1_dead: self.winner_team = 1
-        elif t2_dead: self.winner_team = 0
+        if t1_dead and self.winner_team is None: 
+            self.winner_team = 1
+        elif t2_dead and self.winner_team is None: 
+            self.winner_team = 0
         return self.is_finished
 
     def _patch_ability_events(self, current_actor, target_actor):
@@ -165,6 +167,7 @@ class DoubleBattle(BaseBattle):
         self.record_used_word(word, current_actor.id)
         self.last_actor_id = current_actor.id
         self._advance_turn_index()
+        
         ret = self._make_response()
         self.word, self.events = "", []
         return ret
@@ -248,6 +251,12 @@ class DoubleBattle(BaseBattle):
 
 
     def _make_response(self) -> dict:
+        # 決着時のメッセージをイベントの最後に追加 (本家再現)
+        if self.winner_team is not None:
+            msg = "あいてとの勝負に勝った！" if self.winner_team == 0 else "あいてとの勝負に負けた…"
+            if not any(e.get("message") == msg for e in self.events if isinstance(e, dict)):
+                self.events.append({"type": "message", "message": msg})
+
         chars = {}
         for p in self.players:
             chars[p.id] = CharacterState(

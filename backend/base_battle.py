@@ -164,6 +164,10 @@ class BaseBattle:
         team_idx = self._get_team_index(current_actor)
         if team_idx != -1:
             self.winner_team = 1 - team_idx
+            if self.winner_team == 0:
+                self.events.append({"type": "message", "message": "あいてとの勝負に勝った！"})
+            else:
+                self.events.append({"type": "message", "message": "あいてとの勝負に負けた…"})
             
         ret = self._make_response()
         self.events = []

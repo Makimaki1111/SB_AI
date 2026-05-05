@@ -105,13 +105,17 @@ class SingleBattle(BaseBattle):
         if defeated_player.id == self.player1.id:
             self.player1_lives -= 1
             lives_left = self.player1_lives
-            if lives_left <= 0: self.winner_team = 1
-            else: defeated_player.hp = MAX_HP
+            if lives_left <= 0:
+                self.winner_team = 1
+            else:
+                defeated_player.hp = MAX_HP
         else:
             self.player2_lives -= 1
             lives_left = self.player2_lives
-            if lives_left <= 0: self.winner_team = 0
-            else: defeated_player.hp = MAX_HP
+            if lives_left <= 0:
+                self.winner_team = 0
+            else:
+                defeated_player.hp = MAX_HP
             
         if self.winner_team is None:
             defeated_player.attack_rank = 0
@@ -179,6 +183,12 @@ class SingleBattle(BaseBattle):
 
     def _make_response(self) -> dict:
         print("DEBUG: Starting _make_response")
+        # 決着時のメッセージをイベントの最後に追加 (本家再現)
+        if self.winner_team is not None:
+            msg = "あいてとの勝負に勝った！" if self.winner_team == 0 else "あいてとの勝負に負けた…"
+            if not any(e.get("message") == msg for e in self.events if isinstance(e, dict)):
+                self.events.append({"type": "message", "message": msg})
+        
         try:
             chars = {
                 self.player1.id: CharacterState(

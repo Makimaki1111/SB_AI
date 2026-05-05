@@ -24,6 +24,7 @@ export const useBattle = (url: string) => {
   const [allyWord, setAllyWord] = useState<string | null>(null);
   const [foeWord, setFoeWord] = useState<string | null>(null);
   const [knockoutStates, setKnockoutStates] = useState<Record<string, boolean>>({});
+  const [showResultButton, setShowResultButton] = useState(false);
   const soundManager = SoundManager.getInstance();
 
   useEffect(() => {
@@ -70,6 +71,7 @@ export const useBattle = (url: string) => {
         setDisplayMessage(null);
         setWaitMessage(null);
         setKnockoutStates({});
+        setShowResultButton(false);
         setAllyEffect(null);
         setFoeEffect(null);
       }
@@ -97,7 +99,7 @@ export const useBattle = (url: string) => {
       const initialVisualState: BattleState = {
         ...data.state,
         characters: { ...data.state.characters },
-        status: data.state.winner_team !== null ? 'finished' : 'active'
+        status: 'active' // 演出開始時は常にactiveにする
       };
 
       // 演出開始時は、キャラクターのHPだけ「以前の状態」を維持する
@@ -210,6 +212,13 @@ export const useBattle = (url: string) => {
           setFoeEffect(null);
         } else if (event.type === 'ability_changed') {
           await new Promise(resolve => setTimeout(resolve, 100)); // 本家: 100ms
+        } else if (event.type === 'message') {
+          setDisplayMessage(event.message);
+          // 決着メッセージの場合は、即座にボタンを表示状態にする (本家再現)
+          if (event.message === "あいてとの勝負に勝った！" || event.message === "あいてとの勝負に負けた…") {
+            setShowResultButton(true);
+          }
+          await new Promise(resolve => setTimeout(resolve, 1000));
         } else {
           // メッセージ表示等の汎用待機
           await new Promise(resolve => setTimeout(resolve, 1000));
@@ -226,9 +235,6 @@ export const useBattle = (url: string) => {
 
       // ターン開始メッセージの設定 (本家再現)
       if (finalState.status === 'finished') {
-        const resultMsg = finalState.ally_win === true ? 'あなたの勝ちです！' : 
-                         finalState.ally_win === false ? 'あなたの負けです...' : '引き分けです';
-        setDisplayMessage(resultMsg);
         setWaitMessage(null);
       } else {
         const turnMsg = finalState.is_my_turn ? 'あなたのターンです。' : '相手のターンです。';
@@ -353,6 +359,7 @@ export const useBattle = (url: string) => {
     prediction,
     displayMessage,
     waitMessage,
+    showResultButton,
     isProcessing,
     allyEffect,
     foeEffect,
