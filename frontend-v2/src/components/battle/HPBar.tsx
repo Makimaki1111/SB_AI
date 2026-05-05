@@ -22,7 +22,7 @@ export const HPBar: React.FC<HPBarProps> = ({
   isAlly 
 }) => {
   const hpPercentage = maxHp > 0 ? (hp / maxHp) * 100 : 0;
-  const barColor = hpPercentage > 50 ? '#00FF00' : hpPercentage > 20 ? '#FFCC00' : '#FF0000';
+  const barColor = hpPercentage > 50 ? '#00FF00' : hpPercentage > 20 ? '#FFFF00' : '#FF0000';
 
   return (
     <div className={`${styles.balloon} ${isAlly ? styles.right : styles.left}`}>
@@ -35,19 +35,12 @@ export const HPBar: React.FC<HPBarProps> = ({
       </div>
       
       <div className={styles.barContainer}>
-        {/* ダメージ演出用の白い残像バー */}
-        <motion.div 
-          className={styles.whiteBar}
-          initial={{ width: `${hpPercentage}%` }}
-          animate={{ width: `${hpPercentage}%` }}
-          transition={{ duration: 1.2, ease: "easeOut", delay: 0.3 }}
-        />
-        {/* メインのHPバー */}
+        {/* メインのHPバー (本家同様のアニメーション) */}
         <motion.div 
           className={styles.hpBar} 
           initial={{ width: `${hpPercentage}%`, backgroundColor: barColor }}
           animate={{ width: `${hpPercentage}%`, backgroundColor: barColor }}
-          transition={{ duration: 0.6, ease: "easeInOut" }}
+          transition={{ duration: 0.5, ease: "easeOut" }} // 本家: 500ms
         />
       </div>
 

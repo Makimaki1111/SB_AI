@@ -12,6 +12,7 @@ interface BattleArenaProps {
   foe: CharacterState | null;
   prediction: { include: boolean, type1?: string, type2?: string, used?: boolean, prediction?: string } | null;
   displayMessage: string | null;
+  waitMessage: string | null;
   isProcessing: boolean;
   allyEffect: string | null;
   foeEffect: string | null;
@@ -35,6 +36,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
   foe,
   prediction,
   displayMessage,
+  waitMessage,
   isProcessing,
   allyEffect,
   foeEffect,
@@ -95,13 +97,15 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
           </div>
 
           <div className={styles.inputWrapper}>
-            <WordInput 
-              onSend={onSendWord} 
-              onChange={onSendIncludeCheck}
-              disabled={(battleState?.is_my_turn === false) || battleState?.status === 'finished'}
-              initialChar={battleState?.character || ''}
-            />
-            {prediction && prediction.include && (
+            {(!displayMessage && battleState?.is_my_turn && battleState?.status !== 'finished') && (
+              <WordInput 
+                onSend={onSendWord} 
+                onChange={onSendIncludeCheck}
+                disabled={isProcessing}
+                initialChar={battleState?.character || ''}
+              />
+            )}
+            {prediction && prediction.include && !displayMessage && (
               <div className={styles.predictionContainer}>
                 <div className={styles.predictionImages}>
                   {prediction.used ? (
@@ -116,9 +120,14 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                 {prediction.prediction && <div className={styles.predictionMsg}>{prediction.prediction}</div>}
               </div>
             )}
-            {displayMessage && (
+            {displayMessage !== null && (
               <div className={styles.messageOverlay}>
                 {displayMessage}
+              </div>
+            )}
+            {waitMessage && (
+              <div className={styles.waitMessage}>
+                {waitMessage}
               </div>
             )}
           </div>

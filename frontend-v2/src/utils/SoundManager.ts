@@ -33,15 +33,15 @@ export class SoundManager {
       '動物': 'animal',
       '植物': 'plant',
       '食べ物': 'food',
-      '場所': 'place',
-      '人間': 'person',
-      '身体': 'body',
+      '地名': 'place',
+      '人物': 'person',
+      '人体': 'body',
       '服飾': 'cloth',
-      '道具': 'mech',
+      '機械': 'mech',
       'スポーツ': 'sports',
       '芸術': 'art',
       '理科': 'science',
-      '算数': 'math',
+      '数学': 'math',
       '社会': 'society',
       '遊び': 'play',
       '物語': 'tale',
@@ -49,10 +49,11 @@ export class SoundManager {
       '感情': 'emote',
       '宗教': 'religion',
       '暴力': 'violence',
-      '健康': 'health',
-      '電脳': 'denno',
-      '電化製品': 'concent',
-      '虫': 'bug'
+      '医療': 'health',
+      '虫': 'bug',
+      '暴言': 'insult',
+      '工作': 'work',
+      '時間': 'time'
     };
 
     const soundName = typeMap[typeName] || 'normal';

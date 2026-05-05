@@ -12,15 +12,22 @@
   text-shadow: 0 0 0.8cqw rgba(255,255,255,0.8);
 }
 
+.blinking {
+  animation: blink 0.2s 5;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
 /* 本家の正確な座標 (450px幅基準のcqw) */
 .allyWord {
   top: 40cqw; /* 180px / 450px */
   left: 25%;
-  transform: translateX(-50%);
 }
 
 .foeWord {
   top: 18.2cqw; /* 82px / 450px */
   right: 29%;
-  transform: translateX(50%);
 }

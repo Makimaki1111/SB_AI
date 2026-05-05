@@ -35,6 +35,7 @@ export const BattleView: React.FC = () => {
     isConnected, 
     prediction,
     displayMessage,
+    waitMessage,
     isProcessing,
     allyEffect,
     foeEffect,
@@ -84,6 +85,10 @@ export const BattleView: React.FC = () => {
       const timer = setTimeout(() => {
         setIsLobby(false);
         setMatchingMessage(null);
+        // 本家再現: 対戦開始時にモーダルをすべて閉じる
+        setIsAbilityModalOpen(false);
+        setIsSituationModalOpen(false);
+        setIsStockModalOpen(false);
       }, 1500);
       return () => clearTimeout(timer);
     }
@@ -234,6 +239,7 @@ export const BattleView: React.FC = () => {
               foe={foe}
               prediction={prediction}
               displayMessage={displayMessage}
+              waitMessage={waitMessage}
               isProcessing={isProcessing}
               allyEffect={allyEffect}
               foeEffect={foeEffect}

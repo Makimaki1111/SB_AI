@@ -46,7 +46,7 @@ export const BattleSide: React.FC<BattleSideProps> = ({
   );
 
   const effects = <BattleEffects trigger={effect} side={isAlly ? "ally" : "foe"} />;
-  const wordDisplay = <WordDisplay word={word} isAlly={isAlly} />;
+  const wordDisplay = <WordDisplay word={word} isAlly={isAlly} isBlinking={effect === 'blink'} isKnockout={isKnockout} />;
 
   return (
     <>

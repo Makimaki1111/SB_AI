@@ -169,6 +169,32 @@ class DoubleBattle(BaseBattle):
         self.word, self.events = "", []
         return ret
 
+    def timeout(self):
+        """タイムアウト処理 (DoubleBattle用にターン進行を追加)"""
+        if self.is_finished: return self._make_response()
+        current_actor = self.get_current_actor()
+        if not current_actor: return self._make_response()
+
+        current_actor.hp = 0
+        self.events.append({
+            "type": "damage", 
+            "message": f"時間切れ！{current_actor.name}は力尽きた…", 
+            "target": self.get_player_label(current_actor), 
+            "damage": 0, 
+            "hp": 0
+        })
+        
+        team_idx = self._get_team_index(current_actor)
+        if team_idx != -1:
+            self.winner_team = 1 - team_idx
+            
+        # ターンを進行
+        self._advance_turn_index()
+            
+        ret = self._make_response()
+        self.events = []
+        return ret
+
     def execute_cpu_turn(self):
         actor = self.get_current_actor()
         cpu_word = self.get_cpu_word()
@@ -181,7 +207,9 @@ class DoubleBattle(BaseBattle):
         else:
             actor.hp = 0
             self.events.append({"message": f"{actor.name}は ことばを思いつかなかった！", "target": actor.id})
-            if not self._check_win_condition(): self._advance_turn_index()
+            self._check_win_condition()
+            # CPU失敗時もターン進行
+            self._advance_turn_index()
             return self._make_response()
 
     def get_cpu_word(self):

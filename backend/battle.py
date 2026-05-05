@@ -168,10 +168,9 @@ class SingleBattle(BaseBattle):
         self._check_win_condition()
         
         # ターンを交代
-        if not self.is_finished:
-            self.player1_turn = not self.player1_turn
-            self.turn += 1
-            self.last_actor_id = player_id
+        self.player1_turn = not self.player1_turn
+        self.turn += 1
+        self.last_actor_id = player_id
         
         ret = self._make_response()
         # イベントをリセット（次のターンのために）
@@ -281,11 +280,40 @@ class SingleBattle(BaseBattle):
         })
         return self._make_response()
 
+    def timeout(self):
+        """タイムアウト処理 (SingleBattle 用にターン交代を追加)"""
+        if self.is_finished: return self._make_response()
+        current_actor = self.get_current_actor()
+        if not current_actor: return self._make_response()
+
+        current_actor.hp = 0
+        self.events.append({
+            "type": "damage", 
+            "message": f"時間切れ！{current_actor.name}は力尽きた…", 
+            "target": self.get_player_label(current_actor), 
+            "damage": 0, 
+            "hp": 0
+        })
+        
+        team_idx = self._get_team_index(current_actor)
+        if team_idx != -1:
+            self.winner_team = 1 - team_idx
+        
+        # ターンを交代
+        self.player1_turn = not self.player1_turn
+        self.turn += 1
+            
+        ret = self._make_response()
+        self.events = []
+        return ret
+
     def execute_cpu_turn(self):
         cpu_word = self.get_cpu_word()
         if cpu_word: return self.try_attack(self.player2.id, cpu_word)
         self.player2.hp = 0
         self._check_win_condition()
+        # CPU失敗時もターン交代(念のため)
+        self.player1_turn = not self.player1_turn
         return self._make_response()
 
     def get_cpu_word(self):

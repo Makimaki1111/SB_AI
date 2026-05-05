@@ -12,7 +12,6 @@ interface CharacterAvatarProps {
 
 /**
  * キャラクターアバター (タイプ画像) コンポーネント。
- * 本家同様、複合タイプの場合は2つの画像を並べて表示する。
  */
 export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({ 
   types = [], 
@@ -20,48 +19,51 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
   isBlinking,
   isKnockout 
 }) => {
-  // 表示するタイプを確定 (空ならノーマル)
-  const displayTypes = types.length > 0 ? types.filter(t => t) : ['ノーマル'];
+  // 初期状態(タイプなし)は何も表示しない
+  if (!types || types.length === 0) return null;
+
+  const displayTypes = types.filter(t => t);
+  if (displayTypes.length === 0) return null;
+
   const isDual = displayTypes.length >= 2;
 
   return (
     <AnimatePresence>
-      {!isKnockout && (
-        <motion.div 
-          className={`${styles.avatarGroup} ${isAlly ? styles.allyGroup : styles.foeGroup} ${isBlinking ? styles.blinking : ''}`}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 100 }}
-          transition={{ duration: 0.6 }}
-        >
-          {displayTypes.map((type, index) => {
-            const iconName = TYPE_TO_IMAGE[type] || 'normal';
-            const imageUrl = `/img/${iconName}.gif`;
-            
-            // 複合タイプ時の個別配置クラス
-            const positionClass = isDual 
-              ? (index === 0 ? styles.type1 : styles.type2) 
-              : styles.single;
+      <motion.div 
+        key={isKnockout ? 'knockout' : 'alive'}
+        className={`${styles.avatarGroup} ${isAlly ? styles.allyGroup : styles.foeGroup} ${isBlinking ? styles.blinking : ''}`}
+        initial={{ opacity: 1, y: 0 }}
+        animate={isKnockout ? { opacity: 0, y: 100 } : { opacity: 1, y: 0 }}
+        transition={{ duration: isKnockout ? 0.8 : 0.3 }}
+      >
+        {displayTypes.map((type, index) => {
+          const iconName = TYPE_TO_IMAGE[type] || 'normal';
+          const imageUrl = `/img/${iconName}.gif`;
+          
+          const positionClass = isDual 
+            ? (index === 0 ? styles.type1 : styles.type2) 
+            : styles.single;
 
-            return (
-              <div key={`${type}-${index}`} className={`${styles.iconContainer} ${positionClass}`}>
-                <img 
-                  src={imageUrl} 
-                  alt={type} 
-                  className={styles.avatarImg} 
-                  onError={(e) => {
-                    console.error(`❌ Failed to load avatar image: ${imageUrl} for type: ${type}`);
-                    e.currentTarget.src = '/img/normal.gif';
-                  }}
-                  onLoad={() => {
-                    console.log(`✅ Loaded avatar: ${imageUrl} for ${isAlly ? 'ally' : 'foe'} (type: ${type})`);
-                  }}
-                />
-              </div>
-            );
-          })}
-        </motion.div>
-      )}
+          return (
+            <motion.div 
+              key={`${index}-${imageUrl}`}
+              className={`${styles.iconContainer} ${positionClass}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <img 
+                src={imageUrl} 
+                alt={type} 
+                className={styles.avatarImg} 
+                onError={(e) => {
+                  e.currentTarget.src = '/img/normal.gif';
+                }}
+              />
+            </motion.div>
+          );
+        })}
+      </motion.div>
     </AnimatePresence>
   );
 };

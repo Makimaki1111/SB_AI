@@ -62,11 +62,10 @@
 
 /* --- 演出 --- */
 .blinking {
-  animation: blink 0.15s infinite;
+  animation: blink 0.2s 5;
 }
 
 @keyframes blink {
-  0% { opacity: 1; }
+  0%, 100% { opacity: 1; }
   50% { opacity: 0; }
-  100% { opacity: 1; }
 }
