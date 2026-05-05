@@ -32,10 +32,10 @@
   /* Layout */
   --phone-width: min(96vw, 60vh);
   --phone-aspect: 10 / 16;
-  --radius-main: 3.5cqw;
-  --radius-button: 2.6cqw;
-  --shadow-main: 0 0.8cqw 2.2cqw rgba(0, 0, 0, 0.1);
-  --shadow-button: 0 1.3cqw 2.6cqw rgba(0, 0, 0, 0.12);
+  --radius-main: 16px;
+  --radius-button: 12px;
+  --shadow-main: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-button: 0 6px 12px rgba(0, 0, 0, 0.12);
   
   /* Fonts */
   --font-main: "M PLUS 1p", sans-serif;

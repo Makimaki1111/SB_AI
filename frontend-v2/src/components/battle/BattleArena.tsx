@@ -1,10 +1,8 @@
 import React from 'react';
 import styles from './BattleArena.module.css';
-import { HPBar } from './HPBar';
-import { CharacterAvatar } from './CharacterAvatar';
-import { WordDisplay } from './WordDisplay';
 import { WordInput } from './WordInput';
-import { BattleEffects } from './BattleEffects';
+import { GroundShadow } from './GroundShadow';
+import { BattleSide } from './BattleSide';
 import { TYPE_TO_IMAGE } from '../../constants/game';
 import type { BattleState, CharacterState } from '../../types/battle';
 
@@ -58,46 +56,28 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
       <div className={styles.topImage}>
         <img src="/img/ground.jpg" className={styles.bgImage} alt="背景画像" />
         
-        {/* 背景要素 (地面) */}
-        <div className={`${styles.ellipse} ${styles.ellipseRight}`} />
-        <div className={`${styles.ellipse} ${styles.ellipseLeft}`} />
+        <GroundShadow />
 
         {/* 相手セクション */}
-        <HPBar 
-          hp={foe?.hp ?? 0} 
-          maxHp={foe?.max_hp ?? 100} 
-          name={foe?.name ?? "あいて"} 
-          isPoison={foe?.is_poison ?? false}
-          lives={foe?.lives ?? 0}
-          maxLives={battleState?.foe_max_lives ?? 2}
+        <BattleSide 
+          character={foe}
           isAlly={false}
-        />
-        <CharacterAvatar 
-          types={foe?.types || []} 
-          isAlly={false} 
-          isBlinking={foeEffect === 'blink'}
+          effect={foeEffect}
+          word={foeWord}
           isKnockout={foeId ? knockoutStates[foeId] : false}
+          maxLives={battleState?.foe_max_lives ?? 2}
+          name={foe?.name ?? "あいて"}
         />
-        <BattleEffects trigger={foeEffect} side="foe" />
-        <WordDisplay word={foeWord} isAlly={false} />
 
         {/* 自分セクション */}
-        <CharacterAvatar 
-          types={ally?.types || []} 
-          isAlly={true} 
-          isBlinking={allyEffect === 'blink'}
-          isKnockout={allyId ? knockoutStates[allyId] : false}
-        />
-        <BattleEffects trigger={allyEffect} side="ally" />
-        <WordDisplay word={allyWord} isAlly={true} />
-        <HPBar 
-          hp={ally?.hp ?? 0} 
-          maxHp={ally?.max_hp ?? 100} 
-          name={username || ally?.name || "じぶん"} 
-          isPoison={ally?.is_poison ?? false}
-          lives={ally?.lives ?? 0}
-          maxLives={battleState?.ally_max_lives ?? 2}
+        <BattleSide 
+          character={ally}
           isAlly={true}
+          effect={allyEffect}
+          word={allyWord}
+          isKnockout={allyId ? knockoutStates[allyId] : false}
+          maxLives={battleState?.ally_max_lives ?? 2}
+          name={username || ally?.name || "じぶん"}
         />
       </div>
 

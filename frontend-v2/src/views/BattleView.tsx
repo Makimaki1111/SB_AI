@@ -6,7 +6,7 @@ import { AbilityModal } from '../components/battle/AbilityModal';
 import { BattleArena } from '../components/battle/BattleArena';
 import { GameLayout } from '../components/layout/GameLayout';
 import { GameModal } from '../components/common/GameModal';
-import { StatCard } from '../components/battle/StatCard';
+import { SituationModal } from '../components/battle/SituationModal';
 import { StockSelectionModal } from '../components/battle/StockSelectionModal';
 import { API_BASE_URL, WS_BASE_URL } from '../constants/game';
 import type { AbilityData } from '../types/battle';
@@ -279,41 +279,14 @@ export const BattleView: React.FC = () => {
           onConfirm={handleConfirmStockMatch}
         />
 
-        <GameModal
+        <SituationModal 
           isOpen={isSituationModalOpen}
           onClose={() => setIsSituationModalOpen(false)}
-          title="じょうきょう"
-          footer={
-            <button className={styles.backBtn} onClick={() => setIsSituationModalOpen(false)}>とじる</button>
-          }
-        >
-          <div className={styles.situationCardsContainer}>
-            <StatCard 
-              type="foe"
-              name={foe?.name || "あいて"}
-              hp={foe?.hp ?? 0}
-              maxHp={foe?.max_hp ?? 100}
-              lives={foe?.lives ?? 0}
-              maxLives={battleState?.foe_max_lives ?? 1}
-              stats={{
-                attack: foe?.attack_rank || 0,
-                defense: foe?.defense_rank || 0
-              }}
-            />
-            <StatCard 
-              type="ally"
-              name={username || ally?.name || "じぶん"}
-              hp={ally?.hp ?? 0}
-              maxHp={ally?.max_hp ?? 100}
-              lives={ally?.lives ?? 0}
-              maxLives={battleState?.ally_max_lives ?? 1}
-              stats={{
-                attack: ally?.attack_rank || 0,
-                defense: ally?.defense_rank || 0
-              }}
-            />
-          </div>
-        </GameModal>
+          ally={ally}
+          foe={foe}
+          battleState={battleState}
+          username={username || "ななし"}
+        />
 
         <AbilityModal 
           isOpen={isAbilityModalOpen}
