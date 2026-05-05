@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  width: 100%; /* phoneBoxの幅いっぱいに広げる */
   position: relative;
   background: #fce5cd;
   overflow: hidden;
@@ -9,13 +10,12 @@
 }
 
 .topImage {
+  flex: 1;
   position: relative;
-  width: 450px; /* 本家の基本幅 */
-  height: 380px; 
-  flex-shrink: 0;
+  width: 100%;
   z-index: 1;
   overflow: hidden;
-  margin: 0 auto;
+  background: #fff;
 }
 
 .bgImage {
@@ -25,15 +25,13 @@
 }
 
 .content {
-  flex: 1;
-  padding: 0;
+  flex: 1.8;
   display: flex;
   flex-direction: column;
   background: transparent;
   position: relative;
   z-index: 10;
-  width: 450px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .actionArea {
@@ -41,6 +39,23 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
+  position: relative;
+}
+
+.timerContainer {
+  width: 100%;
+  height: 0.8cqw; /* 高さをコンテナ幅に同期 */
+  min-height: 4px;
+  background: #e0e0e0;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.timerBar {
+  height: 100%;
+  background-color: #00FF00;
+  transition: width 0.1s linear, background-color 0.3s ease;
 }
 
 .inputWrapper {
@@ -48,20 +63,8 @@
   flex-direction: column;
   align-items: center;
   position: relative;
-  min-height: 80px;
-  padding-top: 20px;
-}
-
-.timerContainer {
-  width: 100%;
-  height: 8px;
-  background: #e0e0e0;
-  overflow: hidden;
-}
-
-.timerBar {
-  height: 100%;
-  transition: width 0.1s linear;
+  padding: 2cqw 0;
+  min-height: 18cqw;
 }
 
 .messageOverlay {
@@ -70,20 +73,21 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: #333333;
+  background-color: #333;
   color: white;
   display: flex;
-  padding: 15px 25px;
-  font-size: 1.3em;
+  padding: 2.6cqw 4.4cqw;
+  font-size: 5cqw;
   z-index: 40;
   box-sizing: border-box;
   pointer-events: none;
+  line-height: 1.4;
 }
 
 .predictionContainer {
   position: absolute;
-  bottom: 100%;
-  right: 60px;
+  bottom: 95%;
+  right: 12%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -93,31 +97,29 @@
 
 .predictionImages {
   display: flex;
-  height: 80px;
+  height: 18cqw;
 }
 
 .predictionImg {
-  height: 80px;
+  height: 100%;
+  filter: drop-shadow(0 0.4cqw 0.8cqw rgba(0,0,0,0.2));
 }
 
 .predictionMsg {
-  font-size: 0.9rem;
-  font-weight: bold;
+  font-size: 3.5cqw;
+  font-weight: 800;
   color: #333;
-  text-shadow: 0 0 2px white;
+  text-shadow: 0 0 0.6cqw white;
+  margin-top: -1cqw;
 }
 
 .actionsWrapper {
   display: flex;
   justify-content: center;
-  gap: 20px;
-  padding: 10px;
-}
-
-.footerArea {
-  display: flex;
-  justify-content: center;
-  padding: 15px 0;
+  gap: 2.6cqw;
+  padding: 1.7cqw;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .actionBtn {
@@ -125,35 +127,58 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 180px;
-  height: 100px;
+  flex: 1;
+  max-width: 40cqw;
+  height: 20cqw;
   background: rgba(255, 255, 255, 0.9);
-  border: none;
-  border-radius: 20px;
+  border: 0.2cqw solid rgba(255, 255, 255, 0.5);
+  border-radius: 4cqw;
   cursor: pointer;
-  box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 0.8cqw 2.2cqw rgba(0,0,0,0.08);
+  transition: transform 0.2s, background-color 0.2s;
 }
 
-.situationBtn { border-bottom: 5px solid #ff4757; }
-.abilityBtn { border-bottom: 5px solid #2ed573; }
+.actionBtn:hover {
+  transform: translateY(-0.4cqw);
+  background: #fff;
+}
 
-.actionBtnIcon { width: 32px; height: 32px; margin-bottom: 5px; }
+.situationBtn { border-bottom: 1cqw solid #ff4757; }
+.abilityBtn { border-bottom: 1cqw solid #2ed573; }
+
+.actionBtnIcon { width: 7cqw; height: 7cqw; margin-bottom: 1cqw; }
 .situationBtn .actionBtnIcon { fill: #ff4757; }
 .abilityBtn .actionBtnIcon { fill: #2ed573; }
 
-.actionBtnText { font-size: 1.1rem; font-weight: 800; color: #333; }
+.actionBtnText { font-size: 4cqw; font-weight: 800; color: #333; letter-spacing: 0.1em; }
 
-.cancelBattleBtn {
-  padding: 12px 40px;
-  font-size: 1.1rem;
-  font-weight: 700;
-  border-radius: 50px;
-  border: 1px solid #ccc;
-  background: white;
-  color: #666;
-  cursor: pointer;
+.footerArea {
+  display: flex;
+  justify-content: center;
+  padding: 2.6cqw 0 4cqw;
 }
 
+.cancelBattleBtn {
+  padding: 2cqw 8cqw;
+  font-size: 3.8cqw;
+  font-weight: 700;
+  border-radius: 11cqw;
+  border: 0.2cqw solid #ccc;
+  background: rgba(255, 255, 255, 0.9);
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 0.4cqw 1.7cqw rgba(0,0,0,0.05);
+}
+
+.cancelBattleBtn:hover {
+  background: #fff;
+  color: #ff6b6b;
+  border-color: #ff6b6b;
+  transform: translateY(-0.2cqw);
+}
+
+/* 地面の楕円 */
 .ellipse {
   position: absolute;
   background: white;
@@ -161,17 +186,17 @@
   z-index: 1;
 }
 
-/* 本家の正確な座標 */
 .ellipseLeft {
-  top: 310px;
-  left: -140px;
-  width: 620px;
-  height: 160px;
+  bottom: -4cqw;
+  left: 22%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 18cqw;
 }
 
 .ellipseRight {
-  top: 140px;
-  left: 300px;
-  width: 340px;
-  height: 80px;
+  bottom: 22cqw;
+  right: 8%;
+  width: 40cqw;
+  height: 9cqw;
 }

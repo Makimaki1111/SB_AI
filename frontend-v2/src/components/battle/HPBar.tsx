@@ -50,6 +50,17 @@ export const HPBar: React.FC<HPBarProps> = ({
           transition={{ duration: 0.6, ease: "easeInOut" }}
         />
       </div>
+
+      {maxLives > 1 && (
+        <div className={styles.livesContainer}>
+          {Array.from({ length: maxLives }).map((_, i) => (
+            <div 
+              key={i} 
+              className={`${styles.lifeDot} ${i < lives ? styles.alive : ''}`} 
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
