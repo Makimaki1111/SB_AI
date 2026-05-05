@@ -53,9 +53,9 @@
 
 .timerContainer {
   width: 100%;
-  height: 1.7cqw; /* 8px / 450px */
+  height: 2.2cqw; /* 10px / 450px - Adjusted for better prominence */
   background-color: #e0e0e0;
-  border-radius: 0.8cqw;
+  border-radius: 1.1cqw;
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -78,7 +78,7 @@
   align-items: flex-start;
   justify-content: flex-start;
   padding: 2.2cqw 4.4cqw;
-  font-size: 5.3cqw; /* 1.2em */
+  font-size: 4.3cqw; /* ~19.2px (1.2em) / 450px */
   z-index: 40;
   box-sizing: border-box;
   pointer-events: none;

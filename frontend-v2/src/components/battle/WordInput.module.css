@@ -6,9 +6,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  margin-top: 0.5rem;
-  padding: 0 10px;
+  gap: 1.7cqw; /* 8px / 450px */
+  margin-top: 2.2cqw; /* 10px / 450px */
+  padding: 0 2.2cqw;
   position: relative;
 }
 
@@ -25,22 +25,22 @@
   font-family: inherit;
   outline: none;
   font-weight: 400;
-  box-sizing: content-box; /* Crucial to match legacy padding + height behavior */
+  box-sizing: content-box; /* Match legacy padding behavior */
 }
 
 .submitBtn {
-  font-size: 1.2rem;
+  font-size: 5cqw; /* 1.4em / 450px */
   border: none;
-  width: 42px;
-  height: 42px;
+  width: 9.3cqw; /* 42px / 450px */
+  height: 9.3cqw; /* 42px / 450px */
   background-color: white;
-  border-radius: 19px;
+  border-radius: 4.2cqw; /* 19px / 450px */
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #333;
-  padding: 0 0 0 3px;
+  padding: 0 0 0 0.6cqw; /* Micro-adjustment for icon centering */
   box-sizing: border-box;
   transition: transform 0.1s;
 }
