@@ -94,6 +94,11 @@ export const WordDisplay: React.FC<WordDisplayProps> = ({
               x: xPos,
               scaleX: scale
             }}
+            exit={{ 
+              opacity: 0,
+              y: 100,
+              transition: { duration: 0.8, ease: "easeIn" } 
+            }}
             transition={{
               duration: isKnockout ? 0.8 : 0.3,
               ease: isKnockout ? "easeIn" : "easeOut"

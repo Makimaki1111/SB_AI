@@ -34,7 +34,7 @@ export const WordInput: React.FC<WordInputProps> = ({ onSend, onChange, disabled
           className={styles.input}
           value={word}
           onChange={handleChange}
-          placeholder={initialChar ? `${initialChar}から始まる言葉` : '入力...'}
+          placeholder={initialChar ? `「${initialChar}」からはじまることば` : '入力...'}
           disabled={disabled}
           autoComplete="off"
         />

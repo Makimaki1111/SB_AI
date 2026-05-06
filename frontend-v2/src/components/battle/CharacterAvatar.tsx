@@ -42,7 +42,7 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
     },
     knockout: {
       opacity: 0,
-      y: 250,
+      y: 100,
     }
   };
 

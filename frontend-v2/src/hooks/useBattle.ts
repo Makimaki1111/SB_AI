@@ -145,9 +145,11 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
         display.setMessageLog({ text: 'マッチングした！', isOpen: true });
         soundManager.stopBGM();
         soundManager.play('start');
-        // Wait 1.5s while UI is already shown
+        // Legacy uses 1500ms
         await new Promise(resolve => setTimeout(resolve, 1500));
         soundManager.playBGM('/resource/overflow.mp3');
+        // Initial battle doesn't have a word to read, so we can skip the next word delay
+        data.state.word = ""; 
       }
 
       // 3. Pre-effect updates (Word submission display etc)
@@ -171,7 +173,6 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
       // 4. Timer Sync
       if (data.state.is_my_turn !== (prevState?.is_my_turn) || isInitialBattle) {
         resetTimer(data.info?.time_limit || 20, data.info?.total_time || 20);
-        if (data.state.is_my_turn && !isInitialBattle) soundManager.play('start');
       }
 
       const events = data.events || [];
@@ -190,30 +191,49 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
         const targetSide = event.target === allyId ? 'ally' : event.target === foeId ? 'foe' : null;
         const targetId = event.target;
 
-        // Message & Sound
-        if (event.type === 'ability_changed') {
-          display.setMessageLog({ text: null, isOpen: false });
-          display.showNotification('特性が変わった！');
-        } else {
+        // Message & Sound Logic (Legacy Parity)
+        const msg = event.message || '';
+        let soundKey: string | null = null;
+
+        // 1. Message-based priority
+        if (msg.includes('やどりぎ') || msg.includes('種を植え付け')) soundKey = 'seeded';
+        else if (msg.includes('毒のダメージ') || msg.includes('毒を受けた')) soundKey = 'poison';
+        else if (msg.includes('ばつぐん')) soundKey = 'effective';
+        else if (msg.includes('いまひとつ')) soundKey = 'noneffective';
+        else if (msg.includes('ふつうのダメージ')) soundKey = 'middmg';
+        else if (msg.includes('はたおれた！') || msg.includes('力尽きた')) {
+          soundKey = 'end';
+        }
+
+        // 2. Type-based fallback
+        if (!soundKey) {
+          if (event.type === 'damage') soundKey = 'middmg';
+          else if (event.type === 'cure') soundKey = 'heal';
+          else if (event.type === 'drain') soundKey = 'seed_damage';
+          else if (event.type === 'stat_up') soundKey = 'up';
+          else if (event.type === 'stat_down') soundKey = 'down';
+          else if (event.type === 'revive') {
+            // Revive uses start in my previous attempt, but legacy doesn't have a sound for it.
+            // We'll keep it silent or use heal if appropriate, but following legacy: no sound.
+          }
+          else if (event.type === 'ability_changed') {
+            soundKey = 'concent';
+            display.setMessageLog({ text: null, isOpen: false });
+            display.showNotification('特性が変わった！');
+          }
+        }
+
+        // Initial battle plays no event sounds/waits to match legacy speed
+        if (!isInitialBattle && soundKey) soundManager.play(soundKey);
+        
+        if (event.type !== 'ability_changed') {
           display.setMessageLog({ text: event.message || null, isOpen: true });
         }
 
-        if (event.message?.includes('効果はばつぐんだ')) soundManager.play('effective');
-        else if (event.message?.includes('効果はいまひとつ')) soundManager.play('noneffective');
-        else if (event.message?.includes('ふつうのダメージ')) soundManager.play('middmg');
-        else if ((event.message?.includes('はたおれた！') || event.message?.includes('力尽きた')) && targetId) {
-          display.setKnockoutStates(prev => ({ ...prev, [targetId]: true }));
-          soundManager.play('end');
-        }
-        else if (event.type === 'damage') soundManager.play('middmg');
-        else if (event.type === 'cure' || event.type === 'drain') soundManager.play('heal');
-        else if (event.type === 'stat_up') soundManager.play('up');
-        else if (event.type === 'stat_down') soundManager.play('down');
-        else if (event.type === 'revive') soundManager.play('start');
-
         // Logic by Event Type
         if (event.type === 'damage' || event.type === 'drain') {
-          if (!event.message?.includes('毒のダメージ')) {
+          // 毒ダメージのときは点滅させない (本家仕様)
+          if (!msg.includes('毒のダメージ')) {
             if (targetSide === 'ally') display.setAllyEffect('blink');
             else if (targetSide === 'foe') display.setFoeEffect('blink');
           }
@@ -231,7 +251,13 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
               setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
             }
           }
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          if (!isInitialBattle) await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // HPが0以下なら気絶演出を開始 (Legacy script.js:262-266)
+          if (targetId && tempCharacters[targetId] && tempCharacters[targetId].hp <= 0) {
+            display.setKnockoutStates(prev => ({ ...prev, [targetId]: true }));
+          }
+
           display.setAllyEffect(null);
           display.setFoeEffect(null);
         } else if (event.type === 'cure') {
@@ -241,7 +267,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
             tempCharacters[targetId].hp = event.hp;
             setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
           }
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          if (!isInitialBattle) await new Promise(resolve => setTimeout(resolve, 1000));
           display.setAllyEffect(null);
           display.setFoeEffect(null);
         } else if (event.type === 'revive') {
@@ -252,7 +278,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
               setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
             }
           }
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          if (!isInitialBattle) await new Promise(resolve => setTimeout(resolve, 1000));
         } else if (event.type === 'stat_up' || event.type === 'stat_down') {
           const effect = event.type === 'stat_up' ? 'up' : 'down';
           if (targetSide === 'ally') display.setAllyEffect(effect);
@@ -262,7 +288,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
             (tempCharacters[targetId] as any)[field] = event.new_rank;
             setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
           }
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          if (!isInitialBattle) await new Promise(resolve => setTimeout(resolve, 1000));
           display.setAllyEffect(null);
           display.setFoeEffect(null);
         } else if (event.type === 'ability_changed') {
@@ -271,12 +297,12 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
             tempCharacters[targetId].ability_change_count = event.new_ability_change_count ?? tempCharacters[targetId].ability_change_count;
             setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
           }
-          if (!isInterrupt) await new Promise(resolve => setTimeout(resolve, 100));
+          if (!isInterrupt && !isInitialBattle) await new Promise(resolve => setTimeout(resolve, 100));
         } else if (event.type === 'battle_result') {
           display.setShowResultButton(true);
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          if (!isInitialBattle) await new Promise(resolve => setTimeout(resolve, 1000));
         } else {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          if (!isInitialBattle) await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
 

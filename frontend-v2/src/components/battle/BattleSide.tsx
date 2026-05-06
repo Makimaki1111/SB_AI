@@ -49,16 +49,16 @@ export const BattleSide: React.FC<BattleSideProps> = ({
     <>
       {isAlly ? (
         <>
-          {avatar}
           {effects}
+          {avatar}
           {wordDisplay}
           {hpBar}
         </>
       ) : (
         <>
           {hpBar}
-          {avatar}
           {effects}
+          {avatar}
           {wordDisplay}
         </>
       )}

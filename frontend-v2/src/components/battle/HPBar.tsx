@@ -44,7 +44,10 @@ export const HPBar: React.FC<HPBarProps> = ({
         <motion.div 
           className={isAlly ? styles.allyHpBar : styles.foeHpBar} 
           animate={{ width: `${hpPercentage}%`, backgroundColor: barColor }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
+          transition={{ 
+            width: { duration: 0.6, ease: "linear" },
+            backgroundColor: { delay: 0.6, duration: 0 } 
+          }}
           style={{ height: '100%', borderRadius: '3px' }}
         />
       </div>
