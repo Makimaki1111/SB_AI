@@ -46,7 +46,8 @@ export const BattleView: React.FC = () => {
     allAbilities: battleAbilities,
     sendMessage,
     sendIncludeCheck,
-    clearPrediction
+    clearPrediction,
+    startMatching
   } = useBattle(dynamicWsUrl);
   
   const [isLobby, setIsLobby] = React.useState(true);
@@ -137,6 +138,7 @@ export const BattleView: React.FC = () => {
     }
 
     // 即座にバトル画面（待機状態）へ遷移
+    startMatching();
     setIsLobby(false);
   };
 
@@ -155,6 +157,7 @@ export const BattleView: React.FC = () => {
       }
     });
     // 即座にバトル画面（待機状態）へ遷移
+    startMatching();
     setIsLobby(false);
   };
 

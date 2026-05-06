@@ -93,6 +93,8 @@ export type SocketMessageType =
   | "find_match_double"
   | "make_new_battle"
   | "join_double_cpu_room"
+  | "join_private_room"
+  | "join_double_private_room"
   | "submit_word"
   | "submit_word_double"
   | "change_ability"

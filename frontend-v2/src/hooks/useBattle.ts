@@ -25,6 +25,11 @@ export const useBattle = (url: string) => {
   const isHandlingQueue = useRef(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const startMatching = () => {
+    display.resetDisplay();
+    display.setMessageLog({ text: 'マッチング待機中...', isOpen: true });
+  };
+
   // --- WebSocket Handler ---
   const onMessage = (data: BattleResponse) => {
     console.log(`Received message type: ${data.type}`);
@@ -101,17 +106,37 @@ export const useBattle = (url: string) => {
       const prevState = battleStateRef.current || data.state;
       const isInitialBattle = (data.type === 'made_room' || data.type === 'accepted') && !battleStateRef.current;
 
-      // 1. Reset for new battle
+      // 1. Initial State Sync (Do this immediately to show UI elements)
+      const initialVisualState: BattleState = {
+        ...data.state,
+        characters: { ...data.state.characters },
+        status: 'active'
+      };
+
+      // Keep old HP for damage animation (only if not initial battle)
+      if (!isInitialBattle) {
+        Object.keys(initialVisualState.characters).forEach(id => {
+          if (prevState.characters[id]) {
+            initialVisualState.characters[id].hp = prevState.characters[id].hp;
+          }
+        });
+      }
+
+      setBattleState(initialVisualState);
+      battleStateRef.current = initialVisualState;
+
+      // 2. Matching Animation (Delayed BGM transition)
       if (isInitialBattle) {
         display.resetDisplay();
         display.setMessageLog({ text: 'マッチングした！', isOpen: true });
         soundManager.stopBGM();
         soundManager.play('start');
+        // Wait 1.5s while UI is already shown
         await new Promise(resolve => setTimeout(resolve, 1500));
         soundManager.playBGM('resource/overflow.mp3');
       }
 
-      // 2. Pre-effect updates
+      // 3. Pre-effect updates (Word submission display etc)
       const isTimeout = data.events?.some(e => e.message?.includes('時間切れ'));
       
       if (data.state.word && !isTimeout) {
@@ -127,27 +152,12 @@ export const useBattle = (url: string) => {
         if (attackerState?.types?.[0]) soundManager.playType(attackerState.types[0]);
       }
 
-      // 3. Visual state initialization (keep old HP for animation)
-      const initialVisualState: BattleState = {
-        ...data.state,
-        characters: { ...data.state.characters },
-        status: 'active'
-      };
-
-      Object.keys(initialVisualState.characters).forEach(id => {
-        if (prevState.characters[id]) {
-          initialVisualState.characters[id].hp = prevState.characters[id].hp;
-        }
-      });
-
-      setBattleState(initialVisualState);
-      battleStateRef.current = initialVisualState;
       let tempCharacters = { ...initialVisualState.characters };
 
       // 4. Timer Sync
-      if (data.state.is_my_turn !== battleStateRef.current?.is_my_turn || isInitialBattle) {
+      if (data.state.is_my_turn !== (prevState?.is_my_turn) || isInitialBattle) {
         resetTimer(data.info?.time_limit || 20, data.info?.total_time || 20);
-        if (data.state.is_my_turn) soundManager.play('start');
+        if (data.state.is_my_turn && !isInitialBattle) soundManager.play('start');
       }
 
       const events = data.events || [];
@@ -309,6 +319,7 @@ export const useBattle = (url: string) => {
     isProcessing,
     sendMessage,
     sendIncludeCheck,
+    startMatching,
     ally: getAlly(battleState, uiMapping),
     foe: getFoe(battleState, uiMapping),
     allyId: getAllyId(uiMapping),

@@ -25,13 +25,17 @@ class WebSocketHandler:
         self.TIME_LIMIT = 20
         self.DOUBLE_TIME_LIMIT = 30
 
+    async def _safe_send(self, websocket, data: dict):
+        """例外を捕捉して安全にメッセージを送信する"""
+        await self.connection_manager.safe_send_text(websocket, json.dumps(data))
+
     async def _try_reconnect(self, websocket, player_id: str) -> bool:
         """切断猶予期間中のルームがあれば再接続を試みる"""
         for rid, room in self.room_manager.rooms.items():
             if player_id in [p.id for p in getattr(room, 'players', [])] and not room.is_finished:
                 self.room_manager.cancel_grace_period(rid, player_id)
                 self.connection_manager.join_room(websocket, rid)
-                await websocket.send_text(json.dumps(room.make_init_response(player_id)))
+                await self._safe_send(websocket, room.make_init_response(player_id))
                 
                 is_double = isinstance(room, DoubleBattle)
                 await self.connection_manager.broadcast_battle_state(rid, room._make_response(), is_double=is_double, room_manager=self.room_manager)
@@ -42,12 +46,12 @@ class WebSocketHandler:
         try:
             req = json.loads(data)
         except json.JSONDecodeError:
-            await websocket.send_text(json.dumps({"type": "error", "message": "Invalid JSON"}))
+            await self._safe_send(websocket, {"type": "error", "message": "Invalid JSON"})
             return
 
         msg_type = req.get("type")
         if msg_type == "ping":
-            await websocket.send_text(json.dumps({"type": "pong"}))
+            await self._safe_send(websocket, {"type": "pong"})
             return
 
         info = req.get("info", {})
@@ -64,10 +68,10 @@ class WebSocketHandler:
                 await handler(websocket, player_id, info)
             except Exception as e:
                 logger.error(f"Error handling message {msg_type}: {e}", exc_info=True)
-                await websocket.send_text(json.dumps({"type": "error", "message": f"Internal server error: {str(e)}"}))
+                await self._safe_send(websocket, {"type": "error", "message": f"Internal server error: {str(e)}"})
         else:
             logger.warning(f"No handler for message type: {msg_type}")
-            await websocket.send_text(json.dumps({"type": "error", "message": f"Handler not found: {msg_type}"}))
+            await self._safe_send(websocket, {"type": "error", "message": f"Handler not found: {msg_type}"})
 
     async def _handle_pre_check(self, websocket, player_id, info):
         text = info.get("text", "")
@@ -78,14 +82,14 @@ class WebSocketHandler:
         if not room: return
         
         res = room.include_check(text)
-        await websocket.send_text(json.dumps({
+        await self._safe_send(websocket, {
             "type": "pre_check",
             "include": res["include"],
             "used": res["used"],
             "type1": res.get("type1"),
             "type2": res.get("type2"),
             "prediction": res.get("prediction")
-        }))
+        })
 
     async def _handle_update_user_info(self, websocket, player_id, info):
         if not player_id:
@@ -96,11 +100,11 @@ class WebSocketHandler:
         ability_2 = info.get("ability_2")
         self.room_manager.update_user_info(player_id, name, ability, ability_2)
         self.connection_manager.register_player(websocket, player_id)
-        await websocket.send_text(json.dumps({"type": "user_info_updated", "message": "ユーザー情報を更新しました"}))
+        await self._safe_send(websocket, {"type": "user_info_updated", "message": "ユーザー情報を更新しました"})
 
     async def _handle_find_match(self, websocket, player_id, info):
         if not player_id:
-            await websocket.send_text(json.dumps({"type": "error", "message": "プレイヤーIDが不明です。再接続してください。"}))
+            await self._safe_send(websocket, {"type": "error", "message": "プレイヤーIDが不明です。再接続してください。"})
             return
             
         self.connection_manager.register_player(websocket, player_id)
@@ -129,6 +133,17 @@ class WebSocketHandler:
             self.room_manager.update_user_info(player_id, name, ability, ability_2)
 
             p1_data = target_waiter
+            
+            # 待機者のソケットが生きているか確認
+            from starlette.websockets import WebSocketState
+            if p1_data["socket"].client_state != WebSocketState.CONNECTED:
+                # 待機者が切断していた場合、今回のプレイヤーを待機者に設定
+                new_waiter = {"socket": websocket, "player_id": player_id}
+                if max_lives > 1: self.room_manager.waiting_player_stock = new_waiter
+                else: self.room_manager.waiting_player_standard = new_waiter
+                await self._safe_send(websocket, {"type": "waiting", "message": "マッチング中…"})
+                return
+
             if max_lives > 1: self.room_manager.waiting_player_stock = None
             else: self.room_manager.waiting_player_standard = None
             
@@ -146,19 +161,19 @@ class WebSocketHandler:
 
             bi.events.append({"type": "message", "message": "マッチングした！"})
 
-            await p1_data["socket"].send_text(json.dumps(bi.make_init_response(p1_data["player_id"], time_limit=self.TIME_LIMIT)))
-            await p2_data["socket"].send_text(json.dumps(bi.make_init_response(p2_data["player_id"], time_limit=self.TIME_LIMIT)))
+            await self._safe_send(p1_data["socket"], bi.make_init_response(p1_data["player_id"], time_limit=self.TIME_LIMIT))
+            await self._safe_send(p2_data["socket"], bi.make_init_response(p2_data["player_id"], time_limit=self.TIME_LIMIT))
             
             await self._after_turn_action(bi.room_id, bi)
         else:
             new_waiter = {"socket": websocket, "player_id": player_id}
             if max_lives > 1: self.room_manager.waiting_player_stock = new_waiter
             else: self.room_manager.waiting_player_standard = new_waiter
-            await websocket.send_text(json.dumps({"type": "waiting", "message": "マッチング中…"}))
+            await self._safe_send(websocket, {"type": "waiting", "message": "マッチング中…"})
 
     async def _handle_find_match_double(self, websocket, player_id, info):
         if not player_id:
-            await websocket.send_text(json.dumps({"type": "error", "message": "プレイヤーIDが不明です。再接続してください。"}))
+            await self._safe_send(websocket, {"type": "error", "message": "プレイヤーIDが不明です。再接続してください。"})
             return
         self.connection_manager.register_player(websocket, player_id)
         name = info.get("name", "じぶん")
@@ -169,8 +184,15 @@ class WebSocketHandler:
         if self.room_manager.waiting_player_double is not None:
             p1_data = self.room_manager.waiting_player_double
             if p1_data["player_id"] == player_id: return
-            self.room_manager.waiting_player_double = None
             
+            # 待機者のソケットが生きているか確認
+            from starlette.websockets import WebSocketState
+            if p1_data["socket"].client_state != WebSocketState.CONNECTED:
+                self.room_manager.waiting_player_double = {"socket": websocket, "player_id": player_id}
+                await self._safe_send(websocket, {"type": "waiting", "message": "マッチング中…"})
+                return
+
+            self.room_manager.waiting_player_double = None
             p2_data = {"socket": websocket, "player_id": player_id}
             
             bi = DoubleBattle("1v1_double", [p1_data["player_id"]], [p2_data["player_id"]], sb_info=self.room_manager.sb_info, profiles=self.room_manager.user_profiles)
@@ -182,22 +204,23 @@ class WebSocketHandler:
             
             bi.events.append({"type": "message", "message": "マッチングした！"})
 
-            await p1_data["socket"].send_text(json.dumps(bi.make_init_response(p1_data["player_id"], time_limit=self.DOUBLE_TIME_LIMIT)))
-            await p2_data["socket"].send_text(json.dumps(bi.make_init_response(p2_data["player_id"], time_limit=self.DOUBLE_TIME_LIMIT)))
+            await self._safe_send(p1_data["socket"], bi.make_init_response(p1_data["player_id"], time_limit=self.DOUBLE_TIME_LIMIT))
+            await self._safe_send(p2_data["socket"], bi.make_init_response(p2_data["player_id"], time_limit=self.DOUBLE_TIME_LIMIT))
+            
             await self._after_turn_action(bi.room_id, bi)
         else:
             self.room_manager.waiting_player_double = {"socket": websocket, "player_id": player_id}
-            await websocket.send_text(json.dumps({"type": "waiting", "message": "マッチング中…"}))
+            await self._safe_send(websocket, {"type": "waiting", "message": "マッチング中…"})
 
     async def _handle_create_private_room(self, websocket, player_id, info):
         p1_max_lives = max(1, min(10, int(info.get("p1_max_lives", STOCK_LIVES))))
         p2_max_lives = max(1, min(10, int(info.get("p2_max_lives", STOCK_LIVES))))
         new_id = self.room_manager.create_private_room(websocket, player_id, p1_max_lives, p2_max_lives, is_double=False)
-        await websocket.send_text(json.dumps({"type": "private_room_created", "room_id": new_id}))
+        await self._safe_send(websocket, {"type": "private_room_created", "room_id": new_id})
 
     async def _handle_create_double_room(self, websocket, player_id, info):
         new_id = self.room_manager.create_private_room(websocket, player_id, 1, 1, is_double=True)
-        await websocket.send_text(json.dumps({"type": "private_room_created", "room_id": new_id}))
+        await self._safe_send(websocket, {"type": "private_room_created", "room_id": new_id})
 
     async def _handle_join_double_room(self, websocket, player_id, info):
         await self._handle_join_private_room(websocket, player_id, info, is_double=True)
@@ -207,7 +230,7 @@ class WebSocketHandler:
 
     async def _handle_make_new_battle(self, websocket, player_id, info):
         if not player_id:
-            await websocket.send_text(json.dumps({"type": "error", "message": "プレイヤーIDが不明です。再接続してください。"}))
+            await self._safe_send(websocket, {"type": "error", "message": "プレイヤーIDが不明です。再接続してください。"})
             return
         
         self.connection_manager.register_player(websocket, player_id)
@@ -249,16 +272,16 @@ class WebSocketHandler:
             bi.events.append({"type": "message", "message": "マッチングした！"})
             
             init_res = bi.make_init_response(player_id, time_limit=self.TIME_LIMIT)
-            await websocket.send_text(json.dumps(init_res))
+            await self._safe_send(websocket, init_res)
             
             await self._after_turn_action(bi.room_id, bi)
         except Exception as e:
             logger.error(f"Error in _handle_make_new_battle: {e}", exc_info=True)
-            await websocket.send_text(json.dumps({"type": "error", "message": f"ルーム作成エラー: {str(e)}"}))
+            await self._safe_send(websocket, {"type": "error", "message": f"ルーム作成エラー: {str(e)}"})
 
     async def _handle_join_double_cpu_room(self, websocket, player_id, info):
         if not player_id:
-            await websocket.send_text(json.dumps({"type": "error", "message": "プレイヤーIDが不明です。再接続してください。"}))
+            await self._safe_send(websocket, {"type": "error", "message": "プレイヤーIDが不明です。再接続してください。"})
             return
         self.connection_manager.register_player(websocket, player_id)
         
@@ -281,7 +304,7 @@ class WebSocketHandler:
         self.connection_manager.register_player(websocket, player_id)
         self.connection_manager.join_room(websocket, bi.room_id)
         
-        await websocket.send_text(json.dumps(bi.make_init_response(player_id, time_limit=self.DOUBLE_TIME_LIMIT)))
+        await self._safe_send(websocket, bi.make_init_response(player_id, time_limit=self.DOUBLE_TIME_LIMIT))
         await self._after_turn_action(bi.room_id, bi, is_double=True)
 
     async def _handle_join_private_room(self, websocket, player_id, info, is_double=False):
@@ -293,7 +316,7 @@ class WebSocketHandler:
         if room_id:
             if target_data:
                 if len(self.room_manager.rooms) >= self.room_manager.MAX_ROOMS:
-                    await websocket.send_text(json.dumps({"type": "error", "message": "サーバーが混雑しています"}))
+                    await self._safe_send(websocket, {"type": "error", "message": "サーバーが混雑しています"})
                     return
 
                 self.room_manager.private_waiting_rooms.pop(room_id)
@@ -319,17 +342,17 @@ class WebSocketHandler:
                 bi.events.append({"type": "message", "message": "マッチングした！"})
 
                 limit = bi.time_limit
-                await p1_data["socket"].send_text(json.dumps(bi.make_init_response(p1_data["player_id"], time_limit=limit)))
-                await p2_data["socket"].send_text(json.dumps(bi.make_init_response(p2_data["player_id"], time_limit=limit)))
+                await self._safe_send(p1_data["socket"], bi.make_init_response(p1_data["player_id"], time_limit=limit))
+                await self._safe_send(p2_data["socket"], bi.make_init_response(p2_data["player_id"], time_limit=limit))
                 
                 await self._after_turn_action(bi.room_id, bi)
             else:
-                await websocket.send_text(json.dumps({"type": "error", "message": "ルームが見つかりません"}))
+                await self._safe_send(websocket, {"type": "error", "message": "ルームが見つかりません"})
         else:
             p1_max_lives = max(1, min(10, int(info.get("p1_max_lives", STOCK_LIVES))))
             p2_max_lives = max(1, min(10, int(info.get("p2_max_lives", STOCK_LIVES))))
             new_id = self.room_manager.create_private_room(websocket, player_id, p1_max_lives, p2_max_lives, is_double=is_double)
-            await websocket.send_text(json.dumps({"type": "private_room_created", "room_id": new_id}))
+            await self._safe_send(websocket, {"type": "private_room_created", "room_id": new_id})
 
     async def _handle_submit_word(self, websocket, player_id, info):
         room_id = info.get("room_id")
@@ -338,13 +361,13 @@ class WebSocketHandler:
 
         room = self.room_manager.get_room(room_id)
         if not room:
-            await websocket.send_text(json.dumps({"type": "error", "message": "ルームが見つかりません"}))
+            await self._safe_send(websocket, {"type": "error", "message": "ルームが見つかりません"})
             return
 
         target_id = info.get("target_id")
         res = room.try_attack(player_id, word, target_id)
         if res.get("type") == "error":
-            await websocket.send_text(json.dumps(res))
+            await self._safe_send(websocket, res)
             return
 
         is_double = room.is_double
@@ -367,7 +390,7 @@ class WebSocketHandler:
         res = room.change_ability(player_id, ability_id, char_id=char_id)
 
         if res.get("type") == "error":
-            await websocket.send_text(json.dumps(res))
+            await self._safe_send(websocket, res)
         else:
             await self.connection_manager.broadcast_battle_state(room_id, res, is_double=room.is_double, room_manager=self.room_manager, time_limit=room.time_limit)
 
@@ -380,7 +403,7 @@ class WebSocketHandler:
         room = self.room_manager.get_room(room_id)
         if room:
             res = room.include_check(word)
-            await websocket.send_text(json.dumps(res))
+            await self._safe_send(websocket, res)
 
     async def _handle_include_check_double(self, websocket, player_id, info):
         await self._handle_include_check(websocket, player_id, info)
@@ -397,7 +420,7 @@ class WebSocketHandler:
     async def _handle_run_away_double(self, websocket, player_id, info):
         await self._handle_run_away(websocket, player_id, info)
 
-    async def _after_turn_action(self, room_id, room):
+    async def _after_turn_action(self, room_id, room, is_double=False):
         if room.is_finished:
             self.room_manager.cancel_timer(room_id)
             self.room_manager.schedule_room_cleanup(room_id, delay=10)
