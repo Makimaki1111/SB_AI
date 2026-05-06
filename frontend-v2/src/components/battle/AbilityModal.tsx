@@ -13,16 +13,19 @@ interface AbilityModalProps {
   allAbilities: Record<string, AbilityData>;
   canChange: boolean;
   abilityChangeCount: number;
+  isLobby?: boolean;
 }
 
 export const AbilityModal: React.FC<AbilityModalProps> = ({
   isOpen,
   onClose,
   onSelect,
+  currentAbilityId,
   allyAbilityId,
   allAbilities,
   canChange,
-  abilityChangeCount
+  abilityChangeCount,
+  isLobby = false
 }) => {
   const abilitiesList = useMemo(() => {
     return Object.entries(allAbilities)
@@ -34,18 +37,20 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
   const [dragX, setDragX] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // 初期位置の設定 (選んでいる最中のものではなく、実際に装備しているものに合わせる)
+  // 初期位置の設定
   useEffect(() => {
     if (isOpen) {
-      const idx = abilitiesList.findIndex(a => a.id === allyAbilityId);
+      // ロビー時は現在の選択(localStorage準拠)を、バトル時は装備中を優先
+      const targetId = isLobby ? currentAbilityId : allyAbilityId;
+      const idx = abilitiesList.findIndex(a => a.id === targetId);
       if (idx !== -1) setCurrentIndex(idx);
     }
-  }, [isOpen, allyAbilityId, abilitiesList]);
+  }, [isOpen, allyAbilityId, currentAbilityId, abilitiesList, isLobby]);
 
   if (!isOpen) return null;
 
   const N = abilitiesList.length;
-  const spacing = 90;
+  const spacing = 95;
 
   const handleDrag = (_: any, info: any) => {
     setDragX(info.offset.x);
@@ -78,7 +83,9 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
   };
 
   const currentInfo = abilitiesList[currentIndex] || { name: '---', description: '' };
-  const allyAbilityInfo = allAbilities[allyAbilityId] || { name: '---', description: '特性がありません' };
+  // ロビー時は選択中のIDを「現在の特性」として表示
+  const displayAllyId = isLobby ? currentAbilityId : allyAbilityId;
+  const allyAbilityInfo = allAbilities[displayAllyId] || { name: '---', description: '特性がありません' };
 
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -92,15 +99,15 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
         {/* 現在の特性表示セクション */}
         <div className={styles.statusSection}>
           <div className={styles.sideStatus}>
-            <span className={styles.sideLabel}>現在のとくせい</span>
+            <span className={styles.sideLabel}>{isLobby ? "せんたく中のとくせい" : "現在のとくせい"}</span>
             <div className={styles.currentAbilityName}>{allyAbilityInfo.name}</div>
             <div className={styles.currentAbilityDesc}>{allyAbilityInfo.description}</div>
           </div>
         </div>
 
         <div className={styles.divider}>
-          <span>タップしてとくせいを変える</span>
-          <span className={styles.remainCount}>(あと{abilityChangeCount}回)</span>
+          <span>{isLobby ? "とくせいを選ぶ" : "タップしてとくせいを変える"}</span>
+          {!isLobby && <span className={styles.remainCount}>(あと{abilityChangeCount}回)</span>}
         </div>
         
         {/* 選んでいる最中の情報表示 */}
@@ -125,9 +132,9 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
               const absDiff = Math.abs(offsetIndex);
               
               const x = offsetIndex * spacing;
-              const y = absDiff * absDiff * 4;
-              const scale = Math.max(0.6, 1 - absDiff * 0.2);
-              const opacity = Math.max(0, 1 - absDiff * 0.35);
+              const y = absDiff * absDiff * 5; // カーブを深くして重なりを避ける
+              const scale = Math.max(0.5, 1 - absDiff * 0.22);
+              const opacity = Math.max(0, 1 - absDiff * 0.25);
               const zIndex = Math.round(100 - absDiff * 10);
 
               const iconName = TYPE_TO_IMAGE[ab.icon_type] || 'normal';

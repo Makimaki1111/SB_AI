@@ -296,6 +296,7 @@ export const BattleView: React.FC = () => {
           allAbilities={allAbilities}
           canChange={canChangeAbility}
           abilityChangeCount={ally?.ability_change_count ?? 0}
+          isLobby={isLobby}
         />
       </div>
     </GameLayout>
