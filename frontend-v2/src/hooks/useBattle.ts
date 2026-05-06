@@ -247,38 +247,33 @@ export const useBattle = (url: string) => {
 
       // 4. 最終状態の確定と後処理
       // 特性変更を維持しつつ最終状態を反映
-      setBattleState(prev => {
-        if (!prev || !data.state) return data.state || prev;
-        
-        // 現在の特性と回数を、サーバーから送られてきた最新の状態（data.state）にマージする
-        // (演出中に割り込みで変わった可能性を考慮)
-        const mergedChars = { ...data.state.characters };
+      const prevForFinal = battleStateRef.current;
+      const mergedChars = { ...data.state.characters };
+      if (prevForFinal) {
         for (const id in mergedChars) {
-          if (prev.characters[id]) {
-            // もし prev (現在の画面) の方が change_count が少ない(＝変更された)なら、そっちを採用
-            if (prev.characters[id].ability_change_count < mergedChars[id].ability_change_count) {
-              mergedChars[id].ability = prev.characters[id].ability;
-              mergedChars[id].ability_change_count = prev.characters[id].ability_change_count;
+          if (prevForFinal.characters[id]) {
+            if (prevForFinal.characters[id].ability_change_count < mergedChars[id].ability_change_count) {
+              mergedChars[id].ability = prevForFinal.characters[id].ability;
+              mergedChars[id].ability_change_count = prevForFinal.characters[id].ability_change_count;
             }
           }
         }
-        const final: BattleState = { 
-          ...data.state, 
-          characters: mergedChars,
-          status: data.state.winner_team !== null ? 'finished' : 'active'
-        };
-        battleStateRef.current = final;
-        return final;
-      });
+      }
+      const final: BattleState = { 
+        ...data.state, 
+        characters: mergedChars
+      };
+      
+      setBattleState(final);
+      battleStateRef.current = final;
 
       // ターン開始メッセージの設定 (本家再現)
-      const currentFinal = battleStateRef.current;
-      if (currentFinal?.status === 'finished') {
+      if (final.status === 'finished') {
         setWaitMessage(null);
       } else {
-        const turnMsg = currentFinal?.is_my_turn ? 'あなたのターンです。' : '相手のターンです。';
+        const turnMsg = final.is_my_turn ? 'あなたのターンです。' : '相手のターンです。';
         setWaitMessage(turnMsg);
-        if (!currentFinal?.is_my_turn) {
+        if (!final.is_my_turn) {
           setMessageLog({ text: '相手のターンです。', isOpen: true });
         } else {
           // 自分のターンになった瞬間に箱を消す
