@@ -1,42 +1,78 @@
-import { useState, useEffect, useRef } from 'react';
-import type { BattleState, SocketMessage, AbilityData, BattleResponse } from '../types/battle';
+import { useState, useRef, useEffect } from 'react';
+import type { BattleResponse, SocketMessage, BattleState } from '../types/battle';
 import { SoundManager } from '../utils/SoundManager';
 import * as wanakana from 'wanakana';
 
+import { useBattleSocket } from './battle/useBattleSocket';
+import { useBattleState } from './battle/useBattleState';
+import { useBattleTimer } from './battle/useBattleTimer';
+import { useBattleDisplay } from './battle/useBattleDisplay';
+
 export const useBattle = (url: string) => {
-  const socketRef = useRef<WebSocket | null>(null);
-  const battleStateRef = useRef<BattleState | null>(null);
-  const uiMappingRef = useRef<Record<string, string>>({});
+  // --- Sub-hooks ---
+  const { 
+    battleState, setBattleState, battleStateRef, 
+    allAbilities, setAllAbilities, 
+    uiMapping, updateUiMapping, uiMappingRef,
+    getAlly, getFoe, getAllyId, getFoeId 
+  } = useBattleState();
+
+  const display = useBattleDisplay();
+  const { timer, resetTimer } = useBattleTimer(battleState?.status === 'finished', !!battleState?.is_cpu);
+  const soundManager = SoundManager.getInstance();
 
   const messageQueue = useRef<BattleResponse[]>([]);
   const isHandlingQueue = useRef(false);
-
-  const [isConnected, setIsConnected] = useState(false);
-  const [battleState, setBattleState] = useState<BattleState | null>(null);
-  const [allAbilities, setAllAbilities] = useState<Record<string, AbilityData>>({});
-  const [uiMapping, setUiMapping] = useState<Record<string, string>>({});
-  const [prediction, setPrediction] = useState<{ include: boolean, type1?: string, type2?: string, used?: boolean, prediction?: string, predictions?: Record<string, string> } | null>(null);
-  const [messageLog, setMessageLog] = useState<{ text: string | null, isOpen: boolean }>({ text: null, isOpen: false });
-  const [notification, setNotification] = useState<string | null>(null);
-  const [waitMessage, setWaitMessage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [allyEffect, setAllyEffect] = useState<string | null>(null);
-  const [foeEffect, setFoeEffect] = useState<string | null>(null);
-  const [timer, setTimer] = useState({ remaining: 20, total: 20 });
-  const [allyWord, setAllyWord] = useState<string | null>(null);
-  const [foeWord, setFoeWord] = useState<string | null>(null);
-  const [knockoutStates, setKnockoutStates] = useState<Record<string, boolean>>({});
-  const [showResultButton, setShowResultButton] = useState(false);
-  const soundManager = SoundManager.getInstance();
 
-  useEffect(() => {
-    battleStateRef.current = battleState;
-  }, [battleState]);
+  // --- WebSocket Handler ---
+  const onMessage = (data: BattleResponse) => {
+    console.log(`Received message type: ${data.type}`);
 
-  useEffect(() => {
-    uiMappingRef.current = uiMapping;
-  }, [uiMapping]);
+    if (data.type === 'pre_check') {
+      const d = data as any;
+      display.setPrediction({
+        include: d.include ?? false,
+        used: d.used ?? false,
+        type1: d.type1,
+        type2: d.type2,
+        prediction: d.prediction,
+        predictions: d.predictions
+      });
+      return;
+    }
+    
+    if (data.type === 'error') {
+      display.setWaitMessage((data as any).message || 'エラーが発生しました');
+      setTimeout(() => display.setWaitMessage(null), 2000);
+      return;
+    }
+    
+    if (data.type === 'waiting') {
+      display.setMessageLog({ text: (data as any).message || 'マッチング中...', isOpen: true });
+      return;
+    }
+    
+    if (data.type === 'opponent_disconnected') {
+      display.setWaitMessage('あいてが切断しました');
+      setBattleState(prev => prev ? { ...prev, status: 'finished' } : null);
+      return;
+    }
+    
+    if (['accepted', 'made_room', 'update', 'battle_end', 'timeout'].includes(data.type)) {
+      if (data.type === 'update' && data.events?.some(e => e.type === 'ability_changed')) {
+        handleBattleUpdate(data, true);
+        if (data.events.length === 1) return;
+      }
+      
+      messageQueue.current.push(data);
+      processQueue();
+    }
+  };
 
+  const { isConnected, sendMessage } = useBattleSocket(url, onMessage);
+
+  // --- Queue Processing ---
   const processQueue = async () => {
     if (isHandlingQueue.current || messageQueue.current.length === 0) return;
     isHandlingQueue.current = true;
@@ -45,7 +81,6 @@ export const useBattle = (url: string) => {
     while (messageQueue.current.length > 0) {
       const data = messageQueue.current.shift();
       if (data) {
-        console.log(`Processing queue item: ${data.type}`);
         await handleBattleUpdate(data);
       }
     }
@@ -54,64 +89,42 @@ export const useBattle = (url: string) => {
     isHandlingQueue.current = false;
   };
 
+  // --- Battle Logic (The Core) ---
   const handleBattleUpdate = async (data: BattleResponse, isInterrupt: boolean = false) => {
     try {
       if (data.all_abilities) setAllAbilities(data.all_abilities);
-      if (data.info?.id_to_ui_map) {
-        setUiMapping(data.info.id_to_ui_map);
-        uiMappingRef.current = data.info.id_to_ui_map;
-      }
+      if (data.info?.id_to_ui_map) updateUiMapping(data.info.id_to_ui_map);
 
-      const currentBattleState = battleStateRef.current;
-      const prevState = currentBattleState || data.state;
+      const prevState = battleStateRef.current || data.state;
       const isInitialMadeRoom = data.type === 'made_room';
 
-      // 1. 初期化 (対戦開始時)
-      if (isInitialMadeRoom) {
-        setAllyWord(null);
-        setFoeWord(null);
-        setMessageLog({ text: null, isOpen: false });
-        setWaitMessage(null);
-        setKnockoutStates({});
-        setShowResultButton(false);
-        setAllyEffect(null);
-        setFoeEffect(null);
-      }
+      // 1. Reset for new battle
+      if (isInitialMadeRoom) display.resetDisplay();
 
-      // 2. 演出開始前の表示更新 (単語、画像、黒い箱、タイプ音)
+      // 2. Pre-effect updates
       if (data.state.word) {
-        setPrediction(null); // 単語が送信されたら予測をクリア
-        setMessageLog({ text: '', isOpen: true }); // 即座に黒い箱を空文字で表示
-        // 重要な修正: 直前のターンの持ち主に基づいて単語の表示場所を決定する
-        // (自分が打ったら相手のターンになるため、prevState.is_my_turn が true なら自分の単語)
-        if (prevState.is_my_turn) {
-          setAllyWord(data.state.word);
-        } else {
-          setFoeWord(data.state.word);
-        }
+        display.clearPrediction();
+        display.setMessageLog({ text: '', isOpen: true });
+        
+        if (prevState.is_my_turn) display.setAllyWord(data.state.word);
+        else display.setFoeWord(data.state.word);
 
         const attackerSide = prevState.is_my_turn ? 'ally' : 'foe';
         const attackerId = Object.keys(data.info?.id_to_ui_map || {}).find(id => data.info?.id_to_ui_map[id] === attackerSide);
         const attackerState = data.state.characters[attackerId || ''];
-        if (attackerState && attackerState.types && attackerState.types[0]) {
-          soundManager.playType(attackerState.types[0]);
-        }
+        if (attackerState?.types?.[0]) soundManager.playType(attackerState.types[0]);
       }
 
-      // 3. ビジュアルステートの構築 (HPは古いまま維持し、演出で減らす)
+      // 3. Visual state initialization (keep old HP for animation)
       const initialVisualState: BattleState = {
         ...data.state,
         characters: { ...data.state.characters },
-        status: 'active' // 演出開始時は常にactiveにする
+        status: 'active'
       };
 
-      // 演出開始時は、キャラクターのHPだけ「以前の状態」を維持する
       Object.keys(initialVisualState.characters).forEach(id => {
         if (prevState.characters[id]) {
-          initialVisualState.characters[id] = {
-            ...initialVisualState.characters[id],
-            hp: prevState.characters[id].hp
-          };
+          initialVisualState.characters[id].hp = prevState.characters[id].hp;
         }
       });
 
@@ -119,45 +132,41 @@ export const useBattle = (url: string) => {
       battleStateRef.current = initialVisualState;
       let tempCharacters = { ...initialVisualState.characters };
 
-      // 4. タイマー更新
-      if (data.state.is_my_turn !== currentBattleState?.is_my_turn || isInitialMadeRoom) {
-        const total = data.info?.total_time || 20;
-        const limit = data.info?.time_limit || 20;
-        setTimer({ remaining: limit, total: total });
+      // 4. Timer Sync
+      if (data.state.is_my_turn !== battleStateRef.current?.is_my_turn || isInitialMadeRoom) {
+        resetTimer(data.info?.time_limit || 20, data.info?.total_time || 20);
         if (data.state.is_my_turn) soundManager.play('start');
       }
 
       const events = data.events || [];
       const currentUiMap = data.info?.id_to_ui_map || uiMappingRef.current;
-      const allyId = Object.keys(currentUiMap).find(id => currentUiMap[id] === 'ally');
-      const foeId = Object.keys(currentUiMap).find(id => currentUiMap[id] === 'foe');
+      const allyId = getAllyId(currentUiMap);
+      const foeId = getFoeId(currentUiMap);
 
-      // 5. 本家再現: 攻撃開始前の溜め (1000ms) - 黒い箱が出た状態で待機
-      const isAbilityChange = events.some(e => e.type === 'ability_changed');
-      if (data.state.word && !isAbilityChange) {
+      // 5. Initial delay for word reading
+      const isAbilityChangeOnly = events.length === 1 && events[0].type === 'ability_changed';
+      if (data.state.word && !isAbilityChangeOnly) {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
-      // 3. イベントループ
+      // 6. Event Processing Loop
       for (const event of events) {
         const targetSide = event.target === allyId ? 'ally' : event.target === foeId ? 'foe' : null;
         const targetId = event.target;
 
-        // 特性変更時は箱を隠すが、それ以外（ダメージ等）はメッセージがなくても箱を維持する
+        // Message & Sound
         if (event.type === 'ability_changed') {
-          setMessageLog({ text: null, isOpen: false });
-          setNotification('特性が変わった！');
-          setTimeout(() => setNotification(null), 1500);
+          display.setMessageLog({ text: null, isOpen: false });
+          display.showNotification('特性が変わった！');
         } else {
-          setMessageLog({ text: event.message || null, isOpen: true });
+          display.setMessageLog({ text: event.message || null, isOpen: true });
         }
 
-        // メッセージ連動型サウンド再生 (本家再現)
         if (event.message?.includes('効果はばつぐんだ')) soundManager.play('effective');
         else if (event.message?.includes('効果はいまひとつ')) soundManager.play('noneffective');
         else if (event.message?.includes('ふつうのダメージ')) soundManager.play('middmg');
         else if (event.message?.includes('はたおれた！') && targetId) {
-          setKnockoutStates(prev => ({ ...prev, [targetId]: true }));
+          display.setKnockoutStates(prev => ({ ...prev, [targetId]: true }));
           soundManager.play('end');
         }
         else if (event.type === 'damage') soundManager.play('middmg');
@@ -166,127 +175,98 @@ export const useBattle = (url: string) => {
         else if (event.type === 'stat_down') soundManager.play('down');
         else if (event.type === 'revive') soundManager.play('start');
 
+        // Logic by Event Type
         if (event.type === 'damage' || event.type === 'drain') {
-          // 本家再現: ダメージ更新と点滅を同時に開始
           if (!event.message?.includes('毒のダメージ')) {
-            if (targetSide === 'ally') setAllyEffect('blink');
-            else if (targetSide === 'foe') setFoeEffect('blink');
+            if (targetSide === 'ally') display.setAllyEffect('blink');
+            else if (targetSide === 'foe') display.setFoeEffect('blink');
           }
-
           if (targetId && tempCharacters[targetId] && event.hp !== undefined && event.hp !== null) {
-            tempCharacters[targetId] = { ...tempCharacters[targetId], hp: event.hp };
+            tempCharacters[targetId].hp = event.hp;
             setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
           }
-
           if (event.type === 'drain' && event.attacker) {
             const attackerSide = event.attacker === allyId ? 'ally' : event.attacker === foeId ? 'foe' : null;
-            if (attackerSide === 'ally') setAllyEffect('heal');
-            else if (attackerSide === 'foe') setFoeEffect('heal');
-
-            if (event.attacker_hp !== undefined && event.attacker_hp !== null) {
-              tempCharacters[event.attacker] = { ...tempCharacters[event.attacker], hp: event.attacker_hp };
+            if (attackerSide === 'ally') display.setAllyEffect('heal');
+            else if (attackerSide === 'foe') display.setFoeEffect('heal');
+            const eventAny = event as any;
+            if (eventAny.attacker_hp !== undefined && eventAny.attacker_hp !== null) {
+              tempCharacters[event.attacker].hp = eventAny.attacker_hp;
               setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
             }
           }
-
-          await new Promise(resolve => setTimeout(resolve, 1000)); // 点滅時間に合わせて待機
-          setAllyEffect(null);
-          setFoeEffect(null);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          display.setAllyEffect(null);
+          display.setFoeEffect(null);
         } else if (event.type === 'cure') {
-          if (targetSide === 'ally') setAllyEffect('heal');
-          else if (targetSide === 'foe') setFoeEffect('heal');
-
+          if (targetSide === 'ally') display.setAllyEffect('heal');
+          else if (targetSide === 'foe') display.setFoeEffect('heal');
           if (targetId && tempCharacters[targetId] && event.hp !== undefined && event.hp !== null) {
-            tempCharacters[targetId] = { ...tempCharacters[targetId], hp: event.hp };
+            tempCharacters[targetId].hp = event.hp;
             setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
           }
-          await new Promise(resolve => setTimeout(resolve, 1000)); // 本家: 1000ms
-          setAllyEffect(null);
-          setFoeEffect(null);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          display.setAllyEffect(null);
+          display.setFoeEffect(null);
         } else if (event.type === 'revive') {
           if (targetId) {
-            setKnockoutStates(prev => ({ ...prev, [targetId]: false }));
+            display.setKnockoutStates(prev => ({ ...prev, [targetId]: false }));
             if (tempCharacters[targetId] && event.hp !== undefined) {
-              tempCharacters[targetId] = { ...tempCharacters[targetId], hp: event.hp };
+              tempCharacters[targetId].hp = event.hp;
               setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
             }
           }
           await new Promise(resolve => setTimeout(resolve, 1000));
         } else if (event.type === 'stat_up' || event.type === 'stat_down') {
           const effect = event.type === 'stat_up' ? 'up' : 'down';
-          if (targetSide === 'ally') setAllyEffect(effect);
-          else if (targetSide === 'foe') setFoeEffect(effect);
-
+          if (targetSide === 'ally') display.setAllyEffect(effect);
+          else if (targetSide === 'foe') display.setFoeEffect(effect);
           if (targetId && tempCharacters[targetId] && event.new_rank !== undefined && event.new_rank !== null) {
             const field = event.stat_type === 'defense' ? 'defense_rank' : 'attack_rank';
-            tempCharacters[targetId] = { ...tempCharacters[targetId], [field]: event.new_rank };
+            (tempCharacters[targetId] as any)[field] = event.new_rank;
             setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
           }
           await new Promise(resolve => setTimeout(resolve, 1000));
-          setAllyEffect(null);
-          setFoeEffect(null);
+          display.setAllyEffect(null);
+          display.setFoeEffect(null);
         } else if (event.type === 'ability_changed') {
           if (targetId && tempCharacters[targetId] && event.new_ability) {
-            tempCharacters[targetId] = { 
-              ...tempCharacters[targetId], 
-              ability: event.new_ability,
-              ability_change_count: event.new_ability_change_count ?? tempCharacters[targetId].ability_change_count
-            };
-            setBattleState(prev => {
-              if (!prev) return null;
-              const newChars = { ...prev.characters, [targetId]: tempCharacters[targetId] };
-              return { ...prev, characters: newChars };
-            });
+            tempCharacters[targetId].ability = event.new_ability;
+            tempCharacters[targetId].ability_change_count = event.new_ability_change_count ?? tempCharacters[targetId].ability_change_count;
+            setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
           }
-          if (!isInterrupt) await new Promise(resolve => setTimeout(resolve, 100)); // 割り込みなら待たない
+          if (!isInterrupt) await new Promise(resolve => setTimeout(resolve, 100));
         } else if (event.type === 'battle_result') {
-          setMessageLog({ text: event.message || null, isOpen: true });
-          setShowResultButton(true);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        } else if (event.type === 'message') {
-          setMessageLog({ text: event.message || null, isOpen: true });
+          display.setShowResultButton(true);
           await new Promise(resolve => setTimeout(resolve, 1000));
         } else {
-          // メッセージ表示等の汎用待機
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
 
-      // 4. 最終状態の確定と後処理
-      // 特性変更を維持しつつ最終状態を反映
-      const prevForFinal = battleStateRef.current;
+      // 7. Finalize State
       const mergedChars = { ...data.state.characters };
-      if (prevForFinal) {
+      const lastVisual = battleStateRef.current;
+      if (lastVisual) {
         for (const id in mergedChars) {
-          if (prevForFinal.characters[id]) {
-            if (prevForFinal.characters[id].ability_change_count < mergedChars[id].ability_change_count) {
-              mergedChars[id].ability = prevForFinal.characters[id].ability;
-              mergedChars[id].ability_change_count = prevForFinal.characters[id].ability_change_count;
-            }
+          if (lastVisual.characters[id] && lastVisual.characters[id].ability_change_count < mergedChars[id].ability_change_count) {
+            mergedChars[id].ability = lastVisual.characters[id].ability;
+            mergedChars[id].ability_change_count = lastVisual.characters[id].ability_change_count;
           }
         }
       }
-      const final: BattleState = { 
-        ...data.state, 
-        characters: mergedChars
-      };
-      
+      const final: BattleState = { ...data.state, characters: mergedChars };
       setBattleState(final);
       battleStateRef.current = final;
 
-      // ターン開始メッセージの設定 (本家再現)
-      if (final.status === 'finished') {
-        setWaitMessage(null);
+      // 8. Turn Transition UI
+      if (final.status !== 'finished') {
+        display.setWaitMessage(final.is_my_turn ? 'あなたのターンです。' : '相手のターンです。');
+        resetTimer(20, 20);
+        if (!final.is_my_turn) display.setMessageLog({ text: '相手のターンです。', isOpen: true });
+        else display.setMessageLog({ text: null, isOpen: false });
       } else {
-        const turnMsg = final.is_my_turn ? 'あなたのターンです。' : '相手のターンです。';
-        setWaitMessage(turnMsg);
-        setTimer({ remaining: 20, total: 20 }); // タイマーリセット
-        if (!final.is_my_turn) {
-          setMessageLog({ text: '相手のターンです。', isOpen: true });
-        } else {
-          // 自分のターンになった瞬間に箱を消す
-          setMessageLog({ text: null, isOpen: false });
-        }
+        display.setWaitMessage(null);
       }
     } catch (err) {
       console.error('Error in handleBattleUpdate:', err);
@@ -294,163 +274,34 @@ export const useBattle = (url: string) => {
   };
 
   useEffect(() => {
-    console.log(`Connecting to WebSocket at: ${url}`);
-    const ws = new WebSocket(url);
-    socketRef.current = ws;
-
-    ws.onopen = () => {
-      console.log('✅ WebSocket Connected');
-      setIsConnected(true);
-    };
-
-    ws.onclose = (event) => {
-      console.log(`❌ WebSocket Closed: ${event.code} ${event.reason}`);
-      setIsConnected(false);
-    };
-
-    ws.onerror = (err) => {
-      console.error('⚠️ WebSocket Error details:', err);
-      setIsConnected(false);
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const data: BattleResponse = JSON.parse(event.data);
-        console.log(`Received message type: ${data.type}`);
-
-        if (data.type === 'pre_check') {
-          setPrediction({
-            include: data.include ?? false,
-            used: data.used ?? false,
-            type1: data.type1,
-            type2: data.type2,
-            prediction: data.prediction,
-            predictions: data.predictions
-          });
-          return;
-        }
-        if (data.type === 'error') {
-          setWaitMessage(data.message || 'エラーが発生しました');
-          setTimeout(() => setWaitMessage(null), 2000);
-          return;
-        }
-        if (data.type === 'waiting') {
-          setMessageLog({ text: data.message || 'マッチング中...', isOpen: true });
-          return;
-        }
-        if (data.type === 'opponent_disconnected') {
-          setWaitMessage('あいてが切断しました');
-          setBattleState(prev => prev ? { ...prev, status: 'finished' } : null);
-          return;
-        }
-        if (['accepted', 'made_room', 'update', 'battle_end', 'timeout'].includes(data.type)) {
-          // 特性変更が含まれる場合は割り込み処理
-          if (data.type === 'update' && data.events?.some(e => e.type === 'ability_changed')) {
-            handleBattleUpdate(data, true);
-            // もし特性変更「のみ」ならキューには入れない (二重処理防止)
-            if (data.events.length === 1) return;
-          }
-          
-          messageQueue.current.push(data);
-          processQueue();
-        }
-      } catch (err) {
-        console.error('Failed to parse WebSocket message:', err);
-      }
-    };
-
-    return () => {
-      if (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN) {
-        console.log('Cleanup: Closing WebSocket');
-        ws.onopen = null;
-        ws.onmessage = null;
-        ws.onerror = null;
-        ws.onclose = null;
-        ws.close();
-      }
-    };
-  }, [url]);
-
-  useEffect(() => {
-    if (battleState?.status === 'finished' || battleState?.is_cpu) return;
-    const timerInterval = setInterval(() => {
-      setTimer(prev => ({
-        ...prev,
-        remaining: Math.max(0, prev.remaining - 0.1)
-      }));
-    }, 100);
-    return () => clearInterval(timerInterval);
-  }, [battleState?.status, battleState?.is_cpu]);
-
-  useEffect(() => {
     if (battleState?.status === 'finished') soundManager.play('end');
   }, [battleState?.status]);
 
-  const sendMessage = (msg: SocketMessage) => {
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      console.log(`Sending message: ${msg.type}`);
-      socketRef.current.send(JSON.stringify(msg));
-    } else {
-      console.warn(`Cannot send message. Socket state: ${socketRef.current?.readyState}`);
-    }
-  };
-
   const sendIncludeCheck = (word: string) => {
-    const currentBattleState = battleStateRef.current;
-    if (!currentBattleState?.room_id) return;
-    
-    if (!word) {
-      setPrediction(null);
+    const current = battleStateRef.current;
+    if (!current?.room_id || !word) {
+      display.clearPrediction();
       return;
     }
-
-    const firstChar = word.charAt(0);
-    const normalizedFirstChar = wanakana.toHiragana(firstChar);
-    const startChar = currentBattleState.character || '';
-    
-    if (normalizedFirstChar !== startChar) {
-      setPrediction(null);
+    if (wanakana.toHiragana(word.charAt(0)) !== (current.character || '')) {
+      display.clearPrediction();
       return;
     }
-
-    sendMessage({
-      type: 'include_check',
-      info: { word, room_id: currentBattleState.room_id }
-    });
+    sendMessage({ type: 'include_check', info: { word, room_id: current.room_id } });
   };
-
-  const ally = (battleState?.characters && uiMapping) ?
-    Object.entries(battleState.characters).find(([id, _]) => uiMapping[id].startsWith('ally'))?.[1] || null : null;
-  const foe = (battleState?.characters && uiMapping) ?
-    Object.entries(battleState.characters).find(([id, _]) => uiMapping[id].startsWith('foe'))?.[1] || null : null;
-
-  const allyId = (battleState?.characters && uiMapping) ?
-    Object.keys(uiMapping).find(id => uiMapping[id].startsWith('ally')) || null : null;
-  const foeId = (battleState?.characters && uiMapping) ?
-    Object.keys(uiMapping).find(id => uiMapping[id].startsWith('foe')) || null : null;
 
   return {
-    ally,
-    foe,
     battleState,
     allAbilities,
     isConnected,
-    prediction,
-    messageLog,
-    notification,
-    waitMessage,
-    showResultButton,
     isProcessing,
-    allyEffect,
-    foeEffect,
-    timer,
-    allyWord,
-    foeWord,
-    knockoutStates,
-    allyId,
-    foeId,
     sendMessage,
     sendIncludeCheck,
-    clearPrediction: () => setPrediction(null)
+    ally: getAlly(battleState, uiMapping),
+    foe: getFoe(battleState, uiMapping),
+    allyId: getAllyId(uiMapping),
+    foeId: getFoeId(uiMapping),
+    ...display,
+    timer
   };
 };
