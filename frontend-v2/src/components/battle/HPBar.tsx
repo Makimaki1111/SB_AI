@@ -8,6 +8,7 @@ interface HPBarProps {
   name: string;
   isPoison: boolean;
   isAlly: boolean;
+  isWaiting?: boolean;
 }
 
 export const HPBar: React.FC<HPBarProps> = ({ 
@@ -15,9 +16,11 @@ export const HPBar: React.FC<HPBarProps> = ({
   maxHp, 
   name, 
   isPoison, 
-  isAlly
+  isAlly,
+  isWaiting = false
 }) => {
-  const hpPercentage = maxHp > 0 ? (hp / maxHp) * 100 : 0;
+  // マッチング待機中は100%表示
+  const hpPercentage = isWaiting ? 100 : (maxHp > 0 ? (hp / maxHp) * 100 : 0);
   
   // Legacy color logic from UI.js (line 629)
   const getHPBarColor = (ratio: number) => {
@@ -26,7 +29,7 @@ export const HPBar: React.FC<HPBarProps> = ({
     return "#FF0000"; // 赤色
   };
 
-  const barColor = getHPBarColor(hp / maxHp);
+  const barColor = isWaiting ? "#00FF00" : getHPBarColor(hp / (maxHp || 1));
 
   return (
     <div className={`${styles.balloon} ${isAlly ? styles.right : styles.left}`}>
@@ -46,7 +49,7 @@ export const HPBar: React.FC<HPBarProps> = ({
         />
       </div>
       
-      <div className={styles.hp}>{hp}/{maxHp}</div>
+      {!isWaiting && <div className={styles.hp}>{hp}/{maxHp}</div>}
     </div>
   );
 };

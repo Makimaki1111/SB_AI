@@ -20,13 +20,8 @@ export const BattleView: React.FC = () => {
   const isDouble = location.pathname.includes('double');
   const { username } = useUser();
   
-  // 動的なWebSocket URLの決定 (開発環境と本番環境の両対応)
   const dynamicWsUrl = React.useMemo(() => {
-    if (WS_BASE_URL.includes('127.0.0.1') || WS_BASE_URL.includes('localhost')) {
-       // ローカル時はそのまま、あるいは必要なら window.location.hostname を使う
-       return WS_BASE_URL;
-    }
-    return WS_BASE_URL; // 本番環境などは定数に従う
+    return WS_BASE_URL;
   }, []);
 
   const { 
@@ -68,7 +63,6 @@ export const BattleView: React.FC = () => {
 
   const [allAbilities, setAllAbilities] = React.useState<Record<string, AbilityData>>({});
 
-  // Hookのルールを守るため、すべての変数定義を早期リターンの前に配置
   const isStock = location.search.includes('mode=stock');
   const canChangeAbility = isLobby || (ally?.ability_change_count ?? 0) > 0;
 
@@ -80,17 +74,17 @@ export const BattleView: React.FC = () => {
   }, []);
 
   React.useEffect(() => {
-    if (battleState && isLobby) {
-      if (battleAbilities && Object.keys(battleAbilities).length > 0) {
-        setAllAbilities(battleAbilities);
-      }
-      // 即座にロビーを抜けて対戦画面へ
-      setIsLobby(false);
+    if (battleAbilities && Object.keys(battleAbilities).length > 0) {
+      setAllAbilities(battleAbilities);
+    }
+    
+    if (battleState) {
+      // マッチング完了時の状態整理
       setIsAbilityModalOpen(false);
       setIsSituationModalOpen(false);
       setIsStockModalOpen(false);
     }
-  }, [battleState, isLobby, battleAbilities]);
+  }, [battleState, battleAbilities]);
 
   const [playerId] = React.useState(() => {
     const saved = localStorage.getItem('sb_player_id');
@@ -100,7 +94,7 @@ export const BattleView: React.FC = () => {
     return newId;
   });
 
-  const handleStartMatch = (mode: 'player' | 'cpu' | 'room') => {
+  const handleStartMatch = (mode: 'player' | 'cpu' | 'room', options?: Record<string, string | number | boolean>) => {
     const isStockMode = location.search.includes('mode=stock');
     if (isStockMode && mode === 'room') {
       setIsStockModalOpen(true);
@@ -121,21 +115,29 @@ export const BattleView: React.FC = () => {
         sendMessage({ type: "join_double_cpu_room", info: { ...commonInfo } });
       } else if (mode === 'player') {
         sendMessage({ type: "find_match_double", info: { ...commonInfo } });
+      } else if (mode === 'room') {
+        const roomId = options?.roomId as string;
+        sendMessage({ type: "join_double_private_room", info: { ...commonInfo, room_id: roomId || "" } });
       }
-      return;
+    } else {
+      if (mode === 'cpu') {
+        sendMessage({
+          type: "make_new_battle",
+          info: { ...commonInfo, player1_id: playerId, player2_id: "cpu", p1_max_lives: 2, p2_max_lives: 2 }
+        });
+      } else if (mode === 'player') {
+        sendMessage({
+          type: "find_match",
+          info: { ...commonInfo, max_lives: 2 }
+        });
+      } else if (mode === 'room') {
+        const roomId = options?.roomId as string;
+        sendMessage({ type: "join_private_room", info: { ...commonInfo, room_id: roomId || "" } });
+      }
     }
 
-    if (mode === 'cpu') {
-      sendMessage({
-        type: "make_new_battle",
-        info: { ...commonInfo, player1_id: playerId, player2_id: "cpu", p1_max_lives: 2, p2_max_lives: 2 }
-      });
-    } else if (mode === 'player') {
-      sendMessage({
-        type: "find_match",
-        info: { ...commonInfo, max_lives: 2 }
-      });
-    }
+    // 即座にバトル画面（待機状態）へ遷移
+    setIsLobby(false);
   };
 
   const handleConfirmStockMatch = (allyStock: number, foeStock: number) => {
@@ -152,6 +154,8 @@ export const BattleView: React.FC = () => {
         foe_max_lives: foeStock
       }
     });
+    // 即座にバトル画面（待機状態）へ遷移
+    setIsLobby(false);
   };
 
   const handleOpenAbility = (index: number = 0) => {
@@ -161,7 +165,6 @@ export const BattleView: React.FC = () => {
 
   const handleSelectAbility = (abilityId: string) => {
     if (isLobby) {
-      // ロビーでの選択：ステート更新とlocalStorage保存
       const newAbilities = [...selectedAbilities];
       newAbilities[targetAbilityIndex] = abilityId;
       setSelectedAbilities(newAbilities);
@@ -171,7 +174,6 @@ export const BattleView: React.FC = () => {
         localStorage.setItem('sb_ability_2', abilityId);
       }
     } else if (battleState?.room_id) {
-      // 対戦中の変更：サーバーに送信するのみ（ロビーの設定は変えない）
       sendMessage({
         type: 'change_ability',
         info: { 
@@ -197,7 +199,7 @@ export const BattleView: React.FC = () => {
   };
 
   const handleSubmitWord = (word: string) => {
-    clearPrediction(); // 送信時に即座に予測をクリア
+    clearPrediction();
     sendMessage({
       type: 'submit_word',
       info: { word, room_id: battleState?.room_id, player_id: playerId }

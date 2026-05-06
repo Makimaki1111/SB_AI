@@ -99,10 +99,17 @@ export const useBattle = (url: string) => {
       if (data.info?.id_to_ui_map) updateUiMapping(data.info.id_to_ui_map);
 
       const prevState = battleStateRef.current || data.state;
-      const isInitialMadeRoom = data.type === 'made_room';
+      const isInitialBattle = (data.type === 'made_room' || data.type === 'accepted') && !battleStateRef.current;
 
       // 1. Reset for new battle
-      if (isInitialMadeRoom) display.resetDisplay();
+      if (isInitialBattle) {
+        display.resetDisplay();
+        display.setMessageLog({ text: 'マッチングした！', isOpen: true });
+        soundManager.stopBGM();
+        soundManager.play('start');
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        soundManager.playBGM('resource/overflow.mp3');
+      }
 
       // 2. Pre-effect updates
       const isTimeout = data.events?.some(e => e.message?.includes('時間切れ'));
@@ -138,7 +145,7 @@ export const useBattle = (url: string) => {
       let tempCharacters = { ...initialVisualState.characters };
 
       // 4. Timer Sync
-      if (data.state.is_my_turn !== battleStateRef.current?.is_my_turn || isInitialMadeRoom) {
+      if (data.state.is_my_turn !== battleStateRef.current?.is_my_turn || isInitialBattle) {
         resetTimer(data.info?.time_limit || 20, data.info?.total_time || 20);
         if (data.state.is_my_turn) soundManager.play('start');
       }

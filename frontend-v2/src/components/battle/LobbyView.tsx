@@ -22,6 +22,7 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
   mode = 'single'
 }) => {
   const [showBalloon, setShowBalloon] = React.useState(false);
+  const [roomId, setRoomId] = React.useState('');
   const isDouble = mode === 'double';
   const isStock = mode === 'stock';
 
@@ -34,7 +35,6 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
       icon_type: 'ノーマル' 
     };
   };
-
 
   return (
     <div className={styles.lobbyContent}>
@@ -109,11 +109,13 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
             type="text" 
             placeholder="ルームID" 
             className={styles.roomInput} 
+            value={roomId}
+            onChange={(e) => setRoomId(e.target.value)}
           />
           <GameButton 
             className={styles.joinButton} 
             variant="green"
-            onClick={() => onStartMatch('room')}
+            onClick={() => onStartMatch('room', { roomId })}
           >
             参加
           </GameButton>

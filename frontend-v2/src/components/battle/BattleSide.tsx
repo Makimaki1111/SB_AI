@@ -29,6 +29,7 @@ export const BattleSide: React.FC<BattleSideProps> = ({
       name={name} 
       isPoison={character?.is_poison ?? false}
       isAlly={isAlly}
+      isWaiting={!character}
     />
   );
 

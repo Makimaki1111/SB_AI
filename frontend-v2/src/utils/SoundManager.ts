@@ -1,6 +1,7 @@
 export class SoundManager {
   private static instance: SoundManager;
   private sounds: Map<string, HTMLAudioElement> = new Map();
+  private bgm: HTMLAudioElement | null = null;
   private isMuted: boolean = false;
 
   private constructor() {}
@@ -17,14 +18,35 @@ export class SoundManager {
 
     let audio = this.sounds.get(name);
     if (!audio) {
-      audio = new Audio(`/resource/${name}.mp3`);
+      // 拡張子が含まれていない場合は .mp3 を付加
+      const src = name.includes('.') ? name : `${name}.mp3`;
+      audio = new Audio(src.startsWith('/') ? src : `/resource/${src}`);
       this.sounds.set(name, audio);
     }
 
-    // クローンを作成して同時再生を可能にする
     const playAudio = audio.cloneNode() as HTMLAudioElement;
     playAudio.volume = volume;
     playAudio.play().catch(e => console.warn(`Sound playback failed for ${name}:`, e));
+  }
+
+  public playBGM(url: string, volume: number = 0.3) {
+    if (this.bgm) {
+      this.bgm.pause();
+      this.bgm = null;
+    }
+
+    const fullUrl = url.startsWith('/') ? url : `/${url}`;
+    this.bgm = new Audio(fullUrl);
+    this.bgm.volume = volume;
+    this.bgm.loop = true;
+    this.bgm.play().catch(e => console.warn(`BGM playback failed for ${url}:`, e));
+  }
+
+  public stopBGM() {
+    if (this.bgm) {
+      this.bgm.pause();
+      this.bgm = null;
+    }
   }
 
   public playType(typeName: string) {
@@ -61,9 +83,17 @@ export class SoundManager {
   }
 
   public stopAll() {
+    this.stopBGM();
     this.sounds.forEach(audio => {
       audio.pause();
       audio.currentTime = 0;
     });
+  }
+
+  public setMuted(muted: boolean) {
+    this.isMuted = muted;
+    if (this.bgm) {
+      this.bgm.muted = muted;
+    }
   }
 }
