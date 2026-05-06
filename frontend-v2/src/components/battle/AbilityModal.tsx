@@ -87,6 +87,9 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
   const displayAllyId = isLobby ? currentAbilityId : allyAbilityId;
   const allyAbilityInfo = allAbilities[displayAllyId] || { name: '---', description: '特性がありません' };
 
+  // 同じ特性を選んでいるかどうか
+  const isSameAbility = abilitiesList[currentIndex]?.id === displayAllyId;
+
   return (
     <div className={styles.overlay} onClick={onClose}>
       <motion.div 
@@ -167,7 +170,7 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
             onClick={handleConfirm}
             disabled={!canChange}
           >
-            {canChange ? '決定' : '変更不可'}
+            {!canChange ? '変更不可' : isSameAbility ? 'そのまま' : '決定'}
           </button>
         </div>
       </motion.div>

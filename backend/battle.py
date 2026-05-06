@@ -271,21 +271,29 @@ class SingleBattle(BaseBattle):
 
 
     def change_ability(self, player_id: str, new_ability_id: str):
-        player = self.player1 if player_id == self.player1.id else self.player2 if player_id == self.player2.id else None
-        if not player: return {"type": "error", "message": "このルームのプレイヤーではありません"}
-        if player.ability_change_count <= 0: return {"type": "error", "message": "特性はもう変更できません"}
-        if new_ability_id not in self.abilities: return {"type": "error", "message": "存在しない特性です"}
-        
-        player.ability_change_count -= 1
-        player.ability = new_ability_id
-        self.events.append({
-            "type": "ability_changed",
-            "message": f"特性が「{self.abilities[new_ability_id].name}」に変わった！",
-            "target": self.get_player_label(player),
-            "new_ability": new_ability_id,
-            "new_ability_change_count": player.ability_change_count
-        })
-        return self._make_response()
+        res = super().change_ability(player_id, new_ability_id)
+        if res.get("type") != "error":
+            self.events = []
+        return res
+
+    def get_current_actor(self) -> Player:
+        return self.player1 if self.player1_turn else self.player2
+
+    def get_enemies(self, player: Player) -> list[Player]:
+        return [self.player2] if player.id == self.player1.id else [self.player1]
+
+    def get_team_index(self, player: Player) -> int:
+        if player.id == self.player1.id: return 0
+        if player.id == self.player2.id: return 1
+        return -1
+
+    def format_predictions(self, enemies: list[Player], at1: str, at2: str) -> dict:
+        if not enemies: return {}
+        enemy = enemies[0]
+        dt1 = enemy.types[0] if len(enemy.types) >= 1 else ""
+        dt2 = enemy.types[1] if len(enemy.types) >= 2 else ""
+        effect = self.sb_info.type_effect(at1, at2, dt1, dt2)
+        return {"prediction": self._get_effect_message(effect)}
 
     def timeout(self):
         """タイムアウト処理 (SingleBattle 用にターン交代を追加)"""

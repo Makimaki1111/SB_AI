@@ -167,6 +167,49 @@ class BaseBattle:
         self.events = []
         return ret
 
+    def change_ability(self, player_id: str, new_ability_id: str, char_id: str = None):
+        """特性変更の共通ロジック"""
+        target_char = self.find_character(player_id, char_id)
+        
+        if not target_char or target_char.owner_id != player_id:
+            return {"type": "error", "message": "不正な操作です"}
+        
+        # 同じ特性を選んだ場合は、回数を減らさずそのまま終了 (本家挙動)
+        if new_ability_id == target_char.ability:
+            return self._make_response()
+
+        if target_char.ability_change_count <= 0:
+            return {"type": "error", "message": "特性はもう変更できません"}
+        
+        # 特性リストの存在確認
+        if not hasattr(self, 'abilities') or new_ability_id not in self.abilities:
+            return {"type": "error", "message": "存在しない特性です"}
+            
+        # 実行
+        target_char.ability_change_count -= 1
+        target_char.ability = new_ability_id
+        
+        # イベント追加 (メッセージなし)
+        self.events.append({
+            "type": "ability_changed",
+            "target": target_char.id,
+            "new_ability": new_ability_id,
+            "new_ability_change_count": target_char.ability_change_count
+        })
+        
+        return self._make_response()
+
+    def find_character(self, player_id: str, char_id: str = None):
+        """player_id または char_id から操作対象のキャラクターを特定する"""
+        if char_id:
+            return self.get_player_by_id(char_id)
+        
+        # char_id がない場合は、player_id が所有する最初のキャラクターを返す (SingleBattle用)
+        for p in self.players:
+            if p.owner_id == player_id:
+                return p
+        return None
+
     def timeout(self):
         """タイムアウト処理"""
         if self.is_finished: return self._make_response()
@@ -176,7 +219,7 @@ class BaseBattle:
         current_actor.hp = 0
         self.events.append({"type": "damage", "message": f"時間切れ！{current_actor.name}は力尽きた…", "target": self.get_player_label(current_actor), "damage": 0, "hp": 0})
         
-        team_idx = self._get_team_index(current_actor)
+        team_idx = self.get_team_index(current_actor)
         if team_idx != -1:
             self.finish_battle(1 - team_idx)
             
@@ -184,12 +227,16 @@ class BaseBattle:
         self.events = []
         return ret
 
-    def _get_team_index(self, player: Player) -> int:
-        if hasattr(self, "player1") and player.id == self.player1.id: return 0
-        if hasattr(self, "player2") and player.id == self.player2.id: return 1
-        if hasattr(self, "team1") and player in self.team1: return 0
-        if hasattr(self, "team2") and player in self.team2: return 1
-        return -1
+    def get_player_by_id(self, char_id: str):
+        """IDからキャラクターを特定する"""
+        for p in self.players:
+            if p.id == char_id:
+                return p
+        return None
+
+    def _get_team_index(self, player) -> int:
+        """後方互換用 (内部では get_team_index を呼ぶ)"""
+        return self.get_team_index(player)
 
     def include_check(self, word: str, current_actor=None):
         """入力中の単語チェック"""
@@ -209,34 +256,25 @@ class BaseBattle:
 
         if is_included:
             types = [t for t in self.sb_info.get_types(word) if t]
-            ret["type1"] = types[0] if len(types) >= 1 else ""
-            ret["type2"] = types[1] if len(types) >= 2 else ""
+            at1 = types[0] if len(types) >= 1 else ""
+            at2 = types[1] if len(types) >= 2 else ""
+            ret["type1"], ret["type2"] = at1, at2
             
             if current_actor is None:
-                if hasattr(self, "get_current_actor"):
-                    current_actor = self.get_current_actor()
-                elif hasattr(self, "player1_turn"):
-                    current_actor = self.player1 if getattr(self, "player1_turn", True) else self.player2
+                current_actor = self.get_current_actor()
 
             if current_actor:
-                at1, at2 = ret["type1"], ret["type2"]
-                if hasattr(self, "team1") and hasattr(self, "team2"):
-                    enemies = self.team2 if current_actor in self.team1 else self.team1
-                    predictions = {}
-                    for enemy in enemies:
-                        if not enemy.is_defeated:
-                            dt1 = enemy.types[0] if len(enemy.types) >= 1 else ""
-                            dt2 = enemy.types[1] if len(enemy.types) >= 2 else ""
-                            effect = self.sb_info.type_effect(at1, at2, dt1, dt2)
-                            predictions[enemy.id] = self._get_effect_message(effect)
-                    ret["predictions"] = predictions
-                else:
-                    if hasattr(self, "player1") and hasattr(self, "player2"):
-                        defender = self.player2 if current_actor.id == self.player1.id else self.player1
-                        dt1 = defender.types[0] if len(defender.types) >= 1 else ""
-                        dt2 = defender.types[1] if len(defender.types) >= 2 else ""
-                        effect = self.sb_info.type_effect(at1, at2, dt1, dt2)
-                        ret["prediction"] = self._get_effect_message(effect)
+                enemies = self.get_enemies(current_actor)
+                # サブクラスにレスポンス形式の整形を任せる
+                ret.update(self.format_predictions(enemies, at1, at2))
+
+        if word in self.used:
+            ret["used"] = True
+        return ret
+
+        if word in self.used:
+            ret["used"] = True
+        return ret
 
         if word in self.used:
             ret["used"] = True
@@ -253,6 +291,18 @@ class BaseBattle:
         raise NotImplementedError
 
     def get_current_actor(self) -> Player:
+        raise NotImplementedError
+
+    def get_enemies(self, player: Player) -> list[Player]:
+        """そのプレイヤーから見た敵全員を返す"""
+        raise NotImplementedError
+
+    def get_team_index(self, player: Player) -> int:
+        """そのプレイヤーが属するチームのインデックスを返す"""
+        raise NotImplementedError
+
+    def format_predictions(self, enemies: list[Player], at1: str, at2: str) -> dict:
+        """相性予測の結果を各モードに適した形式(prediction/predictions)で返す"""
         raise NotImplementedError
 
     def _handle_knockout(self, player: Player):
@@ -341,10 +391,7 @@ class BaseBattle:
 
             target_player.take_damage(damage)
             if target_player.is_defeated: 
-                if hasattr(self, "_handle_knockout"):
-                    self._handle_knockout(target_player)
-                else:
-                    self.events.append({"type": "message", "message": f"{target_player.name}はたおれた！", "target": target_player.id})
+                self._handle_knockout(target_player)
 
         if "暴力" in types:
             drop = VIOLENCE_ATTACK_DROP

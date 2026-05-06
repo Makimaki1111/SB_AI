@@ -172,6 +172,24 @@ class DoubleBattle(BaseBattle):
         self.word, self.events = "", []
         return ret
 
+    def get_enemies(self, player: DoubleBattlePlayer) -> list[DoubleBattlePlayer]:
+        return self.team2 if player in self.team1 else self.team1
+
+    def get_team_index(self, player: DoubleBattlePlayer) -> int:
+        if player in self.team1: return 0
+        if player in self.team2: return 1
+        return -1
+
+    def format_predictions(self, enemies: list[DoubleBattlePlayer], at1: str, at2: str) -> dict:
+        predictions = {}
+        for enemy in enemies:
+            if not enemy.is_defeated:
+                dt1 = enemy.types[0] if len(enemy.types) >= 1 else ""
+                dt2 = enemy.types[1] if len(enemy.types) >= 2 else ""
+                effect = self.sb_info.type_effect(at1, at2, dt1, dt2)
+                predictions[enemy.id] = self._get_effect_message(effect)
+        return {"predictions": predictions}
+
     def timeout(self):
         """タイムアウト処理 (DoubleBattle用にターン進行を追加)"""
         if self.is_finished: return self._make_response()
@@ -187,9 +205,9 @@ class DoubleBattle(BaseBattle):
             "hp": 0
         })
         
-        team_idx = self._get_team_index(current_actor)
+        team_idx = self.get_team_index(current_actor)
         if team_idx != -1:
-            self.winner_team = 1 - team_idx
+            self.finish_battle(1 - team_idx)
             
         # ターンを進行
         self._advance_turn_index()
@@ -225,22 +243,9 @@ class DoubleBattle(BaseBattle):
         return word in self.used
 
     def change_ability(self, player_id: str, char_id: str, new_ability_id: str):
-        char = getattr(self, char_id, None)
-        if not char or char.owner_id != player_id: return {"type": "error", "message": "不正な操作です"}
-        if char.ability_change_count <= 0: return {"type": "error", "message": "特性はもう変更できません"}
-        if new_ability_id not in self.abilities: return {"type": "error", "message": "存在しない特性です"}
-        
-        char.ability_change_count -= 1
-        char.ability = new_ability_id
-        self.events.append({
-            "type": "ability_changed",
-            "message": f"{char.name}の特性が「{self.abilities[new_ability_id].name}」に変わった！",
-            "target": char.id,
-            "new_ability": new_ability_id,
-            "new_ability_change_count": char.ability_change_count
-        })
-        res = self._make_response()
-        self.events = []
+        res = super().change_ability(player_id, new_ability_id, char_id=char_id)
+        if res.get("type") != "error":
+            self.events = []
         return res
 
     def make_init_response(self, player_id: str, time_limit: int = None) -> dict:
