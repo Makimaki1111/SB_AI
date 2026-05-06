@@ -139,7 +139,7 @@ class BaseBattle:
                 })
                 p.poison_turns += 1
                 if p.is_defeated:
-                    self.events.append({"type": "message", "message": f"{p.name}はたおれた！", "target": self.get_player_label(p)})
+                    self._handle_knockout(p)
 
         # やどりぎ処理
         if attacker.leech_turns > 0:
@@ -165,8 +165,11 @@ class BaseBattle:
                     "damage": actual_drain,
                     "attacker": self.get_player_label(attacker),
                     "amount": actual_drain,
-                    "hp": actual_defender.hp
+                    "hp": actual_defender.hp,
+                    "attacker_hp": attacker.hp
                 })
+                if actual_defender.is_defeated:
+                    self._handle_knockout(actual_defender)
             else:
                 attacker.leech_turns = 0
 
@@ -381,6 +384,7 @@ class BaseBattle:
                 cure_amount = FOOD_RECOVERY_AMOUNT
                 if ability_obj: cure_amount = ability_obj.get_food_recovery_amount(cure_amount)
                 
+                current_player.heal(cure_amount)
                 self.events.append({
                     "type": "cure", 
                     "message": "体力が回復した", 
@@ -388,7 +392,6 @@ class BaseBattle:
                     "target": current_player.id,
                     "hp": current_player.hp
                 })
-                current_player.heal(cure_amount)
             else:
                 self.events.append({"type": "message", "message": "もう食べられない！", "target": current_player.id})
         elif "医療" in types:
@@ -399,6 +402,7 @@ class BaseBattle:
                     current_player.poisoner_id = None
                     self.events.append({"type": "cure_poison", "message": "毒が治った！", "target": current_player.id})
                 
+                current_player.heal(MEDICAL_RECOVERY_AMOUNT)
                 self.events.append({
                     "type": "cure", 
                     "message": "体力が回復した", 
@@ -406,7 +410,6 @@ class BaseBattle:
                     "target": current_player.id,
                     "hp": current_player.hp
                 })
-                current_player.heal(MEDICAL_RECOVERY_AMOUNT)
             else:
                 self.events.append({"type": "message", "message": "もう回復できない！", "target": current_player.id})
         else:

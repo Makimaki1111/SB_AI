@@ -14,6 +14,7 @@ class BattleEvent(BaseModel):
     stat_type: Optional[str] = Field(None, description="変化したステータス名(attack/defense)")
     new_rank: Optional[int] = Field(None, description="変化後のランク値")
     hp: Optional[int] = Field(None, description="変化後のHP")
+    attacker_hp: Optional[int] = Field(None, description="攻撃側の変化後のHP(やどりぎ用)")
     lives: Optional[int] = Field(None, description="変化後のストック数")
     new_ability: Optional[str] = Field(None, description="変更後の特性ID")
     new_ability_change_count: Optional[int] = Field(None, description="残り特性変更回数")

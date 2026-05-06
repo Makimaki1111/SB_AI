@@ -180,6 +180,11 @@ export const useBattle = (url: string) => {
             const attackerSide = event.attacker === allyId ? 'ally' : event.attacker === foeId ? 'foe' : null;
             if (attackerSide === 'ally') setAllyEffect('heal');
             else if (attackerSide === 'foe') setFoeEffect('heal');
+
+            if (event.attacker_hp !== undefined && event.attacker_hp !== null) {
+              tempCharacters[event.attacker] = { ...tempCharacters[event.attacker], hp: event.attacker_hp };
+              setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
+            }
           }
 
           await new Promise(resolve => setTimeout(resolve, 1000)); // 点滅時間に合わせて待機
