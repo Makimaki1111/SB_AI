@@ -242,29 +242,46 @@ class SingleBattle(BaseBattle):
         new_res = copy.deepcopy(base_res)
         state = new_res["state"]
         
-        is_p1 = (player_id == self.player1.id)
-        state["is_my_turn"] = self.player1_turn if is_p1 else not self.player1_turn
-        state["ally_max_lives"] = self.p1_max_lives if is_p1 else self.p2_max_lives
-        state["foe_max_lives"] = self.p2_max_lives if is_p1 else self.p1_max_lives
+        # IDを文字列として確実に比較
+        pid_str = str(player_id)
+        is_p1 = (pid_str == str(self.player1.id))
+        is_p2 = (pid_str == str(self.player2.id))
+        
+        # 自分のターンかどうかを判定
+        state["is_my_turn"] = (str(state["current_owner_id"]) == pid_str)
+        
+        # ライフ情報の視点を調整
+        if is_p1:
+            state["ally_max_lives"] = self.p1_max_lives
+            state["foe_max_lives"] = self.p2_max_lives
+        elif is_p2:
+            state["ally_max_lives"] = self.p2_max_lives
+            state["foe_max_lives"] = self.p1_max_lives
         
         if self.winner_team is not None:
-            ally_win = self.is_player_winner(player_id)
+            ally_win = self.is_player_winner(pid_str)
             state["ally_win"] = ally_win
             self._personalize_events(new_res.get("events", []), ally_win)
         
         # 敵の特性をマスク
         foe_id = self.player2.id if is_p1 else self.player1.id
-        if foe_id in state["characters"]:
+        if foe_id in state["characters"] and (is_p1 or is_p2):
             state["characters"][foe_id]["ability"] = "secret"
             state["characters"][foe_id]["ability_change_count"] = ABILITY_CHANGE_COUNT_INIT
 
         # フロントエンド演出用のマッピング情報
+        id_to_ui_map = {}
+        player_ids = []
         if is_p1:
-            id_to_ui_map = {self.player1.id: "ally", self.player2.id: "foe"}
-            player_ids = [self.player1.id]
+            id_to_ui_map = {str(self.player1.id): "ally", str(self.player2.id): "foe"}
+            player_ids = [str(self.player1.id)]
+        elif is_p2:
+            id_to_ui_map = {str(self.player2.id): "ally", str(self.player1.id): "foe"}
+            player_ids = [str(self.player2.id)]
         else:
-            id_to_ui_map = {self.player2.id: "ally", self.player1.id: "foe"}
-            player_ids = [self.player2.id]
+            # 観戦者などの場合 (デフォルトでP1視点)
+            id_to_ui_map = {str(self.player1.id): "ally", str(self.player2.id): "foe"}
+            player_ids = [str(self.player1.id)]
 
         new_res["info"] = {
             "player_ids": player_ids,

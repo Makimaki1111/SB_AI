@@ -57,7 +57,10 @@ class WebSocketHandler:
         info = req.get("info", {})
         player_id = info.get("player_id")
         
-        if not player_id:
+        # メッセージにIDが含まれていれば登録を更新、なければ既存の登録から取得
+        if player_id:
+            self.connection_manager.register_player(websocket, player_id)
+        else:
             player_id = self.connection_manager.get_player_id(websocket)
 
         handler_name = f"_handle_{msg_type}"
@@ -74,7 +77,7 @@ class WebSocketHandler:
             await self._safe_send(websocket, {"type": "error", "message": f"Handler not found: {msg_type}"})
 
     async def _handle_pre_check(self, websocket, player_id, info):
-        text = info.get("text", "")
+        text = info.get("word") or info.get("text", "")
         room_id = info.get("room_id")
         if not room_id: return
         
@@ -213,6 +216,7 @@ class WebSocketHandler:
             await self._safe_send(websocket, {"type": "waiting", "message": "マッチング中…"})
 
     async def _handle_create_private_room(self, websocket, player_id, info):
+        self.room_manager.update_user_info(player_id, info.get("name", "じぶん"), info.get("ability"), info.get("ability_2"))
         p1_max_lives = max(1, min(10, int(info.get("p1_max_lives", STOCK_LIVES))))
         p2_max_lives = max(1, min(10, int(info.get("p2_max_lives", STOCK_LIVES))))
         new_id = self.room_manager.create_private_room(websocket, player_id, p1_max_lives, p2_max_lives, is_double=False)
@@ -309,6 +313,7 @@ class WebSocketHandler:
 
     async def _handle_join_private_room(self, websocket, player_id, info, is_double=False):
         room_id = info.get("room_id")
+        self.room_manager.update_user_info(player_id, info.get("name", "じぶん"), info.get("ability"), info.get("ability_2"))
         self.connection_manager.register_player(websocket, player_id)
 
         target_data = self.room_manager.private_waiting_rooms.get(room_id)
