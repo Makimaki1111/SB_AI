@@ -128,8 +128,27 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                     <img src="/img/god.gif" alt="Used" className={styles.predictionImg} />
                   ) : (
                     <>
-                      {prediction.type1 && <img src={`/img/${TYPE_TO_IMAGE[prediction.type1] || 'normal'}.gif`} alt="Type 1" className={styles.predictionImg} />}
-                      {prediction.type2 && <img src={`/img/${TYPE_TO_IMAGE[prediction.type2] || 'normal'}.gif`} alt="Type 2" className={styles.predictionImg} />}
+                      {prediction.type1 && !prediction.type2 && (
+                        <img 
+                          src={`/img/${TYPE_TO_IMAGE[prediction.type1] || 'normal'}.gif`} 
+                          alt="Type 1" 
+                          className={styles.predictionImg} 
+                        />
+                      )}
+                      {prediction.type1 && prediction.type2 && (
+                        <>
+                          <img 
+                            src={`/img/${TYPE_TO_IMAGE[prediction.type1] || 'normal'}.gif`} 
+                            alt="Type 1" 
+                            className={`${styles.predictionImg} ${styles.type1}`} 
+                          />
+                          <img 
+                            src={`/img/${TYPE_TO_IMAGE[prediction.type2] || 'normal'}.gif`} 
+                            alt="Type 2" 
+                            className={`${styles.predictionImg} ${styles.type2}`} 
+                          />
+                        </>
+                      )}
                     </>
                   )}
                 </div>

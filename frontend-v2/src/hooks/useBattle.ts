@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { BattleState, SocketMessage, AbilityData, BattleResponse } from '../types/battle';
 import { SoundManager } from '../utils/SoundManager';
+import * as wanakana from 'wanakana';
 
 export const useBattle = (url: string) => {
   const socketRef = useRef<WebSocket | null>(null);
@@ -278,6 +279,7 @@ export const useBattle = (url: string) => {
       } else {
         const turnMsg = final.is_my_turn ? 'あなたのターンです。' : '相手のターンです。';
         setWaitMessage(turnMsg);
+        setTimer({ remaining: 20, total: 20 }); // タイマーリセット
         if (!final.is_my_turn) {
           setMessageLog({ text: '相手のターンです。', isOpen: true });
         } else {
@@ -315,15 +317,29 @@ export const useBattle = (url: string) => {
         const data: BattleResponse = JSON.parse(event.data);
         console.log(`Received message type: ${data.type}`);
 
-        if (data.type === 'pre_check' && data.info) {
+        if (data.type === 'pre_check') {
           setPrediction({
-            include: data.info.include ?? false,
-            used: data.info.used ?? false,
-            type1: data.info.type1,
-            type2: data.info.type2,
-            prediction: data.info.prediction,
-            predictions: data.info.predictions
+            include: data.include ?? false,
+            used: data.used ?? false,
+            type1: data.type1,
+            type2: data.type2,
+            prediction: data.prediction,
+            predictions: data.predictions
           });
+          return;
+        }
+        if (data.type === 'error') {
+          setWaitMessage(data.message || 'エラーが発生しました');
+          setTimeout(() => setWaitMessage(null), 2000);
+          return;
+        }
+        if (data.type === 'waiting') {
+          setMessageLog({ text: data.message || 'マッチング中...', isOpen: true });
+          return;
+        }
+        if (data.type === 'opponent_disconnected') {
+          setWaitMessage('あいてが切断しました');
+          setBattleState(prev => prev ? { ...prev, status: 'finished' } : null);
           return;
         }
         if (['accepted', 'made_room', 'update', 'battle_end', 'timeout'].includes(data.type)) {
@@ -355,7 +371,7 @@ export const useBattle = (url: string) => {
   }, [url]);
 
   useEffect(() => {
-    if (battleState?.status === 'finished') return;
+    if (battleState?.status === 'finished' || battleState?.is_cpu) return;
     const timerInterval = setInterval(() => {
       setTimer(prev => ({
         ...prev,
@@ -363,7 +379,7 @@ export const useBattle = (url: string) => {
       }));
     }, 100);
     return () => clearInterval(timerInterval);
-  }, [battleState?.status]);
+  }, [battleState?.status, battleState?.is_cpu]);
 
   useEffect(() => {
     if (battleState?.status === 'finished') soundManager.play('end');
@@ -381,6 +397,21 @@ export const useBattle = (url: string) => {
   const sendIncludeCheck = (word: string) => {
     const currentBattleState = battleStateRef.current;
     if (!currentBattleState?.room_id) return;
+    
+    if (!word) {
+      setPrediction(null);
+      return;
+    }
+
+    const firstChar = word.charAt(0);
+    const normalizedFirstChar = wanakana.toHiragana(firstChar);
+    const startChar = currentBattleState.character || '';
+    
+    if (normalizedFirstChar !== startChar) {
+      setPrediction(null);
+      return;
+    }
+
     sendMessage({
       type: 'include_check',
       info: { word, room_id: currentBattleState.room_id }

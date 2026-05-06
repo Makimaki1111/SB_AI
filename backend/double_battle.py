@@ -275,6 +275,7 @@ class DoubleBattle(BaseBattle):
             winner_team=self.winner_team,
             status="finished" if self.is_finished else "active",
             ally_win=None, # get_personalized_response で設定
+            is_cpu=self.is_cpu_battle,
             current_actor_id=current_actor.id,
             current_owner_id=current_actor.owner_id
         )

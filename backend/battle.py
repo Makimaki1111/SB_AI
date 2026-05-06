@@ -221,6 +221,7 @@ class SingleBattle(BaseBattle):
                 winner_team=self.winner_team,
                 status="finished" if self.is_finished else "active",
                 ally_win=None,
+                is_cpu=self.is_cpu_battle,
                 ally_max_lives=self.p1_max_lives,
                 foe_max_lives=self.p2_max_lives,
                 current_actor_id=self.player1.id if self.player1_turn else self.player2.id,

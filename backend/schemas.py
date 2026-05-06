@@ -54,6 +54,7 @@ class BattleState(BaseModel):
     ally_win: Optional[bool] = None
     ally_max_lives: Optional[int] = None
     foe_max_lives: Optional[int] = None
+    is_cpu: bool = False
     current_actor_id: Optional[str] = None
     current_owner_id: Optional[str] = None
 

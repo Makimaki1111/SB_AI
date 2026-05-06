@@ -151,6 +151,16 @@
   opacity: 0.7;
 }
 
+.type1 {
+  margin-right: -2.2cqw; /* -10px / 450px */
+  z-index: 1;
+}
+
+.type2 {
+  margin-left: -2.2cqw; /* -10px / 450px */
+  z-index: 2;
+}
+
 .predictionMsg {
   font-size: 3.7cqw; /* 0.85rem */
   font-weight: bold;
