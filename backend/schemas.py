@@ -47,6 +47,7 @@ class BattleState(BaseModel):
     word: Optional[str] = ""
     characters: Dict[str, CharacterState] = {}
     winner_team: Optional[int] = None
+    status: str = "active"
     ally_win: Optional[bool] = None
     ally_max_lives: Optional[int] = None
     foe_max_lives: Optional[int] = None

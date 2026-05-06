@@ -219,7 +219,9 @@ class DoubleBattle(BaseBattle):
             self._check_win_condition()
             # CPU失敗時もターン進行
             self._advance_turn_index()
-            return self._make_response()
+            ret = self._make_response()
+            self.events = []
+            return ret
 
     def get_cpu_word(self):
         candidates = self.sb_info.get_typed_word_candidates(self.character)
@@ -230,7 +232,7 @@ class DoubleBattle(BaseBattle):
     def _is_used(self, word: str) -> bool:
         return word in self.used
 
-    def change_ability(self, player_id: str, char_id: str, new_ability_id: str):
+    def change_ability(self, player_id: str, new_ability_id: str, char_id: str = None):
         res = super().change_ability(player_id, new_ability_id, char_id=char_id)
         if res.get("type") != "error":
             self.events = []
@@ -268,6 +270,7 @@ class DoubleBattle(BaseBattle):
             word=self.word,
             characters=chars,
             winner_team=self.winner_team,
+            status="finished" if self.is_finished else "active",
             ally_win=None, # get_personalized_response で設定
             current_actor_id=current_actor.id,
             current_owner_id=current_actor.owner_id

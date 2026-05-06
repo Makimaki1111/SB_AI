@@ -189,18 +189,24 @@ class BaseBattle:
         """プレイヤーの切断を処理する"""
         if self.is_finished: return None
         
+        self.word = "" # フロントエンドの溜め時間を防ぐためにクリア
         disconnected_team_idx = -1
-        for p in self.players:
-            if p.owner_id == player_id:
-                p.hp = 0
-                self.events.append({"type": "message", "message": f"{p.name} は逃げ出した！", "target": self.get_player_label(p)})
-                if disconnected_team_idx == -1:
-                    disconnected_team_idx = self._get_team_index(p)
-        
-        if disconnected_team_idx != -1:
-            self.finish_battle(1 - disconnected_team_idx)
+        try:
+            for p in self.players:
+                if p.owner_id == player_id:
+                    p.hp = 0
+                    self.events.append({"type": "message", "message": f"{p.name} は逃げ出した！", "target": self.get_player_label(p)})
+                    if disconnected_team_idx == -1:
+                        disconnected_team_idx = self._get_team_index(p)
             
-        self.events.append({"type": "error", "message": message})
+            if disconnected_team_idx != -1:
+                self.finish_battle(1 - disconnected_team_idx)
+            else:
+                # 誰が切断したか不明な場合でも終了させる
+                self.finish_battle(0) 
+        except Exception:
+            self.winner_team = 0 # 最悪でも終了フラグを立てる
+            
         ret = self._make_response()
         self.events = []
         return ret

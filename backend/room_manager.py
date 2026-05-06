@@ -90,7 +90,7 @@ class RoomManager:
                 if room:
                     res = room.handle_disconnection(player_id)
                     if res:
-                        is_double = hasattr(room, "team1_win")
+                        is_double = room.is_double
                         await self.connection_manager.broadcast_battle_state(room_id, res, is_double=is_double, room_manager=self)
                     
                     if room.is_finished:

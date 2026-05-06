@@ -53,7 +53,7 @@ export const useBattle = (url: string) => {
     isHandlingQueue.current = false;
   };
 
-  const handleBattleUpdate = async (data: BattleResponse) => {
+  const handleBattleUpdate = async (data: BattleResponse, isInterrupt: boolean = false) => {
     try {
       if (data.all_abilities) setAllAbilities(data.all_abilities);
       if (data.info?.id_to_ui_map) {
@@ -79,7 +79,7 @@ export const useBattle = (url: string) => {
 
       // 2. 演出開始前の表示更新 (単語、画像、黒い箱、タイプ音)
       if (data.state.word) {
-        setMessageLog({ text: null, isOpen: true }); // 即座に黒い箱を表示
+        setMessageLog({ text: '', isOpen: true }); // 即座に黒い箱を空文字で表示
         // 重要な修正: 直前のターンの持ち主に基づいて単語の表示場所を決定する
         // (自分が打ったら相手のターンになるため、prevState.is_my_turn が true なら自分の単語)
         if (prevState.is_my_turn) {
@@ -219,7 +219,19 @@ export const useBattle = (url: string) => {
           setAllyEffect(null);
           setFoeEffect(null);
         } else if (event.type === 'ability_changed') {
-          await new Promise(resolve => setTimeout(resolve, 100)); // 本家: 100ms
+          if (targetId && tempCharacters[targetId] && event.new_ability) {
+            tempCharacters[targetId] = { 
+              ...tempCharacters[targetId], 
+              ability: event.new_ability,
+              ability_change_count: event.new_ability_change_count ?? tempCharacters[targetId].ability_change_count
+            };
+            setBattleState(prev => {
+              if (!prev) return null;
+              const newChars = { ...prev.characters, [targetId]: tempCharacters[targetId] };
+              return { ...prev, characters: newChars };
+            });
+          }
+          if (!isInterrupt) await new Promise(resolve => setTimeout(resolve, 100)); // 割り込みなら待たない
         } else if (event.type === 'battle_result') {
           setMessageLog({ text: event.message || null, isOpen: true });
           setShowResultButton(true);
@@ -234,20 +246,39 @@ export const useBattle = (url: string) => {
       }
 
       // 4. 最終状態の確定と後処理
-      const finalState: BattleState = {
-        ...data.state,
-        status: data.state.winner_team !== null ? 'finished' : 'active'
-      };
-      setBattleState(finalState);
-      battleStateRef.current = finalState;
+      // 特性変更を維持しつつ最終状態を反映
+      setBattleState(prev => {
+        if (!prev || !data.state) return data.state || prev;
+        
+        // 現在の特性と回数を、サーバーから送られてきた最新の状態（data.state）にマージする
+        // (演出中に割り込みで変わった可能性を考慮)
+        const mergedChars = { ...data.state.characters };
+        for (const id in mergedChars) {
+          if (prev.characters[id]) {
+            // もし prev (現在の画面) の方が change_count が少ない(＝変更された)なら、そっちを採用
+            if (prev.characters[id].ability_change_count < mergedChars[id].ability_change_count) {
+              mergedChars[id].ability = prev.characters[id].ability;
+              mergedChars[id].ability_change_count = prev.characters[id].ability_change_count;
+            }
+          }
+        }
+        const final: BattleState = { 
+          ...data.state, 
+          characters: mergedChars,
+          status: data.state.winner_team !== null ? 'finished' : 'active'
+        };
+        battleStateRef.current = final;
+        return final;
+      });
 
       // ターン開始メッセージの設定 (本家再現)
-      if (finalState.status === 'finished') {
+      const currentFinal = battleStateRef.current;
+      if (currentFinal?.status === 'finished') {
         setWaitMessage(null);
       } else {
-        const turnMsg = finalState.is_my_turn ? 'あなたのターンです。' : '相手のターンです。';
+        const turnMsg = currentFinal?.is_my_turn ? 'あなたのターンです。' : '相手のターンです。';
         setWaitMessage(turnMsg);
-        if (!finalState.is_my_turn) {
+        if (!currentFinal?.is_my_turn) {
           setMessageLog({ text: '相手のターンです。', isOpen: true });
         } else {
           // 自分のターンになった瞬間に箱を消す
@@ -296,6 +327,13 @@ export const useBattle = (url: string) => {
           return;
         }
         if (['accepted', 'made_room', 'update', 'battle_end', 'timeout'].includes(data.type)) {
+          // 特性変更が含まれる場合は割り込み処理
+          if (data.type === 'update' && data.events?.some(e => e.type === 'ability_changed')) {
+            handleBattleUpdate(data, true);
+            // もし特性変更「のみ」ならキューには入れない (二重処理防止)
+            if (data.events.length === 1) return;
+          }
+          
           messageQueue.current.push(data);
           processQueue();
         }
@@ -350,14 +388,14 @@ export const useBattle = (url: string) => {
   };
 
   const ally = (battleState?.characters && uiMapping) ?
-    Object.entries(battleState.characters).find(([id, _]) => uiMapping[id] === 'ally')?.[1] || null : null;
+    Object.entries(battleState.characters).find(([id, _]) => uiMapping[id].startsWith('ally'))?.[1] || null : null;
   const foe = (battleState?.characters && uiMapping) ?
-    Object.entries(battleState.characters).find(([id, _]) => uiMapping[id] === 'foe')?.[1] || null : null;
+    Object.entries(battleState.characters).find(([id, _]) => uiMapping[id].startsWith('foe'))?.[1] || null : null;
 
   const allyId = (battleState?.characters && uiMapping) ?
-    Object.keys(uiMapping).find(id => uiMapping[id] === 'ally') || null : null;
+    Object.keys(uiMapping).find(id => uiMapping[id].startsWith('ally')) || null : null;
   const foeId = (battleState?.characters && uiMapping) ?
-    Object.keys(uiMapping).find(id => uiMapping[id] === 'foe') || null : null;
+    Object.keys(uiMapping).find(id => uiMapping[id].startsWith('foe')) || null : null;
 
   return {
     ally,

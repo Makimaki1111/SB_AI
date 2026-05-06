@@ -64,7 +64,6 @@ export const BattleView: React.FC = () => {
     return [a1, a2];
   });
 
-  const [matchingMessage, setMatchingMessage] = React.useState<string | null>(null);
   const [allAbilities, setAllAbilities] = React.useState<Record<string, AbilityData>>({});
 
   // Hookのルールを守るため、すべての変数定義を早期リターンの前に配置
@@ -85,7 +84,6 @@ export const BattleView: React.FC = () => {
       }
       // 即座にロビーを抜けて対戦画面へ
       setIsLobby(false);
-      setMatchingMessage(null);
       setIsAbilityModalOpen(false);
       setIsSituationModalOpen(false);
       setIsStockModalOpen(false);
@@ -154,8 +152,8 @@ export const BattleView: React.FC = () => {
     });
   };
 
-  const handleOpenAbilityModal = (index?: number) => {
-    setTargetAbilityIndex(index || 0);
+  const handleOpenAbility = (index: number = 0) => {
+    setTargetAbilityIndex(index);
     setIsAbilityModalOpen(true);
   };
 
@@ -176,7 +174,7 @@ export const BattleView: React.FC = () => {
           room_id: battleState.room_id, 
           player_id: playerId, 
           ability_id: abilityId,
-          char_id: isDouble ? (targetAbilityIndex === 0 ? 'p1' : 'p2') : 'p1'
+          char_id: targetAbilityIndex === 0 ? allyId : foeId
         }
       });
     }
@@ -217,7 +215,7 @@ export const BattleView: React.FC = () => {
         {isLobby ? (
           <LobbyView 
             onStartMatch={handleStartMatch}
-            onOpenAbilityModal={handleOpenAbilityModal}
+            onOpenAbilityModal={handleOpenAbility}
             onBackToTitle={() => navigate('/')}
             selectedAbilities={selectedAbilities}
             allAbilities={allAbilities}
@@ -246,7 +244,7 @@ export const BattleView: React.FC = () => {
               onSendWord={handleSubmitWord}
               onSendIncludeCheck={sendIncludeCheck}
               onOpenSituation={() => setIsSituationModalOpen(true)}
-              onOpenAbility={() => handleOpenAbilityModal(0)}
+              onOpenAbility={() => handleOpenAbility(0)}
               onRunAway={handleRunAway}
             />
 

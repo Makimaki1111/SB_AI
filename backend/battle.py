@@ -80,6 +80,19 @@ class SingleBattle(BaseBattle):
     def is_finished(self) -> bool:
         return self.winner_team is not None
 
+    def get_team_index(self, player) -> int:
+        return 0 if player.id == self.player1.id else 1
+
+    def get_enemies(self, player) -> list[Player]:
+        return [self.player2] if player.id == self.player1.id else [self.player1]
+
+    def format_predictions(self, enemies: list[Player], at1: str, at2: str) -> dict:
+        enemy = enemies[0]
+        dt1 = enemy.types[0] if len(enemy.types) >= 1 else ""
+        dt2 = enemy.types[1] if len(enemy.types) >= 2 else ""
+        effect = self.sb_info.type_effect(at1, at2, dt1, dt2)
+        return {"prediction": self._get_effect_message(effect)}
+
     def init_character(self):
         self.character = random.choice(self.START_CHARACTERS)
 
@@ -119,7 +132,7 @@ class SingleBattle(BaseBattle):
         if self.winner_team is None:
             defeated_player.attack_rank = 0
             defeated_player.defense_rank = 0
-            defeated_player.types = [""]
+            defeated_player.types = []
             defeated_player.poison_turns = 0
             defeated_player.poisoner_id = None
             defeated_player.leech_turns = 0
@@ -165,6 +178,7 @@ class SingleBattle(BaseBattle):
         
         ret = self._make_response()
         # イベントをリセット（次のターンのために）
+        self.word = ""
         self.events = []
         return ret
 
@@ -190,8 +204,6 @@ class SingleBattle(BaseBattle):
                     lives=self.player2_lives, owner_id=self.player2.id
                 )
             }
-            print("DEBUG: CharacterState instantiated")
-            
             state = BattleState(
                 room_id=self.room_id,
                 character=self.character,
@@ -201,23 +213,20 @@ class SingleBattle(BaseBattle):
                 word=self.word,
                 characters=chars,
                 winner_team=self.winner_team,
+                status="finished" if self.is_finished else "active",
                 ally_win=None,
                 ally_max_lives=self.p1_max_lives,
                 foe_max_lives=self.p2_max_lives,
                 current_actor_id=self.player1.id if self.player1_turn else self.player2.id,
                 current_owner_id=self.player1.id if self.player1_turn else self.player2.id
             )
-            print("DEBUG: BattleState instantiated")
             
             events = [BattleEvent(**e) for e in self.events if isinstance(e, dict)]
-            print(f"DEBUG: Events instantiated (count: {len(events)})")
             
             res = BattleResponse(state=state, events=events).model_dump(by_alias=True)
             res["type"] = "battle_end" if self.is_finished else "update"
-            print(f"DEBUG: _make_response completed (type: {res['type']})")
             return res
         except Exception as e:
-            print(f"DEBUG: ERROR in _make_response: {e}")
             raise e
 
     def get_personalized_response(self, base_res: dict, player_id: str, time_limit: int = None) -> dict:
@@ -257,8 +266,8 @@ class SingleBattle(BaseBattle):
         return new_res
 
 
-    def change_ability(self, player_id: str, new_ability_id: str):
-        res = super().change_ability(player_id, new_ability_id)
+    def change_ability(self, player_id: str, new_ability_id: str, char_id: str = None):
+        res = super().change_ability(player_id, new_ability_id, char_id=char_id)
         if res.get("type") != "error":
             self.events = []
         return res
@@ -280,13 +289,14 @@ class SingleBattle(BaseBattle):
         
         team_idx = self._get_team_index(current_actor)
         if team_idx != -1:
-            self.winner_team = 1 - team_idx
+            self.finish_battle(1 - team_idx)
         
         # ターンを交代
         self.player1_turn = not self.player1_turn
         self.turn += 1
             
         ret = self._make_response()
+        self.word = ""
         self.events = []
         return ret
 
@@ -297,7 +307,10 @@ class SingleBattle(BaseBattle):
         self.finish_battle(0)
         # CPU失敗時もターン交代(念のため)
         self.player1_turn = not self.player1_turn
-        return self._make_response()
+        ret = self._make_response()
+        self.word = ""
+        self.events = []
+        return ret
 
     def get_cpu_word(self):
         candidates = self.sb_info.get_typed_word_candidates(self.character)
