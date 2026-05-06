@@ -12,7 +12,7 @@ class Player:
         self.hp = MAX_HP
         self.attack_rank = 0
         self.defense_rank = 0
-        self.types = [""]
+        self.types = []
         self.ability = "random"
         self.ability_change_count = ABILITY_CHANGE_COUNT_INIT
         self.food_count = 0

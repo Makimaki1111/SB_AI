@@ -112,7 +112,7 @@ async def websocket_endpoint(websocket: WebSocket):
         left_rooms = connection_manager.disconnect(websocket)
         if pid:
             for rid in left_rooms:
-                room_manager.start_grace_period(rid, pid, delay=20)
+                room_manager.start_grace_period(rid, pid, delay=10)
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
         logger.error(traceback.format_exc())
@@ -120,7 +120,7 @@ async def websocket_endpoint(websocket: WebSocket):
         left_rooms = connection_manager.disconnect(websocket)
         if pid:
             for rid in left_rooms:
-                room_manager.start_grace_period(rid, pid, delay=20)
+                room_manager.start_grace_period(rid, pid, delay=10)
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

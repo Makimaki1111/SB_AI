@@ -83,18 +83,14 @@ export const BattleView: React.FC = () => {
       if (battleAbilities && Object.keys(battleAbilities).length > 0) {
         setAllAbilities(battleAbilities);
       }
-      setMatchingMessage("マッチングした！");
-      const timer = setTimeout(() => {
-        setIsLobby(false);
-        setMatchingMessage(null);
-        // 本家再現: 対戦開始時にモーダルをすべて閉じる
-        setIsAbilityModalOpen(false);
-        setIsSituationModalOpen(false);
-        setIsStockModalOpen(false);
-      }, 1500);
-      return () => clearTimeout(timer);
+      // 即座にロビーを抜けて対戦画面へ
+      setIsLobby(false);
+      setMatchingMessage(null);
+      setIsAbilityModalOpen(false);
+      setIsSituationModalOpen(false);
+      setIsStockModalOpen(false);
     }
-  }, [battleState, isLobby]);
+  }, [battleState, isLobby, battleAbilities]);
 
   const [playerId] = React.useState(() => {
     const saved = localStorage.getItem('sb_player_id');
@@ -218,12 +214,6 @@ export const BattleView: React.FC = () => {
   return (
     <GameLayout id="phone-box">
       <div className={styles.battleArea}>
-        {matchingMessage && (
-          <div className={styles.matchOverlay}>
-            <div className={styles.matchMessage}>{matchingMessage}</div>
-          </div>
-        )}
-
         {isLobby ? (
           <LobbyView 
             onStartMatch={handleStartMatch}

@@ -54,17 +54,8 @@ class SingleBattle(BaseBattle):
         self.player1.ability = resolve_ability(p1_profile)
         self.player2.ability = resolve_ability(p2_profile)
         
-        # 初期タイプをランダムに割り当て (フロントエンドの画像表示用)
-        # 有効なタイプ名リスト (SB_info.py の type_number から)
-        valid_types = [
-            "暴力", "食べ物", "地名", "社会", "動物", "感情",
-            "植物", "理科", "遊び", "人物", "服飾", "工作",
-            "芸術", "人体", "時間", "機械", "医療", "物語",
-            "暴言", "数学", "天気", "虫", "宗教", "スポーツ",
-            "ノーマル"
-        ]
-        self.player1.types = [random.choice(valid_types)]
-        self.player2.types = [random.choice(valid_types)]
+        self.player1.types = []
+        self.player2.types = []
 
     def get_player_label(self, player) -> str:
         """SingleBattleでも生のIDを返す (BattleManagerのidToUiMapと同期するため)"""

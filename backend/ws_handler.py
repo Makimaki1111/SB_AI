@@ -144,6 +144,8 @@ class WebSocketHandler:
             self.connection_manager.join_room(p1_data["socket"], bi.room_id)
             self.connection_manager.join_room(p2_data["socket"], bi.room_id)
 
+            bi.events.append({"type": "message", "message": "マッチングした！"})
+
             await p1_data["socket"].send_text(json.dumps(bi.make_init_response(p1_data["player_id"], time_limit=self.TIME_LIMIT)))
             await p2_data["socket"].send_text(json.dumps(bi.make_init_response(p2_data["player_id"], time_limit=self.TIME_LIMIT)))
             
@@ -177,6 +179,8 @@ class WebSocketHandler:
             
             self.connection_manager.join_room(p1_data["socket"], bi.room_id)
             self.connection_manager.join_room(p2_data["socket"], bi.room_id)
+            
+            bi.events.append({"type": "message", "message": "マッチングした！"})
 
             await p1_data["socket"].send_text(json.dumps(bi.make_init_response(p1_data["player_id"], time_limit=self.DOUBLE_TIME_LIMIT)))
             await p2_data["socket"].send_text(json.dumps(bi.make_init_response(p2_data["player_id"], time_limit=self.DOUBLE_TIME_LIMIT)))
@@ -241,6 +245,8 @@ class WebSocketHandler:
             
             self.connection_manager.register_player(websocket, player_id)
             self.connection_manager.join_room(websocket, bi.room_id)
+            
+            bi.events.append({"type": "message", "message": "マッチングした！"})
             
             init_res = bi.make_init_response(player_id, time_limit=self.TIME_LIMIT)
             await websocket.send_text(json.dumps(init_res))
@@ -309,6 +315,8 @@ class WebSocketHandler:
                 
                 self.connection_manager.join_room(p1_data["socket"], bi.room_id)
                 self.connection_manager.join_room(p2_data["socket"], bi.room_id)
+
+                bi.events.append({"type": "message", "message": "マッチングした！"})
 
                 limit = bi.time_limit
                 await p1_data["socket"].send_text(json.dumps(bi.make_init_response(p1_data["player_id"], time_limit=limit)))
@@ -384,6 +392,7 @@ class WebSocketHandler:
             res = room.handle_disconnection(player_id)
             if res:
                 await self.connection_manager.broadcast_battle_state(room_id, res, is_double=room.is_double, room_manager=self.room_manager, time_limit=room.time_limit)
+                await self._after_turn_action(room_id, room)
 
     async def _handle_run_away_double(self, websocket, player_id, info):
         await self._handle_run_away(websocket, player_id, info)
