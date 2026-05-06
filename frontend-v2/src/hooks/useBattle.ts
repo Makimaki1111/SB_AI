@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import type { BattleResponse, SocketMessage, BattleState } from '../types/battle';
+import type { BattleResponse, BattleState } from '../types/battle';
 import { SoundManager } from '../utils/SoundManager';
 import * as wanakana from 'wanakana';
 
@@ -54,7 +54,10 @@ export const useBattle = (url: string) => {
     }
     
     if (data.type === 'opponent_disconnected') {
+      soundManager.play('end');
       display.setWaitMessage('あいてが切断しました');
+      display.setShowResultButton(true);
+      display.setMessageLog({ text: null, isOpen: false });
       setBattleState(prev => prev ? { ...prev, status: 'finished' } : null);
       return;
     }
@@ -102,7 +105,9 @@ export const useBattle = (url: string) => {
       if (isInitialMadeRoom) display.resetDisplay();
 
       // 2. Pre-effect updates
-      if (data.state.word) {
+      const isTimeout = data.events?.some(e => e.message?.includes('時間切れ'));
+      
+      if (data.state.word && !isTimeout) {
         display.clearPrediction();
         display.setMessageLog({ text: '', isOpen: true });
         
@@ -145,7 +150,7 @@ export const useBattle = (url: string) => {
 
       // 5. Initial delay for word reading
       const isAbilityChangeOnly = events.length === 1 && events[0].type === 'ability_changed';
-      if (data.state.word && !isAbilityChangeOnly) {
+      if (data.state.word && !isAbilityChangeOnly && !isTimeout) {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
@@ -165,7 +170,7 @@ export const useBattle = (url: string) => {
         if (event.message?.includes('効果はばつぐんだ')) soundManager.play('effective');
         else if (event.message?.includes('効果はいまひとつ')) soundManager.play('noneffective');
         else if (event.message?.includes('ふつうのダメージ')) soundManager.play('middmg');
-        else if (event.message?.includes('はたおれた！') && targetId) {
+        else if ((event.message?.includes('はたおれた！') || event.message?.includes('力尽きた')) && targetId) {
           display.setKnockoutStates(prev => ({ ...prev, [targetId]: true }));
           soundManager.play('end');
         }

@@ -309,7 +309,13 @@ class DoubleBattle(BaseBattle):
         is_t1 = any(p.owner_id == request_player_id for p in self.team1)
         # 勝敗ラベルの付与
         if self.winner_team is not None:
-            state["ally_win"] = (is_t1 and self.winner_team == 0) or (not is_t1 and self.winner_team == 1)
+            ally_win = (is_t1 and self.winner_team == 0) or (not is_t1 and self.winner_team == 1)
+            state["ally_win"] = ally_win
+            
+            # イベントメッセージのパーソナライズ (勝敗メッセージの反転)
+            for event in new_res.get("events", []):
+                if event.get("type") == "battle_result":
+                    event["message"] = "あいてとの勝負に勝った！" if ally_win else "あいてとの勝負に負けた…"
         
         # 敵の特性をマスク
         for k, char_info in state["characters"].items():

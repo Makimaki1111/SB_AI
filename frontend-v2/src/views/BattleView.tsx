@@ -47,6 +47,7 @@ export const BattleView: React.FC = () => {
     knockoutStates,
     allyId,
     foeId,
+    showResultButton,
     allAbilities: battleAbilities,
     sendMessage,
     sendIncludeCheck,
@@ -252,7 +253,7 @@ export const BattleView: React.FC = () => {
               onRunAway={handleRunAway}
             />
 
-            {battleState?.status === 'finished' && (
+            {showResultButton && (
               <div className={styles.simpleResultArea}>
                 <GameButton 
                   variant="orange"
