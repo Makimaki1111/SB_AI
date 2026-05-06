@@ -25,17 +25,17 @@
   font-weight: bold;
   font-size: 24px;
   user-select: none;
-  text-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+  pointer-events: none;
 }
 
 .heal {
-  color: #4CAF50;
+  color: #4CAF50; /* 緑色 */
 }
 
 .stat_up {
-  color: #FF4500;
+  color: #FF4500; /* オレンジレッド */
 }
 
 .stat_down {
-  color: #1E90FF;
+  color: #1E90FF; /* ドジャーブルー */
 }
