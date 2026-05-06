@@ -11,7 +11,8 @@ interface BattleArenaProps {
   ally: CharacterState | null;
   foe: CharacterState | null;
   prediction: { include: boolean, type1?: string, type2?: string, used?: boolean, prediction?: string } | null;
-  displayMessage: string | null;
+  messageLog: { text: string | null, isOpen: boolean };
+  notification: string | null;
   waitMessage: string | null;
   isProcessing: boolean;
   allyEffect: string | null;
@@ -35,7 +36,8 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
   ally,
   foe,
   prediction,
-  displayMessage,
+  messageLog,
+  notification,
   waitMessage,
   isProcessing,
   allyEffect,
@@ -85,6 +87,13 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
 
       <div className={styles.content}>
         <div className={styles.actionArea}>
+          {/* メッセージボックスがタイマーを覆うように配置 */}
+          {messageLog.isOpen && (
+            <div className={styles.messageOverlay}>
+              {messageLog.text}
+            </div>
+          )}
+
           {/* タイマーを最上部に配置 */}
           <div className={styles.timerContainer}>
             <div 
@@ -96,8 +105,15 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
             />
           </div>
 
+          {/* 特性変更などの通知 */}
+          {notification && (
+            <div className={styles.toastNotification}>
+              {notification}
+            </div>
+          )}
+
           <div className={styles.inputWrapper}>
-            {(!displayMessage && battleState?.is_my_turn && battleState?.status !== 'finished') && (
+            {(!messageLog.isOpen && battleState?.is_my_turn && battleState?.status !== 'finished') && (
               <WordInput 
                 onSend={onSendWord} 
                 onChange={onSendIncludeCheck}
@@ -105,7 +121,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                 initialChar={battleState?.character || ''}
               />
             )}
-            {prediction && prediction.include && !displayMessage && (
+            {prediction && prediction.include && !messageLog.isOpen && (
               <div className={styles.predictionContainer}>
                 <div className={styles.predictionImages}>
                   {prediction.used ? (
@@ -118,11 +134,6 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                   )}
                 </div>
                 {prediction.prediction && <div className={styles.predictionMsg}>{prediction.prediction}</div>}
-              </div>
-            )}
-            {displayMessage !== null && (
-              <div className={styles.messageOverlay}>
-                {displayMessage}
               </div>
             )}
             {waitMessage && (

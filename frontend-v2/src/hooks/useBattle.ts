@@ -15,7 +15,8 @@ export const useBattle = (url: string) => {
   const [allAbilities, setAllAbilities] = useState<Record<string, AbilityData>>({});
   const [uiMapping, setUiMapping] = useState<Record<string, string>>({});
   const [prediction, setPrediction] = useState<{ include: boolean, type1?: string, type2?: string, used?: boolean, prediction?: string, predictions?: Record<string, string> } | null>(null);
-  const [displayMessage, setDisplayMessage] = useState<string | null>(null);
+  const [messageLog, setMessageLog] = useState<{ text: string | null, isOpen: boolean }>({ text: null, isOpen: false });
+  const [notification, setNotification] = useState<string | null>(null);
   const [waitMessage, setWaitMessage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [allyEffect, setAllyEffect] = useState<string | null>(null);
@@ -68,7 +69,7 @@ export const useBattle = (url: string) => {
       if (isInitialMadeRoom) {
         setAllyWord(null);
         setFoeWord(null);
-        setDisplayMessage(null);
+        setMessageLog({ text: null, isOpen: false });
         setWaitMessage(null);
         setKnockoutStates({});
         setShowResultButton(false);
@@ -78,7 +79,7 @@ export const useBattle = (url: string) => {
 
       // 2. 演出開始前の表示更新 (単語、画像、黒い箱、タイプ音)
       if (data.state.word) {
-        setDisplayMessage('');
+        setMessageLog({ text: null, isOpen: true }); // 即座に黒い箱を表示
         // 重要な修正: 直前のターンの持ち主に基づいて単語の表示場所を決定する
         // (自分が打ったら相手のターンになるため、prevState.is_my_turn が true なら自分の単語)
         if (prevState.is_my_turn) {
@@ -140,7 +141,14 @@ export const useBattle = (url: string) => {
         const targetSide = event.target === allyId ? 'ally' : event.target === foeId ? 'foe' : null;
         const targetId = event.target;
 
-        setDisplayMessage(event.message || ''); // 本家再現: メッセージが空でもボックスを出す
+        // 特性変更時は箱を隠すが、それ以外（ダメージ等）はメッセージがなくても箱を維持する
+        if (event.type === 'ability_changed') {
+          setMessageLog({ text: null, isOpen: false });
+          setNotification('特性が変わった！');
+          setTimeout(() => setNotification(null), 1500);
+        } else {
+          setMessageLog({ text: event.message || null, isOpen: true });
+        }
 
         // メッセージ連動型サウンド再生 (本家再現)
         if (event.message?.includes('効果はばつぐんだ')) soundManager.play('effective');
@@ -213,11 +221,11 @@ export const useBattle = (url: string) => {
         } else if (event.type === 'ability_changed') {
           await new Promise(resolve => setTimeout(resolve, 100)); // 本家: 100ms
         } else if (event.type === 'battle_result') {
-          setDisplayMessage(event.message);
+          setMessageLog({ text: event.message || null, isOpen: true });
           setShowResultButton(true);
           await new Promise(resolve => setTimeout(resolve, 1000));
         } else if (event.type === 'message') {
-          setDisplayMessage(event.message);
+          setMessageLog({ text: event.message || null, isOpen: true });
           await new Promise(resolve => setTimeout(resolve, 1000));
         } else {
           // メッセージ表示等の汎用待機
@@ -240,9 +248,10 @@ export const useBattle = (url: string) => {
         const turnMsg = finalState.is_my_turn ? 'あなたのターンです。' : '相手のターンです。';
         setWaitMessage(turnMsg);
         if (!finalState.is_my_turn) {
-          setDisplayMessage('相手のターンです。');
+          setMessageLog({ text: '相手のターンです。', isOpen: true });
         } else {
-          setDisplayMessage(null);
+          // 自分のターンになった瞬間に箱を消す
+          setMessageLog({ text: null, isOpen: false });
         }
       }
     } catch (err) {
@@ -357,7 +366,8 @@ export const useBattle = (url: string) => {
     allAbilities,
     isConnected,
     prediction,
-    displayMessage,
+    messageLog,
+    notification,
     waitMessage,
     showResultButton,
     isProcessing,

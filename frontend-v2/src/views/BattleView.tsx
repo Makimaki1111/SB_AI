@@ -35,7 +35,8 @@ export const BattleView: React.FC = () => {
     battleState, 
     isConnected, 
     prediction,
-    displayMessage,
+    messageLog,
+    notification,
     waitMessage,
     isProcessing,
     allyEffect,
@@ -239,7 +240,8 @@ export const BattleView: React.FC = () => {
               ally={ally}
               foe={foe}
               prediction={prediction}
-              displayMessage={displayMessage}
+              messageLog={messageLog}
+              notification={notification}
               waitMessage={waitMessage}
               isProcessing={isProcessing}
               allyEffect={allyEffect}
