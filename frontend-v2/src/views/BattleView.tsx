@@ -48,13 +48,14 @@ export const BattleView: React.FC = () => {
     sendIncludeCheck,
     clearPrediction,
     startMatching
-  } = useBattle(dynamicWsUrl);
+  } = useBattle(dynamicWsUrl, () => setIsLobby(true));
   
   const [isLobby, setIsLobby] = React.useState(true);
   const [isAbilityModalOpen, setIsAbilityModalOpen] = React.useState(false);
   const [targetAbilityIndex, setTargetAbilityIndex] = React.useState(0);
   const [isSituationModalOpen, setIsSituationModalOpen] = React.useState(false);
   const [isStockModalOpen, setIsStockModalOpen] = React.useState(false);
+  const [pendingMatchMode, setPendingMatchMode] = React.useState<'cpu' | 'room' | null>(null);
   
   const [selectedAbilities, setSelectedAbilities] = React.useState<string[]>(() => {
     const a1 = localStorage.getItem('sb_ability') || 'ikaku';
@@ -97,7 +98,13 @@ export const BattleView: React.FC = () => {
 
   const handleStartMatch = (mode: 'player' | 'cpu' | 'room', options?: Record<string, string | number | boolean>) => {
     const isStockMode = location.search.includes('mode=stock');
-    if (isStockMode && mode === 'room') {
+    const isDouble = location.search.includes('mode=double');
+
+    // ストックモードかつルーム作成/CPU戦の場合はまず残機設定モーダルを開く
+    // ※参加ボタン（optionsにroomIdキーがある場合）はIDの有無に関わらずモーダルを開かない
+    const isJoinAction = options && 'roomId' in options;
+    if (isStockMode && !isJoinAction && (mode === 'room' || mode === 'cpu')) {
+      setPendingMatchMode(mode);
       setIsStockModalOpen(true);
       return;
     }
@@ -111,54 +118,75 @@ export const BattleView: React.FC = () => {
       foe_max_lives: isStockMode ? 2 : 1
     };
 
-    if (isDouble) {
-      if (mode === 'cpu') {
-        sendMessage({ type: "join_double_cpu_room", info: { ...commonInfo } });
-      } else if (mode === 'player') {
-        sendMessage({ type: "find_match_double", info: { ...commonInfo } });
-      } else if (mode === 'room') {
-        const roomId = options?.roomId as string;
-        sendMessage({ type: "join_double_private_room", info: { ...commonInfo, room_id: roomId || "" } });
-      }
-    } else {
-      if (mode === 'cpu') {
+    // ルームIDの有無で作成か参加かを判別
+    const roomIdInput = options?.roomId as string | undefined;
+
+    if (mode === 'room') {
+      if (isJoinAction) {
+        if (!roomIdInput || roomIdInput.trim() === '') {
+          // 参加ボタンなのにIDが空なら何もしない
+          console.log("Room ID is empty, join canceled.");
+          return;
+        }
+        // ルーム参加
         sendMessage({
-          type: "make_new_battle",
-          info: { ...commonInfo, player1_id: playerId, player2_id: "cpu", p1_max_lives: 2, p2_max_lives: 2 }
+          type: isDouble ? "join_double_private_room" : "join_private_room",
+          info: { ...commonInfo, room_id: roomIdInput.trim() }
         });
-      } else if (mode === 'player') {
+      } else {
+        // ルーム作成
         sendMessage({
-          type: "find_match",
-          info: { ...commonInfo, max_lives: 2 }
+          type: isDouble ? "create_double_room" : "create_private_room",
+          info: { ...commonInfo, p1_max_lives: commonInfo.ally_max_lives, p2_max_lives: commonInfo.foe_max_lives }
         });
-      } else if (mode === 'room') {
-        const roomId = options?.roomId as string;
-        sendMessage({ type: "join_private_room", info: { ...commonInfo, room_id: roomId || "" } });
       }
+    } else if (mode === 'cpu') {
+      sendMessage({
+        type: isDouble ? "join_double_cpu_room" : "make_new_battle",
+        info: { ...commonInfo, player1_id: playerId, player2_id: "cpu_1" }
+      });
+    } else if (mode === 'player') {
+      sendMessage({
+        type: isDouble ? "find_match_double" : "find_match",
+        info: { ...commonInfo, max_lives: commonInfo.ally_max_lives }
+      });
     }
 
-    // 即座にバトル画面（待機状態）へ遷移
+    // 待機画面へ遷移
     startMatching();
     setIsLobby(false);
   };
 
   const handleConfirmStockMatch = (allyStock: number, foeStock: number) => {
     setIsStockModalOpen(false);
-    sendMessage({
-      type: "make_new_battle",
-      info: { 
-        player_id: playerId,
-        name: username || "ななし",
-        ability: selectedAbilities[0],
-        ability_2: "",
-        mode: "cpu",
-        ally_max_lives: allyStock,
-        foe_max_lives: foeStock
-      }
-    });
-    // 即座にバトル画面（待機状態）へ遷移
+    
+    const commonInfo = {
+      player_id: playerId,
+      name: username || "ななし",
+      ability: selectedAbilities[0],
+      ability_2: "",
+      ally_max_lives: allyStock,
+      foe_max_lives: foeStock
+    };
+
+    const isDouble = location.search.includes('mode=double');
+
+    if (pendingMatchMode === 'room') {
+      sendMessage({
+        type: isDouble ? "create_double_room" : "create_private_room",
+        info: { ...commonInfo, p1_max_lives: allyStock, p2_max_lives: foeStock }
+      });
+    } else {
+      sendMessage({
+        type: isDouble ? "join_double_cpu_room" : "make_new_battle",
+        info: { ...commonInfo, player1_id: playerId, player2_id: "cpu_1" }
+      });
+    }
+
+    // すべての対戦モードで待機画面へ遷移
     startMatching();
     setIsLobby(false);
+    setPendingMatchMode(null);
   };
 
   const handleOpenAbility = (index: number = 0) => {

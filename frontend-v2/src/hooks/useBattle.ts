@@ -8,7 +8,7 @@ import { useBattleState } from './battle/useBattleState';
 import { useBattleTimer } from './battle/useBattleTimer';
 import { useBattleDisplay } from './battle/useBattleDisplay';
 
-export const useBattle = (url: string) => {
+export const useBattle = (url: string, onRoomError?: () => void) => {
   // --- Sub-hooks ---
   const { 
     battleState, setBattleState, battleStateRef, 
@@ -48,13 +48,27 @@ export const useBattle = (url: string) => {
     }
     
     if (data.type === 'error') {
-      display.setWaitMessage((data as any).message || 'エラーが発生しました');
-      setTimeout(() => display.setWaitMessage(null), 2000);
+      const msg = (data as any).message || 'エラーが発生しました';
+      display.setWaitMessage(msg);
+      if (msg.includes('ルームが見つかりません') || msg.includes('不明です')) {
+        setTimeout(() => {
+          display.setWaitMessage(null);
+          onRoomError?.();
+        }, 1500);
+      } else {
+        setTimeout(() => display.setWaitMessage(null), 2000);
+      }
       return;
     }
     
     if (data.type === 'waiting') {
       display.setMessageLog({ text: (data as any).message || 'マッチング中...', isOpen: true });
+      return;
+    }
+
+    if (data.type === 'private_room_created') {
+      const roomId = (data as any).room_id;
+      display.setMessageLog({ text: `ルームID: ${roomId}\n相手を待っています…`, isOpen: true });
       return;
     }
     
