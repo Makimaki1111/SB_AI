@@ -19,6 +19,7 @@ class BattleEvent(BaseModel):
     new_ability_change_count: Optional[int] = Field(None, description="残り特性変更回数")
     new_ranks: Optional[Dict[str, Dict[str, int]]] = Field(None, description="複数のステータスが変化した場合のマップ")
     predictions: Optional[Dict[str, str]] = Field(None, description="ダブルバトル等の複数対象への相性予測")
+    winner_team: Optional[int] = Field(None, description="バトルの勝者チーム番号")
 
 class CharacterState(BaseModel):
     """個別のキャラクターの状態"""

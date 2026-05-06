@@ -132,6 +132,21 @@ class BaseBattle:
             else:
                 attacker.leech_turns = 0
 
+    def finish_battle(self, winner_team: int):
+        """バトルの決着処理を共通化"""
+        self.winner_team = winner_team
+        
+        # 二重追加防止 (イベントリスト内に既に battle_result がないか確認)
+        if any(e.get("type") == "battle_result" for e in self.events if isinstance(e, dict)):
+            return
+
+        msg = "あいてとの勝負に勝った！" if winner_team == 0 else "あいてとの勝負に負けた…"
+        self.events.append({
+            "type": "battle_result",
+            "message": msg,
+            "winner_team": winner_team
+        })
+
     def handle_disconnection(self, player_id: str, message: str = "あいてが通信を切断しました。"):
         """プレイヤーの切断を処理する"""
         if self.is_finished: return None
@@ -145,7 +160,7 @@ class BaseBattle:
                     disconnected_team_idx = self._get_team_index(p)
         
         if disconnected_team_idx != -1:
-            self.winner_team = 1 - disconnected_team_idx
+            self.finish_battle(1 - disconnected_team_idx)
             
         self.events.append({"type": "error", "message": message})
         ret = self._make_response()
@@ -163,11 +178,7 @@ class BaseBattle:
         
         team_idx = self._get_team_index(current_actor)
         if team_idx != -1:
-            self.winner_team = 1 - team_idx
-            if self.winner_team == 0:
-                self.events.append({"type": "message", "message": "あいてとの勝負に勝った！"})
-            else:
-                self.events.append({"type": "message", "message": "あいてとの勝負に負けた…"})
+            self.finish_battle(1 - team_idx)
             
         ret = self._make_response()
         self.events = []

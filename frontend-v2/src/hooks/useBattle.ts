@@ -212,12 +212,12 @@ export const useBattle = (url: string) => {
           setFoeEffect(null);
         } else if (event.type === 'ability_changed') {
           await new Promise(resolve => setTimeout(resolve, 100)); // 本家: 100ms
+        } else if (event.type === 'battle_result') {
+          setDisplayMessage(event.message);
+          setShowResultButton(true);
+          await new Promise(resolve => setTimeout(resolve, 1000));
         } else if (event.type === 'message') {
           setDisplayMessage(event.message);
-          // 決着メッセージの場合は、即座にボタンを表示状態にする (本家再現)
-          if (event.message === "あいてとの勝負に勝った！" || event.message === "あいてとの勝負に負けた…") {
-            setShowResultButton(true);
-          }
           await new Promise(resolve => setTimeout(resolve, 1000));
         } else {
           // メッセージ表示等の汎用待機

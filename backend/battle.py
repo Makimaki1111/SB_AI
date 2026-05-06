@@ -106,14 +106,14 @@ class SingleBattle(BaseBattle):
             self.player1_lives -= 1
             lives_left = self.player1_lives
             if lives_left <= 0:
-                self.winner_team = 1
+                self.finish_battle(1)
             else:
                 defeated_player.hp = MAX_HP
         else:
             self.player2_lives -= 1
             lives_left = self.player2_lives
             if lives_left <= 0:
-                self.winner_team = 0
+                self.finish_battle(0)
             else:
                 defeated_player.hp = MAX_HP
             
@@ -185,10 +185,7 @@ class SingleBattle(BaseBattle):
         print("DEBUG: Starting _make_response")
         # 決着時のメッセージをイベントの最後に追加 (本家再現)
         if self.winner_team is not None:
-            msg = "あいてとの勝負に勝った！" if self.winner_team == 0 else "あいてとの勝負に負けた…"
-            if not any(e.get("message") == msg for e in self.events if isinstance(e, dict)):
-                self.events.append({"type": "message", "message": msg})
-        
+            self.finish_battle(self.winner_team)
         try:
             chars = {
                 self.player1.id: CharacterState(
@@ -321,7 +318,7 @@ class SingleBattle(BaseBattle):
         cpu_word = self.get_cpu_word()
         if cpu_word: return self.try_attack(self.player2.id, cpu_word)
         self.player2.hp = 0
-        self._check_win_condition()
+        self.finish_battle(0)
         # CPU失敗時もターン交代(念のため)
         self.player1_turn = not self.player1_turn
         return self._make_response()
