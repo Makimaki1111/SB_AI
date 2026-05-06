@@ -256,6 +256,8 @@ class DoubleBattle(BaseBattle):
             chars[p.id] = CharacterState(
                 name=p.name, hp=p.hp, max_hp=MAX_HP,
                 attack_rank=p.attack_rank, defense_rank=p.defense_rank,
+                attack_power=self.sb_info.rank_to_power(p.attack_rank),
+                defense_power=self.sb_info.rank_to_power(p.defense_rank),
                 types=p.types, is_poison=p.poison_turns > 0,
                 ability=p.ability, ability_change_count=p.ability_change_count,
                 lives=None, owner_id=p.owner_id

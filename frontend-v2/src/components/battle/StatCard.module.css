@@ -1,13 +1,11 @@
-.sCard {
+.card {
   flex: 1;
-  background: #fff;
-  border-radius: 16px;
-  padding: 16px 12px;
+  background: #f9f9f9;
+  border-radius: 15px;
+  padding: 12px 8px;
   border: 2px solid #eee;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  font-family: "M PLUS Rounded 1c", sans-serif;
+  box-sizing: border-box;
 }
 
 .foeCard {
@@ -18,109 +16,62 @@
   border-color: #c8e6c9;
 }
 
-.sCardHeader {
-  font-weight: 800;
-  font-size: 0.95rem;
+.header {
+  font-weight: bold;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
   color: #555;
-  border-bottom: 1px solid #f0f0f0;
-  padding-bottom: 6px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 4px;
   text-align: center;
 }
 
-.mainStats {
+.statGrid {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-.hpSection {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.hpText {
-  font-size: 0.9rem;
-  font-weight: bold;
-  font-family: monospace;
-}
-
-.miniHPBar {
-  width: 100%;
-  height: 6px;
-  background: #eee;
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.miniHPFill {
-  height: 100%;
-  transition: width 0.5s ease;
-}
-
-.livesSection {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.livesDots {
-  display: flex;
-  gap: 6px;
-}
-
-.lifeDot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: 1px solid #fff;
-  box-shadow: 0 0 2px rgba(0,0,0,0.2);
-}
-
-.lifeDot.alive {
-  background-color: #ff9800;
-  box-shadow: 0 0 6px rgba(255, 152, 0, 0.6);
-}
-
-.lifeDot.dead {
-  background-color: #9e9e9e;
-}
-
-.divider {
-  height: 1px;
-  background: #f0f0f0;
-}
-
-.sStatGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
 
-.sStatItem {
+.statItem {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.sStatLabel {
+.statLabel {
   font-size: 0.7rem;
   color: #888;
-  margin-bottom: 2px;
 }
 
-.sStatValue {
+.statValue {
   font-size: 1.1rem;
   font-weight: bold;
   color: #333;
 }
 
-.sStatValue.up {
-  color: #e91e63;
+.livesItem .statValue {
+  color: #ff9800;
 }
 
-.sStatValue.down {
-  color: #2196f3;
+.livesContainer {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.livesDisplayItem {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: #ff9800;
+  box-shadow: 0 0 4px rgba(255, 152, 0, 0.9);
+  border: 2px solid #fff;
+  flex-shrink: 0;
+}
+
+.livesDisplayItem.lost {
+  background-color: #555;
+  box-shadow: none;
+  border-color: #777;
 }

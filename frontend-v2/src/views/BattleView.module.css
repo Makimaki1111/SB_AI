@@ -40,20 +40,29 @@
 
 .situationCardsContainer {
   display: flex;
-  flex-direction: column;
-  gap: 3cqw;
-  margin-bottom: 2cqw;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 20px;
+  box-sizing: border-box;
 }
 
-.backBtn {
-  padding: 2.2cqw 6.6cqw;
-  border-radius: 2.2cqw;
+.situationCloseButton {
+  padding: 12px 24px;
+  border-radius: 30px;
   border: none;
-  background: #666;
-  color: white;
-  font-weight: 700;
-  font-size: 3.8cqw;
+  font-weight: bold;
   cursor: pointer;
+  font-size: 1rem;
+  min-width: 110px;
+  transition: transform 0.1s, opacity 0.2s;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: #f0f0f0;
+  color: #555;
+  font-family: "M PLUS Rounded 1c", sans-serif;
+}
+
+.situationCloseButton:active {
+  transform: scale(0.95);
 }
 
 .simpleResultArea {

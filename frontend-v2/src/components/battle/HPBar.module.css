@@ -1,92 +1,70 @@
 .balloon {
   position: absolute;
   background: white;
-  border-radius: 2.2cqw; /* 10px / 450px */
-  padding: 1.3cqw 2.2cqw; /* 6px 10px / 450px */
-  width: 40cqw; /* 180px / 450px */
-  height: 12.2cqw; /* 55px / 450px */
-  box-shadow: 0 0.8cqw 1.7cqw rgba(0, 0, 0, 0.15);
-  z-index: 20;
+  border-radius: 10px;
+  padding: 4px 10px;
+  font-size: 14px;
+  width: 180px;
+  height: 55px;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+  z-index: 2;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  transition: all 0.3s ease;
+  justify-content: center;
 }
 
-/* 本家の正確な座標 (10px / 450px = 2.2cqw) */
+/* 左上に表示 (foe) */
 .left {
-  top: 2.2cqw;
-  left: -1.7cqw; /* -8px / 450px */
+  top: 10px;
+  left: -8px;
 }
 
+/* 右下に表示 (ally) */
 .right {
-  bottom: 2.2cqw;
-  right: -1.7cqw; /* -8px / 450px */
+  bottom: 10px;
+  right: -8px;
 }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.4cqw;
-}
-
-.name {
-  font-weight: 800;
-  font-size: 3.5cqw; /* 16px / 450px */
-  color: #333;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.hpText {
-  font-size: 2.8cqw;
-  color: #666;
-  font-family: monospace;
-}
-
-.barContainer {
-  background: #eee;
-  width: 100%;
-  height: 1.3cqw; /* 6px / 450px */
-  border-radius: 0.6cqw; /* 3px / 450px */
-  margin-top: auto;
-  overflow: hidden;
-  position: relative;
-  border: 0.2cqw solid rgba(0,0,0,0.05);
-}
-
-.hpBar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  z-index: 2;
-}
-
-.livesContainer {
-  display: flex;
-  gap: 0.4cqw; /* 2px / 450px */
-  margin-top: 0.4cqw;
-}
-
-.lifeDot {
-  width: 1.3cqw; /* 6px / 450px approx */
-  height: 1.3cqw;
-  border-radius: 50%;
+.bar {
   background: #ccc;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  margin-top: 1px;
+  overflow: hidden;
 }
 
-.lifeDot.alive {
-  background: #ff9800;
+.allyHpBar, .foeHpBar {
+  width: 100%;
+  height: 100%;
+  border-radius: 3px;
+}
+
+.hp {
+  font-size: 13px;
+  color: #333;
+  margin-top: 1px;
+  line-height: 1;
+}
+
+.allyNameContainer, .foeNameContainer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 5px;
+}
+
+.allyName, .foeName {
+  font-family: "M PLUS 1p", sans-serif;
+  color: #333;
 }
 
 .poison {
   background-color: #8f42d4;
   color: white;
-  border-radius: 0.8cqw;
-  padding: 0 0.8cqw;
-  font-size: 2cqw;
-  font-weight: bold;
+  border-radius: 10px;
+  padding: 0 10px;
+  font-size: 0.8rem;
+  line-height: 1.2;
 }

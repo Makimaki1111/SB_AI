@@ -194,6 +194,8 @@ class SingleBattle(BaseBattle):
                 self.player1.id: CharacterState(
                     name=self.player1.name, hp=self.player1.hp, max_hp=MAX_HP,
                     attack_rank=self.player1.attack_rank, defense_rank=self.player1.defense_rank,
+                    attack_power=self.sb_info.rank_to_power(self.player1.attack_rank),
+                    defense_power=self.sb_info.rank_to_power(self.player1.defense_rank),
                     types=self.player1.types, is_poison=self.player1.poison_turns > 0,
                     ability=self.player1.ability, ability_change_count=self.player1.ability_change_count,
                     lives=self.player1_lives, owner_id=self.player1.id
@@ -201,6 +203,8 @@ class SingleBattle(BaseBattle):
                 self.player2.id: CharacterState(
                     name=self.player2.name, hp=self.player2.hp, max_hp=MAX_HP,
                     attack_rank=self.player2.attack_rank, defense_rank=self.player2.defense_rank,
+                    attack_power=self.sb_info.rank_to_power(self.player2.attack_rank),
+                    defense_power=self.sb_info.rank_to_power(self.player2.defense_rank),
                     types=self.player2.types, is_poison=self.player2.poison_turns > 0,
                     ability=self.player2.ability, ability_change_count=self.player2.ability_change_count,
                     lives=self.player2_lives, owner_id=self.player2.id

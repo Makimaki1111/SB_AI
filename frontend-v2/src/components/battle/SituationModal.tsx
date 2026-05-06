@@ -27,33 +27,25 @@ export const SituationModal: React.FC<SituationModalProps> = ({
       onClose={onClose}
       title="じょうきょう"
       footer={
-        <button className={styles.backBtn} onClick={onClose}>とじる</button>
+        <button className={styles.situationCloseButton} onClick={onClose}>とじる</button>
       }
     >
       <div className={styles.situationCardsContainer}>
-        <StatCard 
+        <StatCard
           type="foe"
-          name={foe?.name || "あいて"}
-          hp={foe?.hp ?? 0}
-          maxHp={foe?.max_hp ?? 100}
+          title="あいて"
+          attackPower={foe?.attack_power ?? 1.0}
+          defensePower={foe?.defense_power ?? 1.0}
           lives={foe?.lives ?? 0}
           maxLives={battleState?.foe_max_lives ?? 1}
-          stats={{
-            attack: foe?.attack_rank || 0,
-            defense: foe?.defense_rank || 0
-          }}
         />
-        <StatCard 
+        <StatCard
           type="ally"
-          name={username || ally?.name || "じぶん"}
-          hp={ally?.hp ?? 0}
-          maxHp={ally?.max_hp ?? 100}
+          title="じぶん"
+          attackPower={ally?.attack_power ?? 1.0}
+          defensePower={ally?.defense_power ?? 1.0}
           lives={ally?.lives ?? 0}
           maxLives={battleState?.ally_max_lives ?? 1}
-          stats={{
-            attack: ally?.attack_rank || 0,
-            defense: ally?.defense_rank || 0
-          }}
         />
       </div>
     </GameModal>

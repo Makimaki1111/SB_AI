@@ -30,6 +30,8 @@ class CharacterState(BaseModel):
     max_hp: int = 0
     atk: int = Field(0, alias="attack_rank")
     def_: int = Field(0, alias="defense_rank")
+    atk_power: float = Field(1.0, alias="attack_power")
+    def_power: float = Field(1.0, alias="defense_power")
     types: List[str] = []
     is_poison: bool = False
     ability: str = ""

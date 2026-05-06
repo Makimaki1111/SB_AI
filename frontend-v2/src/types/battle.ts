@@ -13,6 +13,8 @@ export interface CharacterState {
   max_hp: number;
   attack_rank: number;
   defense_rank: number;
+  attack_power: number;
+  defense_power: number;
   ability: string;
   ability_change_count: number;
   lives?: number | null;

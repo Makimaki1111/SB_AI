@@ -7,8 +7,6 @@ interface HPBarProps {
   maxHp: number;
   name: string;
   isPoison: boolean;
-  lives: number;
-  maxLives: number;
   isAlly: boolean;
 }
 
@@ -17,43 +15,38 @@ export const HPBar: React.FC<HPBarProps> = ({
   maxHp, 
   name, 
   isPoison, 
-  lives, 
-  maxLives, 
   isAlly 
 }) => {
   const hpPercentage = maxHp > 0 ? (hp / maxHp) * 100 : 0;
-  const barColor = hpPercentage > 50 ? '#00FF00' : hpPercentage > 20 ? '#FFFF00' : '#FF0000';
+  
+  // Legacy color logic from UI.js (line 629)
+  const getHPBarColor = (ratio: number) => {
+    if (ratio > 0.5) return "#00FF00"; // 緑色
+    if (ratio > 0.2) return "#FFFF00"; // 黄色
+    return "#FF0000"; // 赤色
+  };
+
+  const barColor = getHPBarColor(hp / maxHp);
 
   return (
     <div className={`${styles.balloon} ${isAlly ? styles.right : styles.left}`}>
-      <div className={styles.header}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <span className={styles.name}>{name}</span>
-          {isPoison && <span className={styles.poison}>どく</span>}
+      <div className={isAlly ? styles.allyNameContainer : styles.foeNameContainer}>
+        <div className={isAlly ? styles.allyName : styles.foeName}>
+          {name}
         </div>
-        <span className={styles.hpText}>{hp}/{maxHp}</span>
+        {isPoison && <span className={styles.poison}>どく</span>}
       </div>
       
-      <div className={styles.barContainer}>
-        {/* メインのHPバー (本家同様のアニメーション) */}
+      <div className={styles.bar}>
         <motion.div 
-          className={styles.hpBar} 
-          initial={{ width: `${hpPercentage}%`, backgroundColor: barColor }}
+          className={isAlly ? styles.allyHpBar : styles.foeHpBar} 
           animate={{ width: `${hpPercentage}%`, backgroundColor: barColor }}
-          transition={{ duration: 0.5, ease: "easeOut" }} // 本家: 500ms
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          style={{ height: '100%', borderRadius: '3px' }}
         />
       </div>
-
-      {maxLives > 1 && (
-        <div className={styles.livesContainer}>
-          {Array.from({ length: maxLives }).map((_, i) => (
-            <div 
-              key={i} 
-              className={`${styles.lifeDot} ${i < lives ? styles.alive : ''}`} 
-            />
-          ))}
-        </div>
-      )}
+      
+      <div className={styles.hp}>{hp}/{maxHp}</div>
     </div>
   );
 };

@@ -30,8 +30,6 @@ export const BattleSide: React.FC<BattleSideProps> = ({
       maxHp={character?.max_hp ?? 100} 
       name={name} 
       isPoison={character?.is_poison ?? false}
-      lives={character?.lives ?? 0}
-      maxLives={maxLives}
       isAlly={isAlly}
     />
   );
