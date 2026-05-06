@@ -248,13 +248,9 @@ class SingleBattle(BaseBattle):
         state["foe_max_lives"] = self.p2_max_lives if is_p1 else self.p1_max_lives
         
         if self.winner_team is not None:
-            ally_win = (is_p1 and self.winner_team == 0) or (not is_p1 and self.winner_team == 1)
+            ally_win = self.is_player_winner(player_id)
             state["ally_win"] = ally_win
-            
-            # イベントメッセージのパーソナライズ (勝敗メッセージの反転)
-            for event in new_res.get("events", []):
-                if event.get("type") == "battle_result":
-                    event["message"] = "あいてとの勝負に勝った！" if ally_win else "あいてとの勝負に負けた…"
+            self._personalize_events(new_res.get("events", []), ally_win)
         
         # 敵の特性をマスク
         foe_id = self.player2.id if is_p1 else self.player1.id
@@ -279,6 +275,11 @@ class SingleBattle(BaseBattle):
         
         return new_res
 
+
+    def is_player_winner(self, player_id: str) -> bool:
+        if self.winner_team is None: return False
+        is_p1 = (player_id == self.player1.id)
+        return (is_p1 and self.winner_team == 0) or (not is_p1 and self.winner_team == 1)
 
     def change_ability(self, player_id: str, new_ability_id: str, char_id: str = None):
         res = super().change_ability(player_id, new_ability_id, char_id=char_id)

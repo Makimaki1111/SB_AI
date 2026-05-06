@@ -234,6 +234,11 @@ class DoubleBattle(BaseBattle):
     def _is_used(self, word: str) -> bool:
         return word in self.used
 
+    def is_player_winner(self, player_id: str) -> bool:
+        if self.winner_team is None: return False
+        is_t1 = any(p.owner_id == player_id for p in self.team1)
+        return (is_t1 and self.winner_team == 0) or (not is_t1 and self.winner_team == 1)
+
     def change_ability(self, player_id: str, new_ability_id: str, char_id: str = None):
         res = super().change_ability(player_id, new_ability_id, char_id=char_id)
         # _make_response 内で self.events がクリアされるため、ここでの手動クリアは不要
@@ -309,13 +314,9 @@ class DoubleBattle(BaseBattle):
         is_t1 = any(p.owner_id == request_player_id for p in self.team1)
         # 勝敗ラベルの付与
         if self.winner_team is not None:
-            ally_win = (is_t1 and self.winner_team == 0) or (not is_t1 and self.winner_team == 1)
+            ally_win = self.is_player_winner(request_player_id)
             state["ally_win"] = ally_win
-            
-            # イベントメッセージのパーソナライズ (勝敗メッセージの反転)
-            for event in new_res.get("events", []):
-                if event.get("type") == "battle_result":
-                    event["message"] = "あいてとの勝負に勝った！" if ally_win else "あいてとの勝負に負けた…"
+            self._personalize_events(new_res.get("events", []), ally_win)
         
         # 敵の特性をマスク
         for k, char_info in state["characters"].items():

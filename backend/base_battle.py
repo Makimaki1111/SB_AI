@@ -359,7 +359,20 @@ class BaseBattle:
     def _make_response(self) -> dict:
         raise NotImplementedError
 
+    def is_player_winner(self, player_id: str) -> bool:
+        """指定したプレイヤーが勝利チームに属しているか判定する (サブクラスで実装)"""
+        raise NotImplementedError
+
+    def _personalize_events(self, events: list, is_winner: bool):
+        """イベントリスト内のメッセージを閲覧プレイヤーの視点に合わせて調整する"""
+        for event in events:
+            if not isinstance(event, dict):
+                continue
+            if event.get("type") == "battle_result":
+                event["message"] = "あいてとの勝負に勝った！" if is_winner else "あいてとの勝負に負けた…"
+
     def get_personalized_response(self, base_response: dict, player_id: str) -> dict:
+        """レスポンスを特定のプレイヤー視点に調整する (サブクラスで実装)"""
         raise NotImplementedError
 
     def execute_attack_flow(self, current_player, target_player, word: str, types: list[str], ability_obj) -> bool:
