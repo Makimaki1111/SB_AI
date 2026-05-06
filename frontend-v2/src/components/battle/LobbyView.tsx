@@ -3,6 +3,8 @@ import { GameButton } from '../common/GameButton';
 import { AbilityCard } from './AbilityCard';
 import type { AbilityData } from '../../types/battle';
 import styles from './LobbyView.module.css';
+import SoundManager from '../../utils/SoundManager';
+
 
 interface LobbyViewProps {
   onStartMatch: (mode: 'player' | 'cpu' | 'room', options?: Record<string, string | number | boolean>) => void;
@@ -38,7 +40,7 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
 
   return (
     <div className={styles.lobbyContent}>
-      <button className={styles.backButton} onClick={onBackToTitle}>
+      <button className={styles.backButton} onClick={() => { SoundManager.play('pera'); onBackToTitle(); }}>
         ← もどる
       </button>
 
@@ -49,7 +51,7 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
         {isStock && (
           <button 
             className={styles.helpBtn} 
-            onClick={(e) => { e.stopPropagation(); setShowBalloon(!showBalloon); }}
+            onClick={(e) => { e.stopPropagation(); SoundManager.play('pera'); setShowBalloon(!showBalloon); }}
           >
             ?
           </button>
@@ -90,17 +92,17 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
       </div>
 
       <div className={styles.buttonContainer}>
-        <GameButton onClick={() => onStartMatch('player')}>
+        <GameButton onClick={() => { SoundManager.play('pera'); onStartMatch('player'); }}>
           ランダムマッチ
         </GameButton>
 
-        <GameButton onClick={() => onStartMatch('cpu')}>
+        <GameButton onClick={() => { SoundManager.play('pera'); onStartMatch('cpu'); }}>
           コンピュータ戦
         </GameButton>
 
         <hr className={styles.separator} />
 
-        <GameButton onClick={() => onStartMatch('room')}>
+        <GameButton onClick={() => { SoundManager.play('pera'); onStartMatch('room'); }}>
           ルーム作成
         </GameButton>
 
@@ -115,7 +117,7 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
           <GameButton 
             className={styles.joinButton} 
             variant="green"
-            onClick={() => onStartMatch('room', { roomId })}
+            onClick={() => { SoundManager.play('pera'); onStartMatch('room', { roomId }); }}
           >
             参加
           </GameButton>

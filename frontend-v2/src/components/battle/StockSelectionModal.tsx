@@ -1,6 +1,8 @@
 import React from 'react';
 import { GameModal } from '../common/GameModal';
 import styles from './StockSelectionModal.module.css';
+import SoundManager from '../../utils/SoundManager';
+
 
 interface StockSelectionModalProps {
   isOpen: boolean;
@@ -17,7 +19,13 @@ export const StockSelectionModal: React.FC<StockSelectionModalProps> = ({
   const [foeStock, setFoeStock] = React.useState(2);
 
   const handleConfirm = () => {
+    SoundManager.play('pera');
     onConfirm(allyStock, foeStock);
+  };
+
+  const handleClose = () => {
+    SoundManager.play('pera');
+    onClose();
   };
 
   const renderOptions = (current: number, setter: (val: number) => void) => {
@@ -27,7 +35,7 @@ export const StockSelectionModal: React.FC<StockSelectionModalProps> = ({
           <div 
             key={val}
             className={`${styles.optionBtn} ${current === val ? styles.selected : ''}`}
-            onClick={() => setter(val)}
+            onClick={() => { SoundManager.play('pera'); setter(val); }}
           >
             {val}
           </div>
@@ -41,11 +49,11 @@ export const StockSelectionModal: React.FC<StockSelectionModalProps> = ({
   return (
     <GameModal 
       isOpen={isOpen} 
-      onClose={onClose} 
+      onClose={handleClose} 
       title="のこり数をえらぶ"
       footer={
         <div className={styles.modalActions}>
-          <button className={styles.cancelBtn} onClick={onClose}>キャンセル</button>
+          <button className={styles.cancelBtn} onClick={handleClose}>キャンセル</button>
           <button 
             className={styles.confirmBtn} 
             onClick={handleConfirm}

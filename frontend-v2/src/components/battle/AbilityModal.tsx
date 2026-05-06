@@ -3,6 +3,8 @@ import styles from './AbilityModal.module.css';
 import { TYPE_TO_IMAGE } from '../../constants/game';
 import type { AbilityData } from '../../types/battle';
 import { motion } from 'framer-motion';
+import SoundManager from '../../utils/SoundManager';
+
 
 interface AbilityModalProps {
   isOpen: boolean;
@@ -68,17 +70,25 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
       setCurrentIndex(nextIndex);
     }
     setDragX(0);
+    // インデックスが変わった場合は音を鳴らしてもよい
   };
 
   const handleItemClick = (index: number) => {
     if (!canChange) return;
+    if (index !== currentIndex) SoundManager.play('pera');
     setCurrentIndex(index);
   };
 
   const handleConfirm = () => {
+    SoundManager.play('pera');
     if (canChange) {
       onSelect(abilitiesList[currentIndex].id);
     }
+    onClose();
+  };
+
+  const handleClose = () => {
+    SoundManager.play('pera');
     onClose();
   };
 
@@ -164,7 +174,7 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
         </div>
 
         <div className={styles.footer}>
-          <button className={styles.closeBtn} onClick={onClose}>とじる</button>
+          <button className={styles.closeBtn} onClick={handleClose}>とじる</button>
           <button 
             className={`${styles.decideBtn} ${!canChange ? styles.disabled : ''}`}
             onClick={handleConfirm}

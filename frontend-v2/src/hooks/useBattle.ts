@@ -147,7 +147,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
         soundManager.play('start');
         // Wait 1.5s while UI is already shown
         await new Promise(resolve => setTimeout(resolve, 1500));
-        soundManager.playBGM('resource/overflow.mp3');
+        soundManager.playBGM('/resource/overflow.mp3');
       }
 
       // 3. Pre-effect updates (Word submission display etc)

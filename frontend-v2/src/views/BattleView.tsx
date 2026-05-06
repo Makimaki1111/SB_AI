@@ -4,6 +4,8 @@ import { useUser } from '../context/UserContext';
 import { LobbyView } from '../components/battle/LobbyView';
 import { AbilityModal } from '../components/battle/AbilityModal';
 import { BattleArena } from '../components/battle/BattleArena';
+import SoundManager from '../utils/SoundManager';
+
 import { GameLayout } from '../components/layout/GameLayout';
 import { SituationModal } from '../components/battle/SituationModal';
 import { StockSelectionModal } from '../components/battle/StockSelectionModal';
@@ -190,6 +192,7 @@ export const BattleView: React.FC = () => {
   };
 
   const handleOpenAbility = (index: number = 0) => {
+    SoundManager.play('pera');
     setTargetAbilityIndex(index);
     setIsAbilityModalOpen(true);
   };
@@ -220,6 +223,7 @@ export const BattleView: React.FC = () => {
   };
 
   const handleRunAway = () => {
+    SoundManager.play('pera');
     if (battleState?.room_id) {
       sendMessage({
         type: 'run_away',

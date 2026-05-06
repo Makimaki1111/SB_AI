@@ -1,10 +1,32 @@
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { UserProvider } from './context/UserContext';
 import { TitleView } from './views/TitleView';
 import { BattleView } from './views/BattleView';
+import SoundManager from './utils/SoundManager';
 import './index.css';
 
 function App() {
+  useEffect(() => {
+    const handleFirstInteraction = () => {
+      SoundManager.unlock().then(() => {
+        // タイトル画面のBGMを開始
+        SoundManager.playBGM('/resource/horizon.mp3');
+      });
+      // 一度だけ実行
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('touchstart', handleFirstInteraction);
+    };
+
+    window.addEventListener('click', handleFirstInteraction);
+    window.addEventListener('touchstart', handleFirstInteraction);
+
+    return () => {
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('touchstart', handleFirstInteraction);
+    };
+  }, []);
+
   return (
     <UserProvider>
       <Router>
