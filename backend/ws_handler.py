@@ -147,7 +147,7 @@ class WebSocketHandler:
             await p1_data["socket"].send_text(json.dumps(bi.make_init_response(p1_data["player_id"], time_limit=self.TIME_LIMIT)))
             await p2_data["socket"].send_text(json.dumps(bi.make_init_response(p2_data["player_id"], time_limit=self.TIME_LIMIT)))
             
-            await self._after_turn_action(bi.room_id, bi, is_double=False)
+            await self._after_turn_action(bi.room_id, bi)
         else:
             new_waiter = {"socket": websocket, "player_id": player_id}
             if max_lives > 1: self.room_manager.waiting_player_stock = new_waiter
@@ -180,7 +180,7 @@ class WebSocketHandler:
 
             await p1_data["socket"].send_text(json.dumps(bi.make_init_response(p1_data["player_id"], time_limit=self.DOUBLE_TIME_LIMIT)))
             await p2_data["socket"].send_text(json.dumps(bi.make_init_response(p2_data["player_id"], time_limit=self.DOUBLE_TIME_LIMIT)))
-            await self._after_turn_action(bi.room_id, bi, is_double=True)
+            await self._after_turn_action(bi.room_id, bi)
         else:
             self.room_manager.waiting_player_double = {"socket": websocket, "player_id": player_id}
             await websocket.send_text(json.dumps({"type": "waiting", "message": "マッチング中…"}))
@@ -245,7 +245,7 @@ class WebSocketHandler:
             init_res = bi.make_init_response(player_id, time_limit=self.TIME_LIMIT)
             await websocket.send_text(json.dumps(init_res))
             
-            await self._after_turn_action(bi.room_id, bi, is_double=False)
+            await self._after_turn_action(bi.room_id, bi)
         except Exception as e:
             logger.error(f"Error in _handle_make_new_battle: {e}", exc_info=True)
             await websocket.send_text(json.dumps({"type": "error", "message": f"ルーム作成エラー: {str(e)}"}))
@@ -310,12 +310,11 @@ class WebSocketHandler:
                 self.connection_manager.join_room(p1_data["socket"], bi.room_id)
                 self.connection_manager.join_room(p2_data["socket"], bi.room_id)
 
-                limit = self.DOUBLE_TIME_LIMIT if is_double else self.TIME_LIMIT
+                limit = bi.time_limit
                 await p1_data["socket"].send_text(json.dumps(bi.make_init_response(p1_data["player_id"], time_limit=limit)))
                 await p2_data["socket"].send_text(json.dumps(bi.make_init_response(p2_data["player_id"], time_limit=limit)))
                 
-                is_db = isinstance(bi, DoubleBattle)
-                await self._after_turn_action(bi.room_id, bi, is_double=is_db)
+                await self._after_turn_action(bi.room_id, bi)
             else:
                 await websocket.send_text(json.dumps({"type": "error", "message": "ルームが見つかりません"}))
         else:
@@ -340,11 +339,11 @@ class WebSocketHandler:
             await websocket.send_text(json.dumps(res))
             return
 
-        is_double = hasattr(room, "team1_win")
-        limit = self.DOUBLE_TIME_LIMIT if is_double else self.TIME_LIMIT
+        is_double = room.is_double
+        limit = room.time_limit
         await self.connection_manager.broadcast_battle_state(room_id, res, is_double=is_double, room_manager=self.room_manager, time_limit=limit)
 
-        await self._after_turn_action(room_id, room, is_double)
+        await self._after_turn_action(room_id, room)
 
     async def _handle_submit_word_double(self, websocket, player_id, info):
         await self._handle_submit_word(websocket, player_id, info)
@@ -352,22 +351,17 @@ class WebSocketHandler:
     async def _handle_change_ability(self, websocket, player_id, info):
         room_id = info.get("room_id")
         ability_id = info.get("ability_id")
-        char_id = info.get("char_id", "p1")
+        char_id = info.get("char_id") # None if single
 
         room = self.room_manager.get_room(room_id)
         if not room: return
 
-        is_double_battle = hasattr(room, "team1_win")
-        if is_double_battle:
-            res = room.change_ability(player_id, char_id, ability_id)
-        else:
-            res = room.change_ability(player_id, ability_id)
+        res = room.change_ability(player_id, ability_id, char_id=char_id)
 
         if res.get("type") == "error":
             await websocket.send_text(json.dumps(res))
         else:
-            is_double = hasattr(room, "team1_win")
-            await self.connection_manager.broadcast_battle_state(room_id, res, is_double=is_double, room_manager=self.room_manager)
+            await self.connection_manager.broadcast_battle_state(room_id, res, is_double=room.is_double, room_manager=self.room_manager, time_limit=room.time_limit)
 
     async def _handle_change_ability_double(self, websocket, player_id, info):
         await self._handle_change_ability(websocket, player_id, info)
@@ -376,7 +370,7 @@ class WebSocketHandler:
         room_id = info.get("room_id")
         word = info.get("word")
         room = self.room_manager.get_room(room_id)
-        if room and hasattr(room, "include_check"):
+        if room:
             res = room.include_check(word)
             await websocket.send_text(json.dumps(res))
 
@@ -389,13 +383,12 @@ class WebSocketHandler:
         if room:
             res = room.handle_disconnection(player_id)
             if res:
-                is_double = hasattr(room, "team1_win")
-                await self.connection_manager.broadcast_battle_state(room_id, res, is_double=is_double, room_manager=self.room_manager)
+                await self.connection_manager.broadcast_battle_state(room_id, res, is_double=room.is_double, room_manager=self.room_manager, time_limit=room.time_limit)
 
     async def _handle_run_away_double(self, websocket, player_id, info):
         await self._handle_run_away(websocket, player_id, info)
 
-    async def _after_turn_action(self, room_id, room, is_double):
+    async def _after_turn_action(self, room_id, room):
         if room.is_finished:
             self.room_manager.cancel_timer(room_id)
             self.room_manager.schedule_room_cleanup(room_id, delay=10)
@@ -403,35 +396,30 @@ class WebSocketHandler:
 
         if room.is_cpu_turn:
             await asyncio.sleep(1)
-            # execute_cpu_turnの結果をブロードキャストする
-            if hasattr(room, 'execute_cpu_turn'):
-                cpu_res = room.execute_cpu_turn()
-                limit = self.DOUBLE_TIME_LIMIT if is_double else self.TIME_LIMIT
-                await self.connection_manager.broadcast_battle_state(room_id, cpu_res, is_double=is_double, room_manager=self.room_manager, time_limit=limit)
+            cpu_res = room.execute_cpu_turn()
+            if cpu_res:
+                await self.connection_manager.broadcast_battle_state(room_id, cpu_res, is_double=room.is_double, room_manager=self.room_manager, time_limit=room.time_limit)
                 if room.is_finished:
                     return
 
-        await self._start_turn_timer(room_id, is_double)
+        await self._start_turn_timer(room_id, room)
 
-    async def _start_turn_timer(self, room_id, is_double):
-        room = self.room_manager.get_room(room_id)
+    async def _start_turn_timer(self, room_id, room):
         if not room or room.is_cpu: return
-
-        limit = self.DOUBLE_TIME_LIMIT if is_double else self.TIME_LIMIT
         
-        task = asyncio.create_task(self._timeout_handler(room_id, is_double, limit))
+        task = asyncio.create_task(self._timeout_handler(room_id, room))
         self.room_manager.set_timer(room_id, task)
 
-    async def _timeout_handler(self, room_id, is_double, limit):
+    async def _timeout_handler(self, room_id, room):
         try:
-            await asyncio.sleep(limit)
+            await asyncio.sleep(room.time_limit)
+            # 実行時に再度ルームの存在を確認
             room = self.room_manager.get_room(room_id)
             if not room: return
 
             res = room.timeout()
-            limit = self.DOUBLE_TIME_LIMIT if is_double else self.TIME_LIMIT
-            await self.connection_manager.broadcast_battle_state(room_id, res, is_double=is_double, room_manager=self.room_manager, time_limit=limit)
+            await self.connection_manager.broadcast_battle_state(room_id, res, is_double=room.is_double, room_manager=self.room_manager, time_limit=room.time_limit)
             
-            await self._after_turn_action(room_id, room, is_double)
+            await self._after_turn_action(room_id, room)
         except asyncio.CancelledError:
             pass

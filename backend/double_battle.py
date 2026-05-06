@@ -25,7 +25,7 @@ class DoubleBattle(BaseBattle):
     def __init__(self, mode: str, team1_players: list, team2_players: list, sb_info: SB_info, room_id: str | None = None, profiles: dict = None, is_cpu: bool = False):
         super().__init__(sb_info, room_id)
         self.mode = mode
-        self.is_cpu = is_cpu
+        self.is_cpu_battle = is_cpu
         self.abilities = get_default_abilities()
         self.ability_ids = list(self.abilities.keys())
         
@@ -99,6 +99,14 @@ class DoubleBattle(BaseBattle):
             loops += 1
         return self.turn_order[self.current_turn_index]
 
+    @property
+    def is_double(self) -> bool:
+        return True
+
+    @property
+    def time_limit(self) -> int:
+        return 30
+
     def _advance_turn_index(self):
         self.current_turn_index = (self.current_turn_index + 1) % 4
         if self.current_turn_index == 0:
@@ -113,35 +121,16 @@ class DoubleBattle(BaseBattle):
             self.finish_battle(0)
         return self.is_finished
 
-    def _patch_ability_events(self, current_actor, target_actor):
-        """特性イベントのフォーマットをダブルバトル用に調整"""
-        for event in self.events:
-            if "target" in event and event["target"] in ("ally", "foe"):
-                event["target"] = current_actor.id if event["target"] == "ally" else target_actor.id
-            if "new_ranks" in event:
-                old = event["new_ranks"]
-                if "ally_atk" in old:
-                    event["new_ranks"] = {
-                        current_actor.id: {"attack_rank": old["ally_atk"], "defense_rank": old["ally_def"]},
-                        target_actor.id: {"attack_rank": old["foe_atk"], "defense_rank": old["foe_def"]}
-                    }
 
     def try_attack(self, player_id: str, word: str, target_char_id: str = None):
         if self.is_finished: return self._make_response()
         
+        # 基本バリデーションをBaseBattleに委譲
+        err = self._validate_word(player_id, word)
+        if err: return err
+
         current_actor = self.get_current_actor()
-        if player_id != current_actor.owner_id:
-            return {"type": "error", "message": "自分のターンではありません"}
-
-        word = self.katakana_to_hiragana(word)
-        if not word or word[0] != self.character:
-            return {"type": "error", "message": "しりとりのルールを守ってください"}
-        if self._is_used(word):
-            return {"type": "error", "message": "その単語は既に使用されています"}
-        if not self.sb_info.include_in_all_words(word):
-            return {"type": "error", "message": "辞書にない単語です"}
-
-        enemies = self.team2 if current_actor in self.team1 else self.team1
+        enemies = self.get_enemies(current_actor)
         target_actor = None
         if target_char_id:
             for e in enemies:
@@ -163,7 +152,6 @@ class DoubleBattle(BaseBattle):
 
         self._process_end_of_turn_effects(current_actor, target_actor)
         self._check_win_condition()
-        self._patch_ability_events(current_actor, target_actor)
         self.record_used_word(word, current_actor.id)
         self.last_actor_id = current_actor.id
         self._advance_turn_index()

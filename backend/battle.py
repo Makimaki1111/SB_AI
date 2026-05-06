@@ -39,7 +39,7 @@ class SingleBattle(BaseBattle):
         self.player2_lives = p2_max_lives
         
         self.player1_turn = (random.random() < 0.5)
-        self.is_cpu = is_cpu
+        self.is_cpu_battle = is_cpu
         self.abilities = get_default_abilities()
         self.init_character()
         
@@ -69,6 +69,14 @@ class SingleBattle(BaseBattle):
     def get_player_label(self, player) -> str:
         """SingleBattleでも生のIDを返す (BattleManagerのidToUiMapと同期するため)"""
         return player.id
+
+    @property
+    def is_double(self) -> bool:
+        return False
+
+    @property
+    def time_limit(self) -> int:
+        return 20
 
     def get_current_actor(self) -> Player:
         return self.player1 if self.player1_turn else self.player2
@@ -137,26 +145,14 @@ class SingleBattle(BaseBattle):
         self.word = word
         if self.is_finished: return self._make_response()
         
-        current_player = self.player1 if self.player1_turn else self.player2
+        # 基本バリデーションをBaseBattleに委譲
+        err = self._validate_word(player_id, word)
+        if err: return err
+
+        current_player = self.get_current_actor()
         target_player = self.player2 if self.player1_turn else self.player1
         
-        if player_id != current_player.id:
-            return {"type": "error", "message": "あなたのターンではありません"}
-
         word = self.katakana_to_hiragana(word)
-        if not word or word[0] != self.character:
-            return {"type": "error", "message": "開始文字がマッチしていません"}
-        
-        if self._is_used(word):
-            return {"type": "error", "message": "その単語は既に使用されています"}
-        
-        if not self.sb_info.include_in_all_words(word):
-            return {"type": "error", "message": "辞書にない単語です"}
-
-        # 「ん」チェック (devブランチのロジックに合わせる)
-        if self.sb_info.get_next_initial(word) == "ん":
-            return {"type": "error", "message": "「ん」で終わっています"}
-
         types = [t for t in self.sb_info.get_types(word) if t]
         current_player.types = types[:]
         ability_obj = self.abilities.get(current_player.ability)
@@ -275,25 +271,6 @@ class SingleBattle(BaseBattle):
         if res.get("type") != "error":
             self.events = []
         return res
-
-    def get_current_actor(self) -> Player:
-        return self.player1 if self.player1_turn else self.player2
-
-    def get_enemies(self, player: Player) -> list[Player]:
-        return [self.player2] if player.id == self.player1.id else [self.player1]
-
-    def get_team_index(self, player: Player) -> int:
-        if player.id == self.player1.id: return 0
-        if player.id == self.player2.id: return 1
-        return -1
-
-    def format_predictions(self, enemies: list[Player], at1: str, at2: str) -> dict:
-        if not enemies: return {}
-        enemy = enemies[0]
-        dt1 = enemy.types[0] if len(enemy.types) >= 1 else ""
-        dt2 = enemy.types[1] if len(enemy.types) >= 2 else ""
-        effect = self.sb_info.type_effect(at1, at2, dt1, dt2)
-        return {"prediction": self._get_effect_message(effect)}
 
     def timeout(self):
         """タイムアウト処理 (SingleBattle 用にターン交代を追加)"""

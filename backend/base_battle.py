@@ -32,6 +32,44 @@ class BaseBattle:
         self.winner_team = None 
         self.last_actor_id = None
         self.is_finished_flag = False
+        self.is_cpu_battle = False
+
+    @property
+    def is_cpu(self) -> bool:
+        return self.is_cpu_battle
+
+    def execute_cpu_turn(self) -> dict | None:
+        """CPUのターンを実行する (必要なモードでオーバーライド)"""
+        return None
+
+    @property
+    def is_double(self) -> bool:
+        raise NotImplementedError
+
+    @property
+    def time_limit(self) -> int:
+        raise NotImplementedError
+
+    def _validate_word(self, player_id: str, word: str) -> dict | None:
+        """しりとりとしての正当性チェック (共通)"""
+        current_actor = self.get_current_actor()
+        if player_id != current_actor.owner_id:
+            return {"type": "error", "message": "あなたのターンではありません"}
+
+        word = self.katakana_to_hiragana(word)
+        if not word or word[0] != self.character:
+            return {"type": "error", "message": "開始文字がマッチしていません"}
+        
+        if word in self.used:
+            return {"type": "error", "message": "その単語は既に使用されています"}
+        
+        if not self.sb_info.include_in_all_words(word):
+            return {"type": "error", "message": "辞書にない単語です"}
+
+        if self.sb_info.get_next_initial(word) == "ん":
+            return {"type": "error", "message": "「ん」で終わっています"}
+            
+        return None
 
     def katakana_to_hiragana(self, text: str) -> str:
         """カタカナをひらがなに変換する"""
