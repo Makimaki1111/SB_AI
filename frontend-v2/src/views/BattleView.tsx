@@ -159,16 +159,18 @@ export const BattleView: React.FC = () => {
   };
 
   const handleSelectAbility = (abilityId: string) => {
-    const newAbilities = [...selectedAbilities];
-    newAbilities[targetAbilityIndex] = abilityId;
-    setSelectedAbilities(newAbilities);
-    if (targetAbilityIndex === 0) {
-      localStorage.setItem('sb_ability', abilityId);
-    } else {
-      localStorage.setItem('sb_ability_2', abilityId);
-    }
-
-    if (!isLobby && battleState?.room_id) {
+    if (isLobby) {
+      // ロビーでの選択：ステート更新とlocalStorage保存
+      const newAbilities = [...selectedAbilities];
+      newAbilities[targetAbilityIndex] = abilityId;
+      setSelectedAbilities(newAbilities);
+      if (targetAbilityIndex === 0) {
+        localStorage.setItem('sb_ability', abilityId);
+      } else {
+        localStorage.setItem('sb_ability_2', abilityId);
+      }
+    } else if (battleState?.room_id) {
+      // 対戦中の変更：サーバーに送信するのみ（ロビーの設定は変えない）
       sendMessage({
         type: 'change_ability',
         info: { 
@@ -283,7 +285,11 @@ export const BattleView: React.FC = () => {
           isOpen={isAbilityModalOpen}
           onClose={() => setIsAbilityModalOpen(false)}
           onSelect={handleSelectAbility}
-          currentAbilityId={selectedAbilities[targetAbilityIndex]}
+          currentAbilityId={
+            !isLobby 
+              ? (targetAbilityIndex === 0 ? ally?.ability : foe?.ability) || selectedAbilities[targetAbilityIndex]
+              : selectedAbilities[targetAbilityIndex]
+          }
           allyAbilityId={ally?.ability || ''}
           allAbilities={allAbilities}
           canChange={canChangeAbility}
