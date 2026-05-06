@@ -11,17 +11,17 @@ interface HPBarProps {
   isWaiting?: boolean;
 }
 
-export const HPBar: React.FC<HPBarProps> = ({ 
-  hp, 
-  maxHp, 
-  name, 
-  isPoison, 
+export const HPBar: React.FC<HPBarProps> = ({
+  hp,
+  maxHp,
+  name,
+  isPoison,
   isAlly,
   isWaiting = false
 }) => {
   // マッチング待機中は100%表示
   const hpPercentage = isWaiting ? 100 : (maxHp > 0 ? (hp / maxHp) * 100 : 0);
-  
+
   // Legacy color logic from UI.js (line 629)
   const getHPBarColor = (ratio: number) => {
     if (ratio > 0.5) return "#00FF00"; // 緑色
@@ -39,19 +39,19 @@ export const HPBar: React.FC<HPBarProps> = ({
         </div>
         {isPoison && <span className={styles.poison}>どく</span>}
       </div>
-      
+
       <div className={styles.bar}>
-        <motion.div 
-          className={isAlly ? styles.allyHpBar : styles.foeHpBar} 
+        <motion.div
+          className={isAlly ? styles.allyHpBar : styles.foeHpBar}
           animate={{ width: `${hpPercentage}%`, backgroundColor: barColor }}
-          transition={{ 
-            width: { duration: 0.6, ease: "linear" },
-            backgroundColor: { delay: 0.6, duration: 0 } 
+          transition={{
+            width: { duration: 0.6 },
+            backgroundColor: { delay: 0.6, duration: 0 }
           }}
           style={{ height: '100%', borderRadius: '3px' }}
         />
       </div>
-      
+
       {!isWaiting && <div className={styles.hp}>{hp}/{maxHp}</div>}
     </div>
   );

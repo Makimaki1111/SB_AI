@@ -203,6 +203,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
         else if (msg.includes('ふつうのダメージ')) soundKey = 'middmg';
         else if (msg.includes('はたおれた！') || msg.includes('力尽きた')) {
           soundKey = 'end';
+          if (targetId) display.setKnockoutStates(prev => ({ ...prev, [targetId]: true }));
         }
 
         // 2. Type-based fallback
@@ -252,12 +253,6 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
             }
           }
           if (!isInitialBattle) await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // HPが0以下なら気絶演出を開始 (Legacy script.js:262-266)
-          if (targetId && tempCharacters[targetId] && tempCharacters[targetId].hp <= 0) {
-            display.setKnockoutStates(prev => ({ ...prev, [targetId]: true }));
-          }
-
           display.setAllyEffect(null);
           display.setFoeEffect(null);
         } else if (event.type === 'cure') {

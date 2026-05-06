@@ -58,6 +58,7 @@ export const BattleView: React.FC = () => {
   const [isSituationModalOpen, setIsSituationModalOpen] = React.useState(false);
   const [isStockModalOpen, setIsStockModalOpen] = React.useState(false);
   const [pendingMatchMode, setPendingMatchMode] = React.useState<'cpu' | 'room' | null>(null);
+  const lastRoomIdRef = React.useRef<string | null>(null);
   
   const [selectedAbilities, setSelectedAbilities] = React.useState<string[]>(() => {
     const a1 = localStorage.getItem('sb_ability') || 'ikaku';
@@ -82,11 +83,12 @@ export const BattleView: React.FC = () => {
       setAllAbilities(battleAbilities);
     }
     
-    if (battleState) {
-      // マッチング完了時の状態整理
+    if (battleState && battleState.room_id !== lastRoomIdRef.current) {
+      // マッチング完了（新しいルームに入った）時のみ状態整理
       setIsAbilityModalOpen(false);
       setIsSituationModalOpen(false);
       setIsStockModalOpen(false);
+      lastRoomIdRef.current = battleState.room_id;
     }
   }, [battleState, battleAbilities]);
 
