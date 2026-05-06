@@ -69,7 +69,6 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
           effect={foeEffect}
           word={foeWord}
           isKnockout={foeId ? knockoutStates[foeId] : false}
-          maxLives={battleState?.foe_max_lives ?? 2}
           name={foe?.name ?? "あいて"}
         />
 
@@ -80,7 +79,6 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
           effect={allyEffect}
           word={allyWord}
           isKnockout={allyId ? knockoutStates[allyId] : false}
-          maxLives={battleState?.ally_max_lives ?? 2}
           name={username || ally?.name || "じぶん"}
         />
       </div>

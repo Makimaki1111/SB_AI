@@ -11,7 +11,6 @@ interface BattleSideProps {
   effect: string | null;
   word: string | null;
   isKnockout: boolean;
-  maxLives: number;
   name: string;
 }
 
@@ -21,7 +20,6 @@ export const BattleSide: React.FC<BattleSideProps> = ({
   effect,
   word,
   isKnockout,
-  maxLives,
   name
 }) => {
   const hpBar = (

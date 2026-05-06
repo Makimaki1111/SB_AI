@@ -39,6 +39,7 @@ export interface BattleState {
   current_owner_id?: string | null;
   last_actor_id?: string | null;
   status?: 'waiting' | 'active' | 'finished';
+  is_cpu?: boolean;
 }
 
 export interface BattleEvent {
@@ -56,6 +57,7 @@ export interface BattleEvent {
   new_ability_change_count?: number | null;
   new_ranks?: Record<string, Record<string, number>> | null;
   predictions?: Record<string, string> | null;
+  attacker_hp?: number | null;
 }
 
 export interface BattleResponse {
@@ -63,6 +65,13 @@ export interface BattleResponse {
   state: BattleState;
   events: BattleEvent[];
   all_abilities?: Record<string, AbilityData>;
+  include?: boolean;
+  used?: boolean;
+  type1?: string;
+  type2?: string;
+  prediction?: string;
+  predictions?: Record<string, string>;
+  message?: string;
   info?: {
     player_ids: string[];
     id_to_ui_map: Record<string, string>;

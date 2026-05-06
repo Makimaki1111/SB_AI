@@ -15,7 +15,7 @@ export const HPBar: React.FC<HPBarProps> = ({
   maxHp, 
   name, 
   isPoison, 
-  isAlly 
+  isAlly
 }) => {
   const hpPercentage = maxHp > 0 ? (hp / maxHp) * 100 : 0;
   

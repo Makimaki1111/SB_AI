@@ -49,7 +49,8 @@ export const BattleView: React.FC = () => {
     foeId,
     allAbilities: battleAbilities,
     sendMessage,
-    sendIncludeCheck 
+    sendIncludeCheck,
+    clearPrediction
   } = useBattle(dynamicWsUrl);
   
   const [isLobby, setIsLobby] = React.useState(true);
@@ -193,6 +194,7 @@ export const BattleView: React.FC = () => {
   };
 
   const handleSubmitWord = (word: string) => {
+    clearPrediction(); // 送信時に即座に予測をクリア
     sendMessage({
       type: 'submit_word',
       info: { word, room_id: battleState?.room_id, player_id: playerId }

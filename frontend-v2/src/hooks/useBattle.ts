@@ -80,6 +80,7 @@ export const useBattle = (url: string) => {
 
       // 2. 演出開始前の表示更新 (単語、画像、黒い箱、タイプ音)
       if (data.state.word) {
+        setPrediction(null); // 単語が送信されたら予測をクリア
         setMessageLog({ text: '', isOpen: true }); // 即座に黒い箱を空文字で表示
         // 重要な修正: 直前のターンの持ち主に基づいて単語の表示場所を決定する
         // (自分が打ったら相手のターンになるため、prevState.is_my_turn が true なら自分の単語)
@@ -449,6 +450,7 @@ export const useBattle = (url: string) => {
     allyId,
     foeId,
     sendMessage,
-    sendIncludeCheck
+    sendIncludeCheck,
+    clearPrediction: () => setPrediction(null)
   };
 };
