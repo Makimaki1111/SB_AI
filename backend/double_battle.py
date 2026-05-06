@@ -54,6 +54,8 @@ class DoubleBattle(BaseBattle):
 
         self.init_character()
         self.last_actor_id = None
+        
+        self.events = [{"type": "message", "message": "マッチングした！"}]
 
     @property
     def is_finished(self) -> bool:
@@ -234,8 +236,7 @@ class DoubleBattle(BaseBattle):
 
     def change_ability(self, player_id: str, new_ability_id: str, char_id: str = None):
         res = super().change_ability(player_id, new_ability_id, char_id=char_id)
-        if res.get("type") != "error":
-            self.events = []
+        # _make_response 内で self.events がクリアされるため、ここでの手動クリアは不要
         return res
 
     def make_init_response(self, player_id: str, time_limit: int = None) -> dict:
@@ -277,6 +278,8 @@ class DoubleBattle(BaseBattle):
         )
         
         events = [BattleEvent(**e) for e in self.events if isinstance(e, dict)]
+        self.events = [] # 送信後にイベントをクリア
+        
         res = BattleResponse(state=state, events=events).model_dump(by_alias=True)
         res["type"] = "battle_end" if self.is_finished else "update"
         return res

@@ -56,6 +56,8 @@ class SingleBattle(BaseBattle):
         
         self.player1.types = []
         self.player2.types = []
+        
+        self.events = [{"type": "message", "message": "マッチングした！"}]
 
     def get_player_label(self, player) -> str:
         """SingleBattleでも生のIDを返す (BattleManagerのidToUiMapと同期するため)"""
@@ -222,6 +224,7 @@ class SingleBattle(BaseBattle):
             )
             
             events = [BattleEvent(**e) for e in self.events if isinstance(e, dict)]
+            self.events = [] # 送信後にイベントをクリア
             
             res = BattleResponse(state=state, events=events).model_dump(by_alias=True)
             res["type"] = "battle_end" if self.is_finished else "update"
@@ -268,8 +271,7 @@ class SingleBattle(BaseBattle):
 
     def change_ability(self, player_id: str, new_ability_id: str, char_id: str = None):
         res = super().change_ability(player_id, new_ability_id, char_id=char_id)
-        if res.get("type") != "error":
-            self.events = []
+        # _make_response 内で self.events がクリアされるため、ここでの手動クリアは不要
         return res
 
     def timeout(self):
