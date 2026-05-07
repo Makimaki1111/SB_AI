@@ -18,6 +18,7 @@ export interface CharacterState {
   ability: string;
   ability_change_count: number;
   lives?: number | null;
+  max_lives?: number | null;
   types: string[];
   is_poison: boolean;
   owner_id: string;
@@ -58,6 +59,7 @@ export interface BattleEvent {
   new_ranks?: Record<string, Record<string, number>> | null;
   predictions?: Record<string, string> | null;
   attacker_hp?: number | null;
+  winner_team?: number | null;
 }
 
 export interface BattleResponse {
