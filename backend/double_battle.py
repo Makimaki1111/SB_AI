@@ -153,9 +153,9 @@ class DoubleBattle(BaseBattle):
     def get_enemies(self, player: DoubleBattlePlayer) -> list[DoubleBattlePlayer]:
         return self.team2 if player in self.team1 else self.team1
 
-    def get_team_index(self, player: DoubleBattlePlayer) -> int:
-        if player in self.team1: return 0
-        if player in self.team2: return 1
+    def get_team_index(self, player_id: str) -> int:
+        if any(p.owner_id == player_id or p.id == player_id for p in self.team1): return 0
+        if any(p.owner_id == player_id or p.id == player_id for p in self.team2): return 1
         return -1
 
     def format_predictions(self, enemies: list[DoubleBattlePlayer], at1: str, at2: str) -> dict:
@@ -204,21 +204,7 @@ class DoubleBattle(BaseBattle):
     def _is_used(self, word: str) -> bool:
         return word in self.used
 
-    def is_player_winner(self, player_id: str) -> bool:
-        if self.winner_team is None: return False
-        is_t1 = any(p.owner_id == player_id for p in self.team1)
-        return (is_t1 and self.winner_team == 0) or (not is_t1 and self.winner_team == 1)
 
-    def change_ability(self, player_id: str, new_ability_id: str, char_id: str = None):
-        res = super().change_ability(player_id, new_ability_id, char_id=char_id)
-        # _make_response 内で self.events がクリアされるため、ここでの手動クリアは不要
-        return res
-
-    def make_init_response(self, player_id: str, time_limit: int = None) -> dict:
-        res = self._make_response()
-        res["type"] = "made_room"
-        res["all_abilities"] = self._get_serializable_abilities()
-        return self.get_personalized_response(res, player_id, time_limit=time_limit)
 
 
     def _make_response(self) -> dict:

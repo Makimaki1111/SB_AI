@@ -79,8 +79,8 @@ class SingleBattle(BaseBattle):
         return self.is_cpu and actor.id == self.player2.id
 
 
-    def get_team_index(self, player) -> int:
-        return 0 if player.id == self.player1.id else 1
+    def get_team_index(self, player_id: str) -> int:
+        return 0 if player_id == self.player1.id else 1
 
     def get_enemies(self, player) -> list[Player]:
         return [self.player2] if player.id == self.player1.id else [self.player1]
@@ -103,11 +103,6 @@ class SingleBattle(BaseBattle):
         return self.is_finished
 
 
-    def make_init_response(self, player_id: str, time_limit: int = None) -> dict:
-        res = self._make_response()
-        res["type"] = "made_room"
-        res["all_abilities"] = self._get_serializable_abilities()
-        return self.get_personalized_response(res, player_id, time_limit=time_limit)
 
     def _is_used(self, word: str) -> bool:
         return word in self.used
@@ -258,15 +253,6 @@ class SingleBattle(BaseBattle):
         return new_res
 
 
-    def is_player_winner(self, player_id: str) -> bool:
-        if self.winner_team is None: return False
-        is_p1 = (player_id == self.player1.id)
-        return (is_p1 and self.winner_team == 0) or (not is_p1 and self.winner_team == 1)
-
-    def change_ability(self, player_id: str, new_ability_id: str, char_id: str = None):
-        res = super().change_ability(player_id, new_ability_id, char_id=char_id)
-        # _make_response 内で self.events がクリアされるため、ここでの手動クリアは不要
-        return res
 
     def timeout(self):
         """タイムアウト処理 (SingleBattle 用にターン交代を追加)"""

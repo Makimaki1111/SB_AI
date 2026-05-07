@@ -261,6 +261,25 @@ class BaseBattle:
         self.events = []
         return ret
 
+    def make_init_response(self, player_id: str, time_limit: int = None) -> dict:
+        """初期化時のレスポンスを生成 (共通)"""
+        res = self._make_response()
+        res["type"] = "made_room"
+        res["all_abilities"] = self._get_serializable_abilities()
+        return self.get_personalized_response(res, player_id, time_limit=time_limit)
+
+    def is_player_winner(self, player_id: str) -> bool:
+        """指定したプレイヤーが勝利したチームに属しているか (共通)"""
+        if self.winner_team is None:
+            return False
+        
+        player_team = self.get_team_index(player_id)
+        return player_team == self.winner_team
+
+    def get_team_index(self, player_id: str) -> int:
+        """プレイヤーIDからチームインデックス(0 or 1)を取得する (サブクラスで実装)"""
+        raise NotImplementedError
+
     def change_ability(self, player_id: str, new_ability_id: str, char_id: str = None):
         """特性変更の共通ロジック"""
         target_char = self.find_character(player_id, char_id)
@@ -448,9 +467,6 @@ class BaseBattle:
     def _make_response(self) -> dict:
         raise NotImplementedError
 
-    def is_player_winner(self, player_id: str) -> bool:
-        """指定したプレイヤーが勝利チームに属しているか判定する (サブクラスで実装)"""
-        raise NotImplementedError
 
     def _personalize_events(self, events: list, is_winner: bool):
         """イベントリスト内のメッセージを閲覧プレイヤーの視点に合わせて調整する"""
