@@ -29,14 +29,9 @@ class SingleBattle(BaseBattle):
         p1_name = p1_profile.get("name", "じぶん") if p1_profile else "じぶん"
         p2_name = p2_profile.get("name", "プレイヤー2") if p2_profile else "プレイヤー2"
         
-        self.player1 = Player(player1_id, p1_name)
-        self.player2 = Player(player2_id, p2_name)
+        self.player1 = Player(player1_id, p1_name, lives=p1_max_lives, max_lives=p1_max_lives)
+        self.player2 = Player(player2_id, p2_name, lives=p2_max_lives, max_lives=p2_max_lives)
         self.players = [self.player1, self.player2]
-        
-        self.p1_max_lives = p1_max_lives
-        self.p2_max_lives = p2_max_lives
-        self.player1_lives = p1_max_lives
-        self.player2_lives = p2_max_lives
         
         # 行動順の設定
         self.turn_order = [self.player1, self.player2]
@@ -108,28 +103,18 @@ class SingleBattle(BaseBattle):
         return word in self.used
 
     def _handle_knockout(self, defeated_player: Player):
-        # まず倒れたメッセージを追加
-        self.events.append({
-            "type": "knockout", 
-            "message": f"{defeated_player.name}はたおれた！", 
-            "target": self.get_player_label(defeated_player)
-        })
-
-        if defeated_player.id == self.player1.id:
-            self.player1_lives -= 1
-            lives_left = self.player1_lives
-            if lives_left <= 0:
-                self.finish_battle(1)
-            else:
-                defeated_player.hp = MAX_HP
+        """SingleBattle用: 倒れた時の処理 (復活 or 敗北)"""
+        super()._handle_knockout(defeated_player)
+        
+        defeated_player.lives -= 1
+        lives_left = defeated_player.lives
+        
+        if lives_left <= 0:
+            winner = 1 if defeated_player.id == self.player1.id else 0
+            self.finish_battle(winner)
         else:
-            self.player2_lives -= 1
-            lives_left = self.player2_lives
-            if lives_left <= 0:
-                self.finish_battle(0)
-            else:
-                defeated_player.hp = MAX_HP
-            
+            defeated_player.hp = MAX_HP
+
         if self.winner_team is None:
             defeated_player.attack_rank = 0
             defeated_player.defense_rank = 0
@@ -189,11 +174,7 @@ class SingleBattle(BaseBattle):
             self.finish_battle(self.winner_team)
 
         # 共通メソッドを呼び出し (SingleBattle特有のフィールドを渡す)
-        res = self._create_base_response(
-            [self.player1, self.player2],
-            ally_max_lives=self.p1_max_lives,
-            foe_max_lives=self.p2_max_lives
-        )
+        res = self._create_base_response([self.player1, self.player2])
         self.events = [] # 送信後にイベントをクリア
         return res
 
@@ -211,12 +192,13 @@ class SingleBattle(BaseBattle):
         state["is_my_turn"] = (str(state["current_owner_id"]) == pid_str)
         
         # ライフ情報の視点を調整
+        # ライフ情報の視点を調整 (CharacterState内のmax_livesを使用するようになったが、トップレベルの互換性も維持)
         if is_p1:
-            state["ally_max_lives"] = self.p1_max_lives
-            state["foe_max_lives"] = self.p2_max_lives
+            state["ally_max_lives"] = self.player1.max_lives
+            state["foe_max_lives"] = self.player2.max_lives
         elif is_p2:
-            state["ally_max_lives"] = self.p2_max_lives
-            state["foe_max_lives"] = self.p1_max_lives
+            state["ally_max_lives"] = self.player2.max_lives
+            state["foe_max_lives"] = self.player1.max_lives
         
         if self.winner_team is not None:
             ally_win = self.is_player_winner(pid_str)

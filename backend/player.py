@@ -5,11 +5,13 @@ except ImportError:
 
 class Player:
     """シングルバトル用のプレイヤークラス"""
-    def __init__(self, id: str, name: str):
+    def __init__(self, id: str, name: str, lives: int = 1, max_lives: int = 1):
         self.id = id
         self.owner_id = id
         self.name = name
         self.hp = MAX_HP
+        self.lives = lives
+        self.max_lives = max_lives
         self.attack_rank = 0
         self.defense_rank = 0
         self.types = []

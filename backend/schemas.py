@@ -38,6 +38,7 @@ class CharacterState(BaseModel):
     ability: str = ""
     ability_change_count: int = 0
     lives: Optional[int] = None
+    max_lives: Optional[int] = None
     owner_id: str = ""
 
 class BattleState(BaseModel):

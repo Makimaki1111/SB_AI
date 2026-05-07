@@ -10,9 +10,9 @@ import { useBattleDisplay } from './battle/useBattleDisplay';
 
 export const useBattle = (url: string, onRoomError?: () => void) => {
   // --- Sub-hooks ---
-  const { 
-    battleState, setBattleState, battleStateRef, 
-    allAbilities, setAllAbilities, 
+  const {
+    battleState, setBattleState, battleStateRef,
+    allAbilities, setAllAbilities,
     uiMapping, updateUiMapping, uiMappingRef,
     getAlly, getFoe, getAllyId, getFoeId,
     reset: resetState
@@ -59,7 +59,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
       });
       return;
     }
-    
+
     if (data.type === 'error') {
       const msg = (data as any).message || 'エラーが発生しました';
       display.setWaitMessage(msg);
@@ -73,7 +73,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
       }
       return;
     }
-    
+
     if (data.type === 'waiting') {
       display.setMessageLog({ text: (data as any).message || 'マッチング中...', isOpen: true });
       return;
@@ -84,7 +84,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
       display.setMessageLog({ text: `ルームID: ${roomId}\n相手を待っています…`, isOpen: true });
       return;
     }
-    
+
     if (data.type === 'opponent_disconnected') {
       soundManager.play('end');
       display.setWaitMessage('あいてが切断しました');
@@ -93,7 +93,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
       setBattleState(prev => prev ? { ...prev, status: 'finished' } : null);
       return;
     }
-    
+
     if (['accepted', 'made_room', 'update', 'battle_end', 'timeout'].includes(data.type)) {
       if (data.type === 'accepted' || data.type === 'made_room') {
         currentRoomIdRef.current = data.state.room_id;
@@ -109,7 +109,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
         handleBattleUpdate(data, true);
         if (data.events.length === 1) return;
       }
-      
+
       messageQueue.current.push(data);
       processQueue();
     }
@@ -184,19 +184,19 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
         // Legacy uses 1500ms
         await new Promise(resolve => setTimeout(resolve, 1500));
         if (checkAbort()) return;
-        
+
         soundManager.playBGM('/resource/overflow.mp3');
         // Initial battle doesn't have a word to read, so we can skip the next word delay
-        data.state.word = ""; 
+        data.state.word = "";
       }
 
       // 3. Pre-effect updates (Word submission display etc)
       const isTimeout = data.events?.some(e => e.message?.includes('時間切れ'));
-      
+
       if (data.state.word && !isTimeout) {
         display.clearPrediction();
         display.setMessageLog({ text: '', isOpen: true });
-        
+
         if (prevState.is_my_turn) display.setAllyWord(data.state.word);
         else display.setFoeWord(data.state.word);
 
@@ -256,7 +256,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
             if (targetSide === 'ally') display.setAllyEffect('blink');
             else if (targetSide === 'foe') display.setFoeEffect('blink');
           }
-          
+
           if (targetId && tempCharacters[targetId] && event.hp !== undefined && event.hp !== null) {
             tempCharacters[targetId].hp = event.hp;
             setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
