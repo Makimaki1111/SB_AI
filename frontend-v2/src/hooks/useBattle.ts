@@ -127,6 +127,11 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
       const data = messageQueue.current.shift();
       if (data) {
         await handleBattleUpdate(data);
+        // ループ中にリセットされたら残りのキューは破棄
+        if (!currentRoomIdRef.current) {
+          messageQueue.current = [];
+          break;
+        }
       }
     }
 
@@ -136,9 +141,17 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
 
   // --- Battle Logic (The Core) ---
   const handleBattleUpdate = async (data: BattleResponse, isInterrupt: boolean = false) => {
+    const checkAbort = () => {
+      // 進行中のルームIDが変わっているか、リセットされていたら中止
+      if (!currentRoomIdRef.current || data.state.room_id !== currentRoomIdRef.current) return true;
+      return false;
+    };
+
     try {
       if (data.all_abilities) setAllAbilities(data.all_abilities);
       if (data.info?.id_to_ui_map) updateUiMapping(data.info.id_to_ui_map);
+
+      if (checkAbort()) return;
 
       const prevState = battleStateRef.current || data.state;
       const isInitialBattle = (data.type === 'made_room' || data.type === 'accepted') && !battleStateRef.current;
@@ -170,6 +183,8 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
         soundManager.play('start');
         // Legacy uses 1500ms
         await new Promise(resolve => setTimeout(resolve, 1500));
+        if (checkAbort()) return;
+        
         soundManager.playBGM('/resource/overflow.mp3');
         // Initial battle doesn't have a word to read, so we can skip the next word delay
         data.state.word = ""; 
@@ -207,6 +222,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
       const isAbilityChangeOnly = events.length === 1 && events[0].type === 'ability_changed';
       if (data.state.word && !isAbilityChangeOnly && !isTimeout) {
         await new Promise(resolve => setTimeout(resolve, 1000));
+        if (checkAbort()) return;
       }
 
       // 6. Event Processing Loop
@@ -253,7 +269,10 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
               setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
             }
           }
-          if (!isInitialBattle) await new Promise(resolve => setTimeout(resolve, 1000));
+          if (!isInitialBattle) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            if (checkAbort()) return;
+          }
           display.setAllyEffect(null);
           display.setFoeEffect(null);
         } else if (event.type === 'cure') {
@@ -263,7 +282,10 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
             tempCharacters[targetId].hp = event.hp;
             setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
           }
-          if (!isInitialBattle) await new Promise(resolve => setTimeout(resolve, 1000));
+          if (!isInitialBattle) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            if (checkAbort()) return;
+          }
           display.setAllyEffect(null);
           display.setFoeEffect(null);
         } else if (event.type === 'revive') {
@@ -274,7 +296,10 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
               setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
             }
           }
-          if (!isInitialBattle) await new Promise(resolve => setTimeout(resolve, 1000));
+          if (!isInitialBattle) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            if (checkAbort()) return;
+          }
         } else if (event.type === 'stat_up' || event.type === 'stat_down') {
           const effect = event.type === 'stat_up' ? 'up' : 'down';
           if (targetSide === 'ally') display.setAllyEffect(effect);
@@ -284,7 +309,10 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
             (tempCharacters[targetId] as any)[field] = event.new_rank;
             setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
           }
-          if (!isInitialBattle) await new Promise(resolve => setTimeout(resolve, 1000));
+          if (!isInitialBattle) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            if (checkAbort()) return;
+          }
           display.setAllyEffect(null);
           display.setFoeEffect(null);
         } else if (event.type === 'ability_changed') {
@@ -293,12 +321,21 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
             tempCharacters[targetId].ability_change_count = event.new_ability_change_count ?? tempCharacters[targetId].ability_change_count;
             setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
           }
-          if (!isInterrupt && !isInitialBattle) await new Promise(resolve => setTimeout(resolve, 100));
+          if (!isInterrupt && !isInitialBattle) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            if (checkAbort()) return;
+          }
         } else if (event.type === 'battle_result') {
           display.setShowResultButton(true);
-          if (!isInitialBattle) await new Promise(resolve => setTimeout(resolve, 1000));
+          if (!isInitialBattle) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            if (checkAbort()) return;
+          }
         } else {
-          if (!isInitialBattle) await new Promise(resolve => setTimeout(resolve, 1000));
+          if (!isInitialBattle) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            if (checkAbort()) return;
+          }
         }
       }
 
@@ -316,6 +353,8 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
       const final: BattleState = { ...data.state, characters: mergedChars };
       setBattleState(final);
       battleStateRef.current = final;
+
+      if (checkAbort()) return;
 
       // 8. Turn Transition UI
       if (final.status !== 'finished') {

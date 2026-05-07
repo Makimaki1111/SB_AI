@@ -110,10 +110,11 @@ export const BattleView: React.FC = () => {
     const isStockMode = location.search.includes('mode=stock');
     const isDouble = location.search.includes('mode=double');
 
-    // ストックモードかつルーム作成/CPU戦の場合はまず残機設定モーダルを開く
+    // ストックモードかつルーム作成の場合はまず残機設定モーダルを開く
+    // CPU戦は固定設定にするためモーダルを開かない
     // ※参加ボタン（optionsにroomIdキーがある場合）はIDの有無に関わらずモーダルを開かない
     const isJoinAction = options && 'roomId' in options;
-    if (isStockMode && !isJoinAction && (mode === 'room' || mode === 'cpu')) {
+    if (isStockMode && !isJoinAction && mode === 'room') {
       setPendingMatchMode(mode);
       setIsStockModalOpen(true);
       return;
