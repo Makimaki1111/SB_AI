@@ -177,6 +177,9 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
 
       // 2. Matching Animation (Delayed BGM transition)
       if (isInitialBattle) {
+        // マッチング直後にタイマーを開始（バックエンドとのズレを最小化）
+        resetTimer(data.info?.time_limit || 20, data.info?.total_time || 20);
+
         display.resetDisplay();
         display.setMessageLog({ text: 'マッチングした！', isOpen: true });
         soundManager.stopBGM();
@@ -208,8 +211,9 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
 
       let tempCharacters = { ...initialVisualState.characters };
 
-      // 4. Timer Sync
-      if (data.state.is_my_turn !== (prevState?.is_my_turn) || isInitialBattle) {
+      // 4. Timer Sync (ターンが変わったときだけリセット、特性変更等の割り込み時はリセットしない)
+      // InitialBattle のときは既に上でリセット済みなので飛ばす
+      if (!isInterrupt && !isInitialBattle && (data.state.is_my_turn !== prevState?.is_my_turn)) {
         resetTimer(data.info?.time_limit || 20, data.info?.total_time || 20);
       }
 
@@ -360,10 +364,10 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
 
       // 8. Turn Transition UI
       if (final.status !== 'finished') {
-        display.setWaitMessage(final.is_my_turn ? 'あなたのターンです。' : '相手のターンです。');
-        resetTimer(20, 20);
-        if (!final.is_my_turn) display.setMessageLog({ text: '', isOpen: true });
-        else display.setMessageLog({ text: null, isOpen: false });
+        const turnMsg = final.is_my_turn ? 'あなたのターンです。' : '相手のターンです。';
+        display.setWaitMessage(turnMsg);
+        // ここでの resetTimer(20, 20) は削除（演出中もサーバーのタイマーは進んでいるため）
+        display.setMessageLog({ text: turnMsg, isOpen: true });
       } else {
         display.setWaitMessage(null);
       }
