@@ -40,9 +40,51 @@ class BaseBattle:
     def is_cpu(self) -> bool:
         return self.is_cpu_battle
 
-    def execute_cpu_turn(self) -> dict | None:
-        """CPUのターンを実行する (必要なモードでオーバーライド)"""
-        return None
+    def execute_cpu_turn(self) -> dict:
+        """
+        CPUの標準的な行動ループ。
+        単語を探し、あれば攻撃、なければ失敗処理を行う。
+        """
+        actor = self.get_current_actor()
+        if not actor:
+            return self._make_response()
+        
+        cpu_word = self.get_cpu_word()
+        if cpu_word:
+            # ターゲットを選択して攻撃
+            target_id = self._select_cpu_target(actor)
+            return self.try_attack(actor.owner_id, cpu_word, target_id=target_id)
+        else:
+            # 単語が見つからなかった場合
+            return self._handle_cpu_failure(actor)
+
+    def get_cpu_word(self) -> str:
+        """標準的なCPUの単語検索ロジック"""
+        candidates = self.sb_info.get_typed_word_candidates(self.character)
+        for word in candidates:
+            if not self._is_used(word):
+                return word
+        return ""
+
+    def _select_cpu_target(self, actor: Player) -> str | None:
+        """CPUの攻撃対象を選択する (サブクラスで実装)"""
+        raise NotImplementedError
+
+    def _handle_cpu_failure(self, actor: Player) -> dict:
+        """CPUが単語を思いつかなかった時の共通処理"""
+        actor.hp = 0
+        self.events.append({
+            "type": "knockout",
+            "message": f"{actor.name}は ことばを思いつかなかった！",
+            "target": self.get_player_label(actor),
+            "hp": 0
+        })
+        self._check_win_condition()
+        self.advance_turn()
+        
+        ret = self._make_response()
+        self.word, self.events = "", []
+        return ret
 
     @property
     def is_double(self) -> bool:
@@ -85,8 +127,11 @@ class BaseBattle:
         self.word = norm_word
         self.character = self.sb_info.get_next_initial(norm_word)
 
-    def get_player_label(self, player) -> str:
-        """プレイヤーの識別子(ID)を返す"""
+    def get_player_label(self, player: Player) -> str:
+        """
+        メッセージやイベントのターゲット指定に使用するラベル。
+        フロントエンドの演出(アニメーション等)のために、原則としてIDを返す。
+        """
         return player.id
 
     def _calc_damage(self, at1, at2, dt1, dt2, attacker_ability, attacker, defender):

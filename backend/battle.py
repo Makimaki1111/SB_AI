@@ -63,9 +63,6 @@ class SingleBattle(BaseBattle):
         
         self.events = [{"type": "message", "message": "マッチングした！"}]
 
-    def get_player_label(self, player) -> str:
-        """SingleBattleでも生のIDを返す (BattleManagerのidToUiMapと同期するため)"""
-        return player.id
 
     @property
     def is_double(self) -> bool:
@@ -298,21 +295,23 @@ class SingleBattle(BaseBattle):
         self.events = []
         return ret
 
-    def execute_cpu_turn(self):
-        cpu_word = self.get_cpu_word()
-        if cpu_word: return self.try_attack(self.player2.id, cpu_word)
-        self.player2.hp = 0
-        self.finish_battle(0)
-        # CPU失敗時もターン交代(念のため)
-        self.advance_turn()
-        ret = self._make_response()
-        self.word = ""
-        self.events = []
-        return ret
+    def _select_cpu_target(self, actor: Player) -> str | None:
+        """SingleBattleでは常に相手プレイヤー(P1)を狙う"""
+        return self.player1.id
 
-    def get_cpu_word(self):
-        candidates = self.sb_info.get_typed_word_candidates(self.character)
-        for word in candidates:
-            if not self._is_used(word): return word
-        return ""
+    def _handle_cpu_failure(self, actor: Player) -> dict:
+        """CPUが単語を思いつかなかった場合、即座に終了(P1勝利)"""
+        actor.hp = 0
+        self.events.append({
+            "type": "knockout", 
+            "message": f"{actor.name}は ことばを思いつかなかった！", 
+            "target": self.get_player_label(actor),
+            "hp": 0
+        })
+        self.finish_battle(0) # プレイヤー1(インデックス0)の勝利
+        self.advance_turn()
+        
+        ret = self._make_response()
+        self.word, self.events = "", []
+        return ret
 

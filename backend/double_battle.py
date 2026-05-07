@@ -112,7 +112,7 @@ class DoubleBattle(BaseBattle):
         return self.is_finished
 
 
-    def try_attack(self, player_id: str, word: str, target_char_id: str = None):
+    def try_attack(self, player_id: str, word: str, target_id: str = None):
         if self.is_finished: return self._make_response()
         
         # 基本バリデーションをBaseBattleに委譲
@@ -122,9 +122,9 @@ class DoubleBattle(BaseBattle):
         current_actor = self.get_current_actor()
         enemies = self.get_enemies(current_actor)
         target_actor = None
-        if target_char_id:
+        if target_id:
             for e in enemies:
-                if e.id == target_char_id and not e.is_defeated:
+                if e.id == target_id and not e.is_defeated:
                     target_actor = e
                     break
         if not target_actor:
@@ -194,35 +194,12 @@ class DoubleBattle(BaseBattle):
         self.events = []
         return ret
 
-    def execute_cpu_turn(self):
-        actor = self.get_current_actor()
-        cpu_word = self.get_cpu_word()
-        if cpu_word:
-            valid_targets = [p.id for p in self.team1 if not p.is_defeated]
-            if not valid_targets:
-                self.winner_team = 1
-                return self._make_response()
-            return self.try_attack(actor.owner_id, cpu_word, target_char_id=random.choice(valid_targets))
-        else:
-            actor.hp = 0
-            self.events.append({
-                "type": "knockout", 
-                "message": f"{actor.name}は ことばを思いつかなかった！", 
-                "target": actor.id,
-                "hp": 0
-            })
-            self._check_win_condition()
-            # CPU失敗時もターン進行
-            self.advance_turn()
-            ret = self._make_response()
-            self.events = []
-            return ret
-
-    def get_cpu_word(self):
-        candidates = self.sb_info.get_typed_word_candidates(self.character)
-        for word in candidates:
-            if not self._is_used(word): return word
-        return ""
+    def _select_cpu_target(self, actor: Player) -> str | None:
+        """CPUの攻撃対象IDを返す (敵チームからランダム)"""
+        enemies = self.get_enemies(actor)
+        alive_enemies = [e for e in enemies if not e.is_defeated]
+        if not alive_enemies: return None
+        return random.choice(alive_enemies).id
 
     def _is_used(self, word: str) -> bool:
         return word in self.used
@@ -253,13 +230,6 @@ class DoubleBattle(BaseBattle):
         res = self._create_base_response(self.players)
         self.events = [] # 送信後にイベントをクリア
         return res
-
-    def _get_cpu_target_id(self, actor: Player) -> str | None:
-        """CPUの攻撃対象IDを返す (敵チームからランダム)"""
-        enemies = self.get_enemies(actor)
-        alive_enemies = [e for e in enemies if not e.is_defeated]
-        if not alive_enemies: return None
-        return random.choice(alive_enemies).id
 
     def _handle_cpu_failure(self, actor: Player) -> dict:
         """CPUが単語を思いつかなかった時の処理"""
