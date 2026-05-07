@@ -1,0 +1,302 @@
+.battleContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  position: relative;
+  background: #fce5cd;
+  overflow: hidden;
+  font-family: "M PLUS 1p", sans-serif;
+}
+
+.topImage {
+  flex: 1;
+  position: relative;
+  width: 100%;
+  z-index: 1;
+  overflow: hidden;
+  background: #fff;
+}
+
+.bgImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* キャラクターコンテナ (ダブル用) */
+.doubleCharContainer {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+}
+
+.bottomLeft {
+  bottom: -3.3cqw; /* -15px / 450px */
+  left: 20%;
+  transform: translateX(-50%);
+  width: 44.4cqw; /* 200px / 450px */
+  height: 26.6cqw; /* 120px / 450px */
+  z-index: 10;
+}
+
+.topRight {
+  top: 40%;
+  right: 5%;
+  width: 33.3cqw; /* 150px / 450px */
+  height: 22.2cqw; /* 100px / 450px */
+  z-index: 5;
+}
+
+.charWrapper {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  pointer-events: auto;
+  transition: all 0.3s ease;
+}
+
+.charWrapper.targeted {
+  filter: drop-shadow(0 0 8px #ffeb3b);
+  transform: scale(1.1) translateY(-5px);
+}
+
+/* 自分の配置 */
+.p1aWrapper {
+  bottom: 0;
+  left: -4.4cqw; /* -20px */
+  z-index: 12;
+  transform: scale(1.1);
+}
+
+.p1bWrapper {
+  bottom: 4.4cqw; /* 20px */
+  right: -4.4cqw; /* -20px */
+  z-index: 11;
+  transform: scale(0.95);
+  opacity: 0.9;
+}
+
+/* 敵の配置 */
+.p2aWrapper {
+  bottom: -2.2cqw; /* -10px */
+  left: -6.6cqw; /* -30px */
+  z-index: 7;
+  transform: scale(1.05);
+}
+
+.p2bWrapper {
+  bottom: 3.3cqw; /* 15px */
+  right: -6.6cqw; /* -30px */
+  z-index: 6;
+  transform: scale(0.9);
+  opacity: 0.95;
+}
+
+/* 地面の楕円 (ダブル用) */
+.doubleEllipse {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.ellipseAlly {
+  width: 120%;
+  height: 60%;
+  bottom: 0;
+  left: -10%;
+}
+
+.ellipseEnemy {
+  width: 120%;
+  height: 60%;
+  bottom: 0;
+  left: -10%;
+}
+
+/* チームステータスバルーン (ダブル用) */
+.doubleBalloon {
+  width: auto;
+  min-width: 44.4cqw; /* 200px */
+  padding: 2.2cqw 3.3cqw !important;
+  max-width: 60cqw;
+}
+
+.teamInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1cqw;
+}
+
+.memberInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4cqw;
+}
+
+.memberName {
+  font-size: 3.1cqw; /* ~14px */
+  font-weight: 800;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.doubleHpBox {
+  height: 1.8cqw !important;
+  margin: 0 !important;
+}
+
+.doubleHpText {
+  font-size: 2.6cqw !important;
+  margin-top: -0.4cqw !important;
+  text-align: right;
+}
+
+.content {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 2.2cqw;
+  background: transparent;
+  position: relative;
+  z-index: 10;
+  width: 100%;
+}
+
+.actionArea {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  position: relative;
+}
+
+/* ターゲット選択UI */
+.targetSelectionUi {
+  height: 10.2cqw; /* 46px */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1.3cqw;
+  gap: 2.6cqw;
+  padding: 1.3cqw 2.6cqw;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 2.6cqw;
+  width: 85%;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.targetLabel {
+  font-size: 3.5cqw;
+  font-weight: bold;
+  color: #444;
+}
+
+.targetBtn {
+  padding: 1.1cqw 2.2cqw;
+  border-radius: 1.1cqw;
+  border: 1.5px solid #ccc;
+  background: white;
+  font-size: 3.1cqw;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.targetBtn.selected {
+  background: #ff5722;
+  color: white;
+  border-color: #e64a19;
+  box-shadow: 0 2px 8px rgba(255, 87, 34, 0.3);
+}
+
+.targetBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #eee;
+}
+
+/* その他共通スタイルは BattleArena.module.css から流用または再定義 */
+.timerContainer {
+  width: 100%;
+  height: 2.2cqw;
+  background-color: #e0e0e0;
+  border-radius: 1.1cqw;
+  overflow: hidden;
+}
+
+.timerBar {
+  height: 100%;
+  background-color: #00FF00;
+  transition: width 0.1s linear, background-color 0.3s ease;
+}
+
+.messageOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 21cqw;
+  background-color: #333333;
+  color: white;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 3cqw 4.4cqw;
+  font-size: 4.3cqw;
+  z-index: 40;
+  box-sizing: border-box;
+  pointer-events: none;
+  line-height: 1.4;
+}
+
+.actionsWrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 3.3cqw;
+  width: 100%;
+  margin-top: 4.4cqw;
+  padding: 0 2.2cqw;
+  box-sizing: border-box;
+}
+
+.actionBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 45%;
+  height: 22.2cqw;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 16px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.actionBtnText {
+  font-size: 4.6cqw;
+  font-weight: 800;
+  color: #333;
+}
+
+.footerArea {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: auto;
+  padding-bottom: 4.4cqw;
+}

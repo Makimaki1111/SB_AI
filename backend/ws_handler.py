@@ -212,9 +212,6 @@ class WebSocketHandler:
         ability = info.get("ability")
         ability_2 = info.get("ability_2")
         self.room_manager.update_user_info(player_id, name, ability, ability_2)
-
-        if await self._try_reconnect(websocket, player_id):
-            return
             
         p2_id = info.get("player2_id", "cpu_1")
         try:

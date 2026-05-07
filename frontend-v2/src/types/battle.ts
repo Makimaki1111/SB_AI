@@ -99,11 +99,15 @@ export type SocketMessageType =
   | "create_double_room"
   | "join_private_room"
   | "join_double_private_room"
+  | "join_double_room"
   | "submit_word"
   | "submit_word_double"
   | "change_ability"
+  | "change_ability_double"
   | "include_check"
+  | "include_check_double"
   | "run_away"
+  | "run_away_double"
   | "ping"
   | "update_user_info";
 
