@@ -188,7 +188,7 @@ class DoubleBattle(BaseBattle):
 
         current_actor.hp = 0
         self.events.append({
-            "type": "damage", 
+            "type": "knockout", 
             "message": f"時間切れ！{current_actor.name}は力尽きた…", 
             "target": self.get_player_label(current_actor), 
             "damage": 0, 
@@ -217,7 +217,12 @@ class DoubleBattle(BaseBattle):
             return self.try_attack(actor.owner_id, cpu_word, target_char_id=random.choice(valid_targets))
         else:
             actor.hp = 0
-            self.events.append({"message": f"{actor.name}は ことばを思いつかなかった！", "target": actor.id})
+            self.events.append({
+                "type": "knockout", 
+                "message": f"{actor.name}は ことばを思いつかなかった！", 
+                "target": actor.id,
+                "hp": 0
+            })
             self._check_win_condition()
             # CPU失敗時もターン進行
             self._advance_turn_index()

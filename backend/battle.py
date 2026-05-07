@@ -116,6 +116,13 @@ class SingleBattle(BaseBattle):
         return word in self.used
 
     def _handle_knockout(self, defeated_player: Player):
+        # まず倒れたメッセージを追加
+        self.events.append({
+            "type": "knockout", 
+            "message": f"{defeated_player.name}はたおれた！", 
+            "target": self.get_player_label(defeated_player)
+        })
+
         if defeated_player.id == self.player1.id:
             self.player1_lives -= 1
             lives_left = self.player1_lives
@@ -311,7 +318,7 @@ class SingleBattle(BaseBattle):
 
         current_actor.hp = 0
         self.events.append({
-            "type": "damage", 
+            "type": "knockout", 
             "message": f"時間切れ！{current_actor.name}は力尽きた…", 
             "target": self.get_player_label(current_actor), 
             "damage": 0, 

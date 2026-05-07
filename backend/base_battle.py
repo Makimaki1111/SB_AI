@@ -264,7 +264,13 @@ class BaseBattle:
         if not current_actor: return self._make_response()
 
         current_actor.hp = 0
-        self.events.append({"type": "damage", "message": f"時間切れ！{current_actor.name}は力尽きた…", "target": self.get_player_label(current_actor), "damage": 0, "hp": 0})
+        self.events.append({
+            "type": "knockout", 
+            "message": f"時間切れ！{current_actor.name}は力尽きた…", 
+            "target": self.get_player_label(current_actor), 
+            "damage": 0, 
+            "hp": 0
+        })
         
         team_idx = self.get_team_index(current_actor)
         if team_idx != -1:
@@ -354,7 +360,11 @@ class BaseBattle:
 
     def _handle_knockout(self, player: Player):
         """プレイヤーが倒れた時のデフォルト処理"""
-        self.events.append({"type": "message", "message": f"{player.name}はたおれた！", "target": self.get_player_label(player)})
+        self.events.append({
+            "type": "knockout", 
+            "message": f"{player.name}はたおれた！", 
+            "target": self.get_player_label(player)
+        })
 
     def _make_response(self) -> dict:
         raise NotImplementedError

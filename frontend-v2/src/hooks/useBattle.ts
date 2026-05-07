@@ -244,6 +244,11 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
           display.setMessageLog({ text: event.message || null, isOpen: true });
         }
 
+        // 倒れた演出の判定
+        if (event.type === 'knockout') {
+          if (targetId) display.setKnockoutStates(prev => ({ ...prev, [targetId]: true }));
+        }
+
         if (event.type === 'damage' || event.type === 'drain') {
           const msg = event.message || '';
           // 毒ダメージのときは点滅させない (本家仕様)
@@ -252,9 +257,6 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
             else if (targetSide === 'foe') display.setFoeEffect('blink');
           }
           
-          if (event.type === 'damage' && (msg.includes('はたおれた！') || msg.includes('力尽きた'))) {
-            if (targetId) display.setKnockoutStates(prev => ({ ...prev, [targetId]: true }));
-          }
           if (targetId && tempCharacters[targetId] && event.hp !== undefined && event.hp !== null) {
             tempCharacters[targetId].hp = event.hp;
             setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
