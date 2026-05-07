@@ -493,13 +493,41 @@ class BaseBattle:
         raise NotImplementedError
 
 
-    def _personalize_events(self, events: list, is_winner: bool):
+    def _personalize_events(self, events: list, player_id: str):
         """イベントリスト内のメッセージを閲覧プレイヤーの視点に合わせて調整する"""
+        is_winner = self.is_player_winner(player_id) if self.winner_team is not None else None
+        
         for event in events:
-            if not isinstance(event, dict):
+            if not isinstance(event, dict) or "message" not in event:
                 continue
+            
+            msg = event["message"]
+            
+            # 決着メッセージの処理
             if event.get("type") == "battle_result":
-                event["message"] = "あいてとの勝負に勝った！" if is_winner else "あいてとの勝負に負けた…"
+                if is_winner is True:
+                    event["message"] = "あいてとの勝負に勝った！"
+                elif is_winner is False:
+                    event["message"] = "あいてとの勝負に負けた…"
+                continue
+
+            # 通常メッセージの処理 (自分・相手の入れ替え)
+            target_id = event.get("target")
+            attacker_id = event.get("attacker")
+            
+            # 閲覧者が対象者の場合
+            if target_id == player_id or (hasattr(self, 'get_team_index') and self.get_team_index(target_id) == self.get_team_index(player_id) if target_id else False):
+                # 「相手にダメージ」→「ダメージを受けた！」など (簡易的な置換)
+                msg = msg.replace("相手に", "あなたは").replace("相手の", "あなたの")
+                msg = msg.replace("相手を", "あなたを").replace("相手は", "あなたは")
+                # 自分が対象の時の「回復した」などはそのまま「回復した」で通じる
+            
+            # 閲覧者が攻撃者の場合
+            elif attacker_id == player_id or (hasattr(self, 'get_team_index') and self.get_team_index(attacker_id) == self.get_team_index(player_id) if attacker_id else False):
+                # 攻撃者視点では「相手に〜」のままで概ね正しい
+                pass
+            
+            event["message"] = msg
 
     def get_personalized_response(self, base_response: dict, player_id: str) -> dict:
         """レスポンスを特定のプレイヤー視点に調整する (サブクラスで実装)"""

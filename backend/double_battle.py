@@ -167,27 +167,44 @@ class DoubleBattle(BaseBattle):
         current_actor = self.get_current_actor()
         state["is_my_turn"] = (current_actor.owner_id == request_player_id)
         
+        # チーム所属の判定
         is_t1 = any(p.owner_id == request_player_id for p in self.team1)
+        is_t2 = any(p.owner_id == request_player_id for p in self.team2)
+
+        # ライフ情報の視点を調整
+        if is_t1:
+            state["ally_max_lives"] = max(p.max_lives for p in self.team1)
+            state["foe_max_lives"] = max(p.max_lives for p in self.team2)
+        elif is_t2:
+            state["ally_max_lives"] = max(p.max_lives for p in self.team2)
+            state["foe_max_lives"] = max(p.max_lives for p in self.team1)
+        else:
+            # 観戦者の場合はデフォルト視点
+            state["ally_max_lives"] = max(p.max_lives for p in self.team1)
+            state["foe_max_lives"] = max(p.max_lives for p in self.team2)
+        
+        # イベントの個別化 (常に実行)
+        self._personalize_events(new_res.get("events", []), request_player_id)
+
         # 勝敗ラベルの付与
         if self.winner_team is not None:
-            ally_win = self.is_player_winner(request_player_id)
-            state["ally_win"] = ally_win
-            self._personalize_events(new_res.get("events", []), ally_win)
+            state["ally_win"] = self.is_player_winner(request_player_id)
         
-        # 敵の特性をマスク
+        # 特性のマスク
         for k, char_info in state["characters"].items():
             if char_info["owner_id"] != request_player_id:
                 char_info["owner_id"] = "opponent"
-                if (is_t1 and k in ["p2a", "p2b"]) or (not is_t1 and k in ["p1a", "p1b"]):
-                    char_info["ability"] = "secret"
-                    char_info["ability_change_count"] = ABILITY_CHANGE_COUNT_INIT
+                char_info["ability"] = "secret"
+                char_info["ability_change_count"] = ABILITY_CHANGE_COUNT_INIT
         
         # イベントのマスク
         masked_events = []
         for e in new_res["events"]:
             if e.get("type") == "ability_changed":
-                cid = e.get("target") # schemas.py では target を使う方針
-                if (is_t1 and cid in ["p2a", "p2b"]) or (not is_t1 and cid in ["p1a", "p1b"]): continue
+                cid = e.get("target")
+                # 自分が所有していないキャラクターの特性変更イベントは隠す
+                if cid in state["characters"] and state["characters"][cid]["owner_id"] == "opponent":
+                    continue
             masked_events.append(e)
         new_res["events"] = masked_events
         # フロントエンド演出用のマッピング情報
@@ -195,12 +212,12 @@ class DoubleBattle(BaseBattle):
         team2_ids = [p.id for p in self.team2]
         
         id_to_ui_map = {}
+        # 自分が所属するチームのキャラクターを ally_a/b に、相手チームを foe_a/b にマッピングする
         if is_t1:
-            id_to_ui_map = {"p1a": "p1a", "p1b": "p1b", "p2a": "p2a", "p2b": "p2b"}
+            id_to_ui_map = {"p1a": "ally_a", "p1b": "ally_b", "p2a": "foe_a", "p2b": "foe_b"}
             player_ids = team1_ids
         else:
-            # 自分がチーム2の場合、画面上の p1a/p1b 位置に p2a/p2b を表示させる
-            id_to_ui_map = {"p2a": "p1a", "p2b": "p1b", "p1a": "p2a", "p1b": "p2b"}
+            id_to_ui_map = {"p2a": "ally_a", "p2b": "ally_b", "p1a": "foe_a", "p1b": "foe_b"}
             player_ids = team2_ids
 
         new_res["info"] = {

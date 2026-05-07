@@ -125,16 +125,28 @@ class SingleBattle(BaseBattle):
             state["ally_max_lives"] = self.player2.max_lives
             state["foe_max_lives"] = self.player1.max_lives
         
+        # イベントの個別化 (常に実行)
+        self._personalize_events(new_res.get("events", []), pid_str)
+
         if self.winner_team is not None:
-            ally_win = self.is_player_winner(pid_str)
-            state["ally_win"] = ally_win
-            self._personalize_events(new_res.get("events", []), ally_win)
+            state["ally_win"] = self.is_player_winner(pid_str)
         
         # 敵の特性をマスク
-        foe_id = self.player2.id if is_p1 else self.player1.id
-        if foe_id in state["characters"] and (is_p1 or is_p2):
-            state["characters"][foe_id]["ability"] = "secret"
-            state["characters"][foe_id]["ability_change_count"] = ABILITY_CHANGE_COUNT_INIT
+        for k, char_info in state["characters"].items():
+            if char_info["owner_id"] != pid_str:
+                char_info["owner_id"] = "opponent"
+                char_info["ability"] = "secret"
+                char_info["ability_change_count"] = ABILITY_CHANGE_COUNT_INIT
+
+        # イベントのマスク
+        masked_events = []
+        for e in new_res["events"]:
+            if e.get("type") == "ability_changed":
+                cid = e.get("target")
+                if cid in state["characters"] and state["characters"][cid]["owner_id"] == "opponent":
+                    continue
+            masked_events.append(e)
+        new_res["events"] = masked_events
 
         # フロントエンド演出用のマッピング情報
         id_to_ui_map = {}
