@@ -78,9 +78,6 @@ class SingleBattle(BaseBattle):
     def is_cpu_turn(self) -> bool:
         return self.is_cpu and not self.player1_turn
 
-    @property
-    def is_finished(self) -> bool:
-        return self.winner_team is not None
 
     def get_team_index(self, player) -> int:
         return 0 if player.id == self.player1.id else 1
@@ -192,57 +189,18 @@ class SingleBattle(BaseBattle):
         return ret
 
     def _make_response(self) -> dict:
-        print("DEBUG: Starting _make_response")
         # 決着時のメッセージをイベントの最後に追加 (本家再現)
         if self.winner_team is not None:
             self.finish_battle(self.winner_team)
-        try:
-            chars = {
-                self.player1.id: CharacterState(
-                    name=self.player1.name, hp=self.player1.hp, max_hp=MAX_HP,
-                    attack_rank=self.player1.attack_rank, defense_rank=self.player1.defense_rank,
-                    attack_power=self.sb_info.rank_to_power(self.player1.attack_rank),
-                    defense_power=self.sb_info.rank_to_power(self.player1.defense_rank),
-                    types=self.player1.types, is_poison=self.player1.poison_turns > 0,
-                    ability=self.player1.ability, ability_change_count=self.player1.ability_change_count,
-                    lives=self.player1_lives, owner_id=self.player1.id
-                ),
-                self.player2.id: CharacterState(
-                    name=self.player2.name, hp=self.player2.hp, max_hp=MAX_HP,
-                    attack_rank=self.player2.attack_rank, defense_rank=self.player2.defense_rank,
-                    attack_power=self.sb_info.rank_to_power(self.player2.attack_rank),
-                    defense_power=self.sb_info.rank_to_power(self.player2.defense_rank),
-                    types=self.player2.types, is_poison=self.player2.poison_turns > 0,
-                    ability=self.player2.ability, ability_change_count=self.player2.ability_change_count,
-                    lives=self.player2_lives, owner_id=self.player2.id
-                )
-            }
-            state = BattleState(
-                room_id=self.room_id,
-                character=self.character,
-                is_my_turn=False,
-                turn=self.turn,
-                last_actor_id=self.last_actor_id,
-                word=self.word,
-                characters=chars,
-                winner_team=self.winner_team,
-                status="finished" if self.is_finished else "active",
-                ally_win=None,
-                is_cpu=self.is_cpu_battle,
-                ally_max_lives=self.p1_max_lives,
-                foe_max_lives=self.p2_max_lives,
-                current_actor_id=self.player1.id if self.player1_turn else self.player2.id,
-                current_owner_id=self.player1.id if self.player1_turn else self.player2.id
-            )
-            
-            events = [BattleEvent(**e) for e in self.events if isinstance(e, dict)]
-            self.events = [] # 送信後にイベントをクリア
-            
-            res = BattleResponse(state=state, events=events).model_dump(by_alias=True)
-            res["type"] = "battle_end" if self.is_finished else "update"
-            return res
-        except Exception as e:
-            raise e
+
+        # 共通メソッドを呼び出し (SingleBattle特有のフィールドを渡す)
+        res = self._create_base_response(
+            [self.player1, self.player2],
+            ally_max_lives=self.p1_max_lives,
+            foe_max_lives=self.p2_max_lives
+        )
+        self.events = [] # 送信後にイベントをクリア
+        return res
 
     def get_personalized_response(self, base_res: dict, player_id: str, time_limit: int = None) -> dict:
         import copy

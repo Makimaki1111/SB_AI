@@ -57,9 +57,9 @@ class DoubleBattle(BaseBattle):
         
         self.events = [{"type": "message", "message": "マッチングした！"}]
 
-    @property
-    def is_finished(self) -> bool:
-        return self.winner_team is not None
+
+    def get_current_actor(self) -> Player:
+        return self.turn_order[self.current_turn_index]
 
     @property
     def is_cpu_turn(self) -> bool:
@@ -261,51 +261,29 @@ class DoubleBattle(BaseBattle):
         if self.winner_team is not None:
             self.finish_battle(self.winner_team)
 
-        chars = {}
-        for p in self.players:
-            chars[p.id] = CharacterState(
-                name=p.name, hp=p.hp, max_hp=MAX_HP,
-                attack_rank=p.attack_rank, defense_rank=p.defense_rank,
-                attack_power=self.sb_info.rank_to_power(p.attack_rank),
-                defense_power=self.sb_info.rank_to_power(p.defense_rank),
-                types=p.types, is_poison=p.poison_turns > 0,
-                ability=p.ability, ability_change_count=p.ability_change_count,
-                lives=None, owner_id=p.owner_id
-            )
-        
-        current_actor = self.get_current_actor()
-        state = BattleState(
-            room_id=self.room_id,
-            character=self.character,
-            is_my_turn=False, # ここでは仮定。get_personalized_response で上書き
-            turn=self.turn,
-            last_actor_id=self.last_actor_id,
-            word=self.word,
-            characters=chars,
-            winner_team=self.winner_team,
-            status="finished" if self.is_finished else "active",
-            ally_win=None, # get_personalized_response で設定
-            is_cpu=self.is_cpu_battle,
-            current_actor_id=current_actor.id,
-            current_owner_id=current_actor.owner_id
-        )
-        
-        events = [BattleEvent(**e) for e in self.events if isinstance(e, dict)]
+        # 共通メソッドを呼び出し (DoubleBattle特有のフィールドは現状なし)
+        res = self._create_base_response(self.players)
         self.events = [] # 送信後にイベントをクリア
-        
-        res = BattleResponse(state=state, events=events).model_dump(by_alias=True)
-        res["type"] = "battle_end" if self.is_finished else "update"
         return res
 
-    def _serialize_player(self, p: DoubleBattlePlayer):
-        # CharacterState を使用するため不要になるが、互換性のために残すか削除を検討
-        pass
-        return {
-            "id": p.id, "name": p.name, "hp": p.hp, "maxHp": MAX_HP,
-            "attack_rank": p.attack_rank, "defense_rank": p.defense_rank,
-            "types": p.types, "ability": p.ability, "ability_change_count": p.ability_change_count,
-            "is_defeated": p.is_defeated, "is_poison": p.poison_turns > 0, "owner_id": p.owner_id
-        }
+    def _get_cpu_target_id(self, actor: Player) -> str | None:
+        """CPUの攻撃対象IDを返す (敵チームからランダム)"""
+        enemies = self.get_enemies(actor)
+        alive_enemies = [e for e in enemies if not e.is_defeated]
+        if not alive_enemies: return None
+        return random.choice(alive_enemies).id
+
+    def _handle_cpu_failure(self, actor: Player) -> dict:
+        """CPUが単語を思いつかなかった時の処理"""
+        self.events.append({
+            "type": "message",
+            "message": f"{actor.name}は単語が思いつかない！"
+        })
+        actor.hp = 0
+        self._handle_knockout(actor)
+        self.last_actor_id = actor.id
+        self._advance_turn_index()
+        return self._make_response()
 
     def get_personalized_response(self, base_res: dict, request_player_id: str, time_limit: int = None) -> dict:
         import copy

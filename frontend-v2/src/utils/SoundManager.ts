@@ -46,7 +46,9 @@ class SoundManager {
         'end': '/resource/end.mp3',
         'stat_down': '/resource/down.mp3',
         'drain': '/resource/seed_damage.mp3',
-        'stat_up': '/resource/up.mp3'
+        'stat_up': '/resource/up.mp3',
+        'knockout': '/resource/end.mp3',
+        'revive': '/resource/up.mp3'
     };
 
     private typeSoundMap: Record<string, string> = {

@@ -341,7 +341,7 @@ class BaseBattle:
 
     @property
     def is_finished(self) -> bool:
-        raise NotImplementedError
+        return self.winner_team is not None
 
     def get_current_actor(self) -> Player:
         raise NotImplementedError
@@ -492,3 +492,61 @@ class BaseBattle:
             "icon_type": "ノーマル"
         }
         return serializable_abilities
+
+    def _create_base_response(self, players: list[Player], **kwargs) -> dict:
+        """
+        共通のレスポンス生成ロジック。
+        Player オブジェクトのリストから、スキーマに沿った辞書形式のレスポンスを作成する。
+        """
+        chars = {}
+        for p in players:
+            chars[p.id] = CharacterState(
+                name=p.name,
+                hp=p.hp,
+                max_hp=MAX_HP,
+                attack_rank=p.attack_rank,
+                defense_rank=p.defense_rank,
+                attack_power=self.sb_info.rank_to_power(p.attack_rank),
+                defense_power=self.sb_info.rank_to_power(p.defense_rank),
+                types=p.types,
+                is_poison=p.poison_turns > 0,
+                ability=p.ability,
+                ability_change_count=p.ability_change_count,
+                lives=getattr(p, 'lives', None),
+                owner_id=p.owner_id
+            )
+        
+        current_actor = self.get_current_actor()
+        
+        # 共通のベース状態
+        state_data = {
+            "room_id": self.room_id,
+            "character": self.character,
+            "is_my_turn": False, # personalization層で設定
+            "turn": self.turn,
+            "last_actor_id": self.last_actor_id,
+            "word": self.word,
+            "characters": chars,
+            "winner_team": self.winner_team,
+            "status": "finished" if self.is_finished else "active",
+            "ally_win": None, # personalization層で設定
+            "is_cpu": self.is_cpu_battle,
+            "current_actor_id": current_actor.id if current_actor else None,
+            "current_owner_id": current_actor.owner_id if current_actor else None
+        }
+        # 追加のフィールドがあれば上書き・追加
+        state_data.update(kwargs)
+        
+        state = BattleState(**state_data)
+        
+        # イベントのバリデーションと変換
+        validated_events = []
+        for e in self.events:
+            if isinstance(e, dict):
+                validated_events.append(BattleEvent(**e))
+            else:
+                validated_events.append(e)
+        
+        res = BattleResponse(state=state, events=validated_events).model_dump(by_alias=True)
+        res["type"] = "battle_end" if self.is_finished else "update"
+        return res
