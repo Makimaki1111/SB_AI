@@ -14,7 +14,8 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
     battleState, setBattleState, battleStateRef, 
     allAbilities, setAllAbilities, 
     uiMapping, updateUiMapping, uiMappingRef,
-    getAlly, getFoe, getAllyId, getFoeId 
+    getAlly, getFoe, getAllyId, getFoeId,
+    reset: resetState
   } = useBattleState();
 
   const display = useBattleDisplay();
@@ -24,15 +25,21 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
   const messageQueue = useRef<BattleResponse[]>([]);
   const isHandlingQueue = useRef(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const currentRoomIdRef = useRef<string | null>(null);
 
   const startMatching = () => {
+    currentRoomIdRef.current = null;
+    messageQueue.current = [];
     display.resetDisplay();
     display.setMessageLog({ text: 'マッチング待機中...', isOpen: true });
   };
 
   const resetBattle = () => {
-    setBattleState(null);
-    battleStateRef.current = null;
+    currentRoomIdRef.current = null;
+    resetState();
+    messageQueue.current = [];
+    isHandlingQueue.current = false;
+    setIsProcessing(false);
     display.resetDisplay();
   };
 
@@ -88,6 +95,16 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
     }
     
     if (['accepted', 'made_room', 'update', 'battle_end', 'timeout'].includes(data.type)) {
+      if (data.type === 'accepted' || data.type === 'made_room') {
+        currentRoomIdRef.current = data.state.room_id;
+      } else {
+        // 現在のルームIDと異なるメッセージは無視する
+        if (!currentRoomIdRef.current || data.state?.room_id !== currentRoomIdRef.current) {
+          console.warn(`Ignoring message for old room: ${data.state?.room_id} (current: ${currentRoomIdRef.current})`);
+          return;
+        }
+      }
+
       if (data.type === 'update' && data.events?.some(e => e.type === 'ability_changed')) {
         handleBattleUpdate(data, true);
         if (data.events.length === 1) return;

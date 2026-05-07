@@ -55,10 +55,20 @@ export const useBattleState = () => {
     return Object.keys(mapping).find(id => mapping[id]?.startsWith('foe')) || null;
   };
 
+  const reset = () => {
+    setBattleState(null);
+    battleStateRef.current = null;
+    setUiMapping({});
+    uiMappingRef.current = {};
+    // allAbilitiesはリロードの手間を省くため保持しても良いが、
+    // 完全に初期化したい場合はここでもクリアする
+  };
+
   return {
     battleState, setBattleState: updateBattleStateAndRef, battleStateRef,
     allAbilities, setAllAbilities,
     uiMapping, updateUiMapping, uiMappingRef,
-    getAlly, getFoe, getAllyId, getFoeId
+    getAlly, getFoe, getAllyId, getFoeId,
+    reset
   };
 };
