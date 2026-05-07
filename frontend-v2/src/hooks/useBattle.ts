@@ -364,10 +364,9 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
 
       // 8. Turn Transition UI
       if (final.status !== 'finished') {
-        const turnMsg = final.is_my_turn ? 'あなたのターンです。' : '相手のターンです。';
-        display.setWaitMessage(turnMsg);
-        // ここでの resetTimer(20, 20) は削除（演出中もサーバーのタイマーは進んでいるため）
-        display.setMessageLog({ text: turnMsg, isOpen: true });
+        display.setWaitMessage(final.is_my_turn ? 'あなたのターンです。' : '相手のターンです。');
+        if (!final.is_my_turn) display.setMessageLog({ text: '', isOpen: true });
+        else display.setMessageLog({ text: null, isOpen: false });
       } else {
         display.setWaitMessage(null);
       }

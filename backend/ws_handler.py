@@ -26,18 +26,6 @@ class WebSocketHandler:
         """例外を捕捉して安全にメッセージを送信する"""
         await self.connection_manager.safe_send_text(websocket, json.dumps(data))
 
-    async def _try_reconnect(self, websocket, player_id: str) -> bool:
-        """切断猶予期間中のルームがあれば再接続を試みる"""
-        for rid, room in self.room_manager.rooms.items():
-            if player_id in [p.id for p in getattr(room, 'players', [])] and not room.is_finished:
-                self.room_manager.cancel_grace_period(rid, player_id)
-                self.connection_manager.join_room(websocket, rid)
-                await self._safe_send(websocket, room.make_init_response(player_id))
-                
-                is_double = isinstance(room, DoubleBattle)
-                await self.connection_manager.broadcast_battle_state(rid, room._make_response(), is_double=is_double, room_manager=self.room_manager)
-                return True
-        return False
 
     async def handle_message(self, websocket, data: str):
         try:
@@ -94,9 +82,7 @@ class WebSocketHandler:
             return
             
         self.connection_manager.register_player(websocket, player_id)
-        if await self._try_reconnect(websocket, player_id):
-            return
-            
+        
         try:
             max_lives = max(1, min(10, int(info.get("max_lives", STOCK_LIVES))))
         except (TypeError, ValueError):

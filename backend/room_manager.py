@@ -35,8 +35,7 @@ class RoomManager:
         # タイマー管理 (room_id -> Timer Task)
         self.room_timers: Dict[str, asyncio.Task] = {}
         
-        # 切断猶予期間およびクリーンアップタイマー
-        self.grace_period_timers: Dict[tuple, asyncio.Task] = {}
+        # クリーンアップタイマー
         self.cleanup_timers: Dict[str, asyncio.Task] = {}
         
         # 最大ルーム数
@@ -77,38 +76,22 @@ class RoomManager:
                 
         self.cleanup_timers[room_id] = asyncio.create_task(_cleanup_task())
 
-    def start_grace_period(self, room_id: str, player_id: str, delay: int = 20):
-        """切断時に猶予期間（Grace Period）を開始する"""
-        key = (room_id, player_id)
-        if key in self.grace_period_timers:
-            self.grace_period_timers[key].cancel()
-            
-        async def _grace_period_task():
-            try:
-                await asyncio.sleep(delay)
-                room = self.get_room(room_id)
-                if room:
-                    res = room.handle_disconnection(player_id)
-                    if res:
-                        is_double = room.is_double
-                        await self.connection_manager.broadcast_battle_state(room_id, res, is_double=is_double, room_manager=self)
-                    
-                    if room.is_finished:
-                        self.schedule_room_cleanup(room_id)
-            except asyncio.CancelledError:
-                pass
-            finally:
-                if key in self.grace_period_timers:
-                    del self.grace_period_timers[key]
-                    
-        self.grace_period_timers[key] = asyncio.create_task(_grace_period_task())
+    async def handle_disconnection(self, room_id: str, player_id: str):
+        """猶予なしで即座に切断処理（敗北確定）を行う"""
+        room = self.get_room(room_id)
+        if not room or room.is_finished:
+            return
 
-    def cancel_grace_period(self, room_id: str, player_id: str):
-        """再接続時に猶予期間タイマーを解除する"""
-        key = (room_id, player_id)
-        if key in self.grace_period_timers:
-            self.grace_period_timers[key].cancel()
-            del self.grace_period_timers[key]
+        res = room.handle_disconnection(player_id)
+        if res:
+            is_double = room.is_double
+            await self.connection_manager.broadcast_battle_state(
+                room_id, res, is_double=is_double, room_manager=self, time_limit=room.time_limit
+            )
+        
+        if room.is_finished:
+            self.cancel_timer(room_id)
+            self.schedule_room_cleanup(room_id)
 
     def get_player_name(self, player_id: str) -> str:
         """プレイヤー名を取得（プロフィールがない場合はデフォルト名）"""
