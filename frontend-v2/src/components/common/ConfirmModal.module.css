@@ -1,0 +1,18 @@
+.message {
+  padding: 20px 10px;
+  text-align: center;
+  font-size: 1.1rem;
+  line-height: 1.5;
+  color: #333;
+}
+
+.footerButtons {
+  display: flex;
+  gap: 15px;
+  width: 100%;
+  justify-content: center;
+}
+
+.btn {
+  min-width: 100px;
+}

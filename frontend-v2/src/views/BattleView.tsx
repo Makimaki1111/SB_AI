@@ -8,6 +8,8 @@ import SoundManager from '../utils/SoundManager';
 
 import { GameLayout } from '../components/layout/GameLayout';
 import { SituationModal } from '../components/battle/SituationModal';
+import { SettingsModal } from '../components/battle/SettingsModal';
+import { ConfirmModal } from '../components/common/ConfirmModal';
 import { StockSelectionModal } from '../components/battle/StockSelectionModal';
 import { GameButton } from '../components/common/GameButton';
 import { API_BASE_URL, WS_BASE_URL } from '../constants/game';
@@ -49,14 +51,17 @@ export const BattleView: React.FC = () => {
     sendMessage,
     sendIncludeCheck,
     clearPrediction,
-    startMatching
+    startMatching,
+    resetBattle
   } = useBattle(dynamicWsUrl, () => setIsLobby(true));
   
   const [isLobby, setIsLobby] = React.useState(true);
   const [isAbilityModalOpen, setIsAbilityModalOpen] = React.useState(false);
   const [targetAbilityIndex, setTargetAbilityIndex] = React.useState(0);
   const [isSituationModalOpen, setIsSituationModalOpen] = React.useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false);
   const [isStockModalOpen, setIsStockModalOpen] = React.useState(false);
+  const [isRunAwayConfirmOpen, setIsRunAwayConfirmOpen] = React.useState(false);
   const [pendingMatchMode, setPendingMatchMode] = React.useState<'cpu' | 'room' | null>(null);
   const lastRoomIdRef = React.useRef<string | null>(null);
   
@@ -88,6 +93,7 @@ export const BattleView: React.FC = () => {
       setIsAbilityModalOpen(false);
       setIsSituationModalOpen(false);
       setIsStockModalOpen(false);
+      setIsSettingsModalOpen(false);
       lastRoomIdRef.current = battleState.room_id;
     }
   }, [battleState, battleAbilities]);
@@ -223,16 +229,29 @@ export const BattleView: React.FC = () => {
 
     setIsAbilityModalOpen(false);
   };
+  
+  const handleOpenSettings = () => {
+    SoundManager.play('pera');
+    setIsSettingsModalOpen(true);
+  };
 
   const handleRunAway = () => {
     SoundManager.play('pera');
+    setIsRunAwayConfirmOpen(true);
+  };
+
+  const confirmRunAway = () => {
     if (battleState?.room_id) {
       sendMessage({
         type: 'run_away',
         info: { room_id: battleState.room_id, player_id: playerId }
       });
     }
-    window.location.reload();
+    // ロビーに戻る
+    SoundManager.playBGM('/resource/horizon.mp3');
+    resetBattle();
+    setIsLobby(true);
+    setIsRunAwayConfirmOpen(false);
   };
 
   const handleSubmitWord = (word: string) => {
@@ -297,7 +316,11 @@ export const BattleView: React.FC = () => {
                 <GameButton 
                   variant="orange"
                   className={styles.lobbyReturnBtn}
-                  onClick={() => window.location.reload()}
+                  onClick={() => {
+                    SoundManager.playBGM('/resource/horizon.mp3');
+                    resetBattle();
+                    setIsLobby(true);
+                  }}
                 >
                   ロビーへ戻る
                 </GameButton>
@@ -335,6 +358,13 @@ export const BattleView: React.FC = () => {
           canChange={canChangeAbility}
           abilityChangeCount={ally?.ability_change_count ?? 0}
           isLobby={isLobby}
+        />
+
+        <ConfirmModal 
+          isOpen={isRunAwayConfirmOpen}
+          onClose={() => setIsRunAwayConfirmOpen(false)}
+          onConfirm={confirmRunAway}
+          message="本当に逃げますか？"
         />
       </div>
     </GameLayout>

@@ -30,6 +30,12 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
     display.setMessageLog({ text: 'マッチング待機中...', isOpen: true });
   };
 
+  const resetBattle = () => {
+    setBattleState(null);
+    battleStateRef.current = null;
+    display.resetDisplay();
+  };
+
   // --- WebSocket Handler ---
   const onMessage = (data: BattleResponse) => {
     console.log(`Received message type: ${data.type}`);
@@ -191,52 +197,30 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
         const targetSide = event.target === allyId ? 'ally' : event.target === foeId ? 'foe' : null;
         const targetId = event.target;
 
-        // Message & Sound Logic (Legacy Parity)
-        const msg = event.message || '';
-        let soundKey: string | null = null;
-
-        // 1. Message-based priority
-        if (msg.includes('やどりぎ') || msg.includes('種を植え付け')) soundKey = 'seeded';
-        else if (msg.includes('毒のダメージ') || msg.includes('毒を受けた')) soundKey = 'poison';
-        else if (msg.includes('ばつぐん')) soundKey = 'effective';
-        else if (msg.includes('いまひとつ')) soundKey = 'noneffective';
-        else if (msg.includes('ふつうのダメージ')) soundKey = 'middmg';
-        else if (msg.includes('はたおれた！') || msg.includes('力尽きた')) {
-          soundKey = 'end';
-          if (targetId) display.setKnockoutStates(prev => ({ ...prev, [targetId]: true }));
+        // Logic by Event Type (Sound is now handled via playEventSound)
+        if (!isInitialBattle) {
+          soundManager.playEventSound(event.type, event.message || '');
         }
 
-        // 2. Type-based fallback
-        if (!soundKey) {
-          if (event.type === 'damage') soundKey = 'middmg';
-          else if (event.type === 'cure') soundKey = 'heal';
-          else if (event.type === 'drain') soundKey = 'seed_damage';
-          else if (event.type === 'stat_up') soundKey = 'up';
-          else if (event.type === 'stat_down') soundKey = 'down';
-          else if (event.type === 'revive') {
-            // Revive uses start in my previous attempt, but legacy doesn't have a sound for it.
-            // We'll keep it silent or use heal if appropriate, but following legacy: no sound.
-          }
-          else if (event.type === 'ability_changed') {
-            soundKey = 'concent';
-            display.setMessageLog({ text: null, isOpen: false });
-            display.showNotification('特性が変わった！');
-          }
+        if (event.type === 'ability_changed') {
+          display.setMessageLog({ text: null, isOpen: false });
+          display.showNotification('特性が変わった！');
         }
 
-        // Initial battle plays no event sounds/waits to match legacy speed
-        if (!isInitialBattle && soundKey) soundManager.play(soundKey);
-        
         if (event.type !== 'ability_changed') {
           display.setMessageLog({ text: event.message || null, isOpen: true });
         }
 
-        // Logic by Event Type
         if (event.type === 'damage' || event.type === 'drain') {
+          const msg = event.message || '';
           // 毒ダメージのときは点滅させない (本家仕様)
           if (!msg.includes('毒のダメージ')) {
             if (targetSide === 'ally') display.setAllyEffect('blink');
             else if (targetSide === 'foe') display.setFoeEffect('blink');
+          }
+          
+          if (event.type === 'damage' && (msg.includes('はたおれた！') || msg.includes('力尽きた'))) {
+            if (targetId) display.setKnockoutStates(prev => ({ ...prev, [targetId]: true }));
           }
           if (targetId && tempCharacters[targetId] && event.hp !== undefined && event.hp !== null) {
             tempCharacters[targetId].hp = event.hp;
@@ -331,7 +315,10 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
   };
 
   useEffect(() => {
-    if (battleState?.status === 'finished') soundManager.play('end');
+    if (battleState?.status === 'finished') {
+      soundManager.stopBGM();
+      soundManager.play('end');
+    }
   }, [battleState?.status]);
 
   const sendIncludeCheck = (word: string) => {
@@ -360,6 +347,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
     allyId: getAllyId(uiMapping),
     foeId: getFoeId(uiMapping),
     ...display,
-    timer
+    timer,
+    resetBattle
   };
 };

@@ -99,3 +99,39 @@
     transform: translateY(0);
   }
 }
+
+.settingsBtnWrapper {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2500;
+}
+
+.settingsBtn {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(4px);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  color: #555;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.settingsBtn:hover {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.settingsBtn:active {
+  transform: scale(0.9);
+}
+
+.settingsIcon {
+  width: 22px;
+  height: 22px;
+}

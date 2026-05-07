@@ -40,6 +40,15 @@ class SoundManager {
         'concent': '/resource/concent.mp3'
     };
 
+    private eventSoundMap: Record<string, string> = {
+        'cure': '/resource/heal.mp3',
+        'start': '/resource/start.mp3',
+        'end': '/resource/end.mp3',
+        'stat_down': '/resource/down.mp3',
+        'drain': '/resource/seed_damage.mp3',
+        'stat_up': '/resource/up.mp3'
+    };
+
     private typeSoundMap: Record<string, string> = {
         "ノーマル": "/resource/normal.mp3",
         "動物": "/resource/animal.mp3",
@@ -68,8 +77,17 @@ class SoundManager {
         "物語": "/resource/tale.mp3"
     };
 
+    // Regex patterns from legacy audio_bridge.js
+    private patterns = {
+        seed: /やどりぎ|種を植え付け/,
+        poison: /毒のダメージ|毒を受けた/,
+        super: /ばつぐん/,
+        notVery: /いまひとつ/,
+        normal: /ふつうのダメージ/
+    };
+
     private constructor() {
-        // localStorageから設定を復元
+        // Restore from localStorage
         const savedBgm = localStorage.getItem('sb_bgm_volume');
         const savedSe = localStorage.getItem('sb_se_volume');
         if (savedBgm !== null) this.bgmVolume = parseFloat(savedBgm);
@@ -81,6 +99,48 @@ class SoundManager {
             SoundManager.instance = new SoundManager();
         }
         return SoundManager.instance;
+    }
+
+    /**
+     * Resolves sound key based on message text (Legacy parity)
+     */
+    private resolveMessageSound(message: string): string | null {
+        if (!message) return null;
+        if (this.patterns.seed.test(message)) return 'seeded';
+        if (this.patterns.poison.test(message)) return 'poison';
+        if (this.patterns.super.test(message)) return 'effective';
+        if (this.patterns.notVery.test(message)) return 'noneffective';
+        if (this.patterns.normal.test(message)) return 'middmg';
+        return null;
+    }
+
+    /**
+     * Plays event sound based on type and message (Legacy parity)
+     */
+    public playEventSound(type: string, message: string = ""): void {
+        // Message-based sound has priority
+        const messageSound = this.resolveMessageSound(message);
+        if (messageSound) {
+            this.play(messageSound);
+            return;
+        }
+
+        // Fallback to event type mapping
+        const eventSound = this.eventSoundMap[type];
+        if (eventSound) {
+            this.play(eventSound);
+        } else if (type === 'end' || type === 'battle_end' || message.includes('はたおれた！')) {
+            // Special cases for end sounds
+            this.play('end');
+        }
+    }
+
+    /**
+     * Plays type-based sound
+     */
+    public playTypeSound(typeName: string): void {
+        const sound = this.typeSoundMap[typeName] || this.typeSoundMap['ノーマル'];
+        this.play(sound);
     }
 
     public async unlock(): Promise<void> {
@@ -102,6 +162,7 @@ class SoundManager {
                 await this.audioCtx!.resume();
             }
             
+            // Dummy buffer to unlock
             const buffer = this.audioCtx!.createBuffer(1, 1, 22050);
             const source = this.audioCtx!.createBufferSource();
             source.buffer = buffer;
@@ -109,6 +170,7 @@ class SoundManager {
             source.start(0);
             
             this.isUnlocked = true;
+            console.log("AudioContext unlocked successfully.");
         } catch (e) {
             console.error("Failed to unlock AudioContext", e);
         }
@@ -126,17 +188,18 @@ class SoundManager {
             this.audioCache.set(path, audioBuffer);
             return audioBuffer;
         } catch (e) {
+            console.warn(`Failed to load audio: ${path}`, e);
             return null;
         }
     }
 
     /**
-     * キーまたはパスを指定してSEを再生します。
-     * 80msのクールダウンと pera.mp3 の 30% 音量抑制を自動で行います。
+     * Plays a sound by key or path
      */
     public async play(keyOrPath: string): Promise<void> {
         const path = this.soundMap[keyOrPath] || this.typeSoundMap[keyOrPath] || keyOrPath;
         
+        // Cooldown check
         const now = Date.now();
         const lastPlay = this.lastPlayTime.get(path) || 0;
         if (now - lastPlay < 80) return;
@@ -157,7 +220,7 @@ class SoundManager {
             const gainNode = this.audioCtx.createGain();
             let volumeScale = 1.0;
             if (path.includes('pera.mp3')) {
-                volumeScale = 0.3;
+                volumeScale = 0.3; // Match legacy volume reduction
             }
             gainNode.gain.value = volumeScale;
 
@@ -169,10 +232,9 @@ class SoundManager {
         }
     }
 
-    // 互換性用の別名メソッド
-    public playSE(path: string, volumeScale: number = 1.0): void { this.play(path); }
-    public playSE_legacy(key: string): void { this.play(key); }
-    public playType(type: string): void { this.play(type); }
+    // Aliases for compatibility
+    public playSE(path: string): void { this.play(path); }
+    public playType(type: string): void { this.playTypeSound(type); }
     public playBGM(path: string): void { this.startBGM(path); }
 
     public async startBGM(path: string): Promise<void> {
@@ -214,14 +276,14 @@ class SoundManager {
         const val = Math.max(0, Math.min(1, value));
         if (category === 'bgm') {
             this.bgmVolume = val;
-            if (this.bgmGain && this.audioCtx) {
-                this.bgmGain.gain.setTargetAtTime(val, this.audioCtx.currentTime, 0.1);
+            if (this.bgmGain) {
+                this.bgmGain.gain.value = val;
             }
             localStorage.setItem('sb_bgm_volume', val.toString());
         } else {
             this.seVolume = val;
-            if (this.seGain && this.audioCtx) {
-                this.seGain.gain.setTargetAtTime(val, this.audioCtx.currentTime, 0.1);
+            if (this.seGain) {
+                this.seGain.gain.value = val;
             }
             localStorage.setItem('sb_se_volume', val.toString());
         }
@@ -231,8 +293,19 @@ class SoundManager {
         return category === 'bgm' ? this.bgmVolume : this.seVolume;
     }
 
-    public preload(paths: string[]): void {
-        paths.forEach(p => this.loadAudio(p));
+    /**
+     * Preloads all common sounds (Legacy parity)
+     */
+    public preloadCommonSounds(): void {
+        const paths = [
+            ...Object.values(this.soundMap),
+            ...Object.values(this.eventSoundMap),
+            ...Object.values(this.typeSoundMap),
+            '/resource/horizon.mp3',
+            '/resource/overflow.mp3'
+        ];
+        const uniquePaths = [...new Set(paths)];
+        uniquePaths.forEach(p => this.loadAudio(p));
     }
 }
 

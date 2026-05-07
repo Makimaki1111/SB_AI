@@ -4,7 +4,7 @@ import { useUser } from '../context/UserContext';
 import styles from './TitleView.module.css';
 import { GameButton } from '../components/common/GameButton';
 import { GameLayout } from '../components/layout/GameLayout';
-import { GameModal } from '../components/common/GameModal';
+import { SettingsModal } from '../components/battle/SettingsModal';
 
 const CAROUSEL_IMAGES = [
   'animal.gif', 'art.gif', 'body.gif', 'bug.gif', 'cloth.gif', 
@@ -16,9 +16,8 @@ const CAROUSEL_IMAGES = [
 
 export const TitleView: React.FC = () => {
   const navigate = useNavigate();
-  const { username, setUsername } = useUser();
+  const { username } = useUser();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [tempName, setTempName] = useState(username);
 
   // カルーセルのアイテムをシャッフルした状態で生成 (無限ループのために2倍にする)
   const shuffledRows = useMemo(() => {
@@ -34,15 +33,6 @@ export const TitleView: React.FC = () => {
       return;
     }
     navigate(path);
-  };
-
-  const handleSaveSettings = () => {
-    const trimmed = tempName.trim().substring(0, 8);
-    if (trimmed) {
-      setUsername(trimmed);
-      localStorage.setItem("sb_username", trimmed);
-    }
-    setIsSettingsOpen(false);
   };
 
   const renderRow = (rowIndex: number, reverse = false) => (
@@ -90,37 +80,10 @@ export const TitleView: React.FC = () => {
         </div>
       </div>
 
-      <GameModal
+      <SettingsModal 
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-        title="設定"
-        footer={
-          <button className={styles.closeButton} onClick={handleSaveSettings}>
-            閉じる
-          </button>
-        }
-      >
-        <div className={styles.field}>
-          <label className={styles.label}>名前</label>
-          <input 
-            type="text" 
-            id="username-input"
-            className={styles.input}
-            value={tempName} 
-            onChange={(e) => setTempName(e.target.value)}
-            placeholder="名前を入力(8文字以内)"
-            maxLength={8}
-          />
-        </div>
-        <div className={styles.field}>
-          <label className={styles.label}>BGM音量</label>
-          <input type="range" className={styles.range} min="0" max="1" step="0.05" defaultValue="0.3" />
-        </div>
-        <div className={styles.field}>
-          <label className={styles.label}>SE音量</label>
-          <input type="range" className={styles.range} min="0" max="1" step="0.05" defaultValue="0.5" />
-        </div>
-      </GameModal>
+      />
     </GameLayout>
   );
 };
