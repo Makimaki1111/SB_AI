@@ -231,10 +231,11 @@ class BaseBattle:
         if any(e.get("type") == "battle_result" for e in self.events if isinstance(e, dict)):
             return
 
-        msg = "あいてとの勝負に勝った！" if winner_team == 0 else "あいてとの勝負に負けた…"
+        # 決着イベント (メッセージは _personalize_events で各プレイヤー視点に変換される)
+        # デフォルトは勝者のメッセージにしておく
         self.events.append({
             "type": "battle_result",
-            "message": msg,
+            "message": "あいてとの勝負に勝った！", 
             "winner_team": winner_team
         })
 
@@ -250,7 +251,7 @@ class BaseBattle:
                     p.hp = 0
                     self.events.append({"type": "message", "message": f"{p.name} は逃げ出した！", "target": self.get_player_label(p)})
                     if disconnected_team_idx == -1:
-                        disconnected_team_idx = self._get_team_index(p)
+                        disconnected_team_idx = self.get_team_index(p.id)
             
             if disconnected_team_idx != -1:
                 self.finish_battle(1 - disconnected_team_idx)
@@ -508,9 +509,14 @@ class BaseBattle:
             
             # 決着メッセージの処理
             if event.get("type") == "battle_result":
-                if is_winner is True:
+                # winner_team が設定されていない（＝まだ決着していない）場合はスキップ
+                if self.winner_team is None:
+                    continue
+                    
+                is_winner = self.is_player_winner(player_id)
+                if is_winner:
                     event["message"] = "あいてとの勝負に勝った！"
-                elif is_winner is False:
+                else:
                     event["message"] = "あいてとの勝負に負けた…"
                 continue
 
@@ -523,7 +529,6 @@ class BaseBattle:
                 # 「相手にダメージ」→「ダメージを受けた！」など (簡易的な置換)
                 msg = msg.replace("相手に", "あなたは").replace("相手の", "あなたの")
                 msg = msg.replace("相手を", "あなたを").replace("相手は", "あなたは")
-                # 自分が対象の時の「回復した」などはそのまま「回復した」で通じる
             
             # 閲覧者が攻撃者の場合
             elif attacker_id == player_id or (hasattr(self, 'get_team_index') and self.get_team_index(attacker_id) == self.get_team_index(player_id) if attacker_id else False):

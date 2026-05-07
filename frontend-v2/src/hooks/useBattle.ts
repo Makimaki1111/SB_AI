@@ -31,7 +31,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
     currentRoomIdRef.current = null;
     messageQueue.current = [];
     display.resetDisplay();
-    display.setMessageLog({ text: 'マッチング待機中...', isOpen: true });
+    display.setMessageLog({ text: '', isOpen: true });
   };
 
   const resetBattle = () => {
@@ -362,7 +362,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
       if (final.status !== 'finished') {
         display.setWaitMessage(final.is_my_turn ? 'あなたのターンです。' : '相手のターンです。');
         resetTimer(20, 20);
-        if (!final.is_my_turn) display.setMessageLog({ text: '相手のターンです。', isOpen: true });
+        if (!final.is_my_turn) display.setMessageLog({ text: '', isOpen: true });
         else display.setMessageLog({ text: null, isOpen: false });
       } else {
         display.setWaitMessage(null);

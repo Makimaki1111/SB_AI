@@ -127,7 +127,7 @@ class WebSocketHandler:
                 new_waiter = {"socket": websocket, "player_id": player_id}
                 if max_lives > 1: self.room_manager.waiting_player_stock = new_waiter
                 else: self.room_manager.waiting_player_standard = new_waiter
-                await self._safe_send(websocket, {"type": "waiting", "message": "マッチング中…"})
+                await self._safe_send(websocket, {"type": "waiting", "message": "マッチング中..."})
                 return
 
             if max_lives > 1: self.room_manager.waiting_player_stock = None
@@ -155,7 +155,7 @@ class WebSocketHandler:
             new_waiter = {"socket": websocket, "player_id": player_id}
             if max_lives > 1: self.room_manager.waiting_player_stock = new_waiter
             else: self.room_manager.waiting_player_standard = new_waiter
-            await self._safe_send(websocket, {"type": "waiting", "message": "マッチング中…"})
+            await self._safe_send(websocket, {"type": "waiting", "message": "マッチング中..."})
 
     async def _handle_find_match_double(self, websocket, player_id, info):
         if not player_id:
@@ -175,7 +175,7 @@ class WebSocketHandler:
             from starlette.websockets import WebSocketState
             if p1_data["socket"].client_state != WebSocketState.CONNECTED:
                 self.room_manager.waiting_player_double = {"socket": websocket, "player_id": player_id}
-                await self._safe_send(websocket, {"type": "waiting", "message": "マッチング中…"})
+                await self._safe_send(websocket, {"type": "waiting", "message": "マッチング中..."})
                 return
 
             self.room_manager.waiting_player_double = None
@@ -196,7 +196,7 @@ class WebSocketHandler:
             await self._after_turn_action(bi.room_id, bi)
         else:
             self.room_manager.waiting_player_double = {"socket": websocket, "player_id": player_id}
-            await self._safe_send(websocket, {"type": "waiting", "message": "マッチング中…"})
+            await self._safe_send(websocket, {"type": "waiting", "message": "マッチング中..."})
 
     async def _handle_create_private_room(self, websocket, player_id, info):
         self.room_manager.update_user_info(player_id, info.get("name", "じぶん"), info.get("ability"), info.get("ability_2"))

@@ -108,9 +108,6 @@ class DoubleBattle(BaseBattle):
             return 0 # チーム1の勝ち
         return None
 
-
-
-
     def _get_attack_target(self, attacker: Player, target_id: str = None) -> Player | None:
         """DoubleBattle用のターゲット特定ロジック"""
         enemies = self.get_enemies(attacker)
