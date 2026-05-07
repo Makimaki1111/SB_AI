@@ -58,8 +58,6 @@ class DoubleBattle(BaseBattle):
         self.events = [{"type": "message", "message": "マッチングした！"}]
 
 
-    def get_current_actor(self) -> Player:
-        return self.turn_order[self.current_turn_index]
 
     @property
     def is_cpu_turn(self) -> bool:
@@ -94,12 +92,6 @@ class DoubleBattle(BaseBattle):
             
         return char
 
-    def get_current_actor(self) -> DoubleBattlePlayer:
-        loops = 0
-        while self.turn_order[self.current_turn_index].is_defeated and loops < 4:
-            self._advance_turn_index()
-            loops += 1
-        return self.turn_order[self.current_turn_index]
 
     @property
     def is_double(self) -> bool:
@@ -109,10 +101,6 @@ class DoubleBattle(BaseBattle):
     def time_limit(self) -> int:
         return 30
 
-    def _advance_turn_index(self):
-        self.current_turn_index = (self.current_turn_index + 1) % 4
-        if self.current_turn_index == 0:
-            self.turn += 1
 
     def _check_win_condition(self):
         t1_dead = all(p.is_defeated for p in self.team1)
@@ -156,7 +144,7 @@ class DoubleBattle(BaseBattle):
         self._check_win_condition()
         self.record_used_word(word, current_actor.id)
         self.last_actor_id = current_actor.id
-        self._advance_turn_index()
+        self.advance_turn()
         
         ret = self._make_response()
         self.word, self.events = "", []
@@ -200,7 +188,7 @@ class DoubleBattle(BaseBattle):
             self.finish_battle(1 - team_idx)
             
         # ターンを進行
-        self._advance_turn_index()
+        self.advance_turn()
             
         ret = self._make_response()
         self.events = []
@@ -225,7 +213,7 @@ class DoubleBattle(BaseBattle):
             })
             self._check_win_condition()
             # CPU失敗時もターン進行
-            self._advance_turn_index()
+            self.advance_turn()
             ret = self._make_response()
             self.events = []
             return ret
@@ -282,7 +270,7 @@ class DoubleBattle(BaseBattle):
         actor.hp = 0
         self._handle_knockout(actor)
         self.last_actor_id = actor.id
-        self._advance_turn_index()
+        self.advance_turn()
         return self._make_response()
 
     def get_personalized_response(self, base_res: dict, request_player_id: str, time_limit: int = None) -> dict:

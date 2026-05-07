@@ -28,6 +28,8 @@ class BaseBattle:
         self.word = ""
         self.character = ""
         self.players = [] 
+        self.turn_order = []
+        self.current_turn_index = 0
         self.START_CHARACTERS = "あいうえおかきくけこさしすせそたちつてとなにねのはひふへほまみむめやゆよらりるれろわ"
         self.winner_team = None 
         self.last_actor_id = None
@@ -344,7 +346,39 @@ class BaseBattle:
         return self.winner_team is not None
 
     def get_current_actor(self) -> Player:
-        raise NotImplementedError
+        """
+        現在の行動者(Player)を返す。
+        倒れているプレイヤーは自動的にスキップして次の生存者を探す。
+        """
+        if not self.turn_order:
+            return None
+            
+        initial_index = self.current_turn_index
+        while True:
+            actor = self.turn_order[self.current_turn_index]
+            if not actor.is_defeated:
+                return actor
+            
+            # スキップして次へ
+            self.current_turn_index = (self.current_turn_index + 1) % len(self.turn_order)
+            if self.current_turn_index == 0:
+                self.turn += 1
+            
+            # 全員倒れているなどの無限ループ防止
+            if self.current_turn_index == initial_index:
+                return actor # 仕方ないのでそのまま返す
+    
+    def advance_turn(self):
+        """
+        ターンインデックスを次に進める。
+        インデックスが0に戻るタイミングで、バトル全体の turn 数をインクリメントする。
+        """
+        if not self.turn_order:
+            return
+            
+        self.current_turn_index = (self.current_turn_index + 1) % len(self.turn_order)
+        if self.current_turn_index == 0:
+            self.turn += 1
 
     def get_enemies(self, player: Player) -> list[Player]:
         """そのプレイヤーから見た敵全員を返す"""

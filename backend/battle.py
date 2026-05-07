@@ -38,7 +38,11 @@ class SingleBattle(BaseBattle):
         self.player1_lives = p1_max_lives
         self.player2_lives = p2_max_lives
         
-        self.player1_turn = (random.random() < 0.5)
+        # 行動順の設定
+        self.turn_order = [self.player1, self.player2]
+        if random.random() < 0.5:
+            self.turn_order = [self.player2, self.player1]
+        self.current_turn_index = 0
         self.is_cpu_battle = is_cpu
         self.abilities = get_default_abilities()
         self.init_character()
@@ -71,12 +75,11 @@ class SingleBattle(BaseBattle):
     def time_limit(self) -> int:
         return 20
 
-    def get_current_actor(self) -> Player:
-        return self.player1 if self.player1_turn else self.player2
 
     @property
     def is_cpu_turn(self) -> bool:
-        return self.is_cpu and not self.player1_turn
+        actor = self.get_current_actor()
+        return self.is_cpu and actor.id == self.player2.id
 
 
     def get_team_index(self, player) -> int:
@@ -160,7 +163,8 @@ class SingleBattle(BaseBattle):
         if err: return err
 
         current_player = self.get_current_actor()
-        target_player = self.player2 if self.player1_turn else self.player1
+        enemies = self.get_enemies(current_player)
+        target_player = enemies[0]
         
         word = self.katakana_to_hiragana(word)
         types = [t for t in self.sb_info.get_types(word) if t]
@@ -178,8 +182,7 @@ class SingleBattle(BaseBattle):
         self._check_win_condition()
         
         # ターンを交代
-        self.player1_turn = not self.player1_turn
-        self.turn += 1
+        self.advance_turn()
         self.last_actor_id = player_id
         
         ret = self._make_response()
@@ -288,8 +291,7 @@ class SingleBattle(BaseBattle):
             self.finish_battle(1 - team_idx)
         
         # ターンを交代
-        self.player1_turn = not self.player1_turn
-        self.turn += 1
+        self.advance_turn()
             
         ret = self._make_response()
         self.word = ""
@@ -302,7 +304,7 @@ class SingleBattle(BaseBattle):
         self.player2.hp = 0
         self.finish_battle(0)
         # CPU失敗時もターン交代(念のため)
-        self.player1_turn = not self.player1_turn
+        self.advance_turn()
         ret = self._make_response()
         self.word = ""
         self.events = []
