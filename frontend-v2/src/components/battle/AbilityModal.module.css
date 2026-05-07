@@ -15,7 +15,9 @@
 .modalBody {
   width: 95%;
   max-width: 450px;
-  height: 540px; /* 少し大きくして余裕を持たせる */
+  max-height: 90vh; /* 画面高さを超えないように */
+  height: auto;
+  min-height: 500px;
   background: rgba(255, 255, 255, 0.95);
   border-radius: 24px;
   padding: 20px 16px;
@@ -27,7 +29,8 @@
   color: #333;
   position: relative;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow-y: auto; /* 高さが足りない場合はスクロール可能に */
+  -webkit-overflow-scrolling: touch;
 }
 
 /* 本家再現のステータスセクション */

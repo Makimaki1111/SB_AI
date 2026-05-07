@@ -49,8 +49,6 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
     }
   }, [isOpen, allyAbilityId, currentAbilityId, abilitiesList, isLobby]);
 
-  if (!isOpen) return null;
-
   const N = abilitiesList.length;
   const spacing = 95;
 
@@ -59,29 +57,44 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
   };
 
   const handleDragEnd = (_: any, info: any) => {
-    const moveThreshold = 30;
+    const moveThreshold = 20;
     const velocityThreshold = 100;
     
-    if (Math.abs(info.offset.x) > moveThreshold || Math.abs(info.velocity.x) > velocityThreshold) {
-      const direction = info.offset.x > 0 ? -1 : 1;
-      let nextIndex = currentIndex + direction;
-      if (nextIndex < 0) nextIndex = N - 1;
-      if (nextIndex >= N) nextIndex = 0;
-      setCurrentIndex(nextIndex);
+    // ドラッグ距離に応じて移動するインデックス数を計算 (1つ以上飛ばせるように)
+    const dragDistance = info.offset.x;
+    const velocity = info.velocity.x;
+
+    if (Math.abs(dragDistance) > moveThreshold || Math.abs(velocity) > velocityThreshold) {
+      // 距離を spacing で割って何個分移動するか決める
+      const itemsToMove = Math.round(dragDistance / spacing);
+      
+      let nextIndex;
+      if (itemsToMove !== 0) {
+        nextIndex = currentIndex - itemsToMove;
+      } else {
+        // 距離が足りなくても速度があれば1つ動かす
+        const direction = velocity > 0 ? -1 : 1;
+        nextIndex = currentIndex + direction;
+      }
+
+      // 範囲内に収める (循環)
+      if (N > 0) {
+        nextIndex = ((nextIndex % N) + N) % N;
+        setCurrentIndex(nextIndex);
+      }
     }
     setDragX(0);
-    // インデックスが変わった場合は音を鳴らしてもよい
   };
 
   const handleItemClick = (index: number) => {
-    if (!canChange) return;
+    if (!canChange || N === 0) return;
     if (index !== currentIndex) SoundManager.play('pera');
     setCurrentIndex(index);
   };
 
   const handleConfirm = () => {
     SoundManager.play('pera');
-    if (canChange) {
+    if (canChange && N > 0) {
       onSelect(abilitiesList[currentIndex].id);
     }
     onClose();
@@ -92,13 +105,23 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
     onClose();
   };
 
-  const currentInfo = abilitiesList[currentIndex] || { name: '---', description: '' };
+  const currentInfo = useMemo(() => {
+    if (N === 0) return { id: '', name: '---', description: '', icon_type: 'normal' };
+    // ドラッグ中も含めた「現在一番前に来ている」インデックスを計算
+    const shift = Math.round(dragX / spacing);
+    let idx = currentIndex - shift;
+    const activeIdx = ((idx % N) + N) % N;
+    return abilitiesList[activeIdx] || { id: '', name: '---', description: '', icon_type: 'normal' };
+  }, [dragX, currentIndex, N, spacing, abilitiesList]);
+
   // ロビー時は選択中のIDを「現在の特性」として表示
   const displayAllyId = isLobby ? currentAbilityId : allyAbilityId;
   const allyAbilityInfo = allAbilities[displayAllyId] || { name: '---', description: '特性がありません' };
 
   // 同じ特性を選んでいるかどうか
-  const isSameAbility = abilitiesList[currentIndex]?.id === displayAllyId;
+  const isSameAbility = currentInfo.id === displayAllyId;
+
+  if (!isOpen) return null;
 
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -133,10 +156,8 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
         <div className={styles.carouselContainer} ref={containerRef}>
           <motion.div 
             className={styles.carouselTrack}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            onDrag={handleDrag}
-            onDragEnd={handleDragEnd}
+            onPan={handleDrag}
+            onPanEnd={handleDragEnd}
           >
             {abilitiesList.map((ab, i) => {
               let diff = i - currentIndex;
@@ -145,7 +166,7 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
               const absDiff = Math.abs(offsetIndex);
               
               const x = offsetIndex * spacing;
-              const y = absDiff * absDiff * 5; // カーブを深くして重なりを避ける
+              const y = absDiff * absDiff * 2.5; // 5から2.5に減らして高さを安定させる
               const scale = Math.max(0.5, 1 - absDiff * 0.22);
               const opacity = Math.max(0, 1 - absDiff * 0.25);
               const zIndex = Math.round(100 - absDiff * 10);

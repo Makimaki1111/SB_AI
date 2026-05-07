@@ -8,7 +8,6 @@ import SoundManager from '../utils/SoundManager';
 
 import { GameLayout } from '../components/layout/GameLayout';
 import { SituationModal } from '../components/battle/SituationModal';
-import { SettingsModal } from '../components/battle/SettingsModal';
 import { ConfirmModal } from '../components/common/ConfirmModal';
 import { StockSelectionModal } from '../components/battle/StockSelectionModal';
 import { GameButton } from '../components/common/GameButton';
@@ -59,7 +58,6 @@ export const BattleView: React.FC = () => {
   const [isAbilityModalOpen, setIsAbilityModalOpen] = React.useState(false);
   const [targetAbilityIndex, setTargetAbilityIndex] = React.useState(0);
   const [isSituationModalOpen, setIsSituationModalOpen] = React.useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false);
   const [isStockModalOpen, setIsStockModalOpen] = React.useState(false);
   const [isRunAwayConfirmOpen, setIsRunAwayConfirmOpen] = React.useState(false);
   const [pendingMatchMode, setPendingMatchMode] = React.useState<'cpu' | 'room' | null>(null);
@@ -93,7 +91,6 @@ export const BattleView: React.FC = () => {
       setIsAbilityModalOpen(false);
       setIsSituationModalOpen(false);
       setIsStockModalOpen(false);
-      setIsSettingsModalOpen(false);
       lastRoomIdRef.current = battleState.room_id;
     }
   }, [battleState, battleAbilities]);
@@ -231,11 +228,6 @@ export const BattleView: React.FC = () => {
     setIsAbilityModalOpen(false);
   };
   
-  const handleOpenSettings = () => {
-    SoundManager.play('pera');
-    setIsSettingsModalOpen(true);
-  };
-
   const handleRunAway = () => {
     SoundManager.play('pera');
     setIsRunAwayConfirmOpen(true);
