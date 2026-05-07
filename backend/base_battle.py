@@ -83,7 +83,6 @@ class BaseBattle:
         self.advance_turn()
         
         ret = self._make_response()
-        self.word, self.events = "", []
         return ret
 
     @property
@@ -93,6 +92,10 @@ class BaseBattle:
     @property
     def time_limit(self) -> int:
         raise NotImplementedError
+
+    def _is_used(self, word: str) -> bool:
+        """単語が既に使用されているかチェック"""
+        return word in self.used
 
     def _validate_word(self, player_id: str, word: str) -> dict | None:
         """しりとりとしての正当性チェック (共通)"""
@@ -104,7 +107,7 @@ class BaseBattle:
         if not word or word[0] != self.character:
             return {"type": "error", "message": "開始文字がマッチしていません"}
         
-        if word in self.used:
+        if self._is_used(word):
             return {"type": "error", "message": "その単語は既に使用されています"}
         
         if not self.sb_info.include_in_all_words(word):
@@ -257,12 +260,13 @@ class BaseBattle:
         except Exception:
             self.winner_team = 0 # 最悪でも終了フラグを立てる
             
-        ret = self._make_response()
-        self.events = []
-        return ret
+        return self._make_response()
 
     def make_init_response(self, player_id: str, time_limit: int = None) -> dict:
         """初期化時のレスポンスを生成 (共通)"""
+        if time_limit is None:
+            time_limit = self.time_limit
+            
         res = self._make_response()
         res["type"] = "made_room"
         res["all_abilities"] = self._get_serializable_abilities()
@@ -324,7 +328,7 @@ class BaseBattle:
         return None
 
     def timeout(self):
-        """タイムアウト処理"""
+        """共通のタイムアウト処理"""
         if self.is_finished: return self._make_response()
         current_actor = self.get_current_actor()
         if not current_actor: return self._make_response()
@@ -338,12 +342,11 @@ class BaseBattle:
             "hp": 0
         })
         
-        team_idx = self.get_team_index(current_actor)
-        if team_idx != -1:
-            self.finish_battle(1 - team_idx)
+        self._handle_knockout(current_actor)
+        self._check_win_condition()
+        self.advance_turn()
             
         ret = self._make_response()
-        self.events = []
         return ret
 
     def get_player_by_id(self, char_id: str):
@@ -353,9 +356,6 @@ class BaseBattle:
                 return p
         return None
 
-    def _get_team_index(self, player) -> int:
-        """後方互換用 (内部では get_team_index を呼ぶ)"""
-        return self.get_team_index(player)
 
     def include_check(self, word: str, current_actor=None):
         """入力中の単語チェック"""
@@ -387,15 +387,7 @@ class BaseBattle:
                 # サブクラスにレスポンス形式の整形を任せる
                 ret.update(self.format_predictions(enemies, at1, at2))
 
-        if word in self.used:
-            ret["used"] = True
-        return ret
-
-        if word in self.used:
-            ret["used"] = True
-        return ret
-
-        if word in self.used:
+        if self._is_used(word):
             ret["used"] = True
         return ret
 
@@ -410,39 +402,24 @@ class BaseBattle:
         return self.winner_team is not None
 
     def get_current_actor(self) -> Player:
+        """現在の行動者(Player)を返す"""
+        if not self.turn_order: return None
+        return self.turn_order[self.current_turn_index]
+    
+    def advance_turn(self):
         """
-        現在の行動者(Player)を返す。
-        倒れているプレイヤーは自動的にスキップして次の生存者を探す。
+        ターンを次に進める。倒れているプレイヤーはスキップする。
         """
-        if not self.turn_order:
-            return None
+        if not self.turn_order: return
             
-        initial_index = self.current_turn_index
-        while True:
-            actor = self.turn_order[self.current_turn_index]
-            if not actor.is_defeated:
-                return actor
-            
-            # スキップして次へ
+        for _ in range(len(self.turn_order)):
             self.current_turn_index = (self.current_turn_index + 1) % len(self.turn_order)
             if self.current_turn_index == 0:
                 self.turn += 1
             
-            # 全員倒れているなどの無限ループ防止
-            if self.current_turn_index == initial_index:
-                return actor # 仕方ないのでそのまま返す
-    
-    def advance_turn(self):
-        """
-        ターンインデックスを次に進める。
-        インデックスが0に戻るタイミングで、バトル全体の turn 数をインクリメントする。
-        """
-        if not self.turn_order:
-            return
-            
-        self.current_turn_index = (self.current_turn_index + 1) % len(self.turn_order)
-        if self.current_turn_index == 0:
-            self.turn += 1
+            # 生存しているプレイヤーが見つかれば終了
+            if not self.turn_order[self.current_turn_index].is_defeated:
+                break
 
     def get_enemies(self, player: Player) -> list[Player]:
         """そのプレイヤーから見た敵全員を返す"""
@@ -456,6 +433,50 @@ class BaseBattle:
         """相性予測の結果を各モードに適した形式(prediction/predictions)で返す"""
         raise NotImplementedError
 
+    def _check_win_condition(self) -> bool:
+        """
+        全モード共通の勝敗・復活判定。
+        1. 倒れているプレイヤーがいれば復活を試みる。
+        2. 復活できない(残機0)プレイヤーがいる場合、勝敗が決まっているか確認する。
+        """
+        for p in self.turn_order:
+            if p.is_defeated and p.lives > 0:
+                self._handle_revive(p)
+        
+        # 勝利チームが決定しているかチェック (サブクラスで実装)
+        winner = self._get_winner_team()
+        if winner is not None:
+            self.finish_battle(winner)
+            return True
+        return False
+
+    def _get_winner_team(self) -> int | None:
+        """どのチームが勝ったかを返す (サブクラスで実装)"""
+        raise NotImplementedError
+
+    def _handle_revive(self, player: Player):
+        """プレイヤーの復活処理"""
+        player.lives -= 1
+        lives_left = player.lives
+        player.hp = MAX_HP
+        
+        # ステータスリセット
+        player.attack_rank = 0
+        player.defense_rank = 0
+        player.types = []
+        player.poison_turns = 0
+        player.poisoner_id = None
+        player.leech_turns = 0
+        player.leech_target_id = None
+        
+        self.events.append({
+            "type": "revive",
+            "message": f"{player.name}は復帰した！（のこり{lives_left}）",
+            "lives": lives_left,
+            "hp": MAX_HP,
+            "target": self.get_player_label(player)
+        })
+
     def _handle_knockout(self, player: Player):
         """プレイヤーが倒れた時のデフォルト処理"""
         self.events.append({
@@ -465,6 +486,10 @@ class BaseBattle:
         })
 
     def _make_response(self) -> dict:
+        """
+        各モード固有のレスポンスを生成する。
+        内部で _create_base_response を呼び出す必要がある。
+        """
         raise NotImplementedError
 
 
@@ -478,6 +503,48 @@ class BaseBattle:
 
     def get_personalized_response(self, base_response: dict, player_id: str) -> dict:
         """レスポンスを特定のプレイヤー視点に調整する (サブクラスで実装)"""
+        raise NotImplementedError
+
+    def try_attack(self, player_id: str, word: str, target_id: str = None):
+        """
+        全モード共通の攻撃実行フロー。
+        """
+        if self.is_finished: return self._make_response()
+        
+        # 基本バリデーション
+        err = self._validate_word(player_id, word)
+        if err: return err
+
+        current_player = self.get_current_actor()
+        target_player = self._get_attack_target(current_player, target_id)
+        
+        if not target_player:
+            return {"type": "error", "message": "攻撃対象が見つかりません"}
+
+        word = self.katakana_to_hiragana(word)
+        self.word = word
+        types = [t for t in self.sb_info.get_types(word) if t]
+        current_player.types = types[:]
+        ability_obj = self.abilities.get(current_player.ability)
+        
+        # 共通のダメージ計算・効果適用フローを実行
+        self.execute_attack_flow(current_player, target_player, word, types, ability_obj)
+        
+        # 単語を記録し、次の文字を更新
+        self.record_used_word(word, player_id)
+        
+        # ターン終了時の効果（毒、やどりぎなど）
+        self._process_end_of_turn_effects(current_player, target_player)
+        self._check_win_condition()
+        
+        # ターンを交代
+        self.advance_turn()
+        self.last_actor_id = player_id
+        
+        return self._make_response()
+
+    def _get_attack_target(self, attacker: Player, target_id: str = None) -> Player | None:
+        """攻撃対象を特定する (サブクラスで実装)"""
         raise NotImplementedError
 
     def execute_attack_flow(self, current_player, target_player, word: str, types: list[str], ability_obj) -> bool:
@@ -591,8 +658,9 @@ class BaseBattle:
     def _create_base_response(self, players: list[Player], **kwargs) -> dict:
         """
         共通のレスポンス生成ロジック。
-        Player オブジェクトのリストから、スキーマに沿った辞書形式のレスポンスを作成する。
         """
+        if self.winner_team is not None:
+            self.finish_battle(self.winner_team)
         chars = {}
         for p in players:
             chars[p.id] = CharacterState(
@@ -645,4 +713,8 @@ class BaseBattle:
         
         res = BattleResponse(state=state, events=validated_events).model_dump(by_alias=True)
         res["type"] = "battle_end" if self.is_finished else "update"
+        
+        # 送信後に状態をクリア (DRY)
+        self.word = ""
+        self.events = []
         return res

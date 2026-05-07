@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-import time
 from typing import Optional
 
 try:
@@ -22,8 +21,6 @@ class WebSocketHandler:
     def __init__(self, room_manager, connection_manager):
         self.room_manager = room_manager
         self.connection_manager = connection_manager
-        self.TIME_LIMIT = 20
-        self.DOUBLE_TIME_LIMIT = 30
 
     async def _safe_send(self, websocket, data: dict):
         """例外を捕捉して安全にメッセージを送信する"""
@@ -77,22 +74,8 @@ class WebSocketHandler:
             await self._safe_send(websocket, {"type": "error", "message": f"Handler not found: {msg_type}"})
 
     async def _handle_pre_check(self, websocket, player_id, info):
-        text = info.get("word") or info.get("text", "")
-        room_id = info.get("room_id")
-        if not room_id: return
-        
-        room = self.room_manager.rooms.get(room_id)
-        if not room: return
-        
-        res = room.include_check(text)
-        await self._safe_send(websocket, {
-            "type": "pre_check",
-            "include": res["include"],
-            "used": res["used"],
-            "type1": res.get("type1"),
-            "type2": res.get("type2"),
-            "prediction": res.get("prediction")
-        })
+        """入力中の単語チェックと相性予測 (旧 pre_check)"""
+        await self._handle_include_check(websocket, player_id, info)
 
     async def _handle_update_user_info(self, websocket, player_id, info):
         if not player_id:
@@ -164,8 +147,8 @@ class WebSocketHandler:
 
             bi.events.append({"type": "message", "message": "マッチングした！"})
 
-            await self._safe_send(p1_data["socket"], bi.make_init_response(p1_data["player_id"], time_limit=self.TIME_LIMIT))
-            await self._safe_send(p2_data["socket"], bi.make_init_response(p2_data["player_id"], time_limit=self.TIME_LIMIT))
+            await self._safe_send(p1_data["socket"], bi.make_init_response(p1_data["player_id"]))
+            await self._safe_send(p2_data["socket"], bi.make_init_response(p2_data["player_id"]))
             
             await self._after_turn_action(bi.room_id, bi)
         else:
@@ -207,8 +190,8 @@ class WebSocketHandler:
             
             bi.events.append({"type": "message", "message": "マッチングした！"})
 
-            await self._safe_send(p1_data["socket"], bi.make_init_response(p1_data["player_id"], time_limit=self.DOUBLE_TIME_LIMIT))
-            await self._safe_send(p2_data["socket"], bi.make_init_response(p2_data["player_id"], time_limit=self.DOUBLE_TIME_LIMIT))
+            await self._safe_send(p1_data["socket"], bi.make_init_response(p1_data["player_id"]))
+            await self._safe_send(p2_data["socket"], bi.make_init_response(p2_data["player_id"]))
             
             await self._after_turn_action(bi.room_id, bi)
         else:
@@ -275,7 +258,7 @@ class WebSocketHandler:
             
             bi.events.append({"type": "message", "message": "マッチングした！"})
             
-            init_res = bi.make_init_response(player_id, time_limit=self.TIME_LIMIT)
+            init_res = bi.make_init_response(player_id)
             await self._safe_send(websocket, init_res)
             
             await self._after_turn_action(bi.room_id, bi)
@@ -308,8 +291,8 @@ class WebSocketHandler:
         self.connection_manager.register_player(websocket, player_id)
         self.connection_manager.join_room(websocket, bi.room_id)
         
-        await self._safe_send(websocket, bi.make_init_response(player_id, time_limit=self.DOUBLE_TIME_LIMIT))
-        await self._after_turn_action(bi.room_id, bi, is_double=True)
+        await self._safe_send(websocket, bi.make_init_response(player_id))
+        await self._after_turn_action(bi.room_id, bi)
 
     async def _handle_join_private_room(self, websocket, player_id, info, is_double=False):
         room_id = info.get("room_id")
@@ -381,8 +364,7 @@ class WebSocketHandler:
 
         await self._after_turn_action(room_id, room)
 
-    async def _handle_submit_word_double(self, websocket, player_id, info):
-        await self._handle_submit_word(websocket, player_id, info)
+    _handle_submit_word_double = _handle_submit_word
 
     async def _handle_change_ability(self, websocket, player_id, info):
         room_id = info.get("room_id")
@@ -399,8 +381,7 @@ class WebSocketHandler:
         else:
             await self.connection_manager.broadcast_battle_state(room_id, res, is_double=room.is_double, room_manager=self.room_manager, time_limit=room.time_limit)
 
-    async def _handle_change_ability_double(self, websocket, player_id, info):
-        await self._handle_change_ability(websocket, player_id, info)
+    _handle_change_ability_double = _handle_change_ability
 
     async def _handle_include_check(self, websocket, player_id, info):
         room_id = info.get("room_id")
@@ -410,8 +391,7 @@ class WebSocketHandler:
             res = room.include_check(word)
             await self._safe_send(websocket, res)
 
-    async def _handle_include_check_double(self, websocket, player_id, info):
-        await self._handle_include_check(websocket, player_id, info)
+    _handle_include_check_double = _handle_include_check
 
     async def _handle_run_away(self, websocket, player_id, info):
         room_id = info.get("room_id")
@@ -422,10 +402,9 @@ class WebSocketHandler:
                 await self.connection_manager.broadcast_battle_state(room_id, res, is_double=room.is_double, room_manager=self.room_manager, time_limit=room.time_limit)
                 await self._after_turn_action(room_id, room)
 
-    async def _handle_run_away_double(self, websocket, player_id, info):
-        await self._handle_run_away(websocket, player_id, info)
+    _handle_run_away_double = _handle_run_away
 
-    async def _after_turn_action(self, room_id, room, is_double=False):
+    async def _after_turn_action(self, room_id, room):
         if room.is_finished:
             self.room_manager.cancel_timer(room_id)
             self.room_manager.schedule_room_cleanup(room_id, delay=10)

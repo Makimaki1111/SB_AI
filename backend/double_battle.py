@@ -1,3 +1,4 @@
+import random
 try:
     from base_battle import BaseBattle
     from player import Player, DoubleBattlePlayer
@@ -11,12 +12,6 @@ except ImportError:
     from backend.SB_info import SB_info
     from backend.abilities import get_default_abilities
     from backend.constants import MAX_HP, ABILITY_CHANGE_COUNT_INIT
-    from backend.schemas import BattleResponse, BattleState, CharacterState, BattleEvent
-
-from collections import defaultdict
-from pydantic import BaseModel
-import random
-import uuid
 
 class DoubleBattle(BaseBattle):
     """
@@ -102,53 +97,31 @@ class DoubleBattle(BaseBattle):
         return 30
 
 
-    def _check_win_condition(self):
-        t1_dead = all(p.is_defeated for p in self.team1)
-        t2_dead = all(p.is_defeated for p in self.team2)
-        if t1_dead and self.winner_team is None: 
-            self.finish_battle(1)
-        elif t2_dead and self.winner_team is None: 
-            self.finish_battle(0)
-        return self.is_finished
-
-
-    def try_attack(self, player_id: str, word: str, target_id: str = None):
-        if self.is_finished: return self._make_response()
+    def _get_winner_team(self) -> int | None:
+        """勝ったチームのインデックスを返す"""
+        t1_defeated = all(p.is_defeated for p in self.team1)
+        t2_defeated = all(p.is_defeated for p in self.team2)
         
-        # 基本バリデーションをBaseBattleに委譲
-        err = self._validate_word(player_id, word)
-        if err: return err
+        if t1_defeated:
+            return 1 # チーム2の勝ち
+        if t2_defeated:
+            return 0 # チーム1の勝ち
+        return None
 
-        current_actor = self.get_current_actor()
-        enemies = self.get_enemies(current_actor)
-        target_actor = None
+
+
+
+    def _get_attack_target(self, attacker: Player, target_id: str = None) -> Player | None:
+        """DoubleBattle用のターゲット特定ロジック"""
+        enemies = self.get_enemies(attacker)
         if target_id:
             for e in enemies:
                 if e.id == target_id and not e.is_defeated:
-                    target_actor = e
-                    break
-        if not target_actor:
-            alive_enemies = [e for e in enemies if not e.is_defeated]
-            if not alive_enemies: return {"type": "error", "message": "ターゲットがいません"}
-            target_actor = random.choice(alive_enemies)
-
-        self.word = word
-        types = [t for t in self.sb_info.get_types(word) if t]
-        current_actor.types = types[:]
-        ability_obj = self.abilities.get(current_actor.ability)
-
-        # BaseBattleの共通フローに委譲
-        self.execute_attack_flow(current_actor, target_actor, word, types, ability_obj)
-
-        self._process_end_of_turn_effects(current_actor, target_actor)
-        self._check_win_condition()
-        self.record_used_word(word, current_actor.id)
-        self.last_actor_id = current_actor.id
-        self.advance_turn()
+                    return e
         
-        ret = self._make_response()
-        self.word, self.events = "", []
-        return ret
+        # ターゲット指定がない、または無効な場合は生存している敵からランダム
+        alive_enemies = [e for e in enemies if not e.is_defeated]
+        return random.choice(alive_enemies) if alive_enemies else None
 
     def get_enemies(self, player: DoubleBattlePlayer) -> list[DoubleBattlePlayer]:
         return self.team2 if player in self.team1 else self.team1
@@ -168,31 +141,6 @@ class DoubleBattle(BaseBattle):
                 predictions[enemy.id] = self._get_effect_message(effect)
         return {"predictions": predictions}
 
-    def timeout(self):
-        """タイムアウト処理 (DoubleBattle用にターン進行を追加)"""
-        if self.is_finished: return self._make_response()
-        current_actor = self.get_current_actor()
-        if not current_actor: return self._make_response()
-
-        current_actor.hp = 0
-        self.events.append({
-            "type": "knockout", 
-            "message": f"時間切れ！{current_actor.name}は力尽きた…", 
-            "target": self.get_player_label(current_actor), 
-            "damage": 0, 
-            "hp": 0
-        })
-        
-        team_idx = self.get_team_index(current_actor)
-        if team_idx != -1:
-            self.finish_battle(1 - team_idx)
-            
-        # ターンを進行
-        self.advance_turn()
-            
-        ret = self._make_response()
-        self.events = []
-        return ret
 
     def _select_cpu_target(self, actor: Player) -> str | None:
         """CPUの攻撃対象IDを返す (敵チームからランダム)"""
@@ -201,33 +149,14 @@ class DoubleBattle(BaseBattle):
         if not alive_enemies: return None
         return random.choice(alive_enemies).id
 
-    def _is_used(self, word: str) -> bool:
-        return word in self.used
 
 
 
 
     def _make_response(self) -> dict:
-        # 決着時のメッセージをイベントの最後に追加 (本家再現)
-        if self.winner_team is not None:
-            self.finish_battle(self.winner_team)
+        # 共通メソッドを呼び出し
+        return self._create_base_response(self.players)
 
-        # 共通メソッドを呼び出し (DoubleBattle特有のフィールドは現状なし)
-        res = self._create_base_response(self.players)
-        self.events = [] # 送信後にイベントをクリア
-        return res
-
-    def _handle_cpu_failure(self, actor: Player) -> dict:
-        """CPUが単語を思いつかなかった時の処理"""
-        self.events.append({
-            "type": "message",
-            "message": f"{actor.name}は単語が思いつかない！"
-        })
-        actor.hp = 0
-        self._handle_knockout(actor)
-        self.last_actor_id = actor.id
-        self.advance_turn()
-        return self._make_response()
 
     def get_personalized_response(self, base_res: dict, request_player_id: str, time_limit: int = None) -> dict:
         import copy

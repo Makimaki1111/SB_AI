@@ -1,3 +1,4 @@
+import random
 try:
     from base_battle import BaseBattle
     from player import Player
@@ -11,17 +12,9 @@ except ImportError:
     from backend.SB_info import SB_info
     from backend.abilities import get_default_abilities
     from backend.constants import MAX_HP, STOCK_LIVES, ABILITY_CHANGE_COUNT_INIT
-    from backend.schemas import BattleResponse, BattleState, CharacterState, BattleEvent
-
-from collections import defaultdict
-from pydantic import BaseModel
-import random
-import uuid
 
 # 定数は constants.py に集約されています
 
-class TextInput(BaseModel):
-    text: str
 
 class SingleBattle(BaseBattle):
     def __init__(self, player1_id: str, player2_id: str, sb_info: SB_info, room_id: str | None = None, p1_profile: dict = None, p2_profile: dict = None, p1_max_lives: int = STOCK_LIVES, p2_max_lives: int = STOCK_LIVES, is_cpu: bool = False):
@@ -90,93 +83,25 @@ class SingleBattle(BaseBattle):
     def init_character(self):
         self.character = random.choice(self.START_CHARACTERS)
 
-    def _check_win_condition(self) -> bool:
-        if self.player1_lives <= 0 or (self.player1.hp <= 0 and self.player1_lives == 0):
-            self.winner_team = 1 # プレイヤー2勝利
-        elif self.player2_lives <= 0 or (self.player2.hp <= 0 and self.player2_lives == 0):
-            self.winner_team = 0 # プレイヤー1勝利
-        return self.is_finished
+    def _get_winner_team(self) -> int | None:
+        """どのチームが勝ったかを返す"""
+        if self.player1.is_defeated:
+            return 1 # P2の勝ち
+        if self.player2.is_defeated:
+            return 0 # P1の勝ち
+        return None
 
 
 
-    def _is_used(self, word: str) -> bool:
-        return word in self.used
 
-    def _handle_knockout(self, defeated_player: Player):
-        """SingleBattle用: 倒れた時の処理 (復活 or 敗北)"""
-        super()._handle_knockout(defeated_player)
-        
-        defeated_player.lives -= 1
-        lives_left = defeated_player.lives
-        
-        if lives_left <= 0:
-            winner = 1 if defeated_player.id == self.player1.id else 0
-            self.finish_battle(winner)
-        else:
-            defeated_player.hp = MAX_HP
 
-        if self.winner_team is None:
-            defeated_player.attack_rank = 0
-            defeated_player.defense_rank = 0
-            defeated_player.types = []
-            defeated_player.poison_turns = 0
-            defeated_player.poisoner_id = None
-            defeated_player.leech_turns = 0
-            defeated_player.leech_target_id = None
-            self.events.append({
-                "type": "revive",
-                "message": f"{defeated_player.name}は復帰した！（のこり{lives_left}）",
-                "lives": lives_left,
-                "hp": MAX_HP,
-                "target": self.get_player_label(defeated_player)
-            })
-
-    def try_attack(self, player_id: str, word: str, target_id: str = None):
-        self.word = word
-        if self.is_finished: return self._make_response()
-        
-        # 基本バリデーションをBaseBattleに委譲
-        err = self._validate_word(player_id, word)
-        if err: return err
-
-        current_player = self.get_current_actor()
-        enemies = self.get_enemies(current_player)
-        target_player = enemies[0]
-        
-        word = self.katakana_to_hiragana(word)
-        types = [t for t in self.sb_info.get_types(word) if t]
-        current_player.types = types[:]
-        ability_obj = self.abilities.get(current_player.ability)
-        
-        # BaseBattleの共通フローに委譲
-        self.execute_attack_flow(current_player, target_player, word, types, ability_obj)
-        
-        # 単語を記録し、次の文字を更新
-        self.record_used_word(word, player_id)
-        
-        # ターン終了時の効果（毒など）
-        self._process_end_of_turn_effects(current_player, target_player)
-        self._check_win_condition()
-        
-        # ターンを交代
-        self.advance_turn()
-        self.last_actor_id = player_id
-        
-        ret = self._make_response()
-        # イベントをリセット（次のターンのために）
-        self.word = ""
-        self.events = []
-        return ret
+    def _get_attack_target(self, attacker: Player, target_id: str = None) -> Player:
+        """SingleBattleでは常に相手プレイヤーを狙う"""
+        return self.player2 if attacker.id == self.player1.id else self.player1
 
     def _make_response(self) -> dict:
-        # 決着時のメッセージをイベントの最後に追加 (本家再現)
-        if self.winner_team is not None:
-            self.finish_battle(self.winner_team)
-
         # 共通メソッドを呼び出し (SingleBattle特有のフィールドを渡す)
-        res = self._create_base_response([self.player1, self.player2])
-        self.events = [] # 送信後にイベントをクリア
-        return res
+        return self._create_base_response([self.player1, self.player2])
 
     def get_personalized_response(self, base_res: dict, player_id: str, time_limit: int = None) -> dict:
         import copy
@@ -236,50 +161,8 @@ class SingleBattle(BaseBattle):
 
 
 
-    def timeout(self):
-        """タイムアウト処理 (SingleBattle 用にターン交代を追加)"""
-        if self.is_finished: return self._make_response()
-        current_actor = self.get_current_actor()
-        if not current_actor: return self._make_response()
-
-        current_actor.hp = 0
-        self.events.append({
-            "type": "knockout", 
-            "message": f"時間切れ！{current_actor.name}は力尽きた…", 
-            "target": self.get_player_label(current_actor), 
-            "damage": 0, 
-            "hp": 0
-        })
-        
-        team_idx = self._get_team_index(current_actor)
-        if team_idx != -1:
-            self.finish_battle(1 - team_idx)
-        
-        # ターンを交代
-        self.advance_turn()
-            
-        ret = self._make_response()
-        self.word = ""
-        self.events = []
-        return ret
-
     def _select_cpu_target(self, actor: Player) -> str | None:
         """SingleBattleでは常に相手プレイヤー(P1)を狙う"""
         return self.player1.id
 
-    def _handle_cpu_failure(self, actor: Player) -> dict:
-        """CPUが単語を思いつかなかった場合、即座に終了(P1勝利)"""
-        actor.hp = 0
-        self.events.append({
-            "type": "knockout", 
-            "message": f"{actor.name}は ことばを思いつかなかった！", 
-            "target": self.get_player_label(actor),
-            "hp": 0
-        })
-        self.finish_battle(0) # プレイヤー1(インデックス0)の勝利
-        self.advance_turn()
-        
-        ret = self._make_response()
-        self.word, self.events = "", []
-        return ret
 
