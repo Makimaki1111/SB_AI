@@ -436,12 +436,16 @@ class BaseBattle:
     def _check_win_condition(self) -> bool:
         """
         全モード共通の勝敗・復活判定。
-        1. 倒れているプレイヤーがいれば復活を試みる。
-        2. 復活できない(残機0)プレイヤーがいる場合、勝敗が決まっているか確認する。
+        1. 倒れているプレイヤーがいれば機数を減らし、復活を試みる。
         """
         for p in self.turn_order:
             if p.is_defeated and p.lives > 0:
-                self._handle_revive(p)
+                p.lives -= 1
+                if p.lives > 0:
+                    self._handle_revive(p)
+                else:
+                    # 最後の1機を失った場合
+                    pass 
         
         # 勝利チームが決定しているかチェック (サブクラスで実装)
         winner = self._get_winner_team()
@@ -455,8 +459,7 @@ class BaseBattle:
         raise NotImplementedError
 
     def _handle_revive(self, player: Player):
-        """プレイヤーの復活処理"""
-        player.lives -= 1
+        """プレイヤーの復活処理 (機数は呼び出し元で減算済み)"""
         lives_left = player.lives
         player.hp = MAX_HP
         

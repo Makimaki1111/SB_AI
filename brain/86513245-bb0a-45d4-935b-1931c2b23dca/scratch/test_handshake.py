@@ -18,10 +18,18 @@ def test_handshake_and_personalization():
     sb_info.get_next_initial.return_value = "い"
     sb_info.rank_to_power.return_value = 1.0
     
-    # 1. Single Battle Test
-    print("\n[1] Single Battle Test")
-    battle = SingleBattle("user1", "user2", sb_info, p1_max_lives=2, p2_max_lives=2)
-    battle.events = [{"type": "damage", "message": "相手に 10 のダメージ！", "target": "user2", "attacker": "user1"}]
+    # 1. Single Battle Test (1-life behavior)
+    print("\n[1] Single Battle Test (1-life)")
+    battle = SingleBattle("user1", "user2", sb_info, p1_max_lives=1, p2_max_lives=1)
+    
+    # User 1 takes fatal damage
+    battle.player1.hp = 0
+    battle._check_win_condition()
+    
+    print(f"P1 lives: {battle.player1.lives}") # Should be 0
+    print(f"P1 hp: {battle.player1.hp}") # Should be 0
+    print(f"Winner: {battle.winner_team}") # Should be 1 (P2 won)
+    print(f"Event types: {[e['type'] for e in battle.events]}") # Should include battle_result
     
     # Simulate broadcast: get base_response ONCE
     base_res = battle._make_response()

@@ -149,10 +149,6 @@ class DoubleBattle(BaseBattle):
         if not alive_enemies: return None
         return random.choice(alive_enemies).id
 
-
-
-
-
     def _make_response(self) -> dict:
         # 共通メソッドを呼び出し
         return self._create_base_response(self.players)
