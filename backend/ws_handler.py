@@ -212,7 +212,7 @@ class WebSocketHandler:
         ability = info.get("ability")
         ability_2 = info.get("ability_2")
         self.room_manager.update_user_info(player_id, name, ability, ability_2)
-            
+
         p2_id = info.get("player2_id", "cpu_1")
         try:
             max_lives = max(1, min(10, int(info.get("max_lives", STOCK_LIVES))))

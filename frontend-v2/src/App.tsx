@@ -1,10 +1,9 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { UserProvider } from './context/UserContext';
 import { SoundProvider } from './context/SoundContext';
 import { TitleView } from './views/TitleView';
 import { BattleView } from './views/BattleView';
-import { DoubleBattleView } from './views/DoubleBattleView';
 import SoundManager from './utils/SoundManager';
 import './index.css';
 
@@ -40,7 +39,7 @@ function App() {
             <Routes>
               <Route path="/" element={<TitleView />} />
               <Route path="/battle/single" element={<BattleView />} />
-              <Route path="/battle/double" element={<DoubleBattleView />} />
+              <Route path="/battle/double" element={<BattleView />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>

@@ -49,6 +49,9 @@ export const BattleView: React.FC = () => {
     allAbilities: battleAbilities,
     sendMessage,
     sendIncludeCheck,
+    sendAttack,
+    selectedTargetId,
+    setSelectedTargetId,
     clearPrediction,
     startMatching,
     resetBattle
@@ -249,10 +252,7 @@ export const BattleView: React.FC = () => {
 
   const handleSubmitWord = (word: string) => {
     clearPrediction();
-    sendMessage({
-      type: 'submit_word',
-      info: { word, room_id: battleState?.room_id, player_id: playerId }
-    });
+    sendAttack(word, playerId);
   };
 
   if (!isConnected) {
@@ -302,6 +302,8 @@ export const BattleView: React.FC = () => {
               onOpenSituation={() => setIsSituationModalOpen(true)}
               onOpenAbility={() => handleOpenAbility(0)}
               onRunAway={handleRunAway}
+              selectedTargetId={selectedTargetId}
+              onSelectTarget={setSelectedTargetId}
             />
 
             {showResultButton && (

@@ -1,20 +1,20 @@
 import { useState } from 'react';
 
 export const useBattleDisplay = () => {
-  const [prediction, setPrediction] = useState<{
-    include: boolean,
-    type1?: string,
-    type2?: string,
-    used?: boolean,
-    prediction?: string,
-    predictions?: Record<string, string>
+  const [prediction, setPrediction] = useState<{ 
+    include: boolean, 
+    type1?: string, 
+    type2?: string, 
+    used?: boolean, 
+    prediction?: string, 
+    predictions?: Record<string, string> 
   } | null>(null);
-
-  const [messageLog, setMessageLog] = useState<{
-    text: string | null,
-    isOpen: boolean
+  
+  const [messageLog, setMessageLog] = useState<{ 
+    text: string | null, 
+    isOpen: boolean 
   }>({ text: null, isOpen: false });
-
+  
   const [notification, setNotification] = useState<string | null>(null);
   const [waitMessage, setWaitMessage] = useState<string | null>(null);
   const [allyEffect, setAllyEffect] = useState<string | null>(null);
@@ -25,7 +25,7 @@ export const useBattleDisplay = () => {
   const [showResultButton, setShowResultButton] = useState(false);
 
   const clearPrediction = () => setPrediction(null);
-
+  
   const showNotification = (text: string, duration: number = 1500) => {
     setNotification(text);
     setTimeout(() => setNotification(null), duration);
