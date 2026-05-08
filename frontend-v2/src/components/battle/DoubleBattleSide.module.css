@@ -49,7 +49,7 @@
   height: var(--char-h);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-end; /* キャラを箱の底につける (浮き防止) */
   transition: transform 0.3s ease;
 }
 
@@ -65,7 +65,7 @@
   z-index: 12;
 }
 
-/* 敵の立ち位置 (右端からの距離で指定) */
+/* 敵の立ち位置 */
 .foe .back {
   right: var(--foe-back-x);
   bottom: var(--foe-back-y);
@@ -101,10 +101,10 @@
 }
 
 /* --- スプライト・装飾 --- */
-/* 詳細度を上げるため、親要素を明示的に指定して !important を排除 */
 .charWrapper :global(.avatar-container) {
   width: 13.3cqw; /* 60px */
   height: 13.3cqw;
+  margin-bottom: 2cqw; /* 足元を少し浮かせて影とのバランスをとる本家の微調整 */
 }
 
 .charWrapper :global(.type2-sprite) {
@@ -123,18 +123,36 @@
 /* --- 単語表示 (吹き出し) --- */
 .wordContainer {
   position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 6.2cqw;
-  font-weight: 800;
-  letter-spacing: -0.4cqw;
+  /* 水平方向はキャラの基準点に合わせ、translateX(-50%)で中央寄せ */
+  width: var(--char-w);
+  display: flex;
+  justify-content: center;
   z-index: 20;
 }
 
 .ally .wordContainer {
-  top: 29.3cqw;
+  top: 29.3cqw; /* 132px (88%) */
+}
+
+.ally .back.wordContainer {
+  left: var(--ally-back-x);
+}
+.ally .front.wordContainer {
+  left: var(--ally-front-x);
 }
 
 .foe .wordContainer {
-  top: 33.3cqw;
+  top: 33.3cqw; /* 150px (100%) */
+}
+
+.foe .back.wordContainer {
+  right: var(--foe-back-x);
+}
+.foe .front.wordContainer {
+  right: var(--foe-front-x);
+}
+
+/* WordDisplay コンポーネント内の位置調整 */
+.wordContainer :global(.word-display-container) {
+  transform: translateX(-50%); /* 吹き出しの中心をキャラの中心に合わせる */
 }

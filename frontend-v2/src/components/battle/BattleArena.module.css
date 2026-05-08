@@ -3,8 +3,6 @@
   flex-direction: column;
   height: 100%;
   width: 100%;
-  max-width: 450px; /* 本家の設計基準幅 */
-  margin: 0 auto;
   position: relative;
   background: #fce5cd;
   overflow: hidden;

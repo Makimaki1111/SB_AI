@@ -61,9 +61,17 @@ export const DoubleBattleSide: React.FC<DoubleBattleSideProps> = ({
         <BattleEffects trigger={effect} side={isAlly ? "ally" : "foe"} />
       </div>
 
-      <div className={styles.wordContainer}>
-        <WordDisplay word={word} isAlly={isAlly} isBlinking={effect === 'blink'} isKnockout={false} />
-      </div>
+      {/* 単語表示 (各キャラクターごとに描画) */}
+      {characters.map((char, index) => (
+        <div 
+          key={`word-${char?.id || index}`}
+          className={`${styles.wordContainer} ${index === 1 ? styles.front : styles.back}`}
+        >
+          {char?.lastWord && (
+            <WordDisplay word={char.lastWord} isAlly={isAlly} isBlinking={effect === 'blink'} isKnockout={false} />
+          )}
+        </div>
+      ))}
     </div>
   );
 };
