@@ -2,7 +2,7 @@ import React from 'react';
 import styles from './BattleArena.module.css';
 import { WordInput } from './WordInput';
 import { GroundShadow } from './GroundShadow';
-import { BattleSide } from './BattleSide';
+import { SingleBattleSide } from './SingleBattleSide';
 import { TYPE_TO_IMAGE } from '../../constants/game';
 import type { BattleState, CharacterState } from '../../types/battle';
 import SoundManager from '../../utils/SoundManager';
@@ -65,7 +65,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
         <GroundShadow />
 
         {/* 相手セクション */}
-        <BattleSide 
+        <SingleBattleSide 
           character={foe}
           isAlly={false}
           effect={foeEffect}
@@ -75,7 +75,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
         />
 
         {/* 自分セクション */}
-        <BattleSide 
+        <SingleBattleSide 
           character={ally}
           isAlly={true}
           effect={allyEffect}

@@ -5,7 +5,7 @@ import { WordDisplay } from './WordDisplay';
 import { BattleEffects } from './BattleEffects';
 import type { CharacterState } from '../../types/battle';
 
-interface BattleSideProps {
+interface SingleBattleSideProps {
   character: CharacterState | null;
   isAlly: boolean;
   effect: string | null;
@@ -14,7 +14,11 @@ interface BattleSideProps {
   name: string;
 }
 
-export const BattleSide: React.FC<BattleSideProps> = ({
+/**
+ * シングルバトル専用の表示コンポーネント
+ * 1体のキャラクターとそのステータス（HPバー等）を垂直に配置します。
+ */
+export const SingleBattleSide: React.FC<SingleBattleSideProps> = ({
   character,
   isAlly,
   effect,
