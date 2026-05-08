@@ -296,3 +296,19 @@
   width: 40cqw; /* 180px */
   height: 8.8cqw; /* 40px */
 }
+
+/* ダブルバトル用の巨大な楕円 */
+.ellipseAlly {
+  bottom: 11cqw;
+  left: 50%;
+  transform: translateX(calc(-50% + 31cqw)); /* 本家の 141px / 450px */
+  width: 88cqw; /* 本家の 400px / 450px */
+  height: 19cqw; /* 本家の 89px / 450px */
+}
+
+.ellipseFoe {
+  top: -10cqw;
+  right: 6cqw;
+  width: 71cqw; /* 本家の 323px / 450px */
+  height: 15cqw; /* 本家の 71px / 450px */
+}

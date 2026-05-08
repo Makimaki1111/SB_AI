@@ -55,6 +55,30 @@ export const useBattleState = () => {
     return Object.keys(mapping).find(id => mapping[id]?.startsWith('foe')) || null;
   };
 
+  // --- Double Battle Helpers (Plural versions) ---
+
+  const getAllies = (state: BattleState | null, mapping: Record<string, string>): CharacterState[] => {
+    if (!state?.characters || !mapping) return [];
+    return Object.entries(state.characters)
+      .filter(([id, _]) => mapping[id]?.startsWith('ally'))
+      .map(([_, char]) => char);
+  };
+
+  const getFoes = (state: BattleState | null, mapping: Record<string, string>): CharacterState[] => {
+    if (!state?.characters || !mapping) return [];
+    return Object.entries(state.characters)
+      .filter(([id, _]) => mapping[id]?.startsWith('foe'))
+      .map(([_, char]) => char);
+  };
+
+  const getAllyIds = (mapping: Record<string, string>): string[] => {
+    return Object.keys(mapping).filter(id => mapping[id]?.startsWith('ally'));
+  };
+
+  const getFoeIds = (mapping: Record<string, string>): string[] => {
+    return Object.keys(mapping).filter(id => mapping[id]?.startsWith('foe'));
+  };
+
   const reset = () => {
     setBattleState(null);
     battleStateRef.current = null;
@@ -69,6 +93,7 @@ export const useBattleState = () => {
     allAbilities, setAllAbilities,
     uiMapping, updateUiMapping, uiMappingRef,
     getAlly, getFoe, getAllyId, getFoeId,
+    getAllies, getFoes, getAllyIds, getFoeIds,
     reset
   };
 };

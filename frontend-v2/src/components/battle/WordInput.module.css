@@ -53,3 +53,48 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Target Selection UI */
+.targetBar {
+  display: flex;
+  justify-content: center;
+  gap: 2cqw;
+  margin-top: 1.5cqw;
+  padding: 0 2cqw;
+}
+
+.targetBtn {
+  flex: 1;
+  max-width: 35cqw;
+  height: 6cqw;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: white;
+  border-radius: 3cqw;
+  font-size: 3.5cqw;
+  font-family: inherit;
+  font-weight: bold;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.targetBtn:hover:not(:disabled) {
+  background: #f8f8f8;
+  transform: translateY(-1px);
+}
+
+.targetActive {
+  background: #ffeb3b; /* Legacy theme yellow */
+  border-color: #fbc02d;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(255, 235, 59, 0.4);
+}
+
+.targetDisabled {
+  background: #eee;
+  color: #999;
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.6;
+}

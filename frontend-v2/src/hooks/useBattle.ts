@@ -15,6 +15,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
     allAbilities, setAllAbilities,
     uiMapping, updateUiMapping, uiMappingRef,
     getAlly, getFoe, getAllyId, getFoeId,
+    getAllies, getFoes, getAllyIds, getFoeIds,
     reset: resetState
   } = useBattleState();
 
@@ -405,8 +406,12 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
     startMatching,
     ally: getAlly(battleState, uiMapping),
     foe: getFoe(battleState, uiMapping),
+    allies: getAllies(battleState, uiMapping),
+    foes: getFoes(battleState, uiMapping),
     allyId: getAllyId(uiMapping),
     foeId: getFoeId(uiMapping),
+    allyIds: getAllyIds(uiMapping),
+    foeIds: getFoeIds(uiMapping),
     ...display,
     timer,
     resetBattle

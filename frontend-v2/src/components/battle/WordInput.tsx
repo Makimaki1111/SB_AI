@@ -1,20 +1,35 @@
 import React, { useState } from 'react';
 import styles from './WordInput.module.css';
 
+import type { CharacterState } from '../../types/battle';
+
 interface WordInputProps {
-  onSend: (word: string) => void;
+  onSend: (word: string, targetId?: string | null) => void;
   onChange: (word: string) => void;
   disabled: boolean;
   initialChar: string;
+  isDouble?: boolean;
+  foes?: CharacterState[];
+  selectedTargetId?: string | null;
+  onTargetChange?: (id: string) => void;
 }
 
-export const WordInput: React.FC<WordInputProps> = ({ onSend, onChange, disabled, initialChar }) => {
+export const WordInput: React.FC<WordInputProps> = ({ 
+  onSend, 
+  onChange, 
+  disabled, 
+  initialChar,
+  isDouble = false,
+  foes = [],
+  selectedTargetId = null,
+  onTargetChange
+}) => {
   const [word, setWord] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (word.trim()) {
-      onSend(word);
+      onSend(word, selectedTargetId);
       setWord('');
     }
   };
@@ -27,6 +42,21 @@ export const WordInput: React.FC<WordInputProps> = ({ onSend, onChange, disabled
 
   return (
     <form className={styles.inputArea} onSubmit={handleSubmit}>
+      {isDouble && foes.length > 0 && (
+        <div className={styles.targetBar}>
+          {foes.map((foe, index) => (
+            <button
+              key={foe.id || index}
+              type="button"
+              className={`${styles.targetBtn} ${selectedTargetId === foe.id ? styles.targetActive : ''} ${foe.hp <= 0 ? styles.targetDisabled : ''}`}
+              onClick={() => foe.hp > 0 && onTargetChange?.(foe.id || '')}
+              disabled={foe.hp <= 0}
+            >
+              {foe.name}
+            </button>
+          ))}
+        </div>
+      )}
       <div className={styles.inputWrapper}>
         <input
           id="input"

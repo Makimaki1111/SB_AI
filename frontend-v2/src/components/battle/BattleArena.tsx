@@ -3,6 +3,7 @@ import styles from './BattleArena.module.css';
 import { WordInput } from './WordInput';
 import { GroundShadow } from './GroundShadow';
 import { SingleBattleSide } from './SingleBattleSide';
+import { DoubleBattleSide } from './DoubleBattleSide';
 import { TYPE_TO_IMAGE } from '../../constants/game';
 import type { BattleState, CharacterState } from '../../types/battle';
 import SoundManager from '../../utils/SoundManager';
@@ -12,6 +13,8 @@ interface BattleArenaProps {
   battleState: BattleState | null;
   ally: CharacterState | null;
   foe: CharacterState | null;
+  allies: CharacterState[];
+  foes: CharacterState[];
   prediction: { include: boolean, type1?: string, type2?: string, used?: boolean, prediction?: string } | null;
   messageLog: { text: string | null, isOpen: boolean };
   notification: string | null;
@@ -37,6 +40,8 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
   battleState,
   ally,
   foe,
+  allies,
+  foes,
   prediction,
   messageLog,
   notification,
@@ -57,32 +62,64 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
   onOpenAbility,
   onRunAway
 }) => {
+  const isDouble = allies.length > 1;
+  const [selectedTargetId, setSelectedTargetId] = React.useState<string | null>(null);
+
+  // 初回読み込み時、またはターゲットが不在時にデフォルトを選択
+  React.useEffect(() => {
+    if (isDouble && !selectedTargetId && foes.length > 0) {
+      const firstAlive = foes.find(f => f.hp > 0);
+      if (firstAlive) setSelectedTargetId(firstAlive.id || null);
+    }
+  }, [isDouble, foes, selectedTargetId]);
+
   return (
     <div className={styles.battleContainer}>
       <div className={styles.topImage}>
         <img src="/img/ground.jpg" className={styles.bgImage} alt="背景画像" />
         
-        <GroundShadow />
+        <GroundShadow isDouble={isDouble} />
 
-        {/* 相手セクション */}
-        <SingleBattleSide 
-          character={foe}
-          isAlly={false}
-          effect={foeEffect}
-          word={foeWord}
-          isKnockout={foeId ? knockoutStates[foeId] : false}
-          name={foe?.name ?? "あいて"}
-        />
-
-        {/* 自分セクション */}
-        <SingleBattleSide 
-          character={ally}
-          isAlly={true}
-          effect={allyEffect}
-          word={allyWord}
-          isKnockout={allyId ? knockoutStates[allyId] : false}
-          name={username || ally?.name || "じぶん"}
-        />
+        {/* キャラクターセクション */}
+        {isDouble ? (
+          <>
+            <DoubleBattleSide 
+              characters={foes}
+              isAlly={false}
+              effect={foeEffect}
+              word={foeWord}
+              knockoutStates={knockoutStates}
+              name="あいてチーム"
+            />
+            <DoubleBattleSide 
+              characters={allies}
+              isAlly={true}
+              effect={allyEffect}
+              word={allyWord}
+              knockoutStates={knockoutStates}
+              name={username || "じぶんチーム"}
+            />
+          </>
+        ) : (
+          <>
+            <SingleBattleSide 
+              character={foe}
+              isAlly={false}
+              effect={foeEffect}
+              word={foeWord}
+              isKnockout={foeId ? knockoutStates[foeId] : false}
+              name={foe?.name ?? "あいて"}
+            />
+            <SingleBattleSide 
+              character={ally}
+              isAlly={true}
+              effect={allyEffect}
+              word={allyWord}
+              isKnockout={allyId ? knockoutStates[allyId] : false}
+              name={username || ally?.name || "じぶん"}
+            />
+          </>
+        )}
       </div>
 
       <div className={styles.content}>
@@ -121,6 +158,10 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                 onChange={onSendIncludeCheck}
                 disabled={isProcessing}
                 initialChar={battleState?.character || ''}
+                isDouble={isDouble}
+                foes={foes}
+                selectedTargetId={selectedTargetId}
+                onTargetChange={setSelectedTargetId}
               />
             )}
             {prediction && prediction.include && !messageLog.isOpen && (

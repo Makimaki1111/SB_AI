@@ -1,0 +1,70 @@
+import React from 'react';
+import { CharacterAvatar } from './CharacterAvatar';
+import { WordDisplay } from './WordDisplay';
+import { BattleEffects } from './BattleEffects';
+import { TeamHPBar } from './TeamHPBar';
+import type { CharacterState } from '../../types/battle';
+import styles from './DoubleBattleSide.module.css';
+
+interface DoubleBattleSideProps {
+  characters: CharacterState[];
+  isAlly: boolean;
+  effect: string | null;
+  word: string | null;
+  knockoutStates: Record<string, boolean>;
+  name: string;
+}
+
+/**
+ * ダブルバトル専用の表示コンポーネント
+ * 2体のキャラクターを奥行き（前後）を持たせて配置します。
+ */
+export const DoubleBattleSide: React.FC<DoubleBattleSideProps> = ({
+  characters,
+  isAlly,
+  effect,
+  word,
+  knockoutStates,
+  name
+}) => {
+  if (characters.length === 0) return null;
+
+  // 奥のキャラ (A) と 手前のキャラ (B)
+  const charA = characters[0];
+  const charB = characters[1];
+
+  const renderCharacter = (char: CharacterState | undefined, isFront: boolean) => {
+    if (!char) return null;
+    const isKO = knockoutStates[char.id || ''] || char.hp <= 0;
+    
+    return (
+      <div className={`${styles.charWrapper} ${isFront ? styles.front : styles.back}`}>
+        <CharacterAvatar 
+          types={char.types || []} 
+          isAlly={isAlly} 
+          isBlinking={effect === 'blink'}
+          isKnockout={isKO}
+        />
+      </div>
+    );
+  };
+
+  return (
+    <div className={`${styles.teamContainer} ${isAlly ? styles.ally : styles.foe}`}>
+      {/* 奥のキャラを先に描画 */}
+      {renderCharacter(charA, false)}
+      {/* 手前のキャラを後に描画 (z-index) */}
+      {renderCharacter(charB, true)}
+
+      <div className={styles.effectsContainer}>
+        <BattleEffects trigger={effect} side={isAlly ? "ally" : "foe"} />
+      </div>
+
+      <div className={styles.wordContainer}>
+        <WordDisplay word={word} isAlly={isAlly} isBlinking={effect === 'blink'} isKnockout={false} />
+      </div>
+
+      <TeamHPBar characters={characters} isAlly={isAlly} teamName={name} />
+    </div>
+  );
+};

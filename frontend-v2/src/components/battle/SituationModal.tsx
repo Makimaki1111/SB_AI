@@ -10,7 +10,6 @@ interface SituationModalProps {
   ally: CharacterState | null;
   foe: CharacterState | null;
   battleState: BattleState | null;
-  username: string;
 }
 
 export const SituationModal: React.FC<SituationModalProps> = ({
@@ -18,8 +17,7 @@ export const SituationModal: React.FC<SituationModalProps> = ({
   onClose,
   ally,
   foe,
-  battleState,
-  username
+  battleState
 }) => {
   return (
     <GameModal

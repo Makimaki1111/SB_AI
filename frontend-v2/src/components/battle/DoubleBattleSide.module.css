@@ -1,0 +1,71 @@
+.teamContainer {
+  position: absolute;
+  width: 46.6cqw; /* 210px / 450px */
+  height: 33.3cqw; /* 150px / 450px */
+  display: flex;
+  pointer-events: none;
+}
+
+.ally {
+  bottom: 7.1cqw; /* 32px / 450px */
+  left: 7.1cqw; /* 32px / 450px */
+}
+
+.foe {
+  top: -10.6cqw; /* -48px / 450px */
+  right: 6.2cqw; /* 28px / 450px */
+}
+
+.charWrapper {
+  position: absolute;
+  width: 22.2cqw; /* 100px */
+  height: 22.2cqw;
+  transition: transform 0.3s ease;
+}
+
+/* 本家の前後配置を再現 */
+.back {
+  z-index: 10;
+  transform: scale(0.9) translate(-4.4cqw, -3.3cqw); /* -20px, -15px */
+}
+
+.front {
+  z-index: 12;
+  transform: scale(1.0) translate(0px, 0px);
+}
+
+/* 敵側のオフセット調整 */
+.foe .back {
+  transform: scale(0.9) translate(2.2cqw, -4.4cqw); /* 10px, -20px */
+}
+
+.foe .front {
+  transform: scale(1.0) translate(2.2cqw, 0.6cqw); /* 10px, 3px */
+}
+
+.effectsContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 15;
+}
+
+.wordContainer {
+  position: absolute;
+  width: 100%;
+  z-index: 20;
+}
+
+.ally .wordContainer {
+  bottom: -2cqw;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.foe .wordContainer {
+  top: -2cqw;
+  left: 50%;
+  transform: translateX(-50%);
+}

@@ -31,6 +31,8 @@ export const BattleView: React.FC = () => {
   const { 
     ally, 
     foe, 
+    allies,
+    foes,
     battleState, 
     isConnected, 
     prediction,
@@ -50,7 +52,6 @@ export const BattleView: React.FC = () => {
     allAbilities: battleAbilities,
     sendMessage,
     sendIncludeCheck,
-    clearPrediction,
     startMatching,
     resetBattle
   } = useBattle(dynamicWsUrl, () => setIsLobby(true));
@@ -243,11 +244,11 @@ export const BattleView: React.FC = () => {
     setIsRunAwayConfirmOpen(false);
   };
 
-  const handleSubmitWord = (word: string) => {
-    clearPrediction();
+  const handleSubmitWord = (word: string, targetId: string | null = null) => {
+    if (!battleState?.room_id) return;
     sendMessage({
-      type: 'submit_word',
-      info: { word, room_id: battleState?.room_id, player_id: playerId }
+      type: isDouble ? 'submit_word_double' : 'submit_word',
+      info: { word, room_id: battleState.room_id, player_id: playerId, target_id: targetId || undefined }
     });
   };
 
@@ -279,6 +280,8 @@ export const BattleView: React.FC = () => {
               battleState={battleState}
               ally={ally}
               foe={foe}
+              allies={allies}
+              foes={foes}
               prediction={prediction}
               messageLog={messageLog}
               notification={notification}
@@ -330,7 +333,6 @@ export const BattleView: React.FC = () => {
           ally={ally}
           foe={foe}
           battleState={battleState}
-          username={username || "ななし"}
         />
 
         <AbilityModal 
