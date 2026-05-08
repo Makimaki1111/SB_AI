@@ -23,6 +23,7 @@ export interface CharacterState {
   is_poison: boolean;
   owner_id: string;
   id?: string;
+  word?: string | null;
   lastWord?: string;
 }
 
@@ -31,7 +32,7 @@ export interface BattleState {
   turn: number;
   characters: Record<string, CharacterState>;
   word: string | null;
-  character: string; 
+  character: string;
   is_my_turn: boolean;
   winner_team: number | null;
   ally_win: boolean | null;
@@ -91,7 +92,7 @@ export interface BattleResponse {
   };
 }
 
-export type SocketMessageType = 
+export type SocketMessageType =
   | "find_match"
   | "find_match_double"
   | "make_new_battle"

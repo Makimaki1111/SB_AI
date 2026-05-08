@@ -23,18 +23,18 @@ export const BattleView: React.FC = () => {
   const isDouble = location.pathname.includes('double') || location.search.includes('mode=double');
   const isStock = location.search.includes('mode=stock');
   const { username } = useUser();
-  
+
   const dynamicWsUrl = React.useMemo(() => {
     return WS_BASE_URL;
   }, []);
 
-  const { 
-    ally, 
-    foe, 
+  const {
+    ally,
+    foe,
     allies,
     foes,
-    battleState, 
-    isConnected, 
+    battleState,
+    isConnected,
     prediction,
     messageLog,
     notification,
@@ -55,7 +55,7 @@ export const BattleView: React.FC = () => {
     startMatching,
     resetBattle
   } = useBattle(dynamicWsUrl, () => setIsLobby(true));
-  
+
   const [isLobby, setIsLobby] = React.useState(true);
   const [isAbilityModalOpen, setIsAbilityModalOpen] = React.useState(false);
   const [targetAbilityIndex, setTargetAbilityIndex] = React.useState(0);
@@ -64,7 +64,7 @@ export const BattleView: React.FC = () => {
   const [isRunAwayConfirmOpen, setIsRunAwayConfirmOpen] = React.useState(false);
   const [pendingMatchMode, setPendingMatchMode] = React.useState<'cpu' | 'room' | null>(null);
   const lastRoomIdRef = React.useRef<string | null>(null);
-  
+
   const [selectedAbilities, setSelectedAbilities] = React.useState<string[]>(() => {
     const a1 = localStorage.getItem('sb_ability') || 'ikaku';
     const a2 = localStorage.getItem('sb_ability_2') || 'ikaku';
@@ -86,7 +86,7 @@ export const BattleView: React.FC = () => {
     if (battleAbilities && Object.keys(battleAbilities).length > 0) {
       setAllAbilities(battleAbilities);
     }
-    
+
     if (battleState && battleState.room_id !== lastRoomIdRef.current) {
       // マッチング完了（新しいルームに入った）時のみ状態整理
       setIsAbilityModalOpen(false);
@@ -165,7 +165,7 @@ export const BattleView: React.FC = () => {
 
   const handleConfirmStockMatch = (allyStock: number, foeStock: number) => {
     setIsStockModalOpen(false);
-    
+
     const commonInfo = {
       player_id: playerId,
       name: username || "ななし",
@@ -213,9 +213,9 @@ export const BattleView: React.FC = () => {
     } else if (battleState?.room_id) {
       sendMessage({
         type: 'change_ability',
-        info: { 
-          room_id: battleState.room_id, 
-          player_id: playerId, 
+        info: {
+          room_id: battleState.room_id,
+          player_id: playerId,
           ability_id: abilityId,
           char_id: targetAbilityIndex === 0 ? allyId : foeId
         }
@@ -224,7 +224,7 @@ export const BattleView: React.FC = () => {
 
     setIsAbilityModalOpen(false);
   };
-  
+
   const handleRunAway = () => {
     SoundManager.play('pera');
     setIsRunAwayConfirmOpen(true);
@@ -266,7 +266,7 @@ export const BattleView: React.FC = () => {
     <GameLayout id="phone-box">
       <div className={styles.battleArea}>
         {isLobby ? (
-          <LobbyView 
+          <LobbyView
             onStartMatch={handleStartMatch}
             onOpenAbilityModal={handleOpenAbility}
             onBackToTitle={() => navigate('/')}
@@ -276,7 +276,7 @@ export const BattleView: React.FC = () => {
           />
         ) : (
           <>
-            <BattleArena 
+            <BattleArena
               battleState={battleState}
               ally={ally}
               foe={foe}
@@ -305,7 +305,7 @@ export const BattleView: React.FC = () => {
 
             {showResultButton && (
               <div className={styles.simpleResultArea}>
-                <GameButton 
+                <GameButton
                   variant="orange"
                   className={styles.lobbyReturnBtn}
                   onClick={() => {
@@ -321,13 +321,13 @@ export const BattleView: React.FC = () => {
           </>
         )}
 
-        <StockSelectionModal 
+        <StockSelectionModal
           isOpen={isStockModalOpen}
           onClose={() => setIsStockModalOpen(false)}
           onConfirm={handleConfirmStockMatch}
         />
 
-        <SituationModal 
+        <SituationModal
           isOpen={isSituationModalOpen}
           onClose={() => setIsSituationModalOpen(false)}
           ally={ally}
@@ -335,12 +335,12 @@ export const BattleView: React.FC = () => {
           battleState={battleState}
         />
 
-        <AbilityModal 
+        <AbilityModal
           isOpen={isAbilityModalOpen}
           onClose={() => setIsAbilityModalOpen(false)}
           onSelect={handleSelectAbility}
           currentAbilityId={
-            !isLobby 
+            !isLobby
               ? (targetAbilityIndex === 0 ? ally?.ability : foe?.ability) || selectedAbilities[targetAbilityIndex]
               : selectedAbilities[targetAbilityIndex]
           }
@@ -351,7 +351,7 @@ export const BattleView: React.FC = () => {
           isLobby={isLobby}
         />
 
-        <ConfirmModal 
+        <ConfirmModal
           isOpen={isRunAwayConfirmOpen}
           onClose={() => setIsRunAwayConfirmOpen(false)}
           onConfirm={confirmRunAway}

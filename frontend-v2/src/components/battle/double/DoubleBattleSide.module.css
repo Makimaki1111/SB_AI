@@ -1,0 +1,123 @@
+/* --- ダブルバトル・レイアウト (既存の座標データを維持) --- */
+
+.teamContainer {
+  /* 450px基準のcqw換算 */
+  --container-w: 46.6cqw; /* 210px */
+  --container-h: 33.3cqw; /* 150px */
+  --char-w: 22.2cqw;      /* 100px */
+  --char-h: 22.2cqw;
+
+  position: absolute;
+  width: var(--container-w);
+  height: var(--container-h);
+  pointer-events: none;
+}
+
+.ally {
+  bottom: 7.1cqw;
+  left: 7.1cqw;
+}
+
+.foe {
+  top: -10.6cqw;
+  right: 6.2cqw;
+}
+
+/* キャラクターごとの配置 (DoubleBattleSide.tsx の index に対応) */
+/* 味方 */
+.ally .charWrapper:nth-child(2) { /* back (index 0) */
+  left: -3.9cqw;
+  bottom: 3.3cqw;
+  z-index: 10;
+  transform: scale(0.9);
+}
+
+.ally .charWrapper:nth-child(3) { /* front (index 1) */
+  left: 23.8cqw;
+  bottom: 0;
+  z-index: 12;
+}
+
+/* 敵 */
+.foe .charWrapper:nth-child(2) { /* back (index 0) */
+  right: -1.7cqw;
+  bottom: 4.4cqw;
+  z-index: 10;
+  transform: scale(0.9);
+}
+
+.foe .charWrapper:nth-child(3) { /* front (index 1) */
+  right: 21.6cqw;
+  bottom: -0.7cqw;
+  z-index: 12;
+}
+
+.charWrapper {
+  position: absolute;
+  width: var(--char-w);
+  height: var(--char-h);
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.sprite {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 13.3cqw; /* 60px */
+  height: 13.3cqw;
+  object-fit: contain;
+}
+
+.type2 {
+  transform: translate(calc(-50% + 3.3cqw), -2.2cqw);
+  z-index: 11;
+}
+
+.wordWrapper {
+  position: absolute;
+  left: 50%;
+  width: 0;
+  z-index: 50;
+}
+
+.ally .wordWrapper {
+  top: 88%;
+}
+
+.foe .wordWrapper {
+  top: 100%;
+}
+
+.doubleEllipse {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  z-index: 5;
+  transform: translateX(-50%);
+}
+
+.ally .doubleEllipse {
+  width: 88.8cqw;
+  height: 19.7cqw;
+  bottom: -11.1cqw;
+  left: 10.2cqw;
+}
+
+.foe .doubleEllipse {
+  width: 71.7cqw;
+  height: 15.7cqw;
+  bottom: -9.8cqw;
+  left: 29cqw;
+}
+
+.effectsContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 15;
+}

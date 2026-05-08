@@ -30,12 +30,12 @@ export const DoubleBattleSide: React.FC<DoubleBattleSideProps> = ({
   const renderCharacter = (char: CharacterState | undefined, isFront: boolean) => {
     if (!char) return null;
     const isKO = knockoutStates[char.id || ''] || char.hp <= 0;
-    
+
     return (
       <div className={`${styles.charWrapper} ${isFront ? styles.front : styles.back}`}>
-        <CharacterAvatar 
-          types={char.types || []} 
-          isAlly={isAlly} 
+        <CharacterAvatar
+          types={char.types || []}
+          isAlly={isAlly}
           isBlinking={effect === 'blink'}
           isKnockout={isKO}
         />
@@ -59,7 +59,7 @@ export const DoubleBattleSide: React.FC<DoubleBattleSideProps> = ({
 
       {/* 単語表示 (各キャラクターごとに描画) */}
       {characters.map((char, index) => (
-        <div 
+        <div
           key={`word-${char?.id || index}`}
           className={`${styles.wordContainer} ${index === 1 ? styles.front : styles.back}`}
         >

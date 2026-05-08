@@ -1,19 +1,14 @@
 import React from 'react';
-import styles from './BattleArena.module.css';
-import { WordInput } from './WordInput';
-import { GroundShadow } from './GroundShadow';
-import { SingleBattleSide } from './SingleBattleSide';
+import styles from './DoubleBattleArena.module.css';
+import { WordInput } from '../WordInput';
 import { DoubleBattleSide } from './DoubleBattleSide';
-import { TeamHPBar } from './TeamHPBar';
-import { TYPE_TO_IMAGE } from '../../constants/game';
-import type { BattleState, CharacterState } from '../../types/battle';
-import SoundManager from '../../utils/SoundManager';
+import { TeamHPBar } from './TeamHPBar'; // 重複して保存を試みる
+import { TYPE_TO_IMAGE } from '../../../constants/game';
+import type { BattleState, CharacterState } from '../../../types/battle';
+import SoundManager from '../../../utils/SoundManager';
 
-
-interface BattleArenaProps {
+interface DoubleBattleArenaProps {
   battleState: BattleState | null;
-  ally: CharacterState | null;
-  foe: CharacterState | null;
   allies: CharacterState[];
   foes: CharacterState[];
   prediction: { include: boolean, type1?: string, type2?: string, used?: boolean, prediction?: string } | null;
@@ -27,20 +22,20 @@ interface BattleArenaProps {
   allyWord: string | null;
   foeWord: string | null;
   knockoutStates: Record<string, boolean>;
-  allyId: string | null;
-  foeId: string | null;
   username: string;
-  onSendWord: (word: string) => void;
+  onSendWord: (word: string, targetId?: string) => void;
   onSendIncludeCheck: (word: string) => void;
   onOpenSituation: () => void;
   onOpenAbility: () => void;
   onRunAway: () => void;
 }
 
-export const BattleArena: React.FC<BattleArenaProps> = ({
+/**
+ * 既存の BattleArena.tsx をベースにした、ダブルバトル専用アリーナ。
+ * デザインや配置は一切変更せず、シングル用の分岐のみを取り除いています。
+ */
+export const DoubleBattleArena: React.FC<DoubleBattleArenaProps> = ({
   battleState,
-  ally,
-  foe,
   allies,
   foes,
   prediction,
@@ -51,11 +46,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
   allyEffect,
   foeEffect,
   timer,
-  allyWord,
-  foeWord,
   knockoutStates,
-  allyId,
-  foeId,
   username,
   onSendWord,
   onSendIncludeCheck,
@@ -63,85 +54,59 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
   onOpenAbility,
   onRunAway
 }) => {
-  // ダブルバトル判定
-  const isDouble = allies.length >= 2 || foes.length >= 2;
   const [selectedTargetId, setSelectedTargetId] = React.useState<string | null>(null);
 
-  // 初回読み込み時、またはターゲットが不在時にデフォルトを選択
+  // ターゲットの初期選択ロジック (既存のものを維持)
   React.useEffect(() => {
-    if (isDouble && !selectedTargetId && foes.length > 0) {
+    if (!selectedTargetId && foes.length > 0) {
       const firstAlive = foes.find(f => f.hp > 0);
-      if (firstAlive) setSelectedTargetId(firstAlive.id || null);
+      if (firstAlive) setSelectedTargetId(firstAlive.id || firstAlive.name || null);
     }
-  }, [isDouble, foes, selectedTargetId]);
+  }, [foes, selectedTargetId]);
+
+  const handleSendWord = (word: string) => {
+    // ターゲットIDを渡して送信 (ロジック修正)
+    onSendWord(word, selectedTargetId || undefined);
+  };
 
   return (
-    <div className={styles.battleContainer} data-battle-mode={isDouble ? "double" : "single"}>
+    <div className={styles.battleContainer} data-battle-mode="double">
       <div className={styles.topImage}>
         <img src="/img/ground.jpg" className={styles.bgImage} alt="背景画像" />
 
-        {!isDouble && <GroundShadow isDouble={false} />}
+        <DoubleBattleSide
+          characters={foes}
+          isAlly={false}
+          effect={foeEffect}
+          knockoutStates={knockoutStates}
+        />
+        <DoubleBattleSide
+          characters={allies}
+          isAlly={true}
+          effect={allyEffect}
+          knockoutStates={knockoutStates}
+        />
 
-        {/* キャラクターセクション */}
-        {isDouble ? (
-          <>
-            <DoubleBattleSide
-              characters={foes}
-              isAlly={false}
-              effect={foeEffect}
-              knockoutStates={knockoutStates}
-            />
-            <DoubleBattleSide
-              characters={allies}
-              isAlly={true}
-              effect={allyEffect}
-              knockoutStates={knockoutStates}
-            />
-
-            {/* ダブルバトル用バルーン (対角配置) */}
-            <TeamHPBar
-              characters={foes}
-              isAlly={false}
-              teamName="あいてチーム"
-            />
-            <TeamHPBar
-              characters={allies}
-              isAlly={true}
-              teamName={username || "じぶんチーム"}
-            />
-          </>
-        ) : (
-          <>
-            <SingleBattleSide
-              character={foe}
-              isAlly={false}
-              effect={foeEffect}
-              word={foeWord}
-              isKnockout={foeId ? knockoutStates[foeId] : false}
-              name={foe?.name ?? "あいて"}
-            />
-            <SingleBattleSide
-              character={ally}
-              isAlly={true}
-              effect={allyEffect}
-              word={allyWord}
-              isKnockout={allyId ? knockoutStates[allyId] : false}
-              name={username || ally?.name || "じぶん"}
-            />
-          </>
-        )}
+        <TeamHPBar
+          characters={foes}
+          isAlly={false}
+          teamName="あいてチーム"
+        />
+        <TeamHPBar
+          characters={allies}
+          isAlly={true}
+          teamName={username || "じぶんチーム"}
+        />
       </div>
 
       <div className={styles.content}>
         <div className={styles.actionArea}>
-          {/* メッセージボックスがタイマーを覆うように配置 */}
           {messageLog.isOpen && (
             <div className={styles.messageOverlay}>
               {messageLog.text}
             </div>
           )}
 
-          {/* タイマーを最上部に配置 */}
           {battleState && (
             <div className={styles.timerContainer}>
               <div
@@ -154,7 +119,6 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
             </div>
           )}
 
-          {/* 特性変更などの通知 */}
           {notification && (
             <div className={styles.toastNotification}>
               {notification}
@@ -164,11 +128,10 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
           <div className={styles.inputWrapper}>
             {(!messageLog.isOpen && battleState?.is_my_turn && battleState?.status !== 'finished') && (
               <WordInput
-                onSend={onSendWord}
+                onSend={handleSendWord}
                 onChange={onSendIncludeCheck}
                 disabled={isProcessing}
                 initialChar={battleState?.character || ''}
-                selectedTargetId={selectedTargetId}
               />
             )}
             {prediction && prediction.include && !messageLog.isOpen && (
@@ -212,11 +175,10 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
             )}
           </div>
 
-          {/* ターゲット選択ボタン (ダブルバトル用) - 常時表示 */}
-          {isDouble && foes.length > 0 && battleState?.status !== 'finished' && (
+          {/* ターゲット選択ボタン (既存の UI を 100% 維持) */}
+          {foes.length > 0 && battleState?.status !== 'finished' && (
             <div className={styles.targetBar}>
               {foes.map((foe, index) => {
-                // IDが取れない場合は名前をキーにする (useBattleの同期漏れ対策)
                 const targetKey = foe.id || foe.name;
                 const isActive = selectedTargetId === targetKey;
 
