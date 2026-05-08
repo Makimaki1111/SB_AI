@@ -215,6 +215,28 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
             )}
           </div>
 
+          {/* ターゲット選択ボタン (ダブルバトル用) - 常時表示 */}
+          {isDouble && foes.length > 0 && battleState?.status !== 'finished' && (
+            <div className={styles.targetBar}>
+              {foes.map((foe, index) => (
+                <button
+                  key={foe.id || index}
+                  type="button"
+                  className={`${styles.targetBtn} ${selectedTargetId === foe.id ? styles.targetActive : ''} ${foe.hp <= 0 ? styles.targetDisabled : ''}`}
+                  onClick={() => {
+                    if (foe.hp > 0) {
+                      SoundManager.play('pera');
+                      setSelectedTargetId(foe.id || '');
+                    }
+                  }}
+                  disabled={foe.hp <= 0}
+                >
+                  {foe.name}
+                </button>
+              ))}
+            </div>
+          )}
+
           {battleState && (
             <div className={styles.actionsWrapper}>
               <div 
