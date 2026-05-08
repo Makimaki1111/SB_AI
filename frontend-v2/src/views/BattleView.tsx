@@ -20,7 +20,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 export const BattleView: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const isDouble = location.pathname.includes('double');
+  const isDouble = location.pathname.includes('double') || location.search.includes('mode=double');
+  const isStock = location.search.includes('mode=stock');
   const { username } = useUser();
   
   const dynamicWsUrl = React.useMemo(() => {
@@ -49,9 +50,6 @@ export const BattleView: React.FC = () => {
     allAbilities: battleAbilities,
     sendMessage,
     sendIncludeCheck,
-    sendAttack,
-    selectedTargetId,
-    setSelectedTargetId,
     clearPrediction,
     startMatching,
     resetBattle
@@ -74,7 +72,6 @@ export const BattleView: React.FC = () => {
 
   const [allAbilities, setAllAbilities] = React.useState<Record<string, AbilityData>>({});
 
-  const isStock = location.search.includes('mode=stock');
   const canChangeAbility = isLobby || (ally?.ability_change_count ?? 0) > 0;
 
   React.useEffect(() => {
@@ -107,14 +104,11 @@ export const BattleView: React.FC = () => {
   });
 
   const handleStartMatch = (mode: 'player' | 'cpu' | 'room', options?: Record<string, string | number | boolean>) => {
-    const isStockMode = location.search.includes('mode=stock');
-    const isDouble = location.search.includes('mode=double');
-
     // ストックモードかつルーム作成の場合はまず残機設定モーダルを開く
     // CPU戦は固定設定にするためモーダルを開かない
     // ※参加ボタン（optionsにroomIdキーがある場合）はIDの有無に関わらずモーダルを開かない
     const isJoinAction = options && 'roomId' in options;
-    if (isStockMode && !isJoinAction && mode === 'room') {
+    if (isStock && !isJoinAction && mode === 'room') {
       setPendingMatchMode(mode);
       setIsStockModalOpen(true);
       return;
@@ -125,8 +119,8 @@ export const BattleView: React.FC = () => {
       name: username || "ななし",
       ability: selectedAbilities[0],
       ability_2: isDouble ? selectedAbilities[1] : "",
-      ally_max_lives: isStockMode ? 2 : 1,
-      foe_max_lives: isStockMode ? 2 : 1
+      ally_max_lives: isStock ? 2 : 1,
+      foe_max_lives: isStock ? 2 : 1
     };
 
     // ルームIDの有無で作成か参加かを判別
@@ -180,7 +174,6 @@ export const BattleView: React.FC = () => {
       foe_max_lives: foeStock
     };
 
-    const isDouble = location.search.includes('mode=double');
 
     if (pendingMatchMode === 'room') {
       sendMessage({
@@ -252,7 +245,10 @@ export const BattleView: React.FC = () => {
 
   const handleSubmitWord = (word: string) => {
     clearPrediction();
-    sendAttack(word, playerId);
+    sendMessage({
+      type: 'submit_word',
+      info: { word, room_id: battleState?.room_id, player_id: playerId }
+    });
   };
 
   if (!isConnected) {
@@ -302,8 +298,6 @@ export const BattleView: React.FC = () => {
               onOpenSituation={() => setIsSituationModalOpen(true)}
               onOpenAbility={() => handleOpenAbility(0)}
               onRunAway={handleRunAway}
-              selectedTargetId={selectedTargetId}
-              onSelectTarget={setSelectedTargetId}
             />
 
             {showResultButton && (

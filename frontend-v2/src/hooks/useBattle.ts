@@ -25,7 +25,6 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
   const messageQueue = useRef<BattleResponse[]>([]);
   const isHandlingQueue = useRef(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null);
   const currentRoomIdRef = useRef<string | null>(null);
 
   const startMatching = () => {
@@ -216,7 +215,6 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
       // InitialBattle のときは既に上でリセット済みなので飛ばす
       if (!isInterrupt && !isInitialBattle && (data.state.is_my_turn !== prevState?.is_my_turn)) {
         resetTimer(data.info?.time_limit || 20, data.info?.total_time || 20);
-        setSelectedTargetId(null); // ターンが変わったらターゲット選択をリセット
       }
 
       const events = data.events || [];
@@ -397,22 +395,6 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
     sendMessage({ type: 'include_check', info: { word, room_id: current.room_id } });
   };
 
-  const sendAttack = (word: string, playerId: string) => {
-    if (!battleStateRef.current || !word) return;
-
-    // 攻撃実行時にターゲットを指定して送信
-    sendMessage({
-      type: 'submit_word',
-      info: {
-        word,
-        player_id: playerId,
-        room_id: battleStateRef.current?.room_id,
-        target_id: selectedTargetId || undefined
-      }
-    });
-    setSelectedTargetId(null); // 送信後はリセット
-  };
-
   return {
     battleState,
     allAbilities,
@@ -420,9 +402,6 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
     isProcessing,
     sendMessage,
     sendIncludeCheck,
-    sendAttack,
-    selectedTargetId,
-    setSelectedTargetId,
     startMatching,
     ally: getAlly(battleState, uiMapping),
     foe: getFoe(battleState, uiMapping),

@@ -5,8 +5,6 @@ import { WordDisplay } from './WordDisplay';
 import { BattleEffects } from './BattleEffects';
 import type { CharacterState } from '../../types/battle';
 
-import styles from './BattleSide.module.css';
-
 interface BattleSideProps {
   character: CharacterState | null;
   isAlly: boolean;
@@ -14,10 +12,6 @@ interface BattleSideProps {
   word: string | null;
   isKnockout: boolean;
   name: string;
-  isSelected?: boolean;
-  isCurrentTurn?: boolean;
-  isDouble?: boolean;
-  onSelectTarget?: () => void;
 }
 
 export const BattleSide: React.FC<BattleSideProps> = ({
@@ -26,11 +20,7 @@ export const BattleSide: React.FC<BattleSideProps> = ({
   effect,
   word,
   isKnockout,
-  name,
-  isSelected,
-  isCurrentTurn,
-  isDouble,
-  onSelectTarget
+  name
 }) => {
   const hpBar = (
     <HPBar 
@@ -40,24 +30,16 @@ export const BattleSide: React.FC<BattleSideProps> = ({
       isPoison={character?.is_poison ?? false}
       isAlly={isAlly}
       isWaiting={!character}
-      isDouble={isDouble}
     />
   );
 
   const avatar = (
-    <div 
-      className={`${styles.avatarWrapper} ${isSelected ? styles.selected : ''} ${isCurrentTurn ? styles.activeTurn : ''}`}
-      onClick={!isAlly && !isKnockout ? onSelectTarget : undefined}
-      style={{ cursor: (!isAlly && !isKnockout) ? 'pointer' : 'default' }}
-    >
-      <CharacterAvatar 
-        types={character?.types || []} 
-        isAlly={isAlly} 
-        isBlinking={effect === 'blink'}
-        isKnockout={isKnockout}
-      />
-      {isSelected && <div className={styles.targetMarker} />}
-    </div>
+    <CharacterAvatar 
+      types={character?.types || []} 
+      isAlly={isAlly} 
+      isBlinking={effect === 'blink'}
+      isKnockout={isKnockout}
+    />
   );
 
   const effects = <BattleEffects trigger={effect} side={isAlly ? "ally" : "foe"} />;

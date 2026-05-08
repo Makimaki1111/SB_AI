@@ -31,8 +31,6 @@ interface BattleArenaProps {
   onOpenSituation: () => void;
   onOpenAbility: () => void;
   onRunAway: () => void;
-  selectedTargetId?: string | null;
-  onSelectTarget?: (id: string | null) => void;
 }
 
 export const BattleArena: React.FC<BattleArenaProps> = ({
@@ -57,81 +55,34 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
   onSendIncludeCheck,
   onOpenSituation,
   onOpenAbility,
-  onRunAway,
-  selectedTargetId,
-  onSelectTarget
+  onRunAway
 }) => {
-  const characters = battleState?.characters || {};
-  
-  // シングルバトルのキャラ
-  const p1 = characters['p1'] || (allyId === 'p1' ? ally : null);
-  const p2 = characters['p2'] || (foeId === 'p2' ? foe : null);
-  
-  // ダブルバトルのキャラ
-  const p1a = characters['p1a'];
-  const p1b = characters['p1b'];
-  const p2a = characters['p2a'];
-  const p2b = characters['p2b'];
-
-  const isDouble = !!(p1a || p1b || p2a || p2b);
-
-  const renderSide = (id: string | null, char: CharacterState | null, isAlly: boolean, positionClass: string) => {
-    if (!id && !char) return null;
-    const isCurrent = battleState?.current_actor_id === id;
-    const isSelected = selectedTargetId === id;
-    const word = isAlly ? allyWord : foeWord;
-    const effect = isAlly ? allyEffect : foeEffect;
-
-    return (
-      <div key={id || positionClass} className={`${styles.sideWrapper} ${styles[positionClass]}`}>
-        <BattleSide 
-          character={char}
-          isAlly={isAlly}
-          effect={effect}
-          word={isCurrent ? word : null} // 行動中のキャラのみワードを表示
-          isKnockout={id ? knockoutStates[id] : false}
-          name={char?.name ?? (isAlly ? username : (isDouble ? `あいて(${id?.slice(-1).toUpperCase()})` : "あいて"))}
-          isSelected={isSelected}
-          isCurrentTurn={isCurrent}
-          isDouble={isDouble}
-          onSelectTarget={() => onSelectTarget?.(id)}
-        />
-      </div>
-    );
-  };
-
   return (
-    <div className={`${styles.battleContainer} ${isDouble ? styles.doubleMode : styles.singleMode}`}>
+    <div className={styles.battleContainer}>
       <div className={styles.topImage}>
         <img src="/img/ground.jpg" className={styles.bgImage} alt="背景画像" />
         
         <GroundShadow />
-        
-        <div className={styles.arenaGrid}>
-          {/* 相手側 */}
-          <div className={styles.foeSide}>
-            {isDouble ? (
-              <>
-                {renderSide('p2a', p2a || null, false, 'p2a')}
-                {renderSide('p2b', p2b || null, false, 'p2b')}
-              </>
-            ) : (
-              renderSide('p2', p2 || foe, false, 'p2')
-            )}
-          </div>
 
-          {/* 自分側 */}
-          <div className={styles.allySide}>
-            {isDouble ? (
-              <>
-                {renderSide('p1a', p1a || null, true, 'p1a')}
-                {renderSide('p1b', p1b || null, true, 'p1b')}
-              </>
-            ) : (
-              renderSide('p1', p1 || ally, true, 'p1')
-            )}
-          </div>
-        </div>
+        {/* 相手セクション */}
+        <BattleSide 
+          character={foe}
+          isAlly={false}
+          effect={foeEffect}
+          word={foeWord}
+          isKnockout={foeId ? knockoutStates[foeId] : false}
+          name={foe?.name ?? "あいて"}
+        />
+
+        {/* 自分セクション */}
+        <BattleSide 
+          character={ally}
+          isAlly={true}
+          effect={allyEffect}
+          word={allyWord}
+          isKnockout={allyId ? knockoutStates[allyId] : false}
+          name={username || ally?.name || "じぶん"}
+        />
       </div>
 
       <div className={styles.content}>
