@@ -2,45 +2,85 @@
   position: absolute;
   width: 46.6cqw; /* 210px / 450px */
   height: 33.3cqw; /* 150px / 450px */
-  display: flex;
   pointer-events: none;
 }
 
 .ally {
-  bottom: 7.1cqw; /* 32px / 450px */
-  left: 7.1cqw; /* 32px / 450px */
+  bottom: 7.1cqw; /* 本家の 32px */
+  left: 7.1cqw; /* 本家の 32px */
 }
 
 .foe {
-  top: -10.6cqw; /* -48px / 450px */
-  right: 6.2cqw; /* 28px / 450px */
+  top: -10.6cqw; /* 本家の -48px */
+  right: 6.2cqw; /* 本家の 28px */
+}
+
+.doubleEllipse {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  z-index: 5;
+}
+
+.ally .doubleEllipse {
+  width: 88.8cqw; /* 本家の 400px */
+  height: 19.7cqw; /* 本家の 89px */
+  bottom: -11.1cqw; /* 本家の -50px */
+  left: 10cqw; /* キャラの中間地点 (45px) */
+  transform: translateX(-50%);
+}
+
+.foe .doubleEllipse {
+  width: 71.7cqw; /* 本家の 323px */
+  height: 15.7cqw; /* 本家の 71px */
+  bottom: -9.8cqw; /* 本家の -44px */
+  right: 10cqw; /* キャラの中間地点 (鏡像) */
+  transform: translateX(50%);
 }
 
 .charWrapper {
   position: absolute;
-  width: 22.2cqw; /* 100px */
+  width: 22.2cqw; /* 本家の 100px */
   height: 22.2cqw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   transition: transform 0.3s ease;
-}
-
-/* 本家の前後配置を再現 */
-.back {
   z-index: 10;
-  transform: scale(0.9) translate(-4.4cqw, -3.3cqw); /* -20px, -15px */
 }
 
-.front {
+/* 味方の個別位置 (IDごとの微調整を統合) */
+.ally .back {
+  left: -3.9cqw;  /* (2.5px - 20px) */
+  bottom: 3.3cqw; /* 15px */
+  z-index: 10;
+}
+.ally .front {
+  left: 23.8cqw; /* 107.5px */
+  bottom: 0;
   z-index: 12;
-  transform: scale(1.0) translate(0px, 0px);
 }
 
-/* 敵側のオフセット調整 */
+/* 敵の個別位置 */
 .foe .back {
-  transform: scale(0.9) translate(2.2cqw, -4.4cqw); /* 10px, -20px */
+  right: -1.7cqw; /* 2.5px - 10px */
+  top: -4.4cqw;   /* translate(-20px) */
+  z-index: 10;
+}
+.foe .front {
+  right: 21.6cqw; /* 107.5px - 10px */
+  top: 0.6cqw;    /* translate(3px) */
+  z-index: 12;
 }
 
-.foe .front {
-  transform: scale(1.0) translate(2.2cqw, 0.6cqw); /* 10px, 3px */
+/* スプライト微調整 */
+.charWrapper :global(.avatar-container) {
+  width: 13.3cqw !important;
+  height: 13.3cqw !important;
+}
+
+.charWrapper :global(.type2-sprite) {
+  transform: translate(3.3cqw, -2.2cqw) !important;
 }
 
 .effectsContainer {
@@ -54,18 +94,23 @@
 
 .wordContainer {
   position: absolute;
-  width: 100%;
   z-index: 20;
 }
 
 .ally .wordContainer {
-  bottom: -2cqw;
+  top: 29.3cqw;
   left: 50%;
   transform: translateX(-50%);
+  font-size: 6.2cqw;
+  font-weight: 800;
+  letter-spacing: -0.4cqw;
 }
 
 .foe .wordContainer {
-  top: -2cqw;
+  top: 33.3cqw;
   left: 50%;
   transform: translateX(-50%);
+  font-size: 6.2cqw;
+  font-weight: 800;
+  letter-spacing: -0.4cqw;
 }

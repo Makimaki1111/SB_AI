@@ -1,8 +1,6 @@
-import React from 'react';
 import { CharacterAvatar } from './CharacterAvatar';
 import { WordDisplay } from './WordDisplay';
 import { BattleEffects } from './BattleEffects';
-import { TeamHPBar } from './TeamHPBar';
 import type { CharacterState } from '../../types/battle';
 import styles from './DoubleBattleSide.module.css';
 
@@ -51,6 +49,9 @@ export const DoubleBattleSide: React.FC<DoubleBattleSideProps> = ({
 
   return (
     <div className={`${styles.teamContainer} ${isAlly ? styles.ally : styles.foe}`}>
+      {/* 影 (エリップス) をコンテナ内に配置 */}
+      <div className={styles.doubleEllipse} id={isAlly ? "ellipse-ally" : "ellipse-enemy"} />
+
       {/* 奥のキャラを先に描画 */}
       {renderCharacter(charA, false)}
       {/* 手前のキャラを後に描画 (z-index) */}
@@ -63,8 +64,6 @@ export const DoubleBattleSide: React.FC<DoubleBattleSideProps> = ({
       <div className={styles.wordContainer}>
         <WordDisplay word={word} isAlly={isAlly} isBlinking={effect === 'blink'} isKnockout={false} />
       </div>
-
-      <TeamHPBar characters={characters} isAlly={isAlly} teamName={name} />
     </div>
   );
 };

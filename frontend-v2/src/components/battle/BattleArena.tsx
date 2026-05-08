@@ -4,6 +4,7 @@ import { WordInput } from './WordInput';
 import { GroundShadow } from './GroundShadow';
 import { SingleBattleSide } from './SingleBattleSide';
 import { DoubleBattleSide } from './DoubleBattleSide';
+import { TeamHPBar } from './TeamHPBar';
 import { TYPE_TO_IMAGE } from '../../constants/game';
 import type { BattleState, CharacterState } from '../../types/battle';
 import SoundManager from '../../utils/SoundManager';
@@ -62,7 +63,8 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
   onOpenAbility,
   onRunAway
 }) => {
-  const isDouble = allies.length > 1;
+  // ダブルバトル判定
+  const isDouble = allies.length >= 2 || foes.length >= 2;
   const [selectedTargetId, setSelectedTargetId] = React.useState<string | null>(null);
 
   // 初回読み込み時、またはターゲットが不在時にデフォルトを選択
@@ -74,11 +76,11 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
   }, [isDouble, foes, selectedTargetId]);
 
   return (
-    <div className={styles.battleContainer}>
+    <div className={styles.battleContainer} data-battle-mode={isDouble ? "double" : "single"}>
       <div className={styles.topImage}>
         <img src="/img/ground.jpg" className={styles.bgImage} alt="背景画像" />
         
-        <GroundShadow isDouble={isDouble} />
+        {!isDouble && <GroundShadow isDouble={false} />}
 
         {/* キャラクターセクション */}
         {isDouble ? (
@@ -98,6 +100,18 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
               word={allyWord}
               knockoutStates={knockoutStates}
               name={username || "じぶんチーム"}
+            />
+            
+            {/* ダブルバトル用バルーン (対角配置) */}
+            <TeamHPBar 
+              characters={foes} 
+              isAlly={false} 
+              teamName="あいてチーム" 
+            />
+            <TeamHPBar 
+              characters={allies} 
+              isAlly={true} 
+              teamName={username || "じぶんチーム"} 
             />
           </>
         ) : (

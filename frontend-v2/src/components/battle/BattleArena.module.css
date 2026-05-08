@@ -3,14 +3,17 @@
   flex-direction: column;
   height: 100%;
   width: 100%;
+  max-width: 450px; /* 本家の設計基準幅 */
+  margin: 0 auto;
   position: relative;
   background: #fce5cd;
   overflow: hidden;
   font-family: "M PLUS 1p", sans-serif;
+  container-type: inline-size;
 }
 
 .topImage {
-  flex: 1;
+  flex: 1; /* シングルバトルのデフォルト */
   position: relative;
   width: 100%;
   z-index: 1;
@@ -18,9 +21,25 @@
   background: #fff;
 }
 
+.battleContainer[data-battle-mode="double"] .topImage {
+  flex: none;
+  height: 57.7cqw; /* ダブルバトルの本家固定高 (260px / 450px) */
+}
+
 .bgImage {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
+  object-fit: cover;
+}
+
+.battleContainer[data-battle-mode="double"] .bgImage {
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
   object-fit: cover;
 }
 
