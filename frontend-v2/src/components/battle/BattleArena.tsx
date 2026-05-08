@@ -89,17 +89,13 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
               characters={foes}
               isAlly={false}
               effect={foeEffect}
-              word={foeWord}
               knockoutStates={knockoutStates}
-              name="あいてチーム"
             />
             <DoubleBattleSide 
               characters={allies}
               isAlly={true}
               effect={allyEffect}
-              word={allyWord}
               knockoutStates={knockoutStates}
-              name={username || "じぶんチーム"}
             />
             
             {/* ダブルバトル用バルーン (対角配置) */}

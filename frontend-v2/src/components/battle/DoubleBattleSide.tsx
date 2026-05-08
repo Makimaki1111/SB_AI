@@ -8,9 +8,7 @@ interface DoubleBattleSideProps {
   characters: CharacterState[];
   isAlly: boolean;
   effect: string | null;
-  word: string | null;
   knockoutStates: Record<string, boolean>;
-  name: string;
 }
 
 /**
@@ -21,9 +19,7 @@ export const DoubleBattleSide: React.FC<DoubleBattleSideProps> = ({
   characters,
   isAlly,
   effect,
-  word,
-  knockoutStates,
-  name
+  knockoutStates
 }) => {
   if (characters.length === 0) return null;
 

@@ -23,6 +23,7 @@ export interface CharacterState {
   is_poison: boolean;
   owner_id: string;
   id?: string;
+  lastWord?: string;
 }
 
 export interface BattleState {
