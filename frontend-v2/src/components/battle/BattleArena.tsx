@@ -168,10 +168,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                 onChange={onSendIncludeCheck}
                 disabled={isProcessing}
                 initialChar={battleState?.character || ''}
-                isDouble={isDouble}
-                foes={foes}
                 selectedTargetId={selectedTargetId}
-                onTargetChange={setSelectedTargetId}
               />
             )}
             {prediction && prediction.include && !messageLog.isOpen && (
