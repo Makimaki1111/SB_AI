@@ -38,13 +38,13 @@ export const useBattleState = () => {
   const getAlly = (state: BattleState | null, mapping: Record<string, string>): CharacterState | null => {
     if (!state?.characters || !mapping) return null;
     const entry = Object.entries(state.characters).find(([id, _]) => mapping[id]?.startsWith('ally'));
-    return entry ? entry[1] : null;
+    return entry ? { ...entry[1], id: entry[0] } : null;
   };
 
   const getFoe = (state: BattleState | null, mapping: Record<string, string>): CharacterState | null => {
     if (!state?.characters || !mapping) return null;
     const entry = Object.entries(state.characters).find(([id, _]) => mapping[id]?.startsWith('foe'));
-    return entry ? entry[1] : null;
+    return entry ? { ...entry[1], id: entry[0] } : null;
   };
 
   const getAllyId = (mapping: Record<string, string>): string | null => {
@@ -61,14 +61,14 @@ export const useBattleState = () => {
     if (!state?.characters || !mapping) return [];
     return Object.entries(state.characters)
       .filter(([id, _]) => mapping[id]?.startsWith('ally'))
-      .map(([_, char]) => char);
+      .map(([id, char]) => ({ ...char, id }));
   };
 
   const getFoes = (state: BattleState | null, mapping: Record<string, string>): CharacterState[] => {
     if (!state?.characters || !mapping) return [];
     return Object.entries(state.characters)
       .filter(([id, _]) => mapping[id]?.startsWith('foe'))
-      .map(([_, char]) => char);
+      .map(([id, char]) => ({ ...char, id }));
   };
 
   const getAllyIds = (mapping: Record<string, string>): string[] => {
