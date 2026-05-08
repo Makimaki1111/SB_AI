@@ -1,18 +1,24 @@
 .teamContainer {
   position: absolute;
-  width: 46.6cqw; /* 210px / 450px */
-  height: 33.3cqw; /* 150px / 450px */
+  width: 46.6cqw;
+  /* 210px / 450px */
+  height: 33.3cqw;
+  /* 150px / 450px */
   pointer-events: none;
 }
 
 .ally {
-  bottom: 7.1cqw; /* 本家の 32px */
-  left: 7.1cqw; /* 本家の 32px */
+  bottom: 7.1cqw;
+  /* 本家の 32px */
+  left: 7.1cqw;
+  /* 本家の 32px */
 }
 
 .foe {
-  top: -10.6cqw; /* 本家の -48px */
-  right: 6.2cqw; /* 本家の 28px */
+  top: -10.6cqw;
+  /* 本家の -48px */
+  right: 6.2cqw;
+  /* 本家の 28px */
 }
 
 .doubleEllipse {
@@ -23,24 +29,33 @@
 }
 
 .ally .doubleEllipse {
-  width: 88.8cqw; /* 本家の 400px */
-  height: 19.7cqw; /* 本家の 89px */
-  bottom: -11.1cqw; /* 本家の -50px */
-  left: 10cqw; /* キャラの中間地点 (45px) */
+  width: 88.8cqw;
+  /* 本家の 400px */
+  height: 19.7cqw;
+  /* 本家の 89px */
+  bottom: -11.1cqw;
+  /* 本家の -50px */
+  left: 17.8cqw;
+  /* 論理値 21.1cqw + パース補正済みの確定値 */
   transform: translateX(-50%);
 }
 
 .foe .doubleEllipse {
-  width: 71.7cqw; /* 本家の 323px */
-  height: 15.7cqw; /* 本家の 71px */
-  bottom: -9.8cqw; /* 本家の -44px */
-  right: 10cqw; /* キャラの中間地点 (鏡像) */
-  transform: translateX(50%);
+  width: 71.7cqw;
+  /* 本家の 323px */
+  height: 15.7cqw;
+  /* 本家の 71px */
+  bottom: -9.8cqw;
+  /* 本家の -44px */
+  left: 28.8cqw;
+  /* 本家 */
+  transform: translateX(-50%);
 }
 
 .charWrapper {
   position: absolute;
-  width: 22.2cqw; /* 本家の 100px */
+  width: 22.2cqw;
+  /* 本家の 100px */
   height: 22.2cqw;
   display: flex;
   justify-content: center;
@@ -51,25 +66,34 @@
 
 /* 味方の個別位置 (IDごとの微調整を統合) */
 .ally .back {
-  left: -3.9cqw;  /* (2.5px - 20px) */
-  bottom: 3.3cqw; /* 15px */
+  left: -3.9cqw;
+  /* (2.5px - 20px) */
+  bottom: 3.3cqw;
+  /* 15px */
   z-index: 10;
 }
+
 .ally .front {
-  left: 23.8cqw; /* 107.5px */
+  left: 23.8cqw;
+  /* 107.5px */
   bottom: 0;
   z-index: 12;
 }
 
 /* 敵の個別位置 */
 .foe .back {
-  right: -1.7cqw; /* 2.5px - 10px */
-  top: -4.4cqw;   /* translate(-20px) */
+  right: -1.7cqw;
+  /* 2.5px - 10px */
+  bottom: 4.4cqw;
+  /* 20px */
   z-index: 10;
 }
+
 .foe .front {
-  right: 21.6cqw; /* 107.5px - 10px */
-  top: 0.6cqw;    /* translate(3px) */
+  right: 21.6cqw;
+  /* 107.5px - 10px */
+  bottom: -0.7cqw;
+  /* -3px */
   z-index: 12;
 }
 
