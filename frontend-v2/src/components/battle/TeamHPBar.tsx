@@ -9,42 +9,54 @@ interface TeamHPBarProps {
 }
 
 /**
- * ダブルバトル用のチーム統合型HPバルーン
- * 2人分のHPバーとステータスを1つのバルーン内に表示します。
+ * ダブルバトル用のチーム統合型HPバルーン (本家完全再現版)
+ * 待機中（キャラクター不在）の状態もサポートします。
  */
-export const TeamHPBar: React.FC<TeamHPBarProps> = ({ characters, isAlly, teamName }) => {
-  const getHPColor = (current: number, max: number) => {
-    const ratio = current / max;
-    if (ratio > 0.5) return 'linear-gradient(90deg, #2ecc71, #27ae60)';
-    if (ratio > 0.2) return 'linear-gradient(90deg, #f1c40f, #f39c12)';
-    return 'linear-gradient(90deg, #e74c3c, #c0392b)';
-  };
-
+export const TeamHPBar: React.FC<TeamHPBarProps> = ({ characters, isAlly }) => {
+  // キャラクターが不在（マッチング待機中など）の場合はプレースホルダーを表示
+  const isWaiting = characters.length === 0;
+  
   return (
-    <div className={`${styles.balloon} ${isAlly ? styles.ally : styles.foe}`}>
-      <div className={styles.teamHeader}>{teamName}</div>
-      <div className={styles.membersContainer}>
-        {characters.map((char, index) => {
-          const hpRatio = (char.hp / char.max_hp) * 100;
-          return (
-            <div key={char.id || index} className={styles.memberInfo}>
-              <div className={styles.nameRow}>
-                <span className={styles.memberName}>{char.name}</span>
-                <span className={styles.hpText}>{Math.max(0, char.hp)} / {char.max_hp}</span>
+    <div className={`${styles.balloon} ${isAlly ? styles.ally : styles.foe} ${styles.doubleBalloon}`}>
+      {isWaiting ? (
+        <div className={styles.memberInfo}>
+          <div className={styles.nameRow}>
+            <span className={styles.memberName} style={{ opacity: 0.5 }}>
+              待機中...
+            </span>
+          </div>
+          <div className={styles.bar}>
+            <div className={styles.hpBarFill} style={{ width: '0%', background: '#ddd' }} />
+          </div>
+        </div>
+      ) : (
+        <div className={styles.membersContainer}>
+          {characters.map((char, index) => {
+            const hpRatio = (char.hp / char.max_hp) * 100;
+            return (
+              <div key={char.id || index} className={styles.memberInfo}>
+                <div className={styles.nameRow}>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span className={styles.memberName}>{char.name}</span>
+                    {char.is_poison && (
+                      <span className={styles.poisonLabel}>どく</span>
+                    )}
+                  </div>
+                  <span className={styles.hpText}>
+                    {Math.max(0, char.hp)}/{char.max_hp}
+                  </span>
+                </div>
+                <div className={styles.hpBarContainer}>
+                  <div 
+                    className={styles.hpBarFill}
+                    style={{ width: `${Math.max(0, hpRatio)}%` }}
+                  />
+                </div>
               </div>
-              <div className={styles.hpBarContainer}>
-                <div 
-                  className={`${styles.hpBarFill} ${char.is_poison ? styles.poison : ''}`}
-                  style={{ 
-                    width: `${Math.max(0, hpRatio)}%`,
-                    background: char.is_poison ? undefined : getHPColor(char.hp, char.max_hp)
-                  }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

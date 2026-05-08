@@ -1,90 +1,92 @@
+/* --- ダブルバトル用 Balloon 完全再現 --- */
+
 .balloon {
   position: absolute;
-  width: 32.2cqw; /* 本家の 145px / 450px */
-  padding: 1cqw 1.5cqw;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: 1.5cqw;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: #ffffff; /* 本家の真っ白 */
+  border-radius: 2.22cqw; /* 10px */
+  padding: 1.33cqw 2cqw;
+  width: 40cqw; /* 180px */
+  box-shadow: 0 0 0.88cqw rgba(0, 0, 0, 0.2);
   z-index: 100;
   display: flex;
   flex-direction: column;
-  gap: 0.5cqw;
+  gap: 1.11cqw;
+  box-sizing: border-box;
 }
 
+/* 画面端配置 */
 .ally {
-  bottom: 2.6cqw; /* 本家の 12px */
-  right: 0;
-  border-right: 6px solid #2ecc71;
+  bottom: 2.22cqw;
+  right: -1.77cqw; /* 本家のハミ出し再現 */
 }
 
 .foe {
-  top: 2.6cqw;   /* 本家の 12px */
-  left: 0;
-  border-left: 6px solid #e74c3c;
+  top: 2.22cqw;
+  left: -1.77cqw;
 }
 
 .teamHeader {
-  font-size: 3cqw;
-  font-weight: bold;
-  color: #666;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  padding-bottom: 0.5cqw;
+  display: none; /* 本家ダブルはチーム名のヘッダーなし、個別に名前表示 */
 }
 
 .membersContainer {
   display: flex;
   flex-direction: column;
-  gap: 1.5cqw;
+  gap: 1.33cqw;
 }
 
 .memberInfo {
   display: flex;
   flex-direction: column;
-  gap: 0.5cqw;
+  width: 100%;
 }
 
 .nameRow {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
+  margin-bottom: 0.22cqw;
 }
 
 .memberName {
-  font-size: 3.5cqw;
-  font-weight: 800;
+  font-size: 3.1cqw;
+  font-weight: bold;
   color: #333;
+  font-family: "M PLUS 1p", sans-serif;
+  white-space: nowrap;
 }
 
 .hpText {
-  font-size: 2.8cqw;
-  color: #777;
-  font-weight: 600;
+  font-size: 2.4cqw;
+  color: #666;
+  font-weight: bold;
+  font-family: monospace;
 }
 
+/* HPバー */
 .hpBarContainer {
   width: 100%;
-  height: 1.5cqw; /* 約6-7px */
+  height: 1.33cqw;
   background: #eee;
-  border-radius: 1cqw;
+  border-radius: 0.66cqw;
   overflow: hidden;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .hpBarFill {
   height: 100%;
-  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #2ecc71; /* モダンな黄緑 */
+  transition: width 0.5s ease-out;
 }
 
-.poison {
-  background: linear-gradient(90deg, #9b59b6, #8e44ad);
-  animation: poisonPulse 2s infinite;
-}
-
-@keyframes poisonPulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.7; }
-  100% { opacity: 1; }
+/* 毒ラベル */
+.poisonLabel {
+  background-color: #8f42d4;
+  color: white;
+  font-size: 2.2cqw;
+  font-weight: bold;
+  padding: 0 1.11cqw;
+  border-radius: 2.22cqw;
+  margin-left: 0.88cqw;
+  display: inline-block;
+  line-height: 1.4;
 }
