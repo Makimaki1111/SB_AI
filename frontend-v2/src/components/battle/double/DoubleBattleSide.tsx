@@ -35,14 +35,14 @@ export const DoubleBattleSide: React.FC<DoubleBattleSideProps> = ({
     <div className={`${styles.teamContainer} ${isAlly ? styles.ally : styles.foe}`}>
       {/* チーム全体の足元の影 */}
       <div className={styles.doubleEllipse} />
-      
+
       {characters.map((char, index) => {
         const isKnockout = char.id ? knockoutStates[char.id] : false;
-        
+
         return (
           <div key={char.id || index} className={styles.charWrapper}>
             {char.types?.map((type, tIndex) => (
-              <img 
+              <img
                 key={tIndex}
                 src={`/img/${TYPE_TO_IMAGE[type] || 'normal'}.gif`}
                 className={`${styles.sprite} ${tIndex > 0 ? styles.type2 : ''}`}
@@ -52,17 +52,17 @@ export const DoubleBattleSide: React.FC<DoubleBattleSideProps> = ({
             ))}
 
             <div className={styles.effectsContainer}>
-              <BattleEffects 
-                trigger={effect} 
-                side={isAlly ? "ally" : "foe"} 
+              <BattleEffects
+                trigger={effect}
+                side={isAlly ? "ally" : "foe"}
               />
             </div>
 
             <div className={styles.wordWrapper}>
-              <WordDisplay 
-                word={char.word || null} 
+              <WordDisplay
+                word={char.word || null}
                 isAlly={isAlly}
-                isBlinking={effect === 'blink'} 
+                isBlinking={effect === 'blink'}
                 isKnockout={isKnockout}
               />
             </div>

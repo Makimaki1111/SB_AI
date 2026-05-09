@@ -2,8 +2,10 @@
 
 .teamContainer {
   /* コンテナ幅と高さ */
-  --container-w: 46.7cqw; /* 210px / 450px */
-  --container-h: 33.3cqw; /* 150px / 450px */
+  --container-w: 46.7cqw;
+  /* 210px / 450px */
+  --container-h: 33.3cqw;
+  /* 150px / 450px */
 
   position: absolute;
   width: var(--container-w);
@@ -35,14 +37,14 @@
   width: 88.9cqw;
   height: 19.8cqw;
   bottom: -11.1cqw;
-  left: 10.2cqw;
+  left: -13.1cqw;
 }
 
 .foe .doubleEllipse {
   width: 71.8cqw;
   height: 15.8cqw;
   bottom: -9.8cqw;
-  left: 29.0cqw;
+  left: 5.7cqw;
 }
 
 /* キャラクター配置 (.charWrapper) */
@@ -97,12 +99,12 @@
   width: 13.3cqw;
   height: 13.3cqw;
   left: 4.4cqw;
-  bottom: 0cqw;
+  bottom: 4.4cqw;
 }
 
 .charWrapper:nth-child(3) .type2 {
   left: 7.8cqw;
-  bottom: 2.2cqw;
+  bottom: 6.7cqw;
   z-index: 11;
 }
 
@@ -111,12 +113,12 @@
   width: 12cqw;
   height: 12cqw;
   left: 4.0cqw;
-  bottom: 0cqw;
+  bottom: 4.0cqw;
 }
 
 .charWrapper:nth-child(2) .type2 {
   left: 7.0cqw;
-  bottom: 2.0cqw;
+  bottom: 6.0cqw;
   z-index: 11;
 }
 
@@ -138,7 +140,7 @@
 }
 
 /* WordDisplay コンポーネントへの強制上書き */
-.wordWrapper > div {
+.wordWrapper>div {
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
