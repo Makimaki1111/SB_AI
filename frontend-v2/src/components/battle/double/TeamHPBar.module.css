@@ -2,20 +2,21 @@
   position: absolute;
   background: white;
   border-radius: 10px;
-  padding: 8px 12px;
-  width: 145px;
+  padding: 1.8cqw; /* 8px */
+  width: 32.2cqw; /* 145px */
+  min-height: 13.3cqw; /* 60px */
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
   z-index: 100;
 }
 
 .right {
-  bottom: 10px;
-  right: -8px;
+  bottom: 2.7cqw; /* 12px */
+  right: 0cqw;
 }
 
 .left {
-  top: 10px;
-  left: -8px;
+  top: 2.7cqw; /* 12px */
+  left: 0cqw;
 }
 
 .teamInfo {

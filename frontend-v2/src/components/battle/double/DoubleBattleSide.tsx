@@ -33,6 +33,9 @@ export const DoubleBattleSide: React.FC<DoubleBattleSideProps> = ({
 }) => {
   return (
     <div className={`${styles.teamContainer} ${isAlly ? styles.ally : styles.foe}`}>
+      {/* チーム全体の足元の影 */}
+      <div className={styles.doubleEllipse} />
+      
       {characters.map((char, index) => {
         const isKnockout = char.id ? knockoutStates[char.id] : false;
         

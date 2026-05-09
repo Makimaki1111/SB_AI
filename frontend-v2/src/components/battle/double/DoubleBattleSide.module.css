@@ -1,86 +1,132 @@
-/* --- ダブルバトル・レイアウト (既存の座標データを維持) --- */
+/* --- ダブルバトル・レイアウト (calc/transform を排除した絶対座標) --- */
 
 .teamContainer {
-  /* 450px基準のcqw換算 */
-  --container-w: 46.6cqw; /* 210px */
-  --container-h: 33.3cqw; /* 150px */
-  --char-w: 22.2cqw;      /* 100px */
-  --char-h: 22.2cqw;
+  /* コンテナ幅と高さ */
+  --container-w: 46.7cqw; /* 210px / 450px */
+  --container-h: 33.3cqw; /* 150px / 450px */
 
   position: absolute;
   width: var(--container-w);
   height: var(--container-h);
   pointer-events: none;
+  z-index: 10;
 }
 
+/* チームコンテナ自体の配置 */
 .ally {
   bottom: 7.1cqw;
   left: 7.1cqw;
 }
 
 .foe {
-  top: -10.6cqw;
+  top: -10.7cqw;
   right: 6.2cqw;
 }
 
-/* キャラクターごとの配置 (DoubleBattleSide.tsx の index に対応) */
-/* 味方 */
-.ally .charWrapper:nth-child(2) { /* back (index 0) */
-  left: -3.9cqw;
-  bottom: 3.3cqw;
-  z-index: 10;
-  transform: scale(0.9);
+/* 足元の影 (白い楕円) */
+.doubleEllipse {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  z-index: 5;
 }
 
-.ally .charWrapper:nth-child(3) { /* front (index 1) */
-  left: 23.8cqw;
-  bottom: 0;
+.ally .doubleEllipse {
+  width: 88.9cqw;
+  height: 19.8cqw;
+  bottom: -11.1cqw;
+  left: 10.2cqw;
+}
+
+.foe .doubleEllipse {
+  width: 71.8cqw;
+  height: 15.8cqw;
+  bottom: -9.8cqw;
+  left: 29.0cqw;
+}
+
+/* キャラクター配置 (.charWrapper) */
+.charWrapper {
+  position: absolute;
+}
+
+/* 味方A (後衛・左) */
+.ally .charWrapper:nth-child(2) {
+  width: 20cqw;
+  height: 20cqw;
+  left: -2.3cqw;
+  bottom: 4.1cqw;
+  z-index: 10;
+}
+
+/* 味方B (前衛・右) */
+.ally .charWrapper:nth-child(3) {
+  width: 22.2cqw;
+  height: 22.2cqw;
+  left: 23.9cqw;
+  bottom: 0cqw;
   z-index: 12;
 }
 
-/* 敵 */
-.foe .charWrapper:nth-child(2) { /* back (index 0) */
-  right: -1.7cqw;
-  bottom: 4.4cqw;
+/* 敵A (後衛・左) */
+.foe .charWrapper:nth-child(2) {
+  width: 20cqw;
+  height: 20cqw;
+  left: 3.7cqw;
+  bottom: 5.1cqw;
   z-index: 10;
-  transform: scale(0.9);
 }
 
-.foe .charWrapper:nth-child(3) { /* front (index 1) */
-  right: 21.6cqw;
+/* 敵B (前衛・右) */
+.foe .charWrapper:nth-child(3) {
+  width: 22.2cqw;
+  height: 22.2cqw;
+  left: 26.1cqw;
   bottom: -0.7cqw;
   z-index: 12;
 }
 
-.charWrapper {
-  position: absolute;
-  width: var(--char-w);
-  height: var(--char-h);
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-}
-
+/* アバター画像 */
 .sprite {
   position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 13.3cqw; /* 60px */
-  height: 13.3cqw;
   object-fit: contain;
 }
 
-.type2 {
-  transform: translate(calc(-50% + 3.3cqw), -2.2cqw);
+/* 前衛用画像サイズ (味方B, 敵B) */
+.charWrapper:nth-child(3) .sprite {
+  width: 13.3cqw;
+  height: 13.3cqw;
+  left: 4.4cqw;
+  bottom: 0cqw;
+}
+
+.charWrapper:nth-child(3) .type2 {
+  left: 7.8cqw;
+  bottom: 2.2cqw;
   z-index: 11;
 }
 
+/* 後衛用画像サイズ (味方A, 敵A) */
+.charWrapper:nth-child(2) .sprite {
+  width: 12cqw;
+  height: 12cqw;
+  left: 4.0cqw;
+  bottom: 0cqw;
+}
+
+.charWrapper:nth-child(2) .type2 {
+  left: 7.0cqw;
+  bottom: 2.0cqw;
+  z-index: 11;
+}
+
+/* 単語吹き出しのラッパー */
 .wordWrapper {
   position: absolute;
-  left: 50%;
-  width: 0;
+  width: 100%;
+  left: 0;
   z-index: 50;
+  text-align: center;
 }
 
 .ally .wordWrapper {
@@ -91,28 +137,16 @@
   top: 100%;
 }
 
-.doubleEllipse {
-  position: absolute;
-  background: white;
-  border-radius: 50%;
-  z-index: 5;
-  transform: translateX(-50%);
+/* WordDisplay コンポーネントへの強制上書き */
+.wordWrapper > div {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: auto !important;
+  width: 100% !important;
 }
 
-.ally .doubleEllipse {
-  width: 88.8cqw;
-  height: 19.7cqw;
-  bottom: -11.1cqw;
-  left: 10.2cqw;
-}
-
-.foe .doubleEllipse {
-  width: 71.7cqw;
-  height: 15.7cqw;
-  bottom: -9.8cqw;
-  left: 29cqw;
-}
-
+/* エフェクト用コンテナ */
 .effectsContainer {
   position: absolute;
   top: 0;
