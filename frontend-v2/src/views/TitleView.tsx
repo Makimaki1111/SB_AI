@@ -4,7 +4,7 @@ import { useUser } from '../context/UserContext';
 import styles from './TitleView.module.css';
 import { GameButton } from '../components/common/GameButton';
 import { GameLayout } from '../components/layout/GameLayout';
-import { SettingsModal } from '../components/battle/SettingsModal';
+import { SettingsModal } from '../components/modals/SettingsModal';
 
 const CAROUSEL_IMAGES = [
   'animal.gif', 'art.gif', 'body.gif', 'bug.gif', 'cloth.gif', 

@@ -1,16 +1,16 @@
 import React from 'react';
 import { useBattle } from '../hooks/useBattle';
 import { useUser } from '../context/UserContext';
-import { LobbyView } from '../components/battle/LobbyView';
-import { AbilityModal } from '../components/battle/AbilityModal';
+import { LobbyView } from '../components/lobby/LobbyView';
+import { AbilityModal } from '../components/modals/AbilityModal';
 import { SingleBattleArena } from '../components/battle/single/SingleBattleArena';
 import { DoubleBattleArena } from '../components/battle/double/DoubleBattleArena';
 import SoundManager from '../utils/SoundManager';
 
 import { GameLayout } from '../components/layout/GameLayout';
-import { SituationModal } from '../components/battle/SituationModal';
+import { SituationModal } from '../components/modals/SituationModal';
+import { StockSelectionModal } from '../components/modals/StockSelectionModal';
 import { ConfirmModal } from '../components/common/ConfirmModal';
-import { StockSelectionModal } from '../components/battle/StockSelectionModal';
 import { GameButton } from '../components/common/GameButton';
 import { API_BASE_URL, WS_BASE_URL } from '../constants/game';
 import type { AbilityData } from '../types/battle';

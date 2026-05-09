@@ -1,6 +1,6 @@
 import React from 'react';
 import { GameModal } from '../common/GameModal';
-import { StatCard } from './StatCard';
+import { StatCard } from '../lobby/StatCard';
 import styles from '../../views/BattleView.module.css';
 import type { CharacterState, BattleState } from '../../types/battle';
 
