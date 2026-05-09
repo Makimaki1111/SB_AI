@@ -1,10 +1,10 @@
 import React from 'react';
 import styles from './SingleBattle.module.css';
-import { WordInput } from './WordInput';
+import { WordInput } from '../WordInput';
 import { SingleBattleSide } from './SingleBattleSide';
-import { TYPE_TO_IMAGE } from '../../constants/game';
-import type { BattleState, CharacterState } from '../../types/battle';
-import SoundManager from '../../utils/SoundManager';
+import { TYPE_TO_IMAGE } from '../../../constants/game';
+import type { BattleState, CharacterState } from '../../../types/battle';
+import SoundManager from '../../../utils/SoundManager';
 
 
 interface SingleBattleArenaProps {

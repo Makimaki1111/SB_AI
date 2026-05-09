@@ -1,9 +1,9 @@
 import React from 'react';
-import { HPBar } from './HPBar';
-import { CharacterAvatar } from './CharacterAvatar';
-import { WordDisplay } from './WordDisplay';
-import { BattleEffects } from './BattleEffects';
-import type { CharacterState } from '../../types/battle';
+import { HPBar } from '../HPBar';
+import { CharacterAvatar } from '../CharacterAvatar';
+import { WordDisplay } from '../WordDisplay';
+import { BattleEffects } from '../BattleEffects';
+import type { CharacterState } from '../../../types/battle';
 
 interface SingleBattleSideProps {
   character: CharacterState | null;

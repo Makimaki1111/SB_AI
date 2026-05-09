@@ -3,7 +3,7 @@ import { useBattle } from '../hooks/useBattle';
 import { useUser } from '../context/UserContext';
 import { LobbyView } from '../components/battle/LobbyView';
 import { AbilityModal } from '../components/battle/AbilityModal';
-import { SingleBattleArena } from '../components/battle/SingleBattleArena';
+import { SingleBattleArena } from '../components/battle/single/SingleBattleArena';
 import { DoubleBattleArena } from '../components/battle/double/DoubleBattleArena';
 import SoundManager from '../utils/SoundManager';
 
