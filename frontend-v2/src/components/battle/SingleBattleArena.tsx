@@ -1,7 +1,6 @@
 import React from 'react';
-import styles from './BattleArena.module.css';
+import styles from './SingleBattle.module.css';
 import { WordInput } from './WordInput';
-import { GroundShadow } from './GroundShadow';
 import { SingleBattleSide } from './SingleBattleSide';
 import { TYPE_TO_IMAGE } from '../../constants/game';
 import type { BattleState, CharacterState } from '../../types/battle';
@@ -62,7 +61,9 @@ export const SingleBattleArena: React.FC<SingleBattleArenaProps> = ({
       <div className={styles.topImage}>
         <img src="/img/ground.jpg" className={styles.bgImage} alt="背景画像" />
 
-        <GroundShadow isDouble={false} />
+        {/* 地面の楕円 (シングル専用) */}
+        <div className={`${styles.ellipse} ${styles.ellipseRight}`} />
+        <div className={`${styles.ellipse} ${styles.ellipseLeft}`} />
 
         {/* キャラクターセクション (シングル専用) */}
         <SingleBattleSide

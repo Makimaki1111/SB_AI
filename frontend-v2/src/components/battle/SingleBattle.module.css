@@ -1,3 +1,8 @@
+/* === SingleBattle.module.css ===
+ * BattleArena.module.css からダブルバトル専用ルールを除去したシングル専用CSS。
+ * 全ての値は BattleArena.module.css と完全に同一。
+ */
+
 .battleContainer {
   display: flex;
   flex-direction: column;
@@ -12,18 +17,12 @@
 
 .topImage {
   flex: 1;
-  /* シングルバトルのデフォルト */
+  /* シングルバトル: flex:1 で残りの高さを埋める */
   position: relative;
   width: 100%;
   z-index: 1;
   overflow: hidden;
   background: #fff;
-}
-
-.battleContainer[data-battle-mode="double"] .topImage {
-  flex: none;
-  height: 57.7cqw;
-  /* ダブルバトルの本家固定高 (260px / 450px) */
 }
 
 .bgImage {
@@ -32,14 +31,6 @@
   left: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-}
-
-.battleContainer[data-battle-mode="double"] .bgImage {
-  width: 100%;
-  height: 100%;
-  left: 0;
-  top: 0;
   object-fit: cover;
 }
 
@@ -229,93 +220,6 @@
   z-index: 31;
 }
 
-.targetBar {
-  display: flex;
-  justify-content: center;
-  gap: 3cqw;
-  width: 100%;
-  padding: 0 4.4cqw;
-  box-sizing: border-box;
-  margin-top: 2.2cqw;
-}
-
-.targetBtn {
-  flex: 1;
-  position: relative;
-  padding: 2.5cqw 2cqw;
-  border-radius: 3cqw;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  background: linear-gradient(145deg, #ffffff, #f0f0f0);
-  font-size: 3.8cqw;
-  font-weight: 800;
-  color: #666;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5cqw;
-}
-
-/* 選択中: モダンなネオンレッドのグラデーション */
-.targetActive {
-  background: linear-gradient(135deg, #ff7675, #d63031);
-  color: white;
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 20px rgba(214, 48, 49, 0.4);
-  transform: translateY(-0.8cqw) scale(1.02);
-}
-
-.targetActive::before {
-  content: "🎯 TARGETING";
-  position: absolute;
-  top: -2.2cqw;
-  background: #d63031;
-  color: white;
-  font-size: 2cqw;
-  padding: 0.2cqw 1.5cqw;
-  border-radius: 1cqw;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  animation: targetPulse 1.5s infinite;
-}
-
-@keyframes targetPulse {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-
-  50% {
-    transform: scale(1.1);
-    opacity: 0.8;
-  }
-
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.targetDisabled {
-  background: #e0e0e0;
-  color: #999;
-  border-color: #ccc;
-  cursor: not-allowed;
-  opacity: 0.6;
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-.targetBtn:hover:not(.targetDisabled):not(.targetActive) {
-  background: #fff;
-  transform: translateY(-0.4cqw);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-  color: #333;
-}
-
 .actionBtn {
   display: flex;
   flex-direction: column;
@@ -419,7 +323,7 @@
   transform: translateY(-0.6cqw);
 }
 
-/* 地面の楕円 */
+/* 地面の楕円 (シングル専用) */
 .ellipse {
   position: absolute;
   background: white;
@@ -443,25 +347,4 @@
   /* 180px */
   height: 8.8cqw;
   /* 40px */
-}
-
-/* ダブルバトル用の巨大な楕円 */
-.ellipseAlly {
-  bottom: 11cqw;
-  left: 50%;
-  transform: translateX(calc(-50% + 31cqw));
-  /* 本家の 141px / 450px */
-  width: 88cqw;
-  /* 本家の 400px / 450px */
-  height: 19cqw;
-  /* 本家の 89px / 450px */
-}
-
-.ellipseFoe {
-  top: -10cqw;
-  right: 6cqw;
-  width: 71cqw;
-  /* 本家の 323px / 450px */
-  height: 15cqw;
-  /* 本家の 71px / 450px */
 }
