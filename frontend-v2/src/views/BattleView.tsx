@@ -3,7 +3,8 @@ import { useBattle } from '../hooks/useBattle';
 import { useUser } from '../context/UserContext';
 import { LobbyView } from '../components/battle/LobbyView';
 import { AbilityModal } from '../components/battle/AbilityModal';
-import { BattleArena } from '../components/battle/BattleArena';
+import { SingleBattleArena } from '../components/battle/SingleBattleArena';
+import { DoubleBattleArena } from '../components/battle/double/DoubleBattleArena';
 import SoundManager from '../utils/SoundManager';
 
 import { GameLayout } from '../components/layout/GameLayout';
@@ -276,32 +277,55 @@ export const BattleView: React.FC = () => {
           />
         ) : (
           <>
-            <BattleArena
-              battleState={battleState}
-              ally={ally}
-              foe={foe}
-              allies={allies}
-              foes={foes}
-              prediction={prediction}
-              messageLog={messageLog}
-              notification={notification}
-              waitMessage={waitMessage}
-              isProcessing={isProcessing}
-              allyEffect={allyEffect}
-              foeEffect={foeEffect}
-              timer={timer}
-              allyWord={allyWord}
-              foeWord={foeWord}
-              knockoutStates={knockoutStates}
-              allyId={allyId}
-              foeId={foeId}
-              username={username || "ななし"}
-              onSendWord={handleSubmitWord}
-              onSendIncludeCheck={sendIncludeCheck}
-              onOpenSituation={() => setIsSituationModalOpen(true)}
-              onOpenAbility={() => handleOpenAbility(0)}
-              onRunAway={handleRunAway}
-            />
+            {isDouble ? (
+              <DoubleBattleArena
+                battleState={battleState}
+                allies={allies}
+                foes={foes}
+                prediction={prediction}
+                messageLog={messageLog}
+                notification={notification}
+                waitMessage={waitMessage}
+                isProcessing={isProcessing}
+                allyEffect={allyEffect}
+                foeEffect={foeEffect}
+                timer={timer}
+                allyWord={allyWord}
+                foeWord={foeWord}
+                knockoutStates={knockoutStates}
+                username={username || "ななし"}
+                onSendWord={handleSubmitWord}
+                onSendIncludeCheck={sendIncludeCheck}
+                onOpenSituation={() => setIsSituationModalOpen(true)}
+                onOpenAbility={() => handleOpenAbility(0)}
+                onRunAway={handleRunAway}
+              />
+            ) : (
+              <SingleBattleArena
+                battleState={battleState}
+                ally={ally}
+                foe={foe}
+                prediction={prediction}
+                messageLog={messageLog}
+                notification={notification}
+                waitMessage={waitMessage}
+                isProcessing={isProcessing}
+                allyEffect={allyEffect}
+                foeEffect={foeEffect}
+                timer={timer}
+                allyWord={allyWord}
+                foeWord={foeWord}
+                knockoutStates={knockoutStates}
+                allyId={allyId}
+                foeId={foeId}
+                username={username || "ななし"}
+                onSendWord={handleSubmitWord}
+                onSendIncludeCheck={sendIncludeCheck}
+                onOpenSituation={() => setIsSituationModalOpen(true)}
+                onOpenAbility={() => handleOpenAbility(0)}
+                onRunAway={handleRunAway}
+              />
+            )}
 
             {showResultButton && (
               <div className={styles.simpleResultArea}>
