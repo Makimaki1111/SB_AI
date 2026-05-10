@@ -221,6 +221,15 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
             word: data.state.word
           };
           console.log(`[WordDisplay] Assigned "${data.state.word}" to ${attackerId} (${uiMap[attackerId]})`);
+          
+          // ★重要: 単語がセットされた直後にステートを更新して画面に即時反映させる
+          setBattleState(prev => prev ? { 
+            ...prev, 
+            characters: { 
+              ...prev.characters, 
+              [attackerId]: { ...data.state.characters[attackerId] } 
+            } 
+          } : null);
         }
 
         const attackerState = data.state.characters[attackerId || ''];

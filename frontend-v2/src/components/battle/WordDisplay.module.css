@@ -5,13 +5,28 @@
   font-weight: bold;
   color: #2A2A2A;
   font-size: 7.1cqw;
-  /* 32px / 450px */
   letter-spacing: -0.4cqw;
   white-space: nowrap;
   z-index: 15;
   text-align: center;
   pointer-events: none;
   text-shadow: 0 0 0.8cqw rgba(255, 255, 255, 0.8);
+}
+
+/* Double Battle Legacy Parity */
+.doubleWord {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'M PLUS 1p', sans-serif;
+  font-weight: bold;
+  color: #2A2A2A;
+  font-size: 28px;
+  letter-spacing: -2px;
+  white-space: nowrap;
+  text-align: center;
+  z-index: 50;
+  pointer-events: none;
 }
 
 .blinking {

@@ -8,6 +8,8 @@ interface WordDisplayProps {
   isBlinking?: boolean;
   isKnockout?: boolean;
   centered?: boolean;
+  isDouble?: boolean;
+  slot?: string; // p1a, p1b, p2a, p2b
 }
 
 /**
@@ -19,7 +21,9 @@ export const WordDisplay: React.FC<WordDisplayProps> = ({
   isAlly,
   isBlinking,
   isKnockout,
-  centered = false
+  centered = false,
+  isDouble = false,
+  slot
 }) => {
   const [displayWord, setDisplayWord] = useState<string | null>(null);
   const [scale, setScale] = useState(1);
@@ -44,7 +48,11 @@ export const WordDisplay: React.FC<WordDisplayProps> = ({
     if (measureRef.current) {
       measureRef.current.innerText = word;
       const scrollWidth = measureRef.current.scrollWidth;
-      const maxWidth = centered ? 125 : 180; // ダブルバトル用は125px
+      
+      // スロットによる外部スケール (p1a/p2a は 0.9)
+      const externalScale = (slot === 'p1a' || slot === 'p2a') ? 0.9 : 1.0;
+      const maxWidth = (centered || isDouble) ? (125 / externalScale) : 180; 
+      
       let newScale = 1;
       if (scrollWidth > maxWidth) {
         newScale = maxWidth / scrollWidth;
@@ -54,14 +62,18 @@ export const WordDisplay: React.FC<WordDisplayProps> = ({
       setScale(newScale);
       setDisplayWord(word);
     }
-  }, [word, displayWord, centered]);
+  }, [word, displayWord, centered, isDouble, slot]);
 
-  const xPos = centered ? '-50%' : (isAlly ? '-50%' : '50%');
-  const baseClass = centered ? styles.centeredWord : (isAlly ? styles.allyWord : styles.foeWord);
+  const xPos = (centered || isDouble) ? '-50%' : (isAlly ? '-50%' : '50%');
+  const baseClass = isDouble ? styles.doubleWord : (isAlly ? styles.allyWord : styles.foeWord);
+  
+  // スロットによる外部スケール (p1a/p2a は 0.9)
+  const externalScale = (slot === 'p1a' || slot === 'p2a') ? 0.9 : 1.0;
+  const finalScale = scale * externalScale;
 
   return (
     <>
-      {/* 計測用の隠し要素 (常に存在し、スタイルを本番に合わせる) */}
+      {/* 計測用の隠し要素 */}
       <div
         ref={measureRef}
         className={baseClass}
@@ -70,7 +82,9 @@ export const WordDisplay: React.FC<WordDisplayProps> = ({
           pointerEvents: 'none',
           visibility: 'hidden',
           position: 'absolute',
-          display: 'block'
+          display: 'block',
+          fontSize: '28px', // ダブルの基準サイズで測る
+          fontWeight: 'bold'
         }}
       />
 
@@ -83,25 +97,25 @@ export const WordDisplay: React.FC<WordDisplayProps> = ({
             initial={{
               opacity: 0,
               x: xPos,
-              scaleX: scale, // 計測済みの倍率
+              scale: finalScale,
               y: 0
             }}
             animate={isKnockout ? {
               opacity: 0,
               y: 100,
               x: xPos,
-              scaleX: scale
+              scale: finalScale
             } : {
               opacity: 1,
               y: 0,
               x: xPos,
-              scaleX: scale
+              scale: finalScale
             }}
             transition={{
               duration: isKnockout ? 0.8 : 0.3,
               ease: isKnockout ? "easeIn" : "easeOut"
             }}
-            style={{ originX: 0.5 }}
+            style={{ originX: 0.5, originY: 0.5 }}
           >
             {displayWord}
           </motion.div>
