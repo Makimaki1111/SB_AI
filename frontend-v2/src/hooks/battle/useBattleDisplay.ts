@@ -23,12 +23,29 @@ export const useBattleDisplay = () => {
   const [foeWord, setFoeWord] = useState<string | null>(null);
   const [knockoutStates, setKnockoutStates] = useState<Record<string, boolean>>({});
   const [showResultButton, setShowResultButton] = useState(false);
+  
+  // ダブルバトルなど、個別のキャラクターに対するエフェクトを管理
+  const [activeEffects, setActiveEffects] = useState<Record<string, string>>({});
 
   const clearPrediction = () => setPrediction(null);
   
   const showNotification = (text: string, duration: number = 1500) => {
     setNotification(text);
     setTimeout(() => setNotification(null), duration);
+  };
+
+  const playCharacterEffect = (id: string, effect: string, duration: number = 1000) => {
+    setActiveEffects(prev => ({ ...prev, [id]: effect }));
+    setTimeout(() => {
+      setActiveEffects(prev => {
+        if (prev[id] === effect) {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        }
+        return prev;
+      });
+    }, duration);
   };
 
   const resetDisplay = () => {
@@ -40,6 +57,7 @@ export const useBattleDisplay = () => {
     setShowResultButton(false);
     setAllyEffect(null);
     setFoeEffect(null);
+    setActiveEffects({});
   };
 
   return {
@@ -53,6 +71,7 @@ export const useBattleDisplay = () => {
     foeWord, setFoeWord,
     knockoutStates, setKnockoutStates,
     showResultButton, setShowResultButton,
+    activeEffects, setActiveEffects, playCharacterEffect,
     resetDisplay
   };
 };

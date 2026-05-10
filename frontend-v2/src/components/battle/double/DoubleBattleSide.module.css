@@ -136,3 +136,13 @@
   height: 100%;
   z-index: 15;
 }
+
+/* --- 演出 --- */
+.blinking {
+  animation: blink 0.2s 5;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}

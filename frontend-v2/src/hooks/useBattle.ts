@@ -314,6 +314,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
           const msg = event.message || '';
           // 毒ダメージのときは点滅させない (本家仕様)
           if (!msg.includes('毒のダメージ')) {
+            if (targetId) display.playCharacterEffect(targetId, 'blink');
             if (targetSide === 'ally') display.setAllyEffect('blink');
             else if (targetSide === 'foe') display.setFoeEffect('blink');
           }
@@ -324,6 +325,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
           }
           if (event.type === 'drain' && event.attacker) {
             const attackerSide = event.attacker === allyId ? 'ally' : event.attacker === foeId ? 'foe' : null;
+            if (event.attacker) display.playCharacterEffect(event.attacker, 'heal');
             if (attackerSide === 'ally') display.setAllyEffect('heal');
             else if (attackerSide === 'foe') display.setFoeEffect('heal');
             if (event.attacker_hp !== undefined && event.attacker_hp !== null && tempCharacters[event.attacker]) {
@@ -338,6 +340,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
           display.setAllyEffect(null);
           display.setFoeEffect(null);
         } else if (event.type === 'cure') {
+          if (targetId) display.playCharacterEffect(targetId, 'heal');
           if (targetSide === 'ally') display.setAllyEffect('heal');
           else if (targetSide === 'foe') display.setFoeEffect('heal');
           if (targetId && tempCharacters[targetId] && event.hp !== undefined && event.hp !== null) {
@@ -365,6 +368,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
           }
         } else if (event.type === 'stat_up' || event.type === 'stat_down') {
           const effect = event.type === 'stat_up' ? 'up' : 'down';
+          if (targetId) display.playCharacterEffect(targetId, effect);
           if (targetSide === 'ally') display.setAllyEffect(effect);
           else if (targetSide === 'foe') display.setFoeEffect(effect);
           if (targetId && tempCharacters[targetId] && event.new_rank !== undefined && event.new_rank !== null) {

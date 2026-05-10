@@ -16,13 +16,12 @@ interface DoubleBattleArenaProps {
   notification: string | null;
   waitMessage: string | null;
   isProcessing: boolean;
-  allyEffect: string | null;
-  foeEffect: string | null;
   timer: { remaining: number; total: number };
   allyWord: string | null;
   foeWord: string | null;
   knockoutStates: Record<string, boolean>;
   username: string;
+  activeEffects?: Record<string, string>;
   onSendWord: (word: string, targetId?: string) => void;
   onSendIncludeCheck: (word: string) => void;
   onOpenSituation: () => void;
@@ -43,11 +42,10 @@ export const DoubleBattleArena: React.FC<DoubleBattleArenaProps> = ({
   notification,
   waitMessage,
   isProcessing,
-  allyEffect,
-  foeEffect,
   timer,
   knockoutStates,
   username,
+  activeEffects = {},
   onSendWord,
   onSendIncludeCheck,
   onOpenSituation,
@@ -87,14 +85,14 @@ export const DoubleBattleArena: React.FC<DoubleBattleArenaProps> = ({
         <DoubleBattleSide
           characters={foes}
           isAlly={false}
-          effect={foeEffect}
           knockoutStates={knockoutStates}
+          activeEffects={activeEffects}
         />
         <DoubleBattleSide
           characters={allies}
           isAlly={true}
-          effect={allyEffect}
           knockoutStates={knockoutStates}
+          activeEffects={activeEffects}
         />
 
         <TeamHPBar

@@ -59,6 +59,7 @@ export const BattleView: React.FC = () => {
     allyId,
     foeId,
     showResultButton,
+    activeEffects,
     allAbilities: battleAbilities,
     sendMessage,
     sendIncludeCheck,
@@ -291,13 +292,12 @@ export const BattleView: React.FC = () => {
                 notification={notification}
                 waitMessage={waitMessage}
                 isProcessing={isProcessing}
-                allyEffect={allyEffect}
-                foeEffect={foeEffect}
                 timer={timer}
                 allyWord={allyWord}
                 foeWord={foeWord}
                 knockoutStates={knockoutStates}
                 username={username || "ななし"}
+                activeEffects={activeEffects}
                 onSendWord={handleSubmitWord}
                 onSendIncludeCheck={sendIncludeCheck}
                 onOpenSituation={() => setIsSituationModalOpen(true)}

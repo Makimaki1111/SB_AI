@@ -8,8 +8,8 @@ import { TYPE_TO_IMAGE } from '../../../constants/game';
 interface DoubleBattleSideProps {
   characters: CharacterState[];
   isAlly: boolean;
-  effect: string | null;
   knockoutStates: Record<string, boolean>;
+  activeEffects?: Record<string, string>;
 }
 
 /**
@@ -18,8 +18,8 @@ interface DoubleBattleSideProps {
 export const DoubleBattleSide: React.FC<DoubleBattleSideProps> = ({
   characters,
   isAlly,
-  effect,
-  knockoutStates
+  knockoutStates,
+  activeEffects = {}
 }) => {
   return (
     <div className={`${styles.teamContainer} ${isAlly ? styles.ally : styles.foe}`}>
@@ -28,6 +28,10 @@ export const DoubleBattleSide: React.FC<DoubleBattleSideProps> = ({
 
       {characters.map((char, index) => {
         const isKnockout = char.id ? knockoutStates[char.id] || char.hp <= 0 || !!char.is_defeated : char.hp <= 0;
+        const charEffect = char.id ? activeEffects[char.id] : null;
+        
+        const isBlinking = charEffect === 'blink';
+        const displayEffect = charEffect && charEffect !== 'blink' ? charEffect : null;
 
         return (
           <div key={char.id || index} className={styles.charWrapper}>
@@ -35,7 +39,7 @@ export const DoubleBattleSide: React.FC<DoubleBattleSideProps> = ({
               <img
                 key={tIndex}
                 src={`/img/${TYPE_TO_IMAGE[type] || 'normal'}.gif`}
-                className={`${styles.sprite} ${tIndex > 0 ? styles.type2 : ''}`}
+                className={`${styles.sprite} ${tIndex > 0 ? styles.type2 : ''} ${isBlinking ? styles.blinking : ''}`}
                 style={{ opacity: isKnockout ? 0.3 : 1 }}
                 alt={char.name}
               />
@@ -43,7 +47,7 @@ export const DoubleBattleSide: React.FC<DoubleBattleSideProps> = ({
 
             <div className={styles.effectsContainer}>
               <BattleEffects
-                trigger={effect}
+                trigger={displayEffect}
                 side={isAlly ? "ally" : "foe"}
               />
             </div>
@@ -52,7 +56,7 @@ export const DoubleBattleSide: React.FC<DoubleBattleSideProps> = ({
               <WordDisplay
                 word={char.word || null}
                 isAlly={isAlly}
-                isBlinking={effect === 'blink'}
+                isBlinking={isBlinking}
                 isKnockout={isKnockout}
                 isDouble={true}
                 slot={isAlly ? (index === 0 ? 'p1a' : 'p1b') : (index === 0 ? 'p2a' : 'p2b')}
