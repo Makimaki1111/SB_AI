@@ -88,37 +88,24 @@
   z-index: 12;
 }
 
-/* アバター画像 */
+/* アバター画像 - 本家は 100% (100px相当) で表示されていた */
 .sprite {
   position: absolute;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
 }
 
-/* 前衛用画像サイズ (味方B, 敵B) */
-.charWrapper:nth-child(3) .sprite {
-  width: 13.3cqw;
-  height: 13.3cqw;
-  left: 4.4cqw;
-  bottom: 4.4cqw;
-}
-
+/* 2色目のタイプ画像 (本家: translate(15px, -10px)) */
 .charWrapper:nth-child(3) .type2 {
-  left: 7.8cqw;
-  bottom: 6.7cqw;
+  left: 3.3cqw;
+  bottom: 2.2cqw;
   z-index: 11;
 }
 
-/* 後衛用画像サイズ (味方A, 敵A) */
-.charWrapper:nth-child(2) .sprite {
-  width: 12cqw;
-  height: 12cqw;
-  left: 4.0cqw;
-  bottom: 4.0cqw;
-}
-
 .charWrapper:nth-child(2) .type2 {
-  left: 7.0cqw;
-  bottom: 6.0cqw;
+  left: 3.3cqw;
+  bottom: 2.2cqw;
   z-index: 11;
 }
 
