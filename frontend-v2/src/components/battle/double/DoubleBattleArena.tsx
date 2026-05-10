@@ -2,7 +2,7 @@ import React from 'react';
 import styles from './DoubleBattleArena.module.css';
 import { WordInput } from '../WordInput';
 import { DoubleBattleSide } from './DoubleBattleSide';
-import { TeamHPBar } from './TeamHPBar'; // 重複して保存を試みる
+import { TeamHPBar } from './TeamHPBar';
 import { TYPE_TO_IMAGE } from '../../../constants/game';
 import type { BattleState, CharacterState } from '../../../types/battle';
 import SoundManager from '../../../utils/SoundManager';

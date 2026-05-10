@@ -364,7 +364,6 @@ export const BattleView: React.FC = () => {
         />
 
         <AbilityModal
-          key={`${isAbilityModalOpen}-${isLobby}-${targetAbilityIndex}-${selectedBattleAbilityId}-${Object.keys(allAbilities).length}`}
           isOpen={isAbilityModalOpen}
           onClose={() => setIsAbilityModalOpen(false)}
           onSelect={handleSelectAbility}
