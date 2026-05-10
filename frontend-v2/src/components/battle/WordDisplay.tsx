@@ -7,6 +7,7 @@ interface WordDisplayProps {
   isAlly: boolean;
   isBlinking?: boolean;
   isKnockout?: boolean;
+  centered?: boolean;
 }
 
 /**
@@ -17,7 +18,8 @@ export const WordDisplay: React.FC<WordDisplayProps> = ({
   word,
   isAlly,
   isBlinking,
-  isKnockout
+  isKnockout,
+  centered = false
 }) => {
   const [displayWord, setDisplayWord] = useState<string | null>(null);
   const [scale, setScale] = useState(1);
@@ -42,7 +44,7 @@ export const WordDisplay: React.FC<WordDisplayProps> = ({
     if (measureRef.current) {
       measureRef.current.innerText = word;
       const scrollWidth = measureRef.current.scrollWidth;
-      const maxWidth = 180;
+      const maxWidth = centered ? 125 : 180; // ダブルバトル用は125px
       let newScale = 1;
       if (scrollWidth > maxWidth) {
         newScale = maxWidth / scrollWidth;
@@ -52,16 +54,17 @@ export const WordDisplay: React.FC<WordDisplayProps> = ({
       setScale(newScale);
       setDisplayWord(word);
     }
-  }, [word, displayWord]);
+  }, [word, displayWord, centered]);
 
-  const xPos = isAlly ? '-50%' : '50%';
+  const xPos = centered ? '-50%' : (isAlly ? '-50%' : '50%');
+  const baseClass = centered ? styles.centeredWord : (isAlly ? styles.allyWord : styles.foeWord);
 
   return (
     <>
       {/* 計測用の隠し要素 (常に存在し、スタイルを本番に合わせる) */}
       <div
         ref={measureRef}
-        className={isAlly ? styles.allyWord : styles.foeWord}
+        className={baseClass}
         style={{
           opacity: 0,
           pointerEvents: 'none',
@@ -76,7 +79,7 @@ export const WordDisplay: React.FC<WordDisplayProps> = ({
         {displayWord && (
           <motion.div
             key={displayWord}
-            className={`${isAlly ? styles.allyWord : styles.foeWord} ${isBlinking ? styles.blinking : ''}`}
+            className={`${baseClass} ${isBlinking ? styles.blinking : ''} word-display-text`}
             initial={{
               opacity: 0,
               x: xPos,

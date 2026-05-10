@@ -64,6 +64,7 @@ export const DoubleBattleSide: React.FC<DoubleBattleSideProps> = ({
                 isAlly={isAlly}
                 isBlinking={effect === 'blink'}
                 isKnockout={isKnockout}
+                centered={true}
               />
             </div>
           </div>

@@ -194,8 +194,18 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
         data.state.word = "";
       }
 
-      // 3. Pre-effect updates (Word submission display etc)
       const isTimeout = data.events?.some(e => e.message?.includes('時間切れ'));
+      const attackerSide = prevState.is_my_turn ? 'ally' : 'foe';
+      
+      // ダブルバトル対応の Actor 特定ロジック
+      // 1. last_actor_id が characters のキー (p1a等) に直接存在するか確認
+      // 2. 存在しない場合、id_to_ui_map からサイドが一致するスロットを探す
+      const uiMap = data.info?.id_to_ui_map || {};
+      let attackerId = data.state.last_actor_id;
+      
+      if (!attackerId || !data.state.characters[attackerId]) {
+        attackerId = Object.keys(uiMap).find(id => uiMap[id]?.startsWith(attackerSide)) || null;
+      }
 
       if (data.state.word && !isTimeout) {
         display.clearPrediction();
@@ -204,8 +214,15 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
         if (prevState.is_my_turn) display.setAllyWord(data.state.word);
         else display.setFoeWord(data.state.word);
 
-        const attackerSide = prevState.is_my_turn ? 'ally' : 'foe';
-        const attackerId = Object.keys(data.info?.id_to_ui_map || {}).find(id => data.info?.id_to_ui_map[id] === attackerSide);
+        // 単語を特定のキャラクターに紐付ける
+        if (attackerId && data.state.characters[attackerId]) {
+          data.state.characters[attackerId] = {
+            ...data.state.characters[attackerId],
+            word: data.state.word
+          };
+          console.log(`[WordDisplay] Assigned "${data.state.word}" to ${attackerId} (${uiMap[attackerId]})`);
+        }
+
         const attackerState = data.state.characters[attackerId || ''];
         if (attackerState?.types?.[0]) soundManager.playType(attackerState.types[0]);
       }
