@@ -15,10 +15,6 @@ export const TeamHPBar: React.FC<TeamHPBarProps> = ({ characters, isAlly, teamNa
   return (
     <div className={`${styles.balloon} ${isAlly ? styles.right : styles.left}`}>
       <div className={styles.teamInfo}>
-        <div className={styles.teamHeader}>
-          <span className={styles.teamTitle}>{teamName}</span>
-        </div>
-        
         {characters.map((char, index) => {
           const hpPercent = (char.hp / char.max_hp) * 100;
           let barColor = styles.hpHigh;
@@ -36,6 +32,9 @@ export const TeamHPBar: React.FC<TeamHPBarProps> = ({ characters, isAlly, teamNa
                   className={`${styles.hpBar} ${barColor}`} 
                   style={{ width: `${Math.max(0, hpPercent)}%` }}
                 />
+              </div>
+              <div className={styles.hpText}>
+                {char.hp}/{char.max_hp}
               </div>
             </div>
           );

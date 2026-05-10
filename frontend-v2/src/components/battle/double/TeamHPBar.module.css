@@ -1,11 +1,11 @@
 .balloon {
   position: absolute;
   background: white;
-  border-radius: 10px;
+  border-radius: 2.2cqw; /* 10px */
   padding: 1.8cqw; /* 8px */
   width: 32.2cqw; /* 145px */
   min-height: 13.3cqw; /* 60px */
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 0.9cqw rgba(0, 0, 0, 0.2); /* 4px */
   z-index: 100;
 }
 
@@ -22,60 +22,55 @@
 .teamInfo {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-}
-
-.teamHeader {
-  border-bottom: 1px solid #eee;
-  padding-bottom: 2px;
-  margin-bottom: 2px;
-}
-
-.teamTitle {
-  font-size: 11px;
-  font-weight: bold;
-  color: #888;
+  gap: 0.9cqw; /* 4px */
 }
 
 .memberInfo {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  line-height: 1.2;
 }
 
 .nameRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 1cqw;
 }
 
 .memberName {
-  font-size: 13px;
+  font-size: 2.9cqw; /* 13px */
   font-weight: bold;
   color: #333;
 }
 
 .poisonBadge {
-  background: #9b59b6;
-  color: white;
-  font-size: 9px;
-  padding: 1px 4px;
-  border-radius: 4px;
+  color: #ff0000;
+  font-weight: bold;
+  font-size: 2.4cqw; /* 11px */
 }
 
 .hpBarContainer {
-  background: #eee;
+  background: #ccc;
   width: 100%;
-  height: 5px;
-  border-radius: 3px;
+  height: 1.1cqw; /* 5px */
+  border-radius: 0.7cqw; /* 3px */
   overflow: hidden;
+  margin-top: 0.2cqw; /* 1px */
 }
 
 .hpBar {
   height: 100%;
-  transition: width 0.3s ease-out;
+  transition: width 0.3s ease-out, background-color 0.3s ease;
 }
 
-.hpHigh { background: #2ecc71; }
-.hpMedium { background: #f1c40f; }
-.hpLow { background: #e74c3c; }
+.hpText {
+  font-size: 2.9cqw; /* 13px */
+  color: #333;
+  text-align: right;
+  margin-top: 1px;
+}
+
+.hpHigh { background: #00FF00; }
+.hpMedium { background: #FFFF00; }
+.hpLow { background: #FF0000; }
