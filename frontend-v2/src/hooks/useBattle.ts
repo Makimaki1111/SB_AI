@@ -164,11 +164,18 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
         status: 'active'
       };
 
-      // Keep old HP and types for damage/knockout animation (only if not initial battle)
+      // Keep old HP, types, and word for damage/knockout animation (only if not initial battle)
       if (!isInitialBattle) {
         Object.keys(initialVisualState.characters).forEach(id => {
           if (prevState.characters[id]) {
+            // 安全のためにコピーを作成してからプロパティを更新する
+            initialVisualState.characters[id] = { ...initialVisualState.characters[id] };
             initialVisualState.characters[id].hp = prevState.characters[id].hp;
+            
+            // バックエンドからはキャラクター個別のwordは送られてこないため、前回の表示内容を保持する
+            if (prevState.characters[id].word) {
+              initialVisualState.characters[id].word = prevState.characters[id].word;
+            }
             
             // If the backend cleared types (because of revive), we preserve the old types
             // so the knockout animation can play. We will clear it when processing 'revive' event.
@@ -233,6 +240,12 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
             ...data.state.characters[attackerId],
             word: data.state.word
           };
+          
+          // イベントループ(tempCharacters)でのアニメーション中に古い単語に戻らないよう、ベースにも反映する
+          if (initialVisualState.characters[attackerId]) {
+            initialVisualState.characters[attackerId].word = data.state.word;
+          }
+
           console.log(`[WordDisplay] Assigned "${data.state.word}" to ${attackerId} (${uiMap[attackerId]})`);
           
           // ★重要: 単語がセットされた直後にステートを更新して画面に即時反映させる
@@ -394,9 +407,14 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
       const lastVisual = battleStateRef.current;
       if (lastVisual) {
         for (const id in mergedChars) {
-          if (lastVisual.characters[id] && lastVisual.characters[id].ability_change_count < mergedChars[id].ability_change_count) {
-            mergedChars[id].ability = lastVisual.characters[id].ability;
-            mergedChars[id].ability_change_count = lastVisual.characters[id].ability_change_count;
+          if (lastVisual.characters[id]) {
+            if (lastVisual.characters[id].word && !mergedChars[id].word) {
+              mergedChars[id].word = lastVisual.characters[id].word;
+            }
+            if (lastVisual.characters[id].ability_change_count < mergedChars[id].ability_change_count) {
+              mergedChars[id].ability = lastVisual.characters[id].ability;
+              mergedChars[id].ability_change_count = lastVisual.characters[id].ability_change_count;
+            }
           }
         }
       }
