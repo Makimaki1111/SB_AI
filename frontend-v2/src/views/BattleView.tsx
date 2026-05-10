@@ -296,7 +296,6 @@ export const BattleView: React.FC = () => {
                 allyWord={allyWord}
                 foeWord={foeWord}
                 knockoutStates={knockoutStates}
-                username={username || "ななし"}
                 activeEffects={activeEffects}
                 onSendWord={handleSubmitWord}
                 onSendIncludeCheck={sendIncludeCheck}

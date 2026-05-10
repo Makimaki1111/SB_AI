@@ -5,19 +5,18 @@ import type { CharacterState } from '../../../types/battle';
 interface TeamHPBarProps {
   characters: CharacterState[];
   isAlly: boolean;
-  teamName: string;
 }
 
 /**
  * 既存のデザインを維持したチームHPバー(バルーン)
  */
-export const TeamHPBar: React.FC<TeamHPBarProps> = ({ characters, isAlly, teamName }) => {
+export const TeamHPBar: React.FC<TeamHPBarProps> = ({ characters, isAlly }) => {
   return (
     <div className={`${styles.balloon} ${isAlly ? styles.right : styles.left}`}>
-      <div className={styles.teamName}>{teamName}</div>
       <div className={styles.teamInfo}>
         {characters.map((char, index) => {
-          const hpPercent = (char.hp / char.max_hp) * 100;
+          const maxHp = char.max_hp || 1;
+          const hpPercent = (char.hp / maxHp) * 100;
           let barColor = styles.hpHigh;
           if (hpPercent <= 20) barColor = styles.hpLow;
           else if (hpPercent <= 50) barColor = styles.hpMedium;
@@ -35,7 +34,7 @@ export const TeamHPBar: React.FC<TeamHPBarProps> = ({ characters, isAlly, teamNa
                 />
               </div>
               <div className={styles.hpText}>
-                {char.hp}/{char.max_hp}
+                {char.hp}/{maxHp}
               </div>
             </div>
           );

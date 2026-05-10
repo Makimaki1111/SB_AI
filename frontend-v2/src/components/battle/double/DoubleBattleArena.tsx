@@ -20,7 +20,6 @@ interface DoubleBattleArenaProps {
   allyWord: string | null;
   foeWord: string | null;
   knockoutStates: Record<string, boolean>;
-  username: string;
   activeEffects?: Record<string, string>;
   onSendWord: (word: string, targetId?: string) => void;
   onSendIncludeCheck: (word: string) => void;
@@ -44,7 +43,6 @@ export const DoubleBattleArena: React.FC<DoubleBattleArenaProps> = ({
   isProcessing,
   timer,
   knockoutStates,
-  username,
   activeEffects = {},
   onSendWord,
   onSendIncludeCheck,
@@ -98,12 +96,10 @@ export const DoubleBattleArena: React.FC<DoubleBattleArenaProps> = ({
         <TeamHPBar
           characters={foes}
           isAlly={false}
-          teamName="あいてチーム"
         />
         <TeamHPBar
           characters={allies}
           isAlly={true}
-          teamName={username || "じぶんチーム"}
         />
       </div>
 
