@@ -6,6 +6,12 @@
  */
 
 type SoundCategory = 'bgm' | 'se';
+type BrowserAudioContextConstructor = new () => AudioContext;
+
+interface WindowWithWebkitAudio extends Window {
+    AudioContext?: BrowserAudioContextConstructor;
+    webkitAudioContext?: BrowserAudioContextConstructor;
+}
 
 class SoundManager {
     private static instance: SoundManager;
@@ -149,7 +155,9 @@ class SoundManager {
         if (this.isUnlocked) return;
         
         try {
-            const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+            const audioWindow = window as WindowWithWebkitAudio;
+            const AudioContextClass = audioWindow.AudioContext || audioWindow.webkitAudioContext;
+            if (!AudioContextClass) return;
             this.audioCtx = new AudioContextClass();
             
             this.bgmGain = this.audioCtx!.createGain();
@@ -268,7 +276,9 @@ class SoundManager {
             try {
                 this.currentBgmSource.stop();
                 this.currentBgmSource.disconnect();
-            } catch (e) { }
+            } catch {
+                // The source may already be stopped; either way the local state should be cleared.
+            }
             this.currentBgmSource = null;
             this.currentBgmPath = null;
         }

@@ -45,24 +45,23 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
   };
 
   // --- WebSocket Handler ---
-  const onMessage = (data: BattleResponse) => {
+  function onMessage(data: BattleResponse) {
     console.log(`Received message type: ${data.type}`);
 
     if (data.type === 'pre_check') {
-      const d = data as any;
       display.setPrediction({
-        include: d.include ?? false,
-        used: d.used ?? false,
-        type1: d.type1,
-        type2: d.type2,
-        prediction: d.prediction,
-        predictions: d.predictions
+        include: data.include ?? false,
+        used: data.used ?? false,
+        type1: data.type1,
+        type2: data.type2,
+        prediction: data.prediction,
+        predictions: data.predictions
       });
       return;
     }
 
     if (data.type === 'error') {
-      const msg = (data as any).message || 'エラーが発生しました';
+      const msg = data.message || 'エラーが発生しました';
       display.setWaitMessage(msg);
       if (msg.includes('ルームが見つかりません') || msg.includes('不明です')) {
         setTimeout(() => {
@@ -76,12 +75,12 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
     }
 
     if (data.type === 'waiting') {
-      display.setMessageLog({ text: (data as any).message || 'マッチング中...', isOpen: true });
+      display.setMessageLog({ text: data.message || 'マッチング中...', isOpen: true });
       return;
     }
 
     if (data.type === 'private_room_created') {
-      const roomId = (data as any).room_id;
+      const roomId = data.room_id;
       display.setMessageLog({ text: `ルームID: ${roomId}\n相手を待っています…`, isOpen: true });
       return;
     }
@@ -96,6 +95,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
     }
 
     if (['accepted', 'made_room', 'update', 'battle_end', 'timeout'].includes(data.type)) {
+      if (!data.state) return;
       if (data.type === 'accepted' || data.type === 'made_room') {
         currentRoomIdRef.current = data.state.room_id;
       } else {
@@ -114,12 +114,10 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
       messageQueue.current.push(data);
       processQueue();
     }
-  };
-
-  const { isConnected, sendMessage } = useBattleSocket(url, onMessage);
+  }
 
   // --- Queue Processing ---
-  const processQueue = async () => {
+  async function processQueue() {
     if (isHandlingQueue.current || messageQueue.current.length === 0) return;
     isHandlingQueue.current = true;
     setIsProcessing(true);
@@ -138,10 +136,12 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
 
     setIsProcessing(false);
     isHandlingQueue.current = false;
-  };
+  }
 
   // --- Battle Logic (The Core) ---
-  const handleBattleUpdate = async (data: BattleResponse, isInterrupt: boolean = false) => {
+  async function handleBattleUpdate(data: BattleResponse, isInterrupt: boolean = false) {
+    if (!data.state) return;
+
     const checkAbort = () => {
       // 進行中のルームIDが変わっているか、リセットされていたら中止
       if (!currentRoomIdRef.current || data.state.room_id !== currentRoomIdRef.current) return true;
@@ -194,14 +194,21 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
         data.state.word = "";
       }
 
-      const isTimeout = data.events?.some(e => e.message?.includes('時間切れ'));
+      const events = data.events || [];
+      const isTimeout = events.some(e => e.message?.includes('時間切れ'));
       const attackerSide = prevState.is_my_turn ? 'ally' : 'foe';
       
       // ダブルバトル対応の Actor 特定ロジック
       // 1. last_actor_id が characters のキー (p1a等) に直接存在するか確認
       // 2. 存在しない場合、id_to_ui_map からサイドが一致するスロットを探す
       const uiMap = data.info?.id_to_ui_map || {};
-      let attackerId = data.state.last_actor_id;
+      let attackerId = events.find(e => e.attacker && data.state.characters[e.attacker])?.attacker
+        || events.find(e => (
+          e.target
+          && data.state.characters[e.target]
+          && ['cure', 'stat_down', 'stat_up'].includes(e.type)
+        ))?.target
+        || data.state.last_actor_id;
       
       if (!attackerId || !data.state.characters[attackerId]) {
         attackerId = Object.keys(uiMap).find(id => uiMap[id]?.startsWith(attackerSide)) || null;
@@ -236,7 +243,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
         if (attackerState?.types?.[0]) soundManager.playType(attackerState.types[0]);
       }
 
-      let tempCharacters = { ...initialVisualState.characters };
+      const tempCharacters = { ...initialVisualState.characters };
 
       // 4. Timer Sync (ターンが変わったときだけリセット、特性変更等の割り込み時はリセットしない)
       // InitialBattle のときは既に上でリセット済みなので飛ばす
@@ -244,7 +251,6 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
         resetTimer(data.info?.time_limit || 20, data.info?.total_time || 20);
       }
 
-      const events = data.events || [];
       const currentUiMap = data.info?.id_to_ui_map || uiMappingRef.current;
       const allyId = getAllyId(currentUiMap);
       const foeId = getFoeId(currentUiMap);
@@ -258,8 +264,13 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
 
       // 6. Event Processing Loop
       for (const event of events) {
-        const targetSide = event.target === allyId ? 'ally' : event.target === foeId ? 'foe' : null;
         const targetId = event.target;
+        const targetUi = targetId ? currentUiMap[targetId] : undefined;
+        const targetSide = targetUi?.startsWith('ally')
+          ? 'ally'
+          : targetUi?.startsWith('foe')
+            ? 'foe'
+            : event.target === allyId ? 'ally' : event.target === foeId ? 'foe' : null;
 
         // Logic by Event Type (Sound is now handled via playEventSound)
         if (!isInitialBattle) {
@@ -296,9 +307,8 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
             const attackerSide = event.attacker === allyId ? 'ally' : event.attacker === foeId ? 'foe' : null;
             if (attackerSide === 'ally') display.setAllyEffect('heal');
             else if (attackerSide === 'foe') display.setFoeEffect('heal');
-            const eventAny = event as any;
-            if (eventAny.attacker_hp !== undefined && eventAny.attacker_hp !== null) {
-              tempCharacters[event.attacker].hp = eventAny.attacker_hp;
+            if (event.attacker_hp !== undefined && event.attacker_hp !== null && tempCharacters[event.attacker]) {
+              tempCharacters[event.attacker].hp = event.attacker_hp;
               setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
             }
           }
@@ -324,7 +334,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
         } else if (event.type === 'revive') {
           if (targetId) {
             display.setKnockoutStates(prev => ({ ...prev, [targetId]: false }));
-            if (tempCharacters[targetId] && event.hp !== undefined) {
+            if (tempCharacters[targetId] && event.hp !== undefined && event.hp !== null) {
               tempCharacters[targetId].hp = event.hp;
               setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
             }
@@ -338,8 +348,8 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
           if (targetSide === 'ally') display.setAllyEffect(effect);
           else if (targetSide === 'foe') display.setFoeEffect(effect);
           if (targetId && tempCharacters[targetId] && event.new_rank !== undefined && event.new_rank !== null) {
-            const field = event.stat_type === 'defense' ? 'defense_rank' : 'attack_rank';
-            (tempCharacters[targetId] as any)[field] = event.new_rank;
+            const field: 'defense_rank' | 'attack_rank' = event.stat_type === 'defense' ? 'defense_rank' : 'attack_rank';
+            tempCharacters[targetId] = { ...tempCharacters[targetId], [field]: event.new_rank };
             setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
           }
           if (!isInitialBattle) {
@@ -400,14 +410,16 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
     } catch (err) {
       console.error('Error in handleBattleUpdate:', err);
     }
-  };
+  }
+
+  const { isConnected, sendMessage } = useBattleSocket(url, onMessage);
 
   useEffect(() => {
     if (battleState?.status === 'finished') {
       soundManager.stopBGM();
       soundManager.play('end');
     }
-  }, [battleState?.status]);
+  }, [battleState?.status, soundManager]);
 
   const sendIncludeCheck = (word: string) => {
     const current = battleStateRef.current;
@@ -419,7 +431,10 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
       display.clearPrediction();
       return;
     }
-    sendMessage({ type: 'include_check', info: { word, room_id: current.room_id } });
+    sendMessage({
+      type: url.includes('/double') ? 'include_check_double' : 'include_check',
+      info: { word, room_id: current.room_id }
+    });
   };
 
   return {

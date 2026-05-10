@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { GameModal } from '../common/GameModal';
-import { useSound } from '../../context/SoundContext';
-import { useUser } from '../../context/UserContext';
+import { useSound } from '../../context/useSound';
+import { useUser } from '../../context/useUser';
 import styles from './SettingsModal.module.css';
 
 interface SettingsModalProps {

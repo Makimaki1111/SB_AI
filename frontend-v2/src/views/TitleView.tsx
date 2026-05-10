@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useUser } from '../context/UserContext';
+import { useUser } from '../context/useUser';
 import styles from './TitleView.module.css';
 import { GameButton } from '../components/common/GameButton';
 import { GameLayout } from '../components/layout/GameLayout';

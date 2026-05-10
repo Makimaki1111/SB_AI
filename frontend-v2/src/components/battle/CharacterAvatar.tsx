@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import styles from './CharacterAvatar.module.css';
 import { TYPE_TO_IMAGE } from '../../constants/game';
 import { motion } from 'framer-motion';
@@ -19,16 +19,8 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
   isBlinking,
   isKnockout 
 }) => {
-  const lastValidTypesRef = useRef<string[]>([]);
   const currentValidTypes = (types || []).filter(t => t && t.trim() !== '');
-  
-  if (currentValidTypes.length > 0) {
-    lastValidTypesRef.current = currentValidTypes;
-  }
-
-  const displayTypes = (isKnockout || currentValidTypes.length === 0) 
-    ? lastValidTypesRef.current 
-    : currentValidTypes;
+  const displayTypes = currentValidTypes;
 
   if (displayTypes.length === 0) return null;
 

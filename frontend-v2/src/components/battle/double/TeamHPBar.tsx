@@ -14,6 +14,7 @@ interface TeamHPBarProps {
 export const TeamHPBar: React.FC<TeamHPBarProps> = ({ characters, isAlly, teamName }) => {
   return (
     <div className={`${styles.balloon} ${isAlly ? styles.right : styles.left}`}>
+      <div className={styles.teamName}>{teamName}</div>
       <div className={styles.teamInfo}>
         {characters.map((char, index) => {
           const hpPercent = (char.hp / char.max_hp) * 100;

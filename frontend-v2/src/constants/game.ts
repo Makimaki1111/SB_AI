@@ -65,3 +65,4 @@ const wsProtocol = protocol === 'https' ? 'wss' : 'ws';
 
 export const API_BASE_URL = `${protocol}://${baseUrl}`;
 export const WS_BASE_URL = `${wsProtocol}://${baseUrl}/ws`;
+export const WS_DOUBLE_BASE_URL = `${wsProtocol}://${baseUrl}/ws/double`;

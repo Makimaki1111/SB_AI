@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import styles from './AbilityModal.module.css';
 import { TYPE_TO_IMAGE } from '../../constants/game';
 import type { AbilityData } from '../../types/battle';
-import { motion } from 'framer-motion';
+import { motion, type PanInfo } from 'framer-motion';
 import SoundManager from '../../utils/SoundManager';
 
 
@@ -35,28 +35,22 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
       .map(([id, info]) => ({ id, ...info }));
   }, [allAbilities]);
 
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const initialIndex = Math.max(
+    0,
+    abilitiesList.findIndex(a => a.id === (isLobby ? currentAbilityId : allyAbilityId))
+  );
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [dragX, setDragX] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
-  
-  // 初期位置の設定
-  useEffect(() => {
-    if (isOpen) {
-      // ロビー時は現在の選択(localStorage準拠)を、バトル時は装備中を優先
-      const targetId = isLobby ? currentAbilityId : allyAbilityId;
-      const idx = abilitiesList.findIndex(a => a.id === targetId);
-      if (idx !== -1) setCurrentIndex(idx);
-    }
-  }, [isOpen, allyAbilityId, currentAbilityId, abilitiesList, isLobby]);
 
   const N = abilitiesList.length;
   const spacing = 95;
 
-  const handleDrag = (_: any, info: any) => {
+  const handleDrag = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     setDragX(info.offset.x);
   };
 
-  const handleDragEnd = (_: any, info: any) => {
+  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const moveThreshold = 20;
     const velocityThreshold = 100;
     
@@ -68,7 +62,7 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
       // 距離を spacing で割って何個分移動するか決める
       const itemsToMove = Math.round(dragDistance / spacing);
       
-      let nextIndex;
+      let nextIndex: number;
       if (itemsToMove !== 0) {
         nextIndex = currentIndex - itemsToMove;
       } else {
@@ -109,7 +103,7 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
     if (N === 0) return { id: '', name: '---', description: '', icon_type: 'normal' };
     // ドラッグ中も含めた「現在一番前に来ている」インデックスを計算
     const shift = Math.round(dragX / spacing);
-    let idx = currentIndex - shift;
+    const idx = currentIndex - shift;
     const activeIdx = ((idx % N) + N) % N;
     return abilitiesList[activeIdx] || { id: '', name: '---', description: '', icon_type: 'normal' };
   }, [dragX, currentIndex, N, spacing, abilitiesList]);

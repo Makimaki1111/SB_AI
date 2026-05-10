@@ -19,6 +19,13 @@
   left: 0cqw;
 }
 
+.teamName {
+  font-size: 2.6cqw;
+  font-weight: 800;
+  color: #555;
+  margin-bottom: 0.8cqw;
+}
+
 .teamInfo {
   display: flex;
   flex-direction: column;

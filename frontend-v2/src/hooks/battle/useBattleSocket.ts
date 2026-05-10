@@ -3,7 +3,12 @@ import type { BattleResponse, SocketMessage } from '../../types/battle';
 
 export const useBattleSocket = (url: string, onMessage: (data: BattleResponse) => void) => {
   const socketRef = useRef<WebSocket | null>(null);
+  const onMessageRef = useRef(onMessage);
   const [isConnected, setIsConnected] = useState(false);
+
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
 
   useEffect(() => {
     console.log(`Connecting to WebSocket at: ${url}`);
@@ -28,7 +33,7 @@ export const useBattleSocket = (url: string, onMessage: (data: BattleResponse) =
     ws.onmessage = (event) => {
       try {
         const data: BattleResponse = JSON.parse(event.data);
-        onMessage(data);
+        onMessageRef.current(data);
       } catch (err) {
         console.error('Failed to parse WebSocket message:', err);
       }

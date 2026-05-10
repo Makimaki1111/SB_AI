@@ -1,22 +1,9 @@
-import React, { createContext, useContext, useState } from 'react';
+import type { ReactNode } from 'react';
+import { useState } from 'react';
 import SoundManager from '../utils/SoundManager';
+import { SoundContext } from './soundContext';
 
-interface SoundContextType {
-  bgmVolume: number;
-  seVolume: number;
-  setBgmVolume: (value: number) => void;
-  setSeVolume: (value: number) => void;
-  play: (keyOrPath: string) => void;
-  playEventSound: (type: string, message?: string) => void;
-  playTypeSound: (typeName: string) => void;
-  startBGM: (path: string) => void;
-  stopBGM: () => void;
-  unlock: () => Promise<void>;
-}
-
-const SoundContext = createContext<SoundContextType | undefined>(undefined);
-
-export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const SoundProvider = ({ children }: { children: ReactNode }) => {
   const [bgmVolume, setBgmVolumeState] = useState(SoundManager.getVolume('bgm'));
   const [seVolume, setSeVolumeState] = useState(SoundManager.getVolume('se'));
 
@@ -46,12 +33,4 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       {children}
     </SoundContext.Provider>
   );
-};
-
-export const useSound = () => {
-  const context = useContext(SoundContext);
-  if (context === undefined) {
-    throw new Error('useSound must be used within a SoundProvider');
-  }
-  return context;
 };

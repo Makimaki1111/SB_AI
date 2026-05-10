@@ -26,7 +26,7 @@ interface DoubleBattleArenaProps {
   onSendWord: (word: string, targetId?: string) => void;
   onSendIncludeCheck: (word: string) => void;
   onOpenSituation: () => void;
-  onOpenAbility: () => void;
+  onOpenAbility: (index?: number) => void;
   onRunAway: () => void;
 }
 
@@ -55,18 +55,28 @@ export const DoubleBattleArena: React.FC<DoubleBattleArenaProps> = ({
   onRunAway
 }) => {
   const [selectedTargetId, setSelectedTargetId] = React.useState<string | null>(null);
+  const [targetWarning, setTargetWarning] = React.useState<string | null>(null);
 
-  // ターゲットの初期選択ロジック (既存のものを維持)
-  React.useEffect(() => {
-    if (!selectedTargetId && foes.length > 0) {
-      const firstAlive = foes.find(f => f.hp > 0);
-      if (firstAlive) setSelectedTargetId(firstAlive.id || firstAlive.name || null);
-    }
-  }, [foes, selectedTargetId]);
+  const aliveFoes = foes.filter(f => f.hp > 0 && !f.is_defeated);
+  const selectedTargetIsAlive = aliveFoes.some(f => (f.id || f.name) === selectedTargetId);
+  const effectiveTargetId = selectedTargetIsAlive
+    ? selectedTargetId
+    : aliveFoes.length === 1
+      ? aliveFoes[0].id || aliveFoes[0].name || null
+      : null;
 
   const handleSendWord = (word: string) => {
-    // ターゲットIDを渡して送信 (ロジック修正)
-    onSendWord(word, selectedTargetId || undefined);
+    if (aliveFoes.length > 1 && !effectiveTargetId) {
+      setTargetWarning('ターゲットを選択してください');
+      return;
+    }
+    setTargetWarning(null);
+    onSendWord(word, effectiveTargetId || undefined);
+  };
+
+  const handleOpenAbility = () => {
+    const actorIndex = allies.findIndex(ally => ally.id === battleState?.current_actor_id);
+    onOpenAbility(actorIndex >= 0 ? actorIndex : 0);
   };
 
   return (
@@ -173,6 +183,11 @@ export const DoubleBattleArena: React.FC<DoubleBattleArenaProps> = ({
                 {waitMessage}
               </div>
             )}
+            {targetWarning && (
+              <div className={styles.waitMessage}>
+                {targetWarning}
+              </div>
+            )}
           </div>
 
           {/* ターゲット選択ボタン (既存の UI を 100% 維持) */}
@@ -180,7 +195,7 @@ export const DoubleBattleArena: React.FC<DoubleBattleArenaProps> = ({
             <div className={styles.targetBar}>
               {foes.map((foe, index) => {
                 const targetKey = foe.id || foe.name;
-                const isActive = selectedTargetId === targetKey;
+                const isActive = effectiveTargetId === targetKey;
 
                 return (
                   <button
@@ -191,6 +206,7 @@ export const DoubleBattleArena: React.FC<DoubleBattleArenaProps> = ({
                       if (foe.hp > 0) {
                         SoundManager.play('pera');
                         setSelectedTargetId(targetKey);
+                        setTargetWarning(null);
                       }
                     }}
                     disabled={foe.hp <= 0}
@@ -215,7 +231,7 @@ export const DoubleBattleArena: React.FC<DoubleBattleArenaProps> = ({
               </div>
               <div
                 className={`${styles.actionBtn} ${styles.abilityBtn}`}
-                onClick={onOpenAbility}
+                onClick={handleOpenAbility}
               >
                 <svg className={styles.actionBtnIcon} viewBox="0 0 24 24">
                   <path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />

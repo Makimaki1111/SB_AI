@@ -25,6 +25,7 @@ export interface CharacterState {
   id?: string;
   word?: string | null;
   lastWord?: string;
+  is_defeated?: boolean;
 }
 
 export interface BattleState {
@@ -76,6 +77,7 @@ export interface BattleResponse {
   prediction?: string;
   predictions?: Record<string, string>;
   message?: string;
+  room_id?: string;
   info?: {
     player_ids: string[];
     id_to_ui_map: Record<string, string>;
@@ -100,12 +102,16 @@ export type SocketMessageType =
   | "create_private_room"
   | "create_double_room"
   | "join_private_room"
+  | "join_double_room"
   | "join_double_private_room"
   | "submit_word"
   | "submit_word_double"
   | "change_ability"
+  | "change_ability_double"
   | "include_check"
+  | "include_check_double"
   | "run_away"
+  | "run_away_double"
   | "ping"
   | "update_user_info";
 

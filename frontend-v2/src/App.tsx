@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { UserProvider } from './context/UserContext';
-import { SoundProvider } from './context/SoundContext';
+import { UserProvider } from './context/UserProvider';
+import { SoundProvider } from './context/SoundProvider';
 import { TitleView } from './views/TitleView';
 import { BattleView } from './views/BattleView';
 import SoundManager from './utils/SoundManager';

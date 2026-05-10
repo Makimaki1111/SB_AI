@@ -1,6 +1,6 @@
 import React from 'react';
 import { useBattle } from '../hooks/useBattle';
-import { useUser } from '../context/UserContext';
+import { useUser } from '../context/useUser';
 import { LobbyView } from '../components/lobby/LobbyView';
 import { AbilityModal } from '../components/modals/AbilityModal';
 import { SingleBattleArena } from '../components/battle/single/SingleBattleArena';
@@ -12,7 +12,7 @@ import { SituationModal } from '../components/modals/SituationModal';
 import { StockSelectionModal } from '../components/modals/StockSelectionModal';
 import { ConfirmModal } from '../components/common/ConfirmModal';
 import { GameButton } from '../components/common/GameButton';
-import { API_BASE_URL, WS_BASE_URL } from '../constants/game';
+import { API_BASE_URL, WS_BASE_URL, WS_DOUBLE_BASE_URL } from '../constants/game';
 import type { AbilityData } from '../types/battle';
 import styles from './BattleView.module.css';
 
@@ -25,9 +25,18 @@ export const BattleView: React.FC = () => {
   const isStock = location.search.includes('mode=stock');
   const { username } = useUser();
 
+  const [isLobby, setIsLobby] = React.useState(true);
+  const [isAbilityModalOpen, setIsAbilityModalOpen] = React.useState(false);
+  const [targetAbilityIndex, setTargetAbilityIndex] = React.useState(0);
+  const [isSituationModalOpen, setIsSituationModalOpen] = React.useState(false);
+  const [isStockModalOpen, setIsStockModalOpen] = React.useState(false);
+  const [isRunAwayConfirmOpen, setIsRunAwayConfirmOpen] = React.useState(false);
+  const [pendingMatchMode, setPendingMatchMode] = React.useState<'cpu' | 'room' | null>(null);
+  const lastRoomIdRef = React.useRef<string | null>(null);
+
   const dynamicWsUrl = React.useMemo(() => {
-    return WS_BASE_URL;
-  }, []);
+    return isDouble ? WS_DOUBLE_BASE_URL : WS_BASE_URL;
+  }, [isDouble]);
 
   const {
     ally,
@@ -57,37 +66,29 @@ export const BattleView: React.FC = () => {
     resetBattle
   } = useBattle(dynamicWsUrl, () => setIsLobby(true));
 
-  const [isLobby, setIsLobby] = React.useState(true);
-  const [isAbilityModalOpen, setIsAbilityModalOpen] = React.useState(false);
-  const [targetAbilityIndex, setTargetAbilityIndex] = React.useState(0);
-  const [isSituationModalOpen, setIsSituationModalOpen] = React.useState(false);
-  const [isStockModalOpen, setIsStockModalOpen] = React.useState(false);
-  const [isRunAwayConfirmOpen, setIsRunAwayConfirmOpen] = React.useState(false);
-  const [pendingMatchMode, setPendingMatchMode] = React.useState<'cpu' | 'room' | null>(null);
-  const lastRoomIdRef = React.useRef<string | null>(null);
-
   const [selectedAbilities, setSelectedAbilities] = React.useState<string[]>(() => {
     const a1 = localStorage.getItem('sb_ability') || 'ikaku';
     const a2 = localStorage.getItem('sb_ability_2') || 'ikaku';
     return [a1, a2];
   });
 
-  const [allAbilities, setAllAbilities] = React.useState<Record<string, AbilityData>>({});
+  const [fetchedAbilities, setFetchedAbilities] = React.useState<Record<string, AbilityData>>({});
+  const allAbilities = React.useMemo(() => {
+    return Object.keys(battleAbilities).length > 0 ? battleAbilities : fetchedAbilities;
+  }, [battleAbilities, fetchedAbilities]);
 
-  const canChangeAbility = isLobby || (ally?.ability_change_count ?? 0) > 0;
+  const selectedBattleCharacter = isDouble ? allies[targetAbilityIndex] : ally;
+  const selectedBattleAbilityId = selectedBattleCharacter?.ability || selectedAbilities[targetAbilityIndex] || selectedAbilities[0];
+  const canChangeAbility = isLobby || (selectedBattleCharacter?.ability_change_count ?? 0) > 0;
 
   React.useEffect(() => {
     fetch(`${API_BASE_URL}/abilities`)
       .then(res => res.json())
-      .then(data => setAllAbilities(data))
+      .then(data => setFetchedAbilities(data))
       .catch(err => console.error("Failed to fetch abilities:", err));
   }, []);
 
   React.useEffect(() => {
-    if (battleAbilities && Object.keys(battleAbilities).length > 0) {
-      setAllAbilities(battleAbilities);
-    }
-
     if (battleState && battleState.room_id !== lastRoomIdRef.current) {
       // マッチング完了（新しいルームに入った）時のみ状態整理
       setIsAbilityModalOpen(false);
@@ -95,7 +96,7 @@ export const BattleView: React.FC = () => {
       setIsStockModalOpen(false);
       lastRoomIdRef.current = battleState.room_id;
     }
-  }, [battleState, battleAbilities]);
+  }, [battleState]);
 
   const [playerId] = React.useState(() => {
     const saved = localStorage.getItem('sb_player_id');
@@ -137,7 +138,7 @@ export const BattleView: React.FC = () => {
         }
         // ルーム参加
         sendMessage({
-          type: isDouble ? "join_double_private_room" : "join_private_room",
+          type: isDouble ? "join_double_room" : "join_private_room",
           info: { ...commonInfo, room_id: roomIdInput.trim() }
         });
       } else {
@@ -212,13 +213,16 @@ export const BattleView: React.FC = () => {
         localStorage.setItem('sb_ability_2', abilityId);
       }
     } else if (battleState?.room_id) {
+      const charId = selectedBattleCharacter?.id;
+      if (isDouble && !charId) return;
+
       sendMessage({
-        type: 'change_ability',
+        type: isDouble ? 'change_ability_double' : 'change_ability',
         info: {
           room_id: battleState.room_id,
           player_id: playerId,
           ability_id: abilityId,
-          char_id: targetAbilityIndex === 0 ? allyId : foeId
+          char_id: isDouble ? charId : undefined
         }
       });
     }
@@ -234,7 +238,7 @@ export const BattleView: React.FC = () => {
   const confirmRunAway = () => {
     if (battleState?.room_id) {
       sendMessage({
-        type: 'run_away',
+        type: isDouble ? 'run_away_double' : 'run_away',
         info: { room_id: battleState.room_id, player_id: playerId }
       });
     }
@@ -297,7 +301,7 @@ export const BattleView: React.FC = () => {
                 onSendWord={handleSubmitWord}
                 onSendIncludeCheck={sendIncludeCheck}
                 onOpenSituation={() => setIsSituationModalOpen(true)}
-                onOpenAbility={() => handleOpenAbility(0)}
+                onOpenAbility={handleOpenAbility}
                 onRunAway={handleRunAway}
               />
             ) : (
@@ -360,18 +364,19 @@ export const BattleView: React.FC = () => {
         />
 
         <AbilityModal
+          key={`${isAbilityModalOpen}-${isLobby}-${targetAbilityIndex}-${selectedBattleAbilityId}-${Object.keys(allAbilities).length}`}
           isOpen={isAbilityModalOpen}
           onClose={() => setIsAbilityModalOpen(false)}
           onSelect={handleSelectAbility}
           currentAbilityId={
             !isLobby
-              ? (targetAbilityIndex === 0 ? ally?.ability : foe?.ability) || selectedAbilities[targetAbilityIndex]
+              ? selectedBattleAbilityId
               : selectedAbilities[targetAbilityIndex]
           }
-          allyAbilityId={ally?.ability || ''}
+          allyAbilityId={selectedBattleAbilityId || ''}
           allAbilities={allAbilities}
           canChange={canChangeAbility}
-          abilityChangeCount={ally?.ability_change_count ?? 0}
+          abilityChangeCount={selectedBattleCharacter?.ability_change_count ?? 0}
           isLobby={isLobby}
         />
 
