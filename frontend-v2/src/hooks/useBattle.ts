@@ -164,11 +164,17 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
         status: 'active'
       };
 
-      // Keep old HP for damage animation (only if not initial battle)
+      // Keep old HP and types for damage/knockout animation (only if not initial battle)
       if (!isInitialBattle) {
         Object.keys(initialVisualState.characters).forEach(id => {
           if (prevState.characters[id]) {
             initialVisualState.characters[id].hp = prevState.characters[id].hp;
+            
+            // If the backend cleared types (because of revive), we preserve the old types
+            // so the knockout animation can play. We will clear it when processing 'revive' event.
+            if (data.state.characters[id].types.length === 0 && prevState.characters[id].types.length > 0) {
+              initialVisualState.characters[id].types = prevState.characters[id].types;
+            }
           }
         });
       }
@@ -336,6 +342,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
             display.setKnockoutStates(prev => ({ ...prev, [targetId]: false }));
             if (tempCharacters[targetId] && event.hp !== undefined && event.hp !== null) {
               tempCharacters[targetId].hp = event.hp;
+              tempCharacters[targetId].types = [];
               setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
             }
           }

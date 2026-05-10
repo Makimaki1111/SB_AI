@@ -28,28 +28,28 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
 
   // variants を使用してアニメーションの状態を定義
   const containerVariants = {
-    alive: {
-      opacity: 1,
-      y: 0,
-    },
-    knockout: {
-      opacity: 0,
-      y: 100,
-    }
+  alive: {
+    opacity: 1,
+    y: 0,
+  },
+  knockout: {
+    opacity: 0,
+    y: 100,
+  }
   };
 
   return (
-    <motion.div 
-      className={`${styles.avatarGroup} ${isAlly ? styles.allyGroup : styles.foeGroup} ${isBlinking ? styles.blinking : ''}`}
-      initial="alive"
-      animate={isKnockout ? "knockout" : "alive"}
-      variants={containerVariants}
-      transition={{ 
-        duration: isKnockout ? 0.8 : 0.3,
-        ease: isKnockout ? "easeIn" : "easeOut"
-      }}
-    >
-      {displayTypes.map((type, index) => {
+  <motion.div 
+    className={`${styles.avatarGroup} ${isAlly ? styles.allyGroup : styles.foeGroup} ${isBlinking ? styles.blinking : ''}`}
+    initial="alive"
+    animate={isKnockout ? "knockout" : "alive"}
+    variants={containerVariants}
+    transition={{ 
+      duration: isKnockout ? 0.8 : 0.3,
+      // 本家の jQuery のデフォルトイージング (swing) は easeInOut に近い
+      ease: isKnockout ? "easeInOut" : "easeOut"
+    }}
+  >      {displayTypes.map((type, index) => {
         const iconName = TYPE_TO_IMAGE[type] || 'normal';
         const imageUrl = `/img/${iconName}.gif`;
         
