@@ -1,8 +1,8 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import styles from './AbilityModal.module.css';
 import { TYPE_TO_IMAGE } from '../../constants/game';
 import type { AbilityData, CharacterState } from '../../types/battle';
-import { motion, type PanInfo } from 'framer-motion';
+import { motion, type PanInfo, useMotionValue, useSpring, useTransform, useMotionValueEvent } from 'framer-motion';
 import SoundManager from '../../utils/SoundManager';
 
 
@@ -16,6 +16,7 @@ interface AbilityModalProps {
   canChange: boolean;
   abilityChangeCount: number;
   isLobby?: boolean;
+
   allies?: CharacterState[];
   targetAbilityIndex?: number;
   setTargetAbilityIndex?: (index: number) => void;
@@ -49,60 +50,56 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
   );
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   
-  // タブが切り替わったりモーダルが開かれた時に currentIndex をリセットする
+  // 表示上の「現在の位置（インデックス単位）」を管理
+  // useSpring を使うことで、インデックスの切り替えが滑らか（円周状）になる
+  const scrollIndex = useMotionValue(initialIndex);
+  const smoothIndex = useSpring(scrollIndex, { stiffness: 400, damping: 40 });
+
+  // タブが切り替わったりモーダルが開かれた時に位置をリセット
   React.useEffect(() => {
     if (isOpen) {
-      // eslint-disable-next-line
-      setCurrentIndex(Math.max(0, abilitiesList.findIndex(a => a.id === (isLobby ? currentAbilityId : allyAbilityId))));
+      const idx = Math.max(0, abilitiesList.findIndex(a => a.id === (isLobby ? currentAbilityId : allyAbilityId)));
+      setCurrentIndex(idx);
+      scrollIndex.set(idx);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, targetAbilityIndex, currentAbilityId, allyAbilityId, abilitiesList, isLobby]);
 
-  const [dragX, setDragX] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const N = abilitiesList.length;
-  const spacing = 95;
+  const spacing = 85;
 
-  const handleDrag = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    setDragX(info.offset.x);
+  const handleDrag = (_: any, info: PanInfo) => {
+    // 現在のターゲットインデックスから、ドラッグ分を引いた位置をリアルタイムにセット
+    scrollIndex.set(currentIndex - info.offset.x / spacing);
   };
 
-  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const moveThreshold = 20;
-    const velocityThreshold = 100;
+  const handleDragEnd = (_: any, info: PanInfo) => {
+    const { velocity, offset } = info;
+    const power = 0.15;
+    const projectedDistance = offset.x + velocity.x * power;
+    const itemsToMove = Math.round(projectedDistance / spacing);
     
-    // ドラッグ距離に応じて移動するインデックス数を計算 (1つ以上飛ばせるように)
-    const dragDistance = info.offset.x;
-    const velocity = info.velocity.x;
-
-    if (Math.abs(dragDistance) > moveThreshold || Math.abs(velocity) > velocityThreshold) {
-      // 距離を spacing で割って何個分移動するか決める
-      const itemsToMove = Math.round(dragDistance / spacing);
-      
-      let nextIndex: number;
-      if (itemsToMove !== 0) {
-        nextIndex = currentIndex - itemsToMove;
-      } else {
-        // 距離が足りなくても速度があれば1つ動かす
-        const direction = velocity > 0 ? -1 : 1;
-        nextIndex = currentIndex + direction;
-      }
-
-      // 範囲内に収める (循環)
-      if (N > 0) {
-        nextIndex = ((nextIndex % N) + N) % N;
-        setCurrentIndex(nextIndex);
-      }
+    let nextIndex = currentIndex - itemsToMove;
+    if (N > 0) {
+      nextIndex = ((nextIndex % N) + N) % N;
+      if (nextIndex !== currentIndex) SoundManager.play('pera');
+      setCurrentIndex(nextIndex);
+      // スナップ先のインデックスをセット（smoothIndex により円周状にアニメーションする）
+      scrollIndex.set(nextIndex);
     }
-    setDragX(0);
   };
 
   const handleItemClick = (index: number) => {
     if (!canChange || N === 0) return;
-    if (index !== currentIndex) SoundManager.play('pera');
-    setCurrentIndex(index);
+    if (index !== currentIndex) {
+      SoundManager.play('pera');
+      setCurrentIndex(index);
+      scrollIndex.set(index);
+    }
   };
+
 
   const handleConfirm = () => {
     SoundManager.play('pera');
@@ -117,14 +114,19 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
     onClose();
   };
 
+  // 表示上の現在のインデックス（実数）を管理し、毎フレームの更新を検知して再描画させる
+  const [displayIndex, setDisplayIndex] = useState(initialIndex);
+  useMotionValueEvent(smoothIndex, "change", (latest: number) => {
+    setDisplayIndex(latest);
+  });
+
   const currentInfo = useMemo(() => {
     if (N === 0) return { id: '', name: '---', description: '', icon_type: 'normal' };
-    // ドラッグ中も含めた「現在一番前に来ている」インデックスを計算
-    const shift = Math.round(dragX / spacing);
-    const idx = currentIndex - shift;
+    // 現在一番前に来ているインデックスを計算（四捨五入）
+    const idx = Math.round(displayIndex);
     const activeIdx = ((idx % N) + N) % N;
     return abilitiesList[activeIdx] || { id: '', name: '---', description: '', icon_type: 'normal' };
-  }, [dragX, currentIndex, N, spacing, abilitiesList]);
+  }, [displayIndex, N, abilitiesList]);
 
   // ロビー時は選択中のIDを「現在の特性」として表示
   const displayAllyId = isLobby ? currentAbilityId : allyAbilityId;
@@ -137,7 +139,7 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
   const modalBgColor = useMemo(() => {
     if (!isDouble) return 'rgba(255, 255, 255, 0.95)';
     // 本家 double_UI.js 848-850行目の仕様
-    return targetAbilityIndex === 0 
+    return targetAbilityIndex === 0
       ? 'rgba(255, 220, 220, 0.95)' // 味方A (薄い赤)
       : 'rgba(220, 235, 255, 0.95)'; // 味方B (薄い青)
   }, [isDouble, targetAbilityIndex]);
@@ -146,8 +148,8 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <motion.div 
-        className={styles.modalBody} 
+      <motion.div
+        className={styles.modalBody}
         style={{ background: modalBgColor }} // ここで本家の色を適用
         onClick={(e) => e.stopPropagation()}
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -180,21 +182,33 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
           </div>
         </div>
 
+        <div className={styles.countBanner}>
+          {!isLobby && (
+            <span className={styles.remainCount}>残り変更可能回数: {abilityChangeCount}回</span>
+          )}
+        </div>
+
         {/* 円弧状カルーセル */}
         <div className={styles.carouselContainer} ref={containerRef}>
-          <motion.div 
+          <motion.div
             className={styles.carouselTrack}
             onPan={handleDrag}
             onPanEnd={handleDragEnd}
           >
             {abilitiesList.map((ab, i) => {
-              let diff = i - currentIndex;
+              // smoothIndex (表示上の現在地) と i の差から、円周上の位置を計算
+              let diff = i - displayIndex;
               diff = diff - Math.round(diff / N) * N;
-              const offsetIndex = diff + (dragX / spacing);
-              const absDiff = Math.abs(offsetIndex);
               
-              const x = offsetIndex * spacing;
-              const y = absDiff * absDiff * 2.0; 
+              // 円周軌道の計算 (半径 1500px で以前のゆるやかさを再現)
+              const radius = 1500;
+              const anglePerItem = 85 / radius; // 間隔を 85px に保つための角度
+              const angle = diff * anglePerItem;
+              
+              const x = radius * Math.sin(angle);
+              const y = radius * (1 - Math.cos(angle)); 
+              
+              const absDiff = Math.abs(diff);
               const scale = Math.max(0.6, 1 - absDiff * 0.15); 
               const opacity = Math.max(0, 1 - absDiff * 0.2); 
               const zIndex = Math.round(100 - absDiff); 
@@ -205,20 +219,20 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
                 <motion.div
                   key={ab.id}
                   className={`${styles.carouselItem} ${i === currentIndex ? styles.selected : ''}`}
-                  animate={{
+                  style={{
                     x: `calc(-50% + ${x}px)`,
                     y: `calc(-50% + ${y}px)`,
                     scale,
                     opacity,
                     zIndex
                   }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                   onClick={() => handleItemClick(i)}
                 >
                   <img src={`/img/${iconName}.gif`} alt={ab.name} />
                 </motion.div>
               );
             })}
+
           </motion.div>
         </div>
 
@@ -234,7 +248,7 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
         <div className={styles.footer}>
 
           <button className={styles.closeBtn} onClick={handleClose}>とじる</button>
-          <button 
+          <button
             className={`${styles.decideBtn} ${!canChange ? styles.disabled : ''}`}
             onClick={handleConfirm}
             disabled={!canChange}

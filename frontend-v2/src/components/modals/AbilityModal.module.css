@@ -163,7 +163,22 @@
   user-select: none;     /* 本家 84行目 */
   overflow: hidden;      /* 本家 85行目 */
   flex-shrink: 0;        /* 本家 86行目 */
+  perspective: 1000px;   /* 3D効果を有効にする */
 }
+
+.countBanner {
+  background: rgba(255, 152, 0, 0.1);
+  padding: 4px 12px;
+  border-radius: 12px;
+  margin: 2px 0;
+}
+
+.remainCount {
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: #ff5722;
+}
+
 
 .carouselTrack {
   position: absolute;
@@ -186,7 +201,7 @@
   top: 50%;              /* 本家 105行目 */
   left: 50%;             /* 本家 106行目 */
   transform-origin: center center; /* 本家 107行目 */
-  transition: transform 0.3s, border-color 0.3s, background-color 0.3s, box-shadow 0.3s;
+  transition: border-color 0.3s, background-color 0.3s, box-shadow 0.3s;
   cursor: pointer;
   box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* 本家 110行目 */
   z-index: 1;            /* 本家 111行目 */

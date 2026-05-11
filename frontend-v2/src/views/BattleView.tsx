@@ -378,6 +378,7 @@ export const BattleView: React.FC = () => {
           canChange={canChangeAbility}
           abilityChangeCount={selectedBattleCharacter?.ability_change_count ?? 0}
           isLobby={isLobby}
+
           allies={isDouble ? allies : undefined}
           targetAbilityIndex={targetAbilityIndex}
           setTargetAbilityIndex={setTargetAbilityIndex}
