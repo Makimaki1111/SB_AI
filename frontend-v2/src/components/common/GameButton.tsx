@@ -1,5 +1,6 @@
 import React from 'react';
 import styles from './GameButton.module.css';
+import SoundManager from '../../utils/SoundManager';
 
 interface GameButtonProps {
   children: React.ReactNode;
@@ -20,11 +21,20 @@ export const GameButton: React.FC<GameButtonProps> = ({
 }) => {
   const variantClass = styles[variant] || styles.orange;
   
+  const handleClick = (e: React.MouseEvent) => {
+    if (disabled) return;
+    
+    // 全てのボタン音を 'pera' に統一
+    SoundManager.play('pera');
+    
+    if (onClick) onClick();
+  };
+  
   return (
     <button
       type={type}
       className={`${styles.baseButton} ${variantClass} ${className}`}
-      onClick={onClick}
+      onClick={handleClick}
       disabled={disabled}
     >
       {children}

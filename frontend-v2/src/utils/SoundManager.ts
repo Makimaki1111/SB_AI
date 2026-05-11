@@ -204,25 +204,40 @@ class SoundManager {
     }
 
     /**
-     * Plays a sound by key or path
+     * Plays a sound by key or path (Optimized for zero lag)
      */
-    public async play(keyOrPath: string): Promise<void> {
+    public play(keyOrPath: string): void {
         const path = this.soundMap[keyOrPath] || this.typeSoundMap[keyOrPath] || keyOrPath;
         
         // Cooldown check
         const now = Date.now();
         const lastPlay = this.lastPlayTime.get(path) || 0;
-        if (now - lastPlay < 80) return;
+        if (now - lastPlay < 50) return;
         this.lastPlayTime.set(path, now);
 
-        if (!this.isUnlocked) await this.unlock();
+        // キャッシュに既にある場合は同期的に再生を開始してラグをなくす
+        const cachedBuffer = this.audioCache.get(path);
+        if (cachedBuffer) {
+            this.playBuffer(cachedBuffer, path);
+            return;
+        }
+
+        // キャッシュにない場合のみ非同期でロードして再生
+        this.loadAudio(path).then(buffer => {
+            if (buffer) this.playBuffer(buffer, path);
+        });
+    }
+
+    /**
+     * 実際に AudioBuffer を再生する内部メソッド
+     */
+    private playBuffer(buffer: AudioBuffer, path: string): void {
         if (!this.audioCtx || !this.seGain) return;
-
+        
         try {
-            const buffer = await this.loadAudio(path);
-            if (!buffer) return;
-
-            if (this.audioCtx.state === 'suspended') await this.audioCtx.resume();
+            if (this.audioCtx.state === 'suspended') {
+                this.audioCtx.resume();
+            }
 
             const source = this.audioCtx.createBufferSource();
             source.buffer = buffer;
@@ -230,7 +245,7 @@ class SoundManager {
             const gainNode = this.audioCtx.createGain();
             let volumeScale = 1.0;
             if (path.includes('pera.mp3')) {
-                volumeScale = 0.3; // Match legacy volume reduction
+                volumeScale = 0.6; // 少し音量を調整
             }
             gainNode.gain.value = volumeScale;
 
@@ -238,7 +253,7 @@ class SoundManager {
             gainNode.connect(this.seGain);
             source.start(0);
         } catch (e) {
-            console.warn(`Failed to play sound: ${path}`, e);
+            console.warn(`Failed to play buffer: ${path}`, e);
         }
     }
 

@@ -28,8 +28,7 @@ export const BattleActionButtons: React.FC<BattleActionButtonsProps> = ({
       <div
         className={`${styles.actionBtn} ${styles.abilityBtn}`}
         onClick={() => {
-          // DoubleBattle では handleOpenAbility が呼ばれるが、
-          // 内部で SoundManager.play は共通で良い
+          SoundManager.play('pera');
           onOpenAbility();
         }}
       >
