@@ -4,11 +4,11 @@ import { TYPE_TO_IMAGE } from '../../constants/game';
 import { motion } from 'framer-motion';
 
 interface CharacterAvatarProps {
-  types: string[]; // 複数タイプに対応
+  types: string[];
   isAlly: boolean;
-  isBlinking?: boolean;
-  isKnockout?: boolean;
-  scale?: number;
+  isBlinking: boolean;
+  isKnockout: boolean;
+  isDouble?: boolean;
   className?: string;
 }
 
@@ -16,12 +16,11 @@ interface CharacterAvatarProps {
  * キャラクターアバター (タイプ画像) コンポーネント。
  */
 export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({ 
-  types = [], 
+  types, 
   isAlly, 
   isBlinking,
   isKnockout,
   isDouble = false,
-  scale = 1,
   className = ''
 }) => {
   const currentValidTypes = (types || []).filter(t => t && t.trim() !== '');

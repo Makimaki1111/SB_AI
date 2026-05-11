@@ -26,7 +26,6 @@ export const HPBar: React.FC<HPBarProps> = ({
         hp={hp}
         maxHp={maxHp}
         isPoison={isPoison}
-        isAlly={isAlly}
         isWaiting={isWaiting}
       />
     </div>

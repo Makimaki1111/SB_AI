@@ -23,7 +23,6 @@ export const TeamHPBar: React.FC<TeamHPBarProps> = ({ characters, isAlly }) => {
             hp={char.hp}
             maxHp={char.max_hp || 1}
             isPoison={char.is_poison || false}
-            isAlly={isAlly}
           />
         ))}
       </div>

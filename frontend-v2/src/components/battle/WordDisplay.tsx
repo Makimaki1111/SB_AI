@@ -9,8 +9,6 @@ interface WordDisplayProps {
   isKnockout?: boolean;
   centered?: boolean;
   isDouble?: boolean;
-  slot?: string; // p1a, p1b, p2a, p2b
-  scale?: number;
 }
 
 /**
@@ -23,9 +21,7 @@ export const WordDisplay: React.FC<WordDisplayProps> = ({
   isBlinking,
   isKnockout,
   centered = false,
-  isDouble = false,
-  slot,
-  scale = 1.0
+  isDouble = false
 }) => {
   const xPos = '-50%';
   const baseClass = isDouble ? styles.doubleWord : (isAlly ? styles.allyWord : styles.foeWord);

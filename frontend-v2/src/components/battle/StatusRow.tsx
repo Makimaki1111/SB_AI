@@ -7,7 +7,6 @@ interface StatusRowProps {
   hp: number;
   maxHp: number;
   isPoison: boolean;
-  isAlly: boolean;
   isWaiting?: boolean;
 }
 
@@ -20,7 +19,6 @@ export const StatusRow: React.FC<StatusRowProps> = ({
   hp,
   maxHp,
   isPoison,
-  isAlly,
   isWaiting = false
 }) => {
   // マッチング待機中やデータがない場合は100%表示

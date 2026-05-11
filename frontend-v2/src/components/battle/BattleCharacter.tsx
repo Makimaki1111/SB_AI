@@ -68,7 +68,6 @@ export const BattleCharacter: React.FC<BattleCharacterProps> = ({
           isBlinking={isBlinking}
           isKnockout={isKnockout}
           isDouble={!!slot}
-          slot={slot}
         />
       </div>
     </div>
