@@ -1,7 +1,7 @@
 import React, { useState, useRef, useMemo } from 'react';
 import styles from './AbilityModal.module.css';
 import { TYPE_TO_IMAGE } from '../../constants/game';
-import type { AbilityData } from '../../types/battle';
+import type { AbilityData, CharacterState } from '../../types/battle';
 import { motion, type PanInfo } from 'framer-motion';
 import SoundManager from '../../utils/SoundManager';
 
@@ -16,6 +16,9 @@ interface AbilityModalProps {
   canChange: boolean;
   abilityChangeCount: number;
   isLobby?: boolean;
+  allies?: CharacterState[];
+  targetAbilityIndex?: number;
+  setTargetAbilityIndex?: (index: number) => void;
 }
 
 export const AbilityModal: React.FC<AbilityModalProps> = ({
@@ -27,7 +30,10 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
   allAbilities,
   canChange,
   abilityChangeCount,
-  isLobby = false
+  isLobby = false,
+  allies = [],
+  targetAbilityIndex = 0,
+  setTargetAbilityIndex
 }) => {
   const abilitiesList = useMemo(() => {
     return Object.entries(allAbilities)
@@ -35,11 +41,23 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
       .map(([id, info]) => ({ id, ...info }));
   }, [allAbilities]);
 
+  const isDouble = allies.length > 1;
+
   const initialIndex = Math.max(
     0,
     abilitiesList.findIndex(a => a.id === (isLobby ? currentAbilityId : allyAbilityId))
   );
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  
+  // タブが切り替わったりモーダルが開かれた時に currentIndex をリセットする
+  React.useEffect(() => {
+    if (isOpen) {
+      // eslint-disable-next-line
+      setCurrentIndex(Math.max(0, abilitiesList.findIndex(a => a.id === (isLobby ? currentAbilityId : allyAbilityId))));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, targetAbilityIndex, currentAbilityId, allyAbilityId, abilitiesList, isLobby]);
+
   const [dragX, setDragX] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -115,17 +133,44 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
   // 同じ特性を選んでいるかどうか
   const isSameAbility = currentInfo.id === displayAllyId;
 
+  // 本家再現の色設定
+  const modalBgColor = useMemo(() => {
+    if (!isDouble) return 'rgba(255, 255, 255, 0.95)';
+    // 本家 double_UI.js 848-850行目の仕様
+    return targetAbilityIndex === 0 
+      ? 'rgba(255, 220, 220, 0.95)' // 味方A (薄い赤)
+      : 'rgba(220, 235, 255, 0.95)'; // 味方B (薄い青)
+  }, [isDouble, targetAbilityIndex]);
+
   if (!isOpen) return null;
 
   return (
     <div className={styles.overlay} onClick={onClose}>
       <motion.div 
         className={styles.modalBody} 
+        style={{ background: modalBgColor }} // ここで本家の色を適用
         onClick={(e) => e.stopPropagation()}
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
       >
+        {isDouble && (
+          <div className={styles.tabsContainer}>
+            {allies.map((a, idx) => (
+              <button
+                key={a.id || a.name || idx}
+                className={`${styles.tabBtn} ${idx === targetAbilityIndex ? styles.activeTab : ''}`}
+                onClick={() => {
+                  SoundManager.play('pera');
+                  if (setTargetAbilityIndex) setTargetAbilityIndex(idx);
+                }}
+              >
+                {a.name || `味方${idx + 1}`}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* 現在の特性表示セクション */}
         <div className={styles.statusSection}>
           <div className={styles.sideStatus}>
