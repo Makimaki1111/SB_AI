@@ -216,12 +216,12 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
       // 2. 存在しない場合、id_to_ui_map からサイドが一致するスロットを探す
       const uiMap = data.info?.id_to_ui_map || {};
       let attackerId = events.find(e => e.attacker && data.state.characters[e.attacker])?.attacker
+        || data.state.last_actor_id
         || events.find(e => (
           e.target
           && data.state.characters[e.target]
-          && ['cure', 'stat_down', 'stat_up'].includes(e.type)
-        ))?.target
-        || data.state.last_actor_id;
+          && ['cure'].includes(e.type)
+        ))?.target;
       
       if (!attackerId || !data.state.characters[attackerId]) {
         attackerId = Object.keys(uiMap).find(id => uiMap[id]?.startsWith(attackerSide)) || null;
