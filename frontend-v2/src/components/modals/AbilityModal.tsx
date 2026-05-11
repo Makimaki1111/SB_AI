@@ -1,8 +1,8 @@
-import React, { useState, useRef, useMemo, useEffect } from 'react';
+﻿import React, { useState, useRef, useMemo } from 'react';
 import styles from './AbilityModal.module.css';
 import { TYPE_TO_IMAGE } from '../../constants/game';
 import type { AbilityData, CharacterState } from '../../types/battle';
-import { motion, type PanInfo, useMotionValue, useSpring, useTransform, useMotionValueEvent } from 'framer-motion';
+import { motion, type PanInfo, useMotionValue, useSpring, useMotionValueEvent } from 'framer-motion';
 import SoundManager from '../../utils/SoundManager';
 
 
@@ -49,7 +49,7 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
     abilitiesList.findIndex(a => a.id === (isLobby ? currentAbilityId : allyAbilityId))
   );
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
-  
+
   // 表示上の「現在の位置（インデックス単位）」を管理
   // useSpring を使うことで、インデックスの切り替えが滑らか（円周状）になる
   const scrollIndex = useMotionValue(initialIndex);
@@ -80,25 +80,42 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
     const power = 0.15;
     const projectedDistance = offset.x + velocity.x * power;
     const itemsToMove = Math.round(projectedDistance / spacing);
-    
-    let nextIndex = currentIndex - itemsToMove;
+
+    // 目標の「相対的な」インデックス
+    const targetIndex = currentIndex - itemsToMove;
+
     if (N > 0) {
-      nextIndex = ((nextIndex % N) + N) % N;
-      if (nextIndex !== currentIndex) SoundManager.play('pera');
-      setCurrentIndex(nextIndex);
-      // スナップ先のインデックスをセット（smoothIndex により円周状にアニメーションする）
-      scrollIndex.set(nextIndex);
+      // 音声フィードバック用の判定
+      const nextIndexNormalized = ((targetIndex % N) + N) % N;
+      if (nextIndexNormalized !== currentIndex) SoundManager.play('pera');
+
+      // 内部的なターゲットを更新
+      setCurrentIndex(targetIndex);
+      // スプリングの目標値をセット（正規化しないことで、逆戻りを防ぐ）
+      scrollIndex.set(targetIndex);
     }
   };
 
   const handleItemClick = (index: number) => {
     if (!canChange || N === 0) return;
-    if (index !== currentIndex) {
-      SoundManager.play('pera');
-      setCurrentIndex(index);
-      scrollIndex.set(index);
-    }
+
+    // 現在の scrollIndex に最も近い「表示上の index」を探してセットする
+    const currentScroll = scrollIndex.get();
+    // JavaScript の % は負の数で負を返すため、正規化する
+    const normalizedCurrent = ((currentScroll % N) + N) % N;
+
+    let diff = index - normalizedCurrent;
+    if (diff > N / 2) diff -= N;
+    if (diff < -N / 2) diff += N;
+
+    const target = currentScroll + diff;
+
+    SoundManager.play('pera');
+    setCurrentIndex(target);
+    scrollIndex.set(target);
+
   };
+
 
 
   const handleConfirm = () => {
@@ -199,19 +216,19 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
               // smoothIndex (表示上の現在地) と i の差から、円周上の位置を計算
               let diff = i - displayIndex;
               diff = diff - Math.round(diff / N) * N;
-              
+
               // 円周軌道の計算 (半径 1500px で以前のゆるやかさを再現)
               const radius = 1500;
               const anglePerItem = 85 / radius; // 間隔を 85px に保つための角度
               const angle = diff * anglePerItem;
-              
+
               const x = radius * Math.sin(angle);
-              const y = radius * (1 - Math.cos(angle)); 
-              
+              const y = radius * (1 - Math.cos(angle));
+
               const absDiff = Math.abs(diff);
-              const scale = Math.max(0.6, 1 - absDiff * 0.15); 
-              const opacity = Math.max(0, 1 - absDiff * 0.2); 
-              const zIndex = Math.round(100 - absDiff); 
+              const scale = Math.max(0.6, 1 - absDiff * 0.15);
+              const opacity = Math.max(0, 1 - absDiff * 0.2);
+              const zIndex = Math.round(100 - absDiff);
 
               const iconName = TYPE_TO_IMAGE[ab.icon_type] || 'normal';
 
