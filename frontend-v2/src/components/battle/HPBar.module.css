@@ -1,73 +1,27 @@
 .balloon {
   position: absolute;
   background: white;
-  border-radius: 10px;
-  padding: 4px 10px;
-  font-size: 14px;
-  width: 180px;
-  height: 55px;
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+  border-radius: 2.2cqw; /* 10px相当 */
+  padding: 1.3cqw 2.2cqw; /* 6px 10px 相当 */
+  width: 40.0cqw; /* 180px相当 */
+  min-height: 12.2cqw; /* 55px相当 */
+  box-shadow: 0 0 0.9cqw rgba(0, 0, 0, 0.2); /* 4px相当 */
   z-index: 2;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  /* container-type: size を削除することで、StatusRowがArena基準のcqwを参照するように修正 */
 }
 
-/* 左上に表示 (foe) */
+/* 左上に表示 (相手) */
 .left {
-  top: 10px;
-  left: -8px;
+  top: 2.2cqw; /* 10px */
+  left: -1.8cqw; /* -8px */
 }
 
-/* 右下に表示 (ally) */
+/* 右下に表示 (自分) */
 .right {
-  bottom: 10px;
-  right: -8px;
-}
-
-.bar {
-  background: #ccc;
-  width: 100%;
-  height: 6px;
-  border-radius: 3px;
-  margin-top: 1px;
-  overflow: hidden;
-}
-
-.allyHpBar,
-.foeHpBar {
-  width: 100%;
-  height: 100%;
-  border-radius: 3px;
-}
-
-.hp {
-  font-size: 13px;
-  color: #333;
-  margin-top: 1px;
-  line-height: 1;
-}
-
-.allyNameContainer,
-.foeNameContainer {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 5px;
-}
-
-.allyName,
-.foeName {
-  font-family: "M PLUS 1p", sans-serif;
-  color: #333;
-}
-
-.poison {
-  background-color: #8f42d4;
-  color: white;
-  border-radius: 10px;
-  padding: 0 10px;
-  font-size: 0.8rem;
-  line-height: 1.2;
+  bottom: 2.2cqw; /* 10px */
+  right: -1.8cqw; /* -8px */
 }
