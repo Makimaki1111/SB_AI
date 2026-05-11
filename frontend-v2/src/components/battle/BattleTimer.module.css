@@ -1,13 +1,16 @@
 .timerContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
-  height: 2.2cqw;
-  background-color: #e0e0e0;
-  border-radius: 1.1cqw;
+  height: 0.9cqw; /* 4px相当 */
+  background-color: rgba(255, 255, 255, 0.2);
+  z-index: 10;
   overflow: hidden;
-  flex-shrink: 0;
 }
 
 .timerBar {
   height: 100%;
   transition: width 0.1s linear, background-color 0.3s ease;
+  box-shadow: 0 0 0.4cqw rgba(0, 0, 0, 0.3);
 }

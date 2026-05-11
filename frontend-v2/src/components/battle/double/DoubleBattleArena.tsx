@@ -1,6 +1,7 @@
 import React from 'react';
 import styles from './DoubleBattleArena.module.css';
 import { WordInput } from '../WordInput';
+import { BattleTimer } from '../BattleTimer';
 import { DoubleBattleSide } from './DoubleBattleSide';
 import { BattleHPBar } from '../BattleHPBar';
 import { TYPE_TO_IMAGE } from '../../../constants/game';
@@ -114,15 +115,7 @@ export const DoubleBattleArena: React.FC<DoubleBattleArenaProps> = ({
           )}
 
           {battleState && (
-            <div className={styles.timerContainer}>
-              <div
-                className={styles.timerBar}
-                style={{
-                  width: `${(timer.remaining / (timer.total || 1)) * 100}%`,
-                  backgroundColor: timer.remaining > 10 ? '#00FF00' : timer.remaining > 5 ? '#FFFF00' : '#FF0000'
-                }}
-              />
-            </div>
+            <BattleTimer remaining={timer.remaining} total={timer.total} />
           )}
 
           {notification && (

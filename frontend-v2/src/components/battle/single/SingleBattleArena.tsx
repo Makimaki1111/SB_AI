@@ -1,6 +1,7 @@
 import React from 'react';
 import styles from './SingleBattle.module.css';
 import { WordInput } from '../WordInput';
+import { BattleTimer } from '../BattleTimer';
 import { SingleBattleSide } from './SingleBattleSide';
 import { TYPE_TO_IMAGE } from '../../../constants/game';
 import type { BattleState, CharacterState } from '../../../types/battle';
@@ -95,15 +96,7 @@ export const SingleBattleArena: React.FC<SingleBattleArenaProps> = ({
 
           {/* タイマーを最上部に配置 */}
           {battleState && (
-            <div className={styles.timerContainer}>
-              <div
-                className={styles.timerBar}
-                style={{
-                  width: `${(timer.remaining / (timer.total || 1)) * 100}%`,
-                  backgroundColor: timer.remaining > 10 ? '#00FF00' : timer.remaining > 5 ? '#FFFF00' : '#FF0000'
-                }}
-              />
-            </div>
+            <BattleTimer remaining={timer.remaining} total={timer.total} />
           )}
 
           {/* 特性変更などの通知 */}
