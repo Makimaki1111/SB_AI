@@ -1,3 +1,5 @@
+/* WordDisplay.module.css - 統合された中央揃えスタイル */
+
 .allyWord,
 .foeWord,
 .doubleWord {
@@ -15,6 +17,7 @@
   white-space: nowrap;
 }
 
+/* シングルバトル用テキストスタイル */
 .allyWord,
 .foeWord {
   font-size: 7.1cqw;
@@ -22,12 +25,14 @@
   text-shadow: 0 0 0.8cqw rgba(255, 255, 255, 0.8);
 }
 
+/* ダブルバトル用テキストスタイル */
 .doubleWord {
   font-size: 28px;
   letter-spacing: -2px;
   z-index: 50;
 }
 
+/* 演出演出 */
 .blinking {
   animation: blink 0.2s 5;
 }

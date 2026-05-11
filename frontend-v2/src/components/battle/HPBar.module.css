@@ -2,26 +2,46 @@
   position: absolute;
   background: white;
   border-radius: 2.2cqw; /* 10px相当 */
-  padding: 1.3cqw 2.2cqw; /* 6px 10px 相当 */
-  width: 40.0cqw; /* 180px相当 */
-  min-height: 12.2cqw; /* 55px相当 */
-  box-shadow: 0 0 0.9cqw rgba(0, 0, 0, 0.2); /* 4px相当 */
-  z-index: 2;
+  padding: 1.3cqw 2.2cqw; /* シングル用デフォルト */
+  width: 40.0cqw; /* 180px相当 (シングル用) */
+  min-height: 12.2cqw;
+  box-shadow: 0 0 0.9cqw rgba(0, 0, 0, 0.2);
+  z-index: 100;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  /* container-type: size を削除することで、StatusRowがArena基準のcqwを参照するように修正 */
+  gap: 1.1cqw;
 }
 
-/* 左上に表示 (相手) */
-.left {
-  top: 2.2cqw; /* 10px */
-  left: -1.8cqw; /* -8px */
+/* --- シングルバトル用座標 --- */
+.singleFoe {
+  top: 2.2cqw;
+  left: -1.8cqw;
 }
 
-/* 右下に表示 (自分) */
-.right {
-  bottom: 2.2cqw; /* 10px */
-  right: -1.8cqw; /* -8px */
+.singleAlly {
+  bottom: 2.2cqw;
+  right: -1.8cqw;
+}
+
+/* --- ダブルバトル用座標 (ピクセルパーフェクト + 余白調整) --- */
+.doubleFoe,
+.doubleAlly {
+  width: 32.2cqw !important; /* 145px */
+  min-height: 13.3cqw !important; /* 60px */
+  gap: 0.9cqw !important; /* 4px */
+}
+
+.doubleFoe {
+  top: 2.7cqw;
+  left: -1.8cqw; /* はみ出し */
+  padding: 1.8cqw 1.8cqw 1.8cqw 3.6cqw !important; /* 左側の余白を増やして中身を右へ押し戻す */
+}
+
+.doubleAlly {
+  bottom: 2.7cqw;
+  right: -1.8cqw; /* はみ出し */
+  padding: 1.8cqw 3.6cqw 1.8cqw 1.8cqw !important; /* 右側の余白を増やして中身を左へ押し戻す */
+  top: auto;
 }

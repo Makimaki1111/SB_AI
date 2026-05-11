@@ -1,4 +1,4 @@
-/* --- ダブルバトル・レイアウト (calc/transform を排除した絶対座標) --- */
+/* --- ダブルバトル・レイアウト (スロット座標定義のみ) --- */
 
 .teamContainer {
   /* コンテナ幅と高さ */
@@ -47,10 +47,7 @@
   left: -6.9cqw;
 }
 
-/* キャラクター配置 (.charWrapper) */
-.charWrapper {
-  position: absolute;
-}
+/* スロット配置 (各 BattleCharacter ユニットの場所) */
 
 /* 味方A (後衛・左) */
 .slot_p1a {
@@ -86,63 +83,4 @@
   left: 26.1cqw;
   bottom: -0.7cqw;
   z-index: 12;
-}
-
-/* アバター画像 - 本家は 100% (100px相当) で表示されていた */
-.sprite {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-/* 2色目のタイプ画像 (本家: translate(15px, -10px)) */
-.charWrapper:nth-child(3) .type2 {
-  left: 3.3cqw;
-  bottom: 2.2cqw;
-  z-index: 11;
-}
-
-.charWrapper:nth-child(2) .type2 {
-  left: 3.3cqw;
-  bottom: 2.2cqw;
-  z-index: 11;
-}
-
-/* 単語吹き出しのラッパー */
-.wordWrapper {
-  position: absolute;
-  width: 100%;
-  left: 0;
-  z-index: 50;
-  text-align: center;
-  pointer-events: none;
-}
-
-.ally .wordWrapper {
-  top: 88%;
-}
-
-.foe .wordWrapper {
-  top: 100%;
-}
-
-/* エフェクト用コンテナ */
-.effectsContainer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 15;
-}
-
-/* --- 演出 --- */
-.blinking {
-  animation: blink 0.2s 5;
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
 }

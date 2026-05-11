@@ -2,7 +2,7 @@ import React from 'react';
 import styles from './DoubleBattleArena.module.css';
 import { WordInput } from '../WordInput';
 import { DoubleBattleSide } from './DoubleBattleSide';
-import { TeamHPBar } from './TeamHPBar';
+import { BattleHPBar } from '../BattleHPBar';
 import { TYPE_TO_IMAGE } from '../../../constants/game';
 import type { BattleState, CharacterState } from '../../../types/battle';
 import SoundManager from '../../../utils/SoundManager';
@@ -93,13 +93,15 @@ export const DoubleBattleArena: React.FC<DoubleBattleArenaProps> = ({
           activeEffects={activeEffects}
         />
 
-        <TeamHPBar
+        <BattleHPBar
           characters={foes}
           isAlly={false}
+          mode="double"
         />
-        <TeamHPBar
+        <BattleHPBar
           characters={allies}
           isAlly={true}
+          mode="double"
         />
       </div>
 

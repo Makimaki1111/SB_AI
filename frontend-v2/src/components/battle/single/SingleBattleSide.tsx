@@ -1,5 +1,5 @@
 import React from 'react';
-import { HPBar } from '../HPBar';
+import { BattleHPBar } from '../BattleHPBar';
 import { BattleCharacter } from '../BattleCharacter';
 import type { CharacterState } from '../../../types/battle';
 
@@ -35,12 +35,10 @@ export const SingleBattleSide: React.FC<SingleBattleSideProps> = ({
         scale={1.0}
       />
       
-      <HPBar 
-        hp={character?.hp ?? 0} 
-        maxHp={character?.max_hp ?? 100} 
-        name={name} 
-        isPoison={character?.is_poison ?? false}
+      <BattleHPBar 
+        characters={character ? [character] : []}
         isAlly={isAlly}
+        mode="single"
         isWaiting={!character}
       />
     </>
