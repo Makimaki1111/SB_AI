@@ -1,9 +1,11 @@
 import React from 'react';
 import styles from './DoubleBattleArena.module.css';
 import { WordInput } from '../WordInput';
-import { BattleTimer } from '../BattleTimer';
 import { DoubleBattleSide } from './DoubleBattleSide';
 import { BattleHPBar } from '../BattleHPBar';
+import { BattleTimer } from '../BattleTimer';
+import { BattleOverlay } from '../BattleOverlay';
+import { BattleWaitMessage } from '../BattleWaitMessage';
 import { TYPE_TO_IMAGE } from '../../../constants/game';
 import type { BattleState, CharacterState } from '../../../types/battle';
 import SoundManager from '../../../utils/SoundManager';
@@ -108,20 +110,15 @@ export const DoubleBattleArena: React.FC<DoubleBattleArenaProps> = ({
 
       <div className={styles.content}>
         <div className={styles.actionArea}>
-          {messageLog.isOpen && (
-            <div className={styles.messageOverlay}>
-              {messageLog.text}
-            </div>
-          )}
+          {/* メッセージボックス、通知、待機メッセージを一括管理 */}
+          <BattleOverlay
+            messageLog={messageLog}
+            notification={notification}
+          />
 
+          {/* タイマーを表示 */}
           {battleState && (
             <BattleTimer remaining={timer.remaining} total={timer.total} />
-          )}
-
-          {notification && (
-            <div className={styles.toastNotification}>
-              {notification}
-            </div>
           )}
 
           <div className={styles.inputWrapper}>
@@ -167,16 +164,8 @@ export const DoubleBattleArena: React.FC<DoubleBattleArenaProps> = ({
                 {prediction.prediction && <div className={styles.predictionMsg}>{prediction.prediction}</div>}
               </div>
             )}
-            {waitMessage && (
-              <div className={styles.waitMessage}>
-                {waitMessage}
-              </div>
-            )}
-            {targetWarning && (
-              <div className={styles.waitMessage}>
-                {targetWarning}
-              </div>
-            )}
+            <BattleWaitMessage message={waitMessage} />
+            <BattleWaitMessage message={targetWarning} />
           </div>
 
           {/* ターゲット選択ボタン (既存の UI を 100% 維持) */}

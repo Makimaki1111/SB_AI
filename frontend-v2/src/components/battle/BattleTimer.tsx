@@ -6,15 +6,11 @@ interface BattleTimerProps {
   total: number;
 }
 
-/**
- * バトルの制限時間を表示するプログレスバー。
- * 残り時間に応じて色が緑 -> 黄 -> 赤と変化します。
- */
 export const BattleTimer: React.FC<BattleTimerProps> = ({ remaining, total }) => {
-  const percentage = Math.max(0, Math.min(100, (remaining / (total || 1)) * 100));
-
-  // 残り時間に応じた色決定ロジックを一箇所に集約
-  const getTimerColor = () => {
+  const percentage = (remaining / (total || 1)) * 100;
+  
+  // 色の決定ロジックを共通化
+  const getBackgroundColor = () => {
     if (remaining > 10) return '#00FF00'; // 緑
     if (remaining > 5) return '#FFFF00';  // 黄
     return '#FF0000';                     // 赤
@@ -26,7 +22,7 @@ export const BattleTimer: React.FC<BattleTimerProps> = ({ remaining, total }) =>
         className={styles.timerBar}
         style={{
           width: `${percentage}%`,
-          backgroundColor: getTimerColor(),
+          backgroundColor: getBackgroundColor()
         }}
       />
     </div>

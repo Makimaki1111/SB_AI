@@ -1,8 +1,10 @@
 import React from 'react';
 import styles from './SingleBattle.module.css';
 import { WordInput } from '../WordInput';
-import { BattleTimer } from '../BattleTimer';
 import { SingleBattleSide } from './SingleBattleSide';
+import { BattleTimer } from '../BattleTimer';
+import { BattleOverlay } from '../BattleOverlay';
+import { BattleWaitMessage } from '../BattleWaitMessage';
 import { TYPE_TO_IMAGE } from '../../../constants/game';
 import type { BattleState, CharacterState } from '../../../types/battle';
 import SoundManager from '../../../utils/SoundManager';
@@ -87,23 +89,15 @@ export const SingleBattleArena: React.FC<SingleBattleArenaProps> = ({
 
       <div className={styles.content}>
         <div className={styles.actionArea}>
-          {/* メッセージボックスがタイマーを覆うように配置 */}
-          {messageLog.isOpen && (
-            <div className={styles.messageOverlay}>
-              {messageLog.text}
-            </div>
-          )}
+          {/* メッセージボックス、通知、待機メッセージを一括管理 */}
+          <BattleOverlay
+            messageLog={messageLog}
+            notification={notification}
+          />
 
-          {/* タイマーを最上部に配置 */}
+          {/* タイマーを表示 */}
           {battleState && (
             <BattleTimer remaining={timer.remaining} total={timer.total} />
-          )}
-
-          {/* 特性変更などの通知 */}
-          {notification && (
-            <div className={styles.toastNotification}>
-              {notification}
-            </div>
           )}
 
           <div className={styles.inputWrapper}>
@@ -149,11 +143,7 @@ export const SingleBattleArena: React.FC<SingleBattleArenaProps> = ({
                 {prediction.prediction && <div className={styles.predictionMsg}>{prediction.prediction}</div>}
               </div>
             )}
-            {waitMessage && (
-              <div className={styles.waitMessage}>
-                {waitMessage}
-              </div>
-            )}
+            <BattleWaitMessage message={waitMessage} />
           </div>
 
           {battleState && (
