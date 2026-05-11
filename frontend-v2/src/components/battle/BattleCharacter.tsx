@@ -5,33 +5,33 @@ import { BattleEffects } from './BattleEffects';
 import styles from './BattleCharacter.module.css';
 
 interface BattleCharacterProps {
+  id: string;
+  name: string;
   types: string[];
-  word: string | null;
   isAlly: boolean;
-  effect?: string | null;
+  isBlinking: boolean;
   isKnockout: boolean;
+  activeEffect?: string | null;
+  slot?: 'p1a' | 'p1b' | 'p2a' | 'p2b';
+  word?: string | null;
   scale?: number;
-  slot?: string;
   className?: string;
 }
 
 /**
- * キャラクターの姿(Avatar)、言葉(WordDisplay)、エフェクトを
- * ひとまとめにした統合コンポーネント。
+ * 役者（キャラクター）一人の表示を司るコンポーネント
  */
 export const BattleCharacter: React.FC<BattleCharacterProps> = ({
   types,
-  word,
   isAlly,
-  effect,
+  isBlinking,
   isKnockout,
-  scale = 1,
+  activeEffect,
   slot,
+  word,
+  scale = 1,
   className = ''
 }) => {
-  const isBlinking = effect === 'blink';
-  const displayEffect = effect && effect !== 'blink' ? effect : null;
-
   return (
     <div 
       className={`${styles.characterContainer} ${className}`}
@@ -42,7 +42,6 @@ export const BattleCharacter: React.FC<BattleCharacterProps> = ({
         transformOrigin: 'bottom center'
       }}
     >
-      {/* キャラクター本体 */}
       <CharacterAvatar
         types={types}
         isAlly={isAlly}
@@ -52,20 +51,16 @@ export const BattleCharacter: React.FC<BattleCharacterProps> = ({
         className={styles.avatar}
       />
 
-      {/* エフェクト演出 */}
-      <div className={styles.effectsContainer}>
-        <BattleEffects trigger={displayEffect} side={isAlly ? "ally" : "foe"} />
-      </div>
-
-      {/* 発した言葉 */}
       <div className={styles.wordWrapper}>
         <WordDisplay
           word={word}
           isAlly={isAlly}
-          isBlinking={isBlinking}
-          isKnockout={isKnockout}
           isDouble={!!slot}
         />
+      </div>
+
+      <div className={styles.effectsContainer}>
+        <BattleEffects trigger={activeEffect || null} />
       </div>
     </div>
   );

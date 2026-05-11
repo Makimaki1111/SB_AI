@@ -55,12 +55,15 @@ export const BattleTeamDisplay: React.FC<BattleTeamDisplayProps> = ({
           return (
             <BattleCharacter
               key={char.id || index}
+              id={char.id || `char-${index}`}
+              name={char.name}
               types={char.types || []}
               word={char.word || null}
               isAlly={isAlly}
-              effect={charEffect}
+              activeEffect={charEffect}
+              isBlinking={charEffect === 'blink'}
               isKnockout={isKnockout}
-              slot={slot}
+              slot={slot as any}
               className={charClass}
             />
           );

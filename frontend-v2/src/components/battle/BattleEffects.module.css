@@ -1,31 +1,25 @@
 .container {
   position: absolute;
-  width: 220px;
-  height: 150px;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
-  z-index: 5;
+  z-index: 50; /* キャラクタースプライトより手前 */
   display: flex;
   justify-content: center;
   align-items: center;
-}
-
-.ally {
-  top: 80px;
-  left: 0;
-}
-
-.foe {
-  top: 5px;
-  right: 20px;
+  overflow: visible; /* パーティクルが外に飛び出せるように */
 }
 
 .particle {
   position: absolute;
-  font-family: Arial, sans-serif;
+  font-family: 'Outfit', Arial, sans-serif;
   font-weight: bold;
-  font-size: 24px;
+  font-size: 5.3cqw; /* 24px相当 */
   user-select: none;
   pointer-events: none;
+  text-shadow: 0 0 0.4cqw rgba(255, 255, 255, 0.8);
 }
 
 .heal {

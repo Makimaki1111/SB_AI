@@ -5,67 +5,81 @@ import styles from './BattleEffects.module.css';
 interface Particle {
   id: number;
   type: 'heal' | 'stat_up' | 'stat_down';
-  x: number;
-  y: number;
+  startX: number; // cqw
+  startY: number; // cqw
+  driftX: number; // cqw
+  driftY: number; // cqw
+  scale: number;
 }
 
 interface BattleEffectsProps {
   trigger: 'heal' | 'stat_up' | 'stat_down' | 'up' | 'down' | string | null;
-  side: 'ally' | 'foe';
 }
 
-export const BattleEffects: React.FC<BattleEffectsProps> = ({ trigger, side }) => {
+/**
+ * キャラクターの周囲にエフェクトを発生させるコンポーネント
+ */
+export const BattleEffects: React.FC<BattleEffectsProps> = ({ trigger }) => {
   const [particles, setParticles] = useState<Particle[]>([]);
 
   useEffect(() => {
     if (!trigger) return;
 
-    // 回復、能力変化などの演出をトリガー
-    if (trigger === 'heal' || trigger === 'stat_up' || trigger === 'stat_down' || trigger === 'up' || trigger === 'down') {
-      const type = (trigger === 'up' ? 'stat_up' : trigger === 'down' ? 'stat_down' : trigger) as Particle['type'];
-      const count = type === 'heal' ? 15 : 10;
-      const interval = type === 'heal' ? 80 : 100;
+    let type: Particle['type'] | null = null;
+    if (trigger === 'heal') type = 'heal';
+    else if (trigger === 'stat_up' || trigger === 'up') type = 'stat_up';
+    else if (trigger === 'stat_down' || trigger === 'down') type = 'stat_down';
 
-      for (let i = 0; i < count; i++) {
+    if (!type) return;
+
+    // 量は多めを維持
+    const count = type === 'heal' ? 15 : 12;
+    const interval = type === 'heal' ? 60 : 100;
+
+    for (let i = 0; i < count; i++) {
+      setTimeout(() => {
+        const id = Date.now() + i + Math.random();
+        const newParticle: Particle = {
+          id: id,
+          type: type as Particle['type'],
+          // 横幅は広めに散らす (-20cqw ~ 20cqw)
+          startX: (Math.random() - 0.5) * 40,
+          startY: (Math.random() - 0.5) * 10,
+          driftX: (Math.random() - 0.5) * 10,
+          // 縦方向の移動を短く抑える (12cqw)
+          driftY: type === 'stat_down' ? 12 : -12,
+          scale: 0.8 + Math.random() * 0.7,
+        };
+        setParticles(prev => [...prev, newParticle]);
+        
         setTimeout(() => {
-          const id = Date.now() + i;
-          const newParticle: Particle = {
-            id: id,
-            type: type,
-            x: Math.random() * 180 - 90, // 本家: Math.random() * 180 + 20 (コンテナ基準で調整)
-            y: type === 'stat_down' ? -40 : 40,
-          };
-          setParticles(prev => [...prev, newParticle]);
-          
-          // 1.5秒後に削除
-          setTimeout(() => {
-            setParticles(prev => prev.filter(p => p.id !== id));
-          }, 1500);
-        }, i * interval);
-      }
+          setParticles(prev => prev.filter(p => p.id !== id));
+        }, 1300);
+      }, i * interval);
     }
   }, [trigger]);
 
   return (
-    <div className={`${styles.container} ${side === 'ally' ? styles.ally : styles.foe}`}>
+    <div className={styles.container}>
       <AnimatePresence>
         {particles.map(p => (
           <motion.div
             key={p.id}
             initial={{ 
               opacity: 0, 
-              y: p.type === 'stat_down' ? -20 : 20, 
-              scale: 0.5, 
-              x: p.x 
+              y: `${p.startY}cqw`, 
+              scale: p.scale * 0.5, 
+              x: `${p.startX}cqw` 
             }}
             animate={{ 
-              opacity: [0, 1, 1, 0], // 本家の 0->1(20%), 1->0(100%)
-              y: p.type === 'stat_down' ? [null, 0, 60] : [null, 0, -60], 
-              scale: [0.5, 1, 1.2] 
+              opacity: [0, 1, 1, 0], 
+              y: [`${p.startY}cqw`, `${p.startY + p.driftY}cqw`], 
+              x: [`${p.startX}cqw`, `${p.startX + p.driftX}cqw`],
+              scale: [null, p.scale, p.scale * 1.3] 
             }}
             transition={{ 
-              duration: 1.5, 
-              times: [0, 0.2, 0.2, 1], // 0-20% で出現、100% までに移動
+              duration: 1.2, 
+              times: [0, 0.2, 0.8, 1],
               ease: "easeOut" 
             }}
             className={`${styles.particle} ${styles[p.type]}`}

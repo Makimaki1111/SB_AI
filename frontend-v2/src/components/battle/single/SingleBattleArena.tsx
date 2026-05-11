@@ -55,8 +55,12 @@ export const SingleBattleArena: React.FC<SingleBattleArenaProps> = ({
   const { ally, foe } = React.useMemo(() => {
     if (!battleState) return { ally: null, foe: null };
     return {
-      ally: allyId ? battleState.characters[allyId] || null : null,
-      foe: foeId ? battleState.characters[foeId] || null : null
+      ally: allyId && battleState.characters[allyId] 
+        ? { ...battleState.characters[allyId], id: allyId } 
+        : null,
+      foe: foeId && battleState.characters[foeId] 
+        ? { ...battleState.characters[foeId], id: foeId } 
+        : null
     };
   }, [battleState, allyId, foeId]);
 

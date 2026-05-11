@@ -713,7 +713,8 @@ class BaseBattle:
                 ability_change_count=p.ability_change_count,
                 lives=getattr(p, 'lives', 1),
                 max_lives=getattr(p, 'max_lives', 1),
-                owner_id=p.owner_id
+                owner_id=p.owner_id,
+                id=p.id
             )
         
         current_actor = self.get_current_actor()
