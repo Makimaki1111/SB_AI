@@ -22,7 +22,6 @@ export const SingleBattleSide: React.FC<SingleBattleSideProps> = ({
   effect,
   word,
   isKnockout,
-  name
 }) => {
   return (
     <>
@@ -34,8 +33,8 @@ export const SingleBattleSide: React.FC<SingleBattleSideProps> = ({
         isKnockout={isKnockout}
         scale={1.0}
       />
-      
-      <BattleHPBar 
+
+      <BattleHPBar
         characters={character ? [character] : []}
         isAlly={isAlly}
         mode="single"
