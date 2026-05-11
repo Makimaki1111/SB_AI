@@ -34,20 +34,30 @@
 .nameRow {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between; /* 名前とバッジを両端に */
   gap: 1cqw;
+  min-height: 3.5cqw;
 }
 
 .memberName {
   font-size: 2.9cqw; /* 13px */
   font-weight: bold;
   color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70%;
 }
 
 .poisonBadge {
-  color: #ff0000;
+  background-color: #8f42d4; /* 本家の紫 */
+  color: white;              /* 白文字 */
   font-weight: bold;
-  font-size: 2.4cqw; /* 11px */
+  font-size: 2.2cqw;         /* 10px 相当 */
+  padding: 0 1.2cqw;         /* 左右にパディング */
+  border-radius: 2cqw;       /* 角丸カプセル */
+  line-height: 1.4;
+  flex-shrink: 0;
 }
 
 .hpBarContainer {
