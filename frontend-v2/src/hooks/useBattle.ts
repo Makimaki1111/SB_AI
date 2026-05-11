@@ -171,16 +171,10 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
             // 安全のためにコピーを作成してからプロパティを更新する
             initialVisualState.characters[id] = { ...initialVisualState.characters[id] };
             initialVisualState.characters[id].hp = prevState.characters[id].hp;
-            
+
             // バックエンドからはキャラクター個別のwordは送られてこないため、前回の表示内容を保持する
             if (prevState.characters[id].word) {
               initialVisualState.characters[id].word = prevState.characters[id].word;
-            }
-            
-            // If the backend cleared types (because of revive), we preserve the old types
-            // so the knockout animation can play. We will clear it when processing 'revive' event.
-            if (data.state.characters[id].types.length === 0 && prevState.characters[id].types.length > 0) {
-              initialVisualState.characters[id].types = prevState.characters[id].types;
             }
           }
         });
@@ -210,7 +204,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
       const events = data.events || [];
       const isTimeout = events.some(e => e.message?.includes('時間切れ'));
       const attackerSide = prevState.is_my_turn ? 'ally' : 'foe';
-      
+
       // ダブルバトル対応の Actor 特定ロジック
       // 1. last_actor_id が characters のキー (p1a等) に直接存在するか確認
       // 2. 存在しない場合、id_to_ui_map からサイドが一致するスロットを探す
@@ -222,7 +216,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
           && data.state.characters[e.target]
           && ['cure'].includes(e.type)
         ))?.target;
-      
+
       if (!attackerId || !data.state.characters[attackerId]) {
         attackerId = Object.keys(uiMap).find(id => uiMap[id]?.startsWith(attackerSide)) || null;
       }
@@ -240,21 +234,21 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
             ...data.state.characters[attackerId],
             word: data.state.word
           };
-          
+
           // イベントループ(tempCharacters)でのアニメーション中に古い単語に戻らないよう、ベースにも反映する
           if (initialVisualState.characters[attackerId]) {
             initialVisualState.characters[attackerId].word = data.state.word;
           }
 
           console.log(`[WordDisplay] Assigned "${data.state.word}" to ${attackerId} (${uiMap[attackerId]})`);
-          
+
           // ★重要: 単語がセットされた直後にステートを更新して画面に即時反映させる
-          setBattleState(prev => prev ? { 
-            ...prev, 
-            characters: { 
-              ...prev.characters, 
-              [attackerId]: { ...data.state.characters[attackerId] } 
-            } 
+          setBattleState(prev => prev ? {
+            ...prev,
+            characters: {
+              ...prev.characters,
+              [attackerId]: { ...data.state.characters[attackerId] }
+            }
           } : null);
         }
 
