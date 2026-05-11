@@ -13,10 +13,10 @@ function App() {
     SoundManager.preloadCommonSounds();
 
     const handleFirstInteraction = () => {
-      SoundManager.unlock().then(() => {
-        // タイトル画面のBGMを開始
-        SoundManager.playBGM('/resource/horizon.mp3');
-      });
+      SoundManager.unlock();
+      // タイトル画面のBGMを開始 (既に再生中なら何もしない)
+      SoundManager.playBGM('/resource/horizon.mp3');
+      
       // 一度だけ実行
       window.removeEventListener('click', handleFirstInteraction);
       window.removeEventListener('touchstart', handleFirstInteraction);
