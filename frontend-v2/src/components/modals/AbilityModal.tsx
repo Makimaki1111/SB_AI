@@ -173,22 +173,11 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
 
         {/* 現在の特性表示セクション */}
         <div className={styles.statusSection}>
+          <span className={styles.sideLabel}>{isLobby ? "せんたく中のとくせい" : "現在のとくせい"}</span>
           <div className={styles.sideStatus}>
-            <span className={styles.sideLabel}>{isLobby ? "せんたく中のとくせい" : "現在のとくせい"}</span>
-            <div className={styles.currentAbilityName}>{allyAbilityInfo.name}</div>
-            <div className={styles.currentAbilityDesc}>{allyAbilityInfo.description}</div>
+            <h3 className={styles.currentAbilityName}>{allyAbilityInfo.name}</h3>
+            <p className={styles.currentAbilityDesc}>{allyAbilityInfo.description}</p>
           </div>
-        </div>
-
-        <div className={styles.divider}>
-          <span>{isLobby ? "とくせいを選ぶ" : "タップしてとくせいを変える"}</span>
-          {!isLobby && <span className={styles.remainCount}>(あと{abilityChangeCount}回)</span>}
-        </div>
-        
-        {/* 選んでいる最中の情報表示 */}
-        <div className={styles.infoSection}>
-          <h3 className={styles.abilityNameDisplay}>{currentInfo.name}</h3>
-          <p className={styles.abilityDescDisplay}>{currentInfo.description}</p>
         </div>
 
         {/* 円弧状カルーセル */}
@@ -205,10 +194,10 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
               const absDiff = Math.abs(offsetIndex);
               
               const x = offsetIndex * spacing;
-              const y = absDiff * absDiff * 2.5; // 5から2.5に減らして高さを安定させる
-              const scale = Math.max(0.5, 1 - absDiff * 0.22);
-              const opacity = Math.max(0, 1 - absDiff * 0.25);
-              const zIndex = Math.round(100 - absDiff * 10);
+              const y = absDiff * absDiff * 2.0; 
+              const scale = Math.max(0.6, 1 - absDiff * 0.15); 
+              const opacity = Math.max(0, 1 - absDiff * 0.2); 
+              const zIndex = Math.round(100 - absDiff); 
 
               const iconName = TYPE_TO_IMAGE[ab.icon_type] || 'normal';
 
@@ -233,7 +222,17 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
           </motion.div>
         </div>
 
+        {/* 変更後の特性表示セクション */}
+        <div className={styles.infoSection}>
+          <span className={styles.sideLabel} style={{ color: '#ff9800' }}>変更後のとくせい</span>
+          <div className={styles.sideStatus}>
+            <h3 className={styles.abilityNameDisplay}>{currentInfo.name}</h3>
+            <p className={styles.abilityDescDisplay}>{currentInfo.description}</p>
+          </div>
+        </div>
+
         <div className={styles.footer}>
+
           <button className={styles.closeBtn} onClick={handleClose}>とじる</button>
           <button 
             className={`${styles.decideBtn} ${!canChange ? styles.disabled : ''}`}
