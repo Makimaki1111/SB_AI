@@ -1,0 +1,30 @@
+.footerArea {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: auto;
+  padding-bottom: 4.4cqw;
+}
+
+.cancelBattleBtn {
+  z-index: 20;
+  padding: 2.6cqw 7.1cqw;
+  font-size: 4.8cqw;
+  font-weight: 700;
+  color: #666;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 11cqw;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 0.8cqw 3.3cqw rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  letter-spacing: 0.05em;
+}
+
+.cancelBattleBtn:hover {
+  background: #fff;
+  color: #ff6b6b;
+  box-shadow: 0 1.7cqw 4.4cqw rgba(0, 0, 0, 0.15);
+  transform: translateY(-0.6cqw);
+}
