@@ -53,7 +53,7 @@
 }
 
 /* 味方A (後衛・左) */
-.ally .charWrapper:nth-child(2) {
+.slot_p1a {
   width: 20cqw;
   height: 20cqw;
   left: -2.3cqw;
@@ -62,7 +62,7 @@
 }
 
 /* 味方B (前衛・右) */
-.ally .charWrapper:nth-child(3) {
+.slot_p1b {
   width: 22.2cqw;
   height: 22.2cqw;
   left: 23.9cqw;
@@ -71,7 +71,7 @@
 }
 
 /* 敵A (後衛・左) */
-.foe .charWrapper:nth-child(2) {
+.slot_p2a {
   width: 20cqw;
   height: 20cqw;
   left: 3.7cqw;
@@ -80,7 +80,7 @@
 }
 
 /* 敵B (前衛・右) */
-.foe .charWrapper:nth-child(3) {
+.slot_p2b {
   width: 22.2cqw;
   height: 22.2cqw;
   left: 26.1cqw;

@@ -10,6 +10,7 @@ interface WordDisplayProps {
   centered?: boolean;
   isDouble?: boolean;
   slot?: string; // p1a, p1b, p2a, p2b
+  scale?: number;
 }
 
 /**
@@ -23,14 +24,13 @@ export const WordDisplay: React.FC<WordDisplayProps> = ({
   isKnockout,
   centered = false,
   isDouble = false,
-  slot
+  slot,
+  scale = 1.0
 }) => {
-  const xPos = (centered || isDouble) ? '-50%' : (isAlly ? '-50%' : '50%');
+  const xPos = '-50%';
   const baseClass = isDouble ? styles.doubleWord : (isAlly ? styles.allyWord : styles.foeWord);
 
   // 本家の「長い単語を枠内に収める」挙動を再現する。
-  // 以前は全体を縮小（scale）していましたが、本家は横方向（scaleX）のみ縮小します。
-  const externalScale = (slot === 'p1a' || slot === 'p2a') ? 0.9 : 1.0;
   const textScaleX = useMemo(() => {
     if (!word) return 1;
     const maxWidth = (centered || isDouble) ? 125 : 180;
@@ -39,8 +39,8 @@ export const WordDisplay: React.FC<WordDisplayProps> = ({
     return Math.min(1, maxWidth / estimatedWidth);
   }, [centered, isDouble, word]);
   
-  const finalScaleX = textScaleX * externalScale;
-  const finalScaleY = externalScale;
+  const finalScaleX = textScaleX;
+  const finalScaleY = 1.0;
 
   return (
     <AnimatePresence mode="popLayout">

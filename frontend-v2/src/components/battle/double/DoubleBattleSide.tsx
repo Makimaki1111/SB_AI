@@ -1,9 +1,7 @@
 import React from 'react';
-import { WordDisplay } from '../WordDisplay';
-import { BattleEffects } from '../BattleEffects';
 import styles from './DoubleBattleSide.module.css';
+import { BattleCharacter } from '../BattleCharacter';
 import type { CharacterState } from '../../../types/battle';
-import { TYPE_TO_IMAGE } from '../../../constants/game';
 
 interface DoubleBattleSideProps {
   characters: CharacterState[];
@@ -13,7 +11,7 @@ interface DoubleBattleSideProps {
 }
 
 /**
- * 既存のデザインを維持したダブルバトル用キャラクター配置
+ * 統合された BattleCharacter を使用したダブルバトルキャラクター配置
  */
 export const DoubleBattleSide: React.FC<DoubleBattleSideProps> = ({
   characters,
@@ -30,39 +28,21 @@ export const DoubleBattleSide: React.FC<DoubleBattleSideProps> = ({
         const isKnockout = char.id ? knockoutStates[char.id] || char.hp <= 0 || !!char.is_defeated : char.hp <= 0;
         const charEffect = char.id ? activeEffects[char.id] : null;
         
-        const isBlinking = charEffect === 'blink';
-        const displayEffect = charEffect && charEffect !== 'blink' ? charEffect : null;
+        // ダブルバトルのスロットID決定
+        const slot = isAlly ? (index === 0 ? 'p1a' : 'p1b') : (index === 0 ? 'p2a' : 'p2b');
 
         return (
-          <div key={char.id || index} className={styles.charWrapper}>
-            {char.types?.map((type, tIndex) => (
-              <img
-                key={tIndex}
-                src={`/img/${TYPE_TO_IMAGE[type] || 'normal'}.gif`}
-                className={`${styles.sprite} ${tIndex > 0 ? styles.type2 : ''} ${isBlinking ? styles.blinking : ''}`}
-                style={{ opacity: isKnockout ? 0.3 : 1 }}
-                alt={char.name}
-              />
-            ))}
-
-            <div className={styles.effectsContainer}>
-              <BattleEffects
-                trigger={displayEffect}
-                side={isAlly ? "ally" : "foe"}
-              />
-            </div>
-
-            <div className={styles.wordWrapper}>
-              <WordDisplay
-                word={char.word || null}
-                isAlly={isAlly}
-                isBlinking={isBlinking}
-                isKnockout={isKnockout}
-                isDouble={true}
-                slot={isAlly ? (index === 0 ? 'p1a' : 'p1b') : (index === 0 ? 'p2a' : 'p2b')}
-              />
-            </div>
-          </div>
+          <BattleCharacter
+            key={char.id || index}
+            types={char.types || []}
+            word={char.word || null}
+            isAlly={isAlly}
+            effect={charEffect}
+            isKnockout={isKnockout}
+            scale={1.0} /* CSS側のwidth/heightで制御するため、scaleは1倍固定 */
+            slot={slot}
+            className={styles[`slot_${slot}`]}
+          />
         );
       })}
     </div>

@@ -8,6 +8,8 @@ interface CharacterAvatarProps {
   isAlly: boolean;
   isBlinking?: boolean;
   isKnockout?: boolean;
+  scale?: number;
+  className?: string;
 }
 
 /**
@@ -17,7 +19,10 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
   types = [], 
   isAlly, 
   isBlinking,
-  isKnockout 
+  isKnockout,
+  isDouble = false,
+  scale = 1,
+  className = ''
 }) => {
   const currentValidTypes = (types || []).filter(t => t && t.trim() !== '');
   const displayTypes = currentValidTypes;
@@ -40,7 +45,7 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
 
   return (
   <motion.div 
-    className={`${styles.avatarGroup} ${isAlly ? styles.allyGroup : styles.foeGroup} ${isBlinking ? styles.blinking : ''}`}
+    className={`${styles.avatarGroup} ${isDouble ? styles.doubleMode : styles.singleMode} ${isAlly ? styles.ally : styles.foe} ${isBlinking ? styles.blinking : ''} ${className}`}
     initial="alive"
     animate={isKnockout ? "knockout" : "alive"}
     variants={containerVariants}
@@ -49,7 +54,8 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
       // 本家の jQuery のデフォルトイージング (swing) は easeInOut に近い
       ease: isKnockout ? "easeInOut" : "easeOut"
     }}
-  >      {displayTypes.map((type, index) => {
+  >
+      {displayTypes.map((type, index) => {
         const iconName = TYPE_TO_IMAGE[type] || 'normal';
         const imageUrl = `/img/${iconName}.gif`;
         
