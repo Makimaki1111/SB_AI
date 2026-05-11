@@ -13,7 +13,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
   const {
     battleState, setBattleState, battleStateRef,
     allAbilities, setAllAbilities,
-    uiMapping, updateUiMapping, uiMappingRef,
+    uiMapping, updateUiMapping,
     getAlly, getFoe, getAllyId, getFoeId,
     getAllies, getFoes, getAllyIds, getFoeIds,
     reset: resetState
@@ -126,7 +126,6 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
       const data = messageQueue.current.shift();
       if (data) {
         await handleBattleUpdate(data);
-        // ループ中にリセットされたら残りのキューは破棄
         if (!currentRoomIdRef.current) {
           messageQueue.current = [];
           break;
@@ -143,7 +142,6 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
     if (!data.state) return;
 
     const checkAbort = () => {
-      // 進行中のルームIDが変わっているか、リセットされていたら中止
       if (!currentRoomIdRef.current || data.state.room_id !== currentRoomIdRef.current) return true;
       return false;
     };
@@ -157,22 +155,18 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
       const prevState = battleStateRef.current || data.state;
       const isInitialBattle = (data.type === 'made_room' || data.type === 'accepted') && !battleStateRef.current;
 
-      // 1. Initial State Sync (Do this immediately to show UI elements)
+      // 1. Initial State Sync
       const initialVisualState: BattleState = {
         ...data.state,
         characters: { ...data.state.characters },
         status: 'active'
       };
 
-      // Keep old HP, types, and word for damage/knockout animation (only if not initial battle)
       if (!isInitialBattle) {
         Object.keys(initialVisualState.characters).forEach(id => {
           if (prevState.characters[id]) {
-            // 安全のためにコピーを作成してからプロパティを更新する
             initialVisualState.characters[id] = { ...initialVisualState.characters[id] };
             initialVisualState.characters[id].hp = prevState.characters[id].hp;
-
-            // バックエンドからはキャラクター個別のwordは送られてこないため、前回の表示内容を保持する
             if (prevState.characters[id].word) {
               initialVisualState.characters[id].word = prevState.characters[id].word;
             }
@@ -183,21 +177,16 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
       setBattleState(initialVisualState);
       battleStateRef.current = initialVisualState;
 
-      // 2. Matching Animation (Delayed BGM transition)
+      // 2. Matching Animation
       if (isInitialBattle) {
-        // マッチング直後にタイマーを開始（バックエンドとのズレを最小化）
         resetTimer(data.info?.time_limit || 20, data.info?.total_time || 20);
-
         display.resetDisplay();
         display.setMessageLog({ text: 'マッチングした！', isOpen: true });
         soundManager.stopBGM();
         soundManager.play('start');
-        // Legacy uses 1500ms
         await new Promise(resolve => setTimeout(resolve, 1500));
         if (checkAbort()) return;
-
         soundManager.playBGM('/resource/overflow.mp3');
-        // Initial battle doesn't have a word to read, so we can skip the next word delay
         data.state.word = "";
       }
 
@@ -205,9 +194,6 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
       const isTimeout = events.some(e => e.message?.includes('時間切れ'));
       const attackerSide = prevState.is_my_turn ? 'ally' : 'foe';
 
-      // ダブルバトル対応の Actor 特定ロジック
-      // 1. last_actor_id が characters のキー (p1a等) に直接存在するか確認
-      // 2. 存在しない場合、id_to_ui_map からサイドが一致するスロットを探す
       const uiMap = data.info?.id_to_ui_map || {};
       let attackerId = events.find(e => e.attacker && data.state.characters[e.attacker])?.attacker
         || data.state.last_actor_id
@@ -225,9 +211,6 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
         display.clearPrediction();
         display.setMessageLog({ text: '', isOpen: true });
 
-        if (prevState.is_my_turn) display.setAllyWord(data.state.word);
-        else display.setFoeWord(data.state.word);
-
         // 単語を特定のキャラクターに紐付ける
         if (attackerId && data.state.characters[attackerId]) {
           data.state.characters[attackerId] = {
@@ -235,14 +218,10 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
             word: data.state.word
           };
 
-          // イベントループ(tempCharacters)でのアニメーション中に古い単語に戻らないよう、ベースにも反映する
           if (initialVisualState.characters[attackerId]) {
             initialVisualState.characters[attackerId].word = data.state.word;
           }
 
-          console.log(`[WordDisplay] Assigned "${data.state.word}" to ${attackerId} (${uiMap[attackerId]})`);
-
-          // ★重要: 単語がセットされた直後にステートを更新して画面に即時反映させる
           setBattleState(prev => prev ? {
             ...prev,
             characters: {
@@ -258,17 +237,12 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
 
       const tempCharacters = { ...initialVisualState.characters };
 
-      // 4. Timer Sync (ターンが変わったときだけリセット、特性変更等の割り込み時はリセットしない)
-      // InitialBattle のときは既に上でリセット済みなので飛ばす
       if (!isInterrupt && !isInitialBattle && (data.state.is_my_turn !== prevState?.is_my_turn)) {
         resetTimer(data.info?.time_limit || 20, data.info?.total_time || 20);
       }
 
-      const currentUiMap = data.info?.id_to_ui_map || uiMappingRef.current;
-      const allyId = getAllyId(currentUiMap);
-      const foeId = getFoeId(currentUiMap);
 
-      // 5. Initial delay for word reading
+
       const isAbilityChangeOnly = events.length === 1 && events[0].type === 'ability_changed';
       if (data.state.word && !isAbilityChangeOnly && !isTimeout) {
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -278,14 +252,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
       // 6. Event Processing Loop
       for (const event of events) {
         const targetId = event.target;
-        const targetUi = targetId ? currentUiMap[targetId] : undefined;
-        const targetSide = targetUi?.startsWith('ally')
-          ? 'ally'
-          : targetUi?.startsWith('foe')
-            ? 'foe'
-            : event.target === allyId ? 'ally' : event.target === foeId ? 'foe' : null;
-
-        // Logic by Event Type (Sound is now handled via playEventSound)
+        
         if (!isInitialBattle) {
           soundManager.playEventSound(event.type, event.message || '');
         }
@@ -299,18 +266,14 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
           display.setMessageLog({ text: event.message || null, isOpen: true });
         }
 
-        // 倒れた演出の判定
         if (event.type === 'knockout') {
           if (targetId) display.setKnockoutStates(prev => ({ ...prev, [targetId]: true }));
         }
 
         if (event.type === 'damage' || event.type === 'drain') {
           const msg = event.message || '';
-          // 毒ダメージのときは点滅させない (本家仕様)
           if (!msg.includes('毒のダメージ')) {
             if (targetId) display.playCharacterEffect(targetId, 'blink');
-            if (targetSide === 'ally') display.setAllyEffect('blink');
-            else if (targetSide === 'foe') display.setFoeEffect('blink');
           }
 
           if (targetId && tempCharacters[targetId] && event.hp !== undefined && event.hp !== null) {
@@ -318,10 +281,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
             setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
           }
           if (event.type === 'drain' && event.attacker) {
-            const attackerSide = event.attacker === allyId ? 'ally' : event.attacker === foeId ? 'foe' : null;
-            if (event.attacker) display.playCharacterEffect(event.attacker, 'heal');
-            if (attackerSide === 'ally') display.setAllyEffect('heal');
-            else if (attackerSide === 'foe') display.setFoeEffect('heal');
+            display.playCharacterEffect(event.attacker, 'heal');
             if (event.attacker_hp !== undefined && event.attacker_hp !== null && tempCharacters[event.attacker]) {
               tempCharacters[event.attacker].hp = event.attacker_hp;
               setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
@@ -331,12 +291,8 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
             await new Promise(resolve => setTimeout(resolve, 1000));
             if (checkAbort()) return;
           }
-          display.setAllyEffect(null);
-          display.setFoeEffect(null);
         } else if (event.type === 'cure') {
           if (targetId) display.playCharacterEffect(targetId, 'heal');
-          if (targetSide === 'ally') display.setAllyEffect('heal');
-          else if (targetSide === 'foe') display.setFoeEffect('heal');
           if (targetId && tempCharacters[targetId] && event.hp !== undefined && event.hp !== null) {
             tempCharacters[targetId].hp = event.hp;
             setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
@@ -345,8 +301,6 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
             await new Promise(resolve => setTimeout(resolve, 1000));
             if (checkAbort()) return;
           }
-          display.setAllyEffect(null);
-          display.setFoeEffect(null);
         } else if (event.type === 'revive') {
           if (targetId) {
             display.setKnockoutStates(prev => ({ ...prev, [targetId]: false }));
@@ -363,8 +317,6 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
         } else if (event.type === 'stat_up' || event.type === 'stat_down') {
           const effect = event.type === 'stat_up' ? 'up' : 'down';
           if (targetId) display.playCharacterEffect(targetId, effect);
-          if (targetSide === 'ally') display.setAllyEffect(effect);
-          else if (targetSide === 'foe') display.setFoeEffect(effect);
           if (targetId && tempCharacters[targetId] && event.new_rank !== undefined && event.new_rank !== null) {
             const field: 'defense_rank' | 'attack_rank' = event.stat_type === 'defense' ? 'defense_rank' : 'attack_rank';
             tempCharacters[targetId] = { ...tempCharacters[targetId], [field]: event.new_rank };
@@ -374,8 +326,6 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
             await new Promise(resolve => setTimeout(resolve, 1000));
             if (checkAbort()) return;
           }
-          display.setAllyEffect(null);
-          display.setFoeEffect(null);
         } else if (event.type === 'ability_changed') {
           if (targetId && tempCharacters[targetId] && event.new_ability) {
             tempCharacters[targetId].ability = event.new_ability;

@@ -50,8 +50,6 @@ export const BattleView: React.FC = () => {
     notification,
     waitMessage,
     isProcessing,
-    allyEffect,
-    foeEffect,
     timer,
     knockoutStates,
     allyId,
@@ -307,10 +305,9 @@ export const BattleView: React.FC = () => {
                 notification={notification}
                 waitMessage={waitMessage}
                 isProcessing={isProcessing}
-                allyEffect={allyEffect}
-                foeEffect={foeEffect}
                 timer={timer}
                 knockoutStates={knockoutStates}
+                activeEffects={activeEffects}
                 allyId={allyId}
                 foeId={foeId}
                 username={username || "ななし"}

@@ -14,10 +14,9 @@ interface SingleBattleArenaProps {
   notification: string | null;
   waitMessage: string | null;
   isProcessing: boolean;
-  allyEffect: string | null;
-  foeEffect: string | null;
   timer: { remaining: number; total: number };
   knockoutStates: Record<string, boolean>;
+  activeEffects: Record<string, string>;
   allyId: string | null;
   foeId: string | null;
   username: string;
@@ -39,10 +38,9 @@ export const SingleBattleArena: React.FC<SingleBattleArenaProps> = ({
   notification,
   waitMessage,
   isProcessing,
-  allyEffect,
-  foeEffect,
   timer,
   knockoutStates,
+  activeEffects,
   allyId,
   foeId,
   username,
@@ -75,7 +73,7 @@ export const SingleBattleArena: React.FC<SingleBattleArenaProps> = ({
             side="foe"
             characters={foe ? [foe] : []}
             knockoutStates={knockoutStates}
-            activeEffects={foeEffect ? { [foeId || 'foe']: foeEffect } : {}}
+            activeEffects={activeEffects}
             isWaiting={!foe}
           />
           <BattleTeamDisplay
@@ -83,7 +81,7 @@ export const SingleBattleArena: React.FC<SingleBattleArenaProps> = ({
             side="ally"
             characters={ally ? [ally] : []}
             knockoutStates={knockoutStates}
-            activeEffects={allyEffect ? { [allyId || 'ally']: allyEffect } : {}}
+            activeEffects={activeEffects}
             username={username || ally?.name || "じぶん"}
           />
         </>
