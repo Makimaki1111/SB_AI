@@ -1,0 +1,13 @@
+.timerContainer {
+  width: 100%;
+  height: 2.2cqw;
+  background-color: #e0e0e0;
+  border-radius: 1.1cqw;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.timerBar {
+  height: 100%;
+  transition: width 0.1s linear, background-color 0.3s ease;
+}

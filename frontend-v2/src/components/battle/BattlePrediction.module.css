@@ -1,0 +1,43 @@
+.predictionContainer {
+  position: absolute;
+  bottom: 100%;
+  right: 17cqw;
+  margin-bottom: -4.4cqw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.predictionImages {
+  display: flex;
+  height: 17.7cqw;
+  justify-content: center;
+  align-items: center;
+}
+
+.predictionImg {
+  height: 100%;
+  opacity: 0.7;
+}
+
+.type1 {
+  margin-right: -2.2cqw;
+  z-index: 1;
+}
+
+.type2 {
+  margin-left: -2.2cqw;
+  z-index: 2;
+}
+
+.predictionMsg {
+  font-size: 3.7cqw;
+  font-weight: bold;
+  color: #333;
+  opacity: 0.7;
+  white-space: nowrap;
+  text-shadow: 0 0 0.4cqw white;
+  margin-top: -3.3cqw;
+}
