@@ -3,72 +3,7 @@
  * 全ての値は BattleArena.module.css と完全に同一。
  */
 
-.battleContainer {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  width: 100%;
-  position: relative;
-  background: #fce5cd;
-  overflow: hidden;
-  font-family: "M PLUS 1p", sans-serif;
-  container-type: inline-size;
-}
-
-.topImage {
-  flex: 1;
-  /* シングルバトル: flex:1 で残りの高さを埋める */
-  position: relative;
-  width: 100%;
-  z-index: 1;
-  overflow: hidden;
-  background: #fff;
-}
-
-.bgImage {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.content {
-  flex: 2;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: 2.2cqw;
-  /* 10px spacing between major areas */
-  background: transparent;
-  position: relative;
-  z-index: 10;
-  width: 100%;
-}
+/* Layout styles moved to BattleLayout.module.css */
 
 /* 地面の楕円 (シングル専用) */
-.ellipse {
-  position: absolute;
-  background: white;
-  border-radius: 50%;
-  z-index: 1;
-}
-
-.ellipseLeft {
-  bottom: -8.8cqw;
-  left: 22%;
-  transform: translateX(-50%);
-  width: 70%;
-  height: 17.7cqw;
-  /* 80px */
-}
-
-.ellipseRight {
-  bottom: 22.2cqw;
-  right: 8%;
-  width: 40cqw;
-  /* 180px */
-  height: 8.8cqw;
-  /* 40px */
-}
+/* Ellipse styles moved to BattleLayout.module.css */

@@ -1,6 +1,7 @@
 import React from 'react';
 import styles from './SingleBattle.module.css';
 import { SingleBattleSide } from './SingleBattleSide';
+import { BattleLayout } from '../BattleLayout';
 import { BattleInteractionArea } from '../BattleInteractionArea';
 import { BattleActionButtons } from '../BattleActionButtons';
 import { BattleRunAwayButton } from '../BattleRunAwayButton';
@@ -58,55 +59,51 @@ export const SingleBattleArena: React.FC<SingleBattleArenaProps> = ({
   onRunAway
 }) => {
   return (
-    <div className={styles.battleContainer} data-battle-mode="single">
-      <div className={styles.topImage}>
-        <img src="/img/ground.jpg" className={styles.bgImage} alt="背景画像" />
+    <BattleLayout
+      mode="single"
+      backgroundImage="/img/ground.jpg"
+      top={
+        <>
+          {/* キャラクターセクション (シングル専用) */}
+          <SingleBattleSide
+            character={foe}
+            isAlly={false}
+            effect={foeEffect}
+            word={foeWord}
+            isKnockout={foeId ? knockoutStates[foeId] : false}
+            name={foe?.name ?? "あいて"}
+          />
+          <SingleBattleSide
+            character={ally}
+            isAlly={true}
+            effect={allyEffect}
+            word={allyWord}
+            isKnockout={allyId ? knockoutStates[allyId] : false}
+            name={username || ally?.name || "じぶん"}
+          />
+        </>
+      }
+    >
+      <BattleInteractionArea
+        battleState={battleState}
+        timer={timer}
+        messageLog={messageLog}
+        notification={notification}
+        waitMessage={waitMessage}
+        prediction={prediction}
+        isProcessing={isProcessing}
+        onSendWord={onSendWord}
+        onSendIncludeCheck={onSendIncludeCheck}
+      >
+        {battleState && (
+          <BattleActionButtons
+            onOpenSituation={onOpenSituation}
+            onOpenAbility={onOpenAbility}
+          />
+        )}
+      </BattleInteractionArea>
 
-        {/* 地面の楕円 (シングル専用) */}
-        <div className={`${styles.ellipse} ${styles.ellipseRight}`} />
-        <div className={`${styles.ellipse} ${styles.ellipseLeft}`} />
-
-        {/* キャラクターセクション (シングル専用) */}
-        <SingleBattleSide
-          character={foe}
-          isAlly={false}
-          effect={foeEffect}
-          word={foeWord}
-          isKnockout={foeId ? knockoutStates[foeId] : false}
-          name={foe?.name ?? "あいて"}
-        />
-        <SingleBattleSide
-          character={ally}
-          isAlly={true}
-          effect={allyEffect}
-          word={allyWord}
-          isKnockout={allyId ? knockoutStates[allyId] : false}
-          name={username || ally?.name || "じぶん"}
-        />
-      </div>
-
-      <div className={styles.content}>
-        <BattleInteractionArea
-          battleState={battleState}
-          timer={timer}
-          messageLog={messageLog}
-          notification={notification}
-          waitMessage={waitMessage}
-          prediction={prediction}
-          isProcessing={isProcessing}
-          onSendWord={onSendWord}
-          onSendIncludeCheck={onSendIncludeCheck}
-        >
-          {battleState && (
-            <BattleActionButtons
-              onOpenSituation={onOpenSituation}
-              onOpenAbility={onOpenAbility}
-            />
-          )}
-        </BattleInteractionArea>
-
-        <BattleRunAwayButton onRunAway={onRunAway} />
-      </div>
-    </div>
+      <BattleRunAwayButton onRunAway={onRunAway} />
+    </BattleLayout>
   );
 };

@@ -1,0 +1,73 @@
+.battleContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  position: relative;
+  background: #fce5cd;
+  overflow: hidden;
+  font-family: "M PLUS 1p", sans-serif;
+  container-type: inline-size;
+}
+
+.topImage {
+  position: relative;
+  width: 100%;
+  z-index: 1;
+  overflow: hidden;
+  background: #fff;
+}
+
+/* モード別の高さ指定 */
+.battleContainer[data-mode="single"] .topImage {
+  flex: 1;
+}
+
+.battleContainer[data-mode="double"] .topImage {
+  flex: none;
+  height: 57.7cqw;
+}
+
+.bgImage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.content {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 2.2cqw;
+  background: transparent;
+  position: relative;
+  z-index: 10;
+  width: 100%;
+}
+
+/* シングル専用の影 (既存のSingleBattle.module.cssから精密に移植) */
+.ellipse {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.ellipseLeft {
+  bottom: -8.8cqw;
+  left: 22%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 17.7cqw;
+}
+
+.ellipseRight {
+  bottom: 22.2cqw;
+  right: 8%;
+  width: 40cqw;
+  height: 8.8cqw;
+}

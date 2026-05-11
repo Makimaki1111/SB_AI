@@ -2,6 +2,7 @@ import React from 'react';
 import styles from './DoubleBattleArena.module.css';
 import { DoubleBattleSide } from './DoubleBattleSide';
 import { BattleHPBar } from '../BattleHPBar';
+import { BattleLayout } from '../BattleLayout';
 import { BattleInteractionArea } from '../BattleInteractionArea';
 import { BattleActionButtons } from '../BattleActionButtons';
 import { BattleRunAwayButton } from '../BattleRunAwayButton';
@@ -77,86 +78,86 @@ export const DoubleBattleArena: React.FC<DoubleBattleArenaProps> = ({
   };
 
   return (
-    <div className={styles.battleContainer} data-battle-mode="double">
-      <div className={styles.topImage}>
-        <img src="/img/ground.jpg" className={styles.bgImage} alt="背景画像" />
+    <BattleLayout
+      mode="double"
+      backgroundImage="/img/ground.jpg"
+      top={
+        <>
+          <DoubleBattleSide
+            characters={foes}
+            isAlly={false}
+            knockoutStates={knockoutStates}
+            activeEffects={activeEffects}
+          />
+          <DoubleBattleSide
+            characters={allies}
+            isAlly={true}
+            knockoutStates={knockoutStates}
+            activeEffects={activeEffects}
+          />
 
-        <DoubleBattleSide
-          characters={foes}
-          isAlly={false}
-          knockoutStates={knockoutStates}
-          activeEffects={activeEffects}
-        />
-        <DoubleBattleSide
-          characters={allies}
-          isAlly={true}
-          knockoutStates={knockoutStates}
-          activeEffects={activeEffects}
-        />
+          <BattleHPBar
+            characters={foes}
+            isAlly={false}
+            mode="double"
+          />
+          <BattleHPBar
+            characters={allies}
+            isAlly={true}
+            mode="double"
+          />
+        </>
+      }
+    >
+      <BattleInteractionArea
+        battleState={battleState}
+        timer={timer}
+        messageLog={messageLog}
+        notification={notification}
+        waitMessage={waitMessage}
+        extraMessage={targetWarning}
+        prediction={prediction}
+        isProcessing={isProcessing}
+        onSendWord={handleSendWord}
+        onSendIncludeCheck={onSendIncludeCheck}
+      >
+        {/* ターゲット選択ボタン (既存の UI を 100% 維持) */}
+        {foes.length > 0 && battleState?.status !== 'finished' && (
+          <div className={styles.targetBar}>
+            {foes.map((foe, index) => {
+              const targetKey = foe.id || foe.name;
+              const isActive = effectiveTargetId === targetKey;
 
-        <BattleHPBar
-          characters={foes}
-          isAlly={false}
-          mode="double"
-        />
-        <BattleHPBar
-          characters={allies}
-          isAlly={true}
-          mode="double"
-        />
-      </div>
+              return (
+                <button
+                  key={targetKey || index}
+                  type="button"
+                  className={`${styles.targetBtn} ${isActive ? styles.targetActive : ''} ${foe.hp <= 0 ? styles.targetDisabled : ''}`}
+                  onClick={() => {
+                    if (foe.hp > 0) {
+                      SoundManager.play('pera');
+                      setSelectedTargetId(targetKey);
+                      setTargetWarning(null);
+                    }
+                  }}
+                  disabled={foe.hp <= 0}
+                >
+                  {foe.name}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
-      <div className={styles.content}>
-        <BattleInteractionArea
-          battleState={battleState}
-          timer={timer}
-          messageLog={messageLog}
-          notification={notification}
-          waitMessage={waitMessage}
-          extraMessage={targetWarning}
-          prediction={prediction}
-          isProcessing={isProcessing}
-          onSendWord={handleSendWord}
-          onSendIncludeCheck={onSendIncludeCheck}
-        >
-          {/* ターゲット選択ボタン (既存の UI を 100% 維持) */}
-          {foes.length > 0 && battleState?.status !== 'finished' && (
-            <div className={styles.targetBar}>
-              {foes.map((foe, index) => {
-                const targetKey = foe.id || foe.name;
-                const isActive = effectiveTargetId === targetKey;
+        {battleState && (
+          <BattleActionButtons
+            onOpenSituation={onOpenSituation}
+            onOpenAbility={handleOpenAbility}
+          />
+        )}
+      </BattleInteractionArea>
 
-                return (
-                  <button
-                    key={targetKey || index}
-                    type="button"
-                    className={`${styles.targetBtn} ${isActive ? styles.targetActive : ''} ${foe.hp <= 0 ? styles.targetDisabled : ''}`}
-                    onClick={() => {
-                      if (foe.hp > 0) {
-                        SoundManager.play('pera');
-                        setSelectedTargetId(targetKey);
-                        setTargetWarning(null);
-                      }
-                    }}
-                    disabled={foe.hp <= 0}
-                  >
-                    {foe.name}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {battleState && (
-            <BattleActionButtons
-              onOpenSituation={onOpenSituation}
-              onOpenAbility={handleOpenAbility}
-            />
-          )}
-        </BattleInteractionArea>
-
-        <BattleRunAwayButton onRunAway={onRunAway} />
-      </div>
-    </div>
+      <BattleRunAwayButton onRunAway={onRunAway} />
+    </BattleLayout>
   );
 };
