@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import styles from './AbilityModal.module.css';
 import { TYPE_TO_IMAGE } from '../../constants/game';
 import type { AbilityData, CharacterState } from '../../types/battle';
@@ -121,7 +121,8 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
   const handleConfirm = () => {
     SoundManager.play('pera');
     if (canChange && N > 0) {
-      onSelect(abilitiesList[currentIndex].id);
+      const normalizedIndex = ((currentIndex % N) + N) % N;
+      onSelect(abilitiesList[normalizedIndex].id);
     }
     onClose();
   };
@@ -232,10 +233,12 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
 
               const iconName = TYPE_TO_IMAGE[ab.icon_type] || 'normal';
 
+              const normalizedCurrent = ((currentIndex % N) + N) % N;
+
               return (
                 <motion.div
                   key={ab.id}
-                  className={`${styles.carouselItem} ${i === currentIndex ? styles.selected : ''}`}
+                  className={`${styles.carouselItem} ${i === normalizedCurrent ? styles.selected : ''}`}
                   style={{
                     x: `calc(-50% + ${x}px)`,
                     y: `calc(-50% + ${y}px)`,
