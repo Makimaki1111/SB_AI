@@ -24,8 +24,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   };
 
   const handleSeMouseUp = () => {
-    // スライダーを離した時に音を鳴らして確認
-    play('pera');
+    // スライダーを離した時に音を鳴らして確認 (ご要望により middmg)
+    play('middmg');
   };
 
   const handleClose = () => {
@@ -74,6 +74,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             step="0.01" 
             value={bgmVolume} 
             onChange={handleBgmChange}
+            onMouseUp={handleSeMouseUp}
+            onTouchEnd={handleSeMouseUp}
             className={styles.slider}
           />
         </div>

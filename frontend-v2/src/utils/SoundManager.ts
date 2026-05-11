@@ -151,32 +151,33 @@ class SoundManager {
         this.play(sound);
     }
 
-    public async unlock(): Promise<void> {
+    public unlock(): void {
         if (this.isUnlocked) return;
         
         try {
             const audioWindow = window as WindowWithWebkitAudio;
             const AudioContextClass = audioWindow.AudioContext || audioWindow.webkitAudioContext;
             if (!AudioContextClass) return;
+            
             this.audioCtx = new AudioContextClass();
             
-            this.bgmGain = this.audioCtx!.createGain();
+            this.bgmGain = this.audioCtx.createGain();
             this.bgmGain.gain.value = this.bgmVolume;
-            this.bgmGain.connect(this.audioCtx!.destination);
+            this.bgmGain.connect(this.audioCtx.destination);
             
-            this.seGain = this.audioCtx!.createGain();
+            this.seGain = this.audioCtx.createGain();
             this.seGain.gain.value = this.seVolume;
-            this.seGain.connect(this.audioCtx!.destination);
+            this.seGain.connect(this.audioCtx.destination);
             
-            if (this.audioCtx!.state === 'suspended') {
-                await this.audioCtx!.resume();
+            if (this.audioCtx.state === 'suspended') {
+                this.audioCtx.resume();
             }
             
-            // Dummy buffer to unlock
-            const buffer = this.audioCtx!.createBuffer(1, 1, 22050);
-            const source = this.audioCtx!.createBufferSource();
+            // Dummy buffer to unlock (Async but non-blocking)
+            const buffer = this.audioCtx.createBuffer(1, 1, 22050);
+            const source = this.audioCtx.createBufferSource();
             source.buffer = buffer;
-            source.connect(this.audioCtx!.destination);
+            source.connect(this.audioCtx.destination);
             source.start(0);
             
             this.isUnlocked = true;
@@ -209,6 +210,11 @@ class SoundManager {
     public play(keyOrPath: string): void {
         const path = this.soundMap[keyOrPath] || this.typeSoundMap[keyOrPath] || keyOrPath;
         
+        // 未初期化の場合は初期化を試みる
+        if (!this.isUnlocked) {
+            this.unlock();
+        }
+
         // Cooldown check
         const now = Date.now();
         const lastPlay = this.lastPlayTime.get(path) || 0;
@@ -235,6 +241,7 @@ class SoundManager {
         if (!this.audioCtx || !this.seGain) return;
         
         try {
+            // 再開処理
             if (this.audioCtx.state === 'suspended') {
                 this.audioCtx.resume();
             }
@@ -245,7 +252,7 @@ class SoundManager {
             const gainNode = this.audioCtx.createGain();
             let volumeScale = 1.0;
             if (path.includes('pera.mp3')) {
-                volumeScale = 0.6; // 少し音量を調整
+                volumeScale = 0.6;
             }
             gainNode.gain.value = volumeScale;
 
@@ -271,6 +278,7 @@ class SoundManager {
             const buffer = await this.loadAudio(path);
             if (!buffer) return;
             this.stopBGM();
+            
             if (this.audioCtx.state === 'suspended') await this.audioCtx.resume();
 
             const source = this.audioCtx.createBufferSource();
@@ -292,7 +300,7 @@ class SoundManager {
                 this.currentBgmSource.stop();
                 this.currentBgmSource.disconnect();
             } catch {
-                // The source may already be stopped; either way the local state should be cleared.
+                // Ignore
             }
             this.currentBgmSource = null;
             this.currentBgmPath = null;
@@ -303,14 +311,15 @@ class SoundManager {
         const val = Math.max(0, Math.min(1, value));
         if (category === 'bgm') {
             this.bgmVolume = val;
-            if (this.bgmGain) {
-                this.bgmGain.gain.value = val;
+            if (this.bgmGain && this.audioCtx) {
+                // 滑らかに音量を変更
+                this.bgmGain.gain.setTargetAtTime(val, this.audioCtx.currentTime, 0.05);
             }
             localStorage.setItem('sb_bgm_volume', val.toString());
         } else {
             this.seVolume = val;
-            if (this.seGain) {
-                this.seGain.gain.value = val;
+            if (this.seGain && this.audioCtx) {
+                this.seGain.gain.setTargetAtTime(val, this.audioCtx.currentTime, 0.05);
             }
             localStorage.setItem('sb_se_volume', val.toString());
         }
