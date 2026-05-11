@@ -195,6 +195,8 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
       const attackerSide = prevState.is_my_turn ? 'ally' : 'foe';
 
       const uiMap = data.info?.id_to_ui_map || {};
+      const isDouble = Object.keys(uiMap).length > 2;
+      
       let attackerId = events.find(e => e.attacker && data.state.characters[e.attacker])?.attacker
         || data.state.last_actor_id
         || events.find(e => (
@@ -203,8 +205,15 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
           && ['cure'].includes(e.type)
         ))?.target;
 
+      // フォールバックロジックの修正
       if (!attackerId || !data.state.characters[attackerId]) {
-        attackerId = Object.keys(uiMap).find(id => uiMap[id]?.startsWith(attackerSide)) || null;
+        if (!isDouble) {
+          // シングルバトルの場合のみ、サイド情報から特定を試みる
+          attackerId = Object.keys(uiMap).find(id => uiMap[id]?.startsWith(attackerSide)) || null;
+        } else {
+          // ダブルバトルの場合は、特定できないなら無理にアタッカーを決めない
+          attackerId = null;
+        }
       }
 
       if (data.state.word && !isTimeout) {

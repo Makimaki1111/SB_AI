@@ -345,6 +345,7 @@ class BaseBattle:
         
         self._handle_knockout(current_actor)
         self._check_win_condition()
+        self.last_actor_id = current_actor.id
         self.advance_turn()
             
         ret = self._make_response()
@@ -575,7 +576,7 @@ class BaseBattle:
         
         # ターンを交代
         self.advance_turn()
-        self.last_actor_id = player_id
+        self.last_actor_id = current_player.id
         
         return self._make_response()
 
