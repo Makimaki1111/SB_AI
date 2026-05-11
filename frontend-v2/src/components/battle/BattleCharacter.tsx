@@ -32,14 +32,11 @@ export const BattleCharacter: React.FC<BattleCharacterProps> = ({
   const isBlinking = effect === 'blink';
   const displayEffect = effect && effect !== 'blink' ? effect : null;
 
-  // バトルモードに応じた座標クラスの決定
-  const modeClass = !!slot 
-    ? (isAlly ? styles.doubleAlly : styles.doubleFoe)
-    : (isAlly ? styles.singleAlly : styles.singleFoe);
-
   return (
     <div 
-      className={`${styles.characterContainer} ${modeClass} ${className}`}
+      className={`${styles.characterContainer} ${className}`}
+      data-ally={isAlly}
+      data-double={!!slot}
       style={{ 
         transform: `scale(${scale})`,
         transformOrigin: 'bottom center'

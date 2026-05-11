@@ -6,36 +6,41 @@ import type { CharacterState } from '../../types/battle';
 interface BattleHPBarProps {
   characters: CharacterState[];
   isAlly: boolean;
-  mode: 'single' | 'double';
   isWaiting?: boolean;
 }
 
 /**
  * シングル・ダブル両対応のHP表示バルーン
  */
-export const BattleHPBar: React.FC<BattleHPBarProps> = ({
+export const BattleHPBar: React.FC<BattleHPBarProps & { className?: string }> = ({
   characters,
   isAlly,
-  mode,
-  isWaiting = false
+  isWaiting = false,
+  className = ''
 }) => {
-  // 表示位置のクラス決定
-  const positionClass = mode === 'single' 
-    ? (isAlly ? styles.singleAlly : styles.singleFoe)
-    : (isAlly ? styles.doubleAlly : styles.doubleFoe);
 
   return (
-    <div className={`${styles.balloon} ${positionClass}`}>
-      {characters.map((char, index) => (
+    <div className={`${styles.balloon} ${className}`}>
+      {isWaiting && characters.length === 0 ? (
         <StatusRow
-          key={char.id || index}
-          name={char.name || (isAlly ? 'プレイヤー' : '相手')}
-          hp={char.hp}
-          maxHp={char.max_hp || 100}
-          isPoison={char.is_poison || false}
-          isWaiting={isWaiting}
+          name={isAlly ? 'プレイヤー' : '相手'}
+          hp={0}
+          maxHp={100}
+          isPoison={false}
+          isWaiting={true}
         />
-      ))}
+      ) : (
+        characters.map((char, index) => (
+          <StatusRow
+            key={char.id || index}
+            name={char.name || (isAlly ? 'プレイヤー' : '相手')}
+            hp={char.hp}
+            maxHp={char.max_hp || 100}
+            isPoison={char.is_poison || false}
+            isWaiting={isWaiting}
+          />
+        ))
+      )}
     </div>
   );
 };

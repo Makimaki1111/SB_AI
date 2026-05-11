@@ -1,18 +1,14 @@
 import React from 'react';
-import styles from './SingleBattle.module.css';
-import { SingleBattleSide } from './SingleBattleSide';
+import { BattleTeamDisplay } from '../BattleTeamDisplay';
 import { BattleLayout } from '../BattleLayout';
 import { BattleInteractionArea } from '../BattleInteractionArea';
 import { BattleActionButtons } from '../BattleActionButtons';
 import { BattleRunAwayButton } from '../BattleRunAwayButton';
-import type { BattleState, CharacterState } from '../../../types/battle';
-import SoundManager from '../../../utils/SoundManager';
+import type { BattleState } from '../../../types/battle';
 
 
 interface SingleBattleArenaProps {
   battleState: BattleState | null;
-  ally: CharacterState | null;
-  foe: CharacterState | null;
   prediction: { include: boolean, type1?: string, type2?: string, used?: boolean, prediction?: string } | null;
   messageLog: { text: string | null, isOpen: boolean };
   notification: string | null;
@@ -21,8 +17,6 @@ interface SingleBattleArenaProps {
   allyEffect: string | null;
   foeEffect: string | null;
   timer: { remaining: number; total: number };
-  allyWord: string | null;
-  foeWord: string | null;
   knockoutStates: Record<string, boolean>;
   allyId: string | null;
   foeId: string | null;
@@ -34,10 +28,12 @@ interface SingleBattleArenaProps {
   onRunAway: () => void;
 }
 
+/**
+ * シングルバトル専用アリーナ。
+ * BattleLayout と共通コンポーネントを使用して構成されています。
+ */
 export const SingleBattleArena: React.FC<SingleBattleArenaProps> = ({
   battleState,
-  ally,
-  foe,
   prediction,
   messageLog,
   notification,
@@ -46,8 +42,6 @@ export const SingleBattleArena: React.FC<SingleBattleArenaProps> = ({
   allyEffect,
   foeEffect,
   timer,
-  allyWord,
-  foeWord,
   knockoutStates,
   allyId,
   foeId,
@@ -58,28 +52,35 @@ export const SingleBattleArena: React.FC<SingleBattleArenaProps> = ({
   onOpenAbility,
   onRunAway
 }) => {
+  const { ally, foe } = React.useMemo(() => {
+    if (!battleState) return { ally: null, foe: null };
+    return {
+      ally: allyId ? battleState.characters[allyId] || null : null,
+      foe: foeId ? battleState.characters[foeId] || null : null
+    };
+  }, [battleState, allyId, foeId]);
+
   return (
     <BattleLayout
       mode="single"
       backgroundImage="/img/ground.jpg"
       top={
         <>
-          {/* キャラクターセクション (シングル専用) */}
-          <SingleBattleSide
-            character={foe}
-            isAlly={false}
-            effect={foeEffect}
-            word={foeWord}
-            isKnockout={foeId ? knockoutStates[foeId] : false}
-            name={foe?.name ?? "あいて"}
+          <BattleTeamDisplay
+            mode="single"
+            side="foe"
+            characters={foe ? [foe] : []}
+            knockoutStates={knockoutStates}
+            activeEffects={foeEffect ? { [foeId || 'foe']: foeEffect } : {}}
+            isWaiting={!foe}
           />
-          <SingleBattleSide
-            character={ally}
-            isAlly={true}
-            effect={allyEffect}
-            word={allyWord}
-            isKnockout={allyId ? knockoutStates[allyId] : false}
-            name={username || ally?.name || "じぶん"}
+          <BattleTeamDisplay
+            mode="single"
+            side="ally"
+            characters={ally ? [ally] : []}
+            knockoutStates={knockoutStates}
+            activeEffects={allyEffect ? { [allyId || 'ally']: allyEffect } : {}}
+            username={username || ally?.name || "じぶん"}
           />
         </>
       }
@@ -94,14 +95,14 @@ export const SingleBattleArena: React.FC<SingleBattleArenaProps> = ({
         isProcessing={isProcessing}
         onSendWord={onSendWord}
         onSendIncludeCheck={onSendIncludeCheck}
-      >
-        {battleState && (
-          <BattleActionButtons
-            onOpenSituation={onOpenSituation}
-            onOpenAbility={onOpenAbility}
-          />
-        )}
-      </BattleInteractionArea>
+      />
+
+      {battleState && (
+        <BattleActionButtons
+          onOpenSituation={onOpenSituation}
+          onOpenAbility={onOpenAbility}
+        />
+      )}
 
       <BattleRunAwayButton onRunAway={onRunAway} />
     </BattleLayout>

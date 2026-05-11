@@ -1,7 +1,6 @@
 import React from 'react';
 import styles from './DoubleBattleArena.module.css';
-import { DoubleBattleSide } from './DoubleBattleSide';
-import { BattleHPBar } from '../BattleHPBar';
+import { BattleTeamDisplay } from '../BattleTeamDisplay';
 import { BattleLayout } from '../BattleLayout';
 import { BattleInteractionArea } from '../BattleInteractionArea';
 import { BattleActionButtons } from '../BattleActionButtons';
@@ -19,8 +18,6 @@ interface DoubleBattleArenaProps {
   waitMessage: string | null;
   isProcessing: boolean;
   timer: { remaining: number; total: number };
-  allyWord: string | null;
-  foeWord: string | null;
   knockoutStates: Record<string, boolean>;
   activeEffects?: Record<string, string>;
   onSendWord: (word: string, targetId?: string) => void;
@@ -83,28 +80,19 @@ export const DoubleBattleArena: React.FC<DoubleBattleArenaProps> = ({
       backgroundImage="/img/ground.jpg"
       top={
         <>
-          <DoubleBattleSide
+          <BattleTeamDisplay
+            mode="double"
+            side="foe"
             characters={foes}
-            isAlly={false}
             knockoutStates={knockoutStates}
             activeEffects={activeEffects}
           />
-          <DoubleBattleSide
+          <BattleTeamDisplay
+            mode="double"
+            side="ally"
             characters={allies}
-            isAlly={true}
             knockoutStates={knockoutStates}
             activeEffects={activeEffects}
-          />
-
-          <BattleHPBar
-            characters={foes}
-            isAlly={false}
-            mode="double"
-          />
-          <BattleHPBar
-            characters={allies}
-            isAlly={true}
-            mode="double"
           />
         </>
       }

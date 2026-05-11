@@ -38,28 +38,38 @@
 
 .singleMode.ally .type1 {
   left: -11.7cqw; /* 2.2cqw(10px) - 13.9cqw */
-  bottom: 0;
+  top: 0;
+  right: auto;
+  bottom: auto;
 }
 
 .singleMode.ally .type2 {
   left: 12.7cqw; /* 26.6cqw(120px) - 13.9cqw */
-  bottom: 0;
+  top: 0;
+  right: auto;
+  bottom: auto;
 }
 
 .singleMode.foe .type1 {
   right: 11.1cqw; /* 28.8cqw(130px) - 17.7cqw */
-  bottom: 0;
+  top: 0;
+  left: auto;
+  bottom: auto;
 }
 
 .singleMode.foe .type2 {
   right: -8.9cqw; /* 8.8cqw(40px) - 17.7cqw */
-  bottom: 0;
+  top: 0;
+  left: auto;
+  bottom: auto;
 }
 
 /* --- ダブルバトル専用のオフセット --- */
 .doubleMode .type2 {
   left: 15%;
   bottom: 10%;
+  top: auto;
+  right: auto;
 }
 
 /* --- 演出 --- */

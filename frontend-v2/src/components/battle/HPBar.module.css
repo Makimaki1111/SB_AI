@@ -14,34 +14,4 @@
   gap: 1.1cqw;
 }
 
-/* --- シングルバトル用座標 --- */
-.singleFoe {
-  top: 2.2cqw;
-  left: -1.8cqw;
-}
-
-.singleAlly {
-  bottom: 2.2cqw;
-  right: -1.8cqw;
-}
-
-/* --- ダブルバトル用座標 (ピクセルパーフェクト + 余白調整) --- */
-.doubleFoe,
-.doubleAlly {
-  width: 32.2cqw !important; /* 145px */
-  min-height: 13.3cqw !important; /* 60px */
-  gap: 0.9cqw !important; /* 4px */
-}
-
-.doubleFoe {
-  top: 2.7cqw;
-  left: -1.8cqw; /* はみ出し */
-  padding: 1.8cqw 1.8cqw 1.8cqw 3.6cqw !important; /* 左側の余白を増やして中身を右へ押し戻す */
-}
-
-.doubleAlly {
-  bottom: 2.7cqw;
-  right: -1.8cqw; /* はみ出し */
-  padding: 1.8cqw 3.6cqw 1.8cqw 1.8cqw !important; /* 右側の余白を増やして中身を左へ押し戻す */
-  top: auto;
-}
+/* Positioning styles moved to BattleTeamDisplay.module.css */

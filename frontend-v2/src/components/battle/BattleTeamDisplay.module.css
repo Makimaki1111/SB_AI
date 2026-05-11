@@ -1,0 +1,90 @@
+.sideContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* キャラクター配置用のレイヤー */
+.characterLayer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* --- 配置ルール (ダブル: キャラクター枠を制限する) --- */
+.sideContainer[data-mode="double"] .characterLayer {
+  --container-w: 46.7cqw;
+  --container-h: 33.3cqw;
+  width: var(--container-w);
+  height: var(--container-h);
+  top: auto;
+  left: auto;
+}
+
+.sideContainer[data-mode="double"][data-side="ally"] .characterLayer {
+  bottom: 7.1cqw;
+  left: 7.1cqw;
+}
+
+.sideContainer[data-mode="double"][data-side="foe"] .characterLayer {
+  top: -10.7cqw;
+  right: 6.2cqw;
+}
+
+/* --- キャラクター個別座標 (シングル) --- */
+.char_singleAlly { top: 22.2cqw; left: 13.9cqw; }
+.char_singleFoe { top: 1.1cqw; right: 17.7cqw; }
+
+/* --- スロット配置 (ダブル) --- */
+.slot_p1a { width: 20cqw; height: 20cqw; left: -2.3cqw; bottom: 4.1cqw; z-index: 10; }
+.slot_p1b { width: 22.2cqw; height: 22.2cqw; left: 23.9cqw; bottom: 0cqw; z-index: 12; }
+.slot_p2a { width: 20cqw; height: 20cqw; left: 3.7cqw; bottom: 5.1cqw; z-index: 10; }
+.slot_p2b { width: 22.2cqw; height: 22.2cqw; left: 26.1cqw; bottom: -0.7cqw; z-index: 12; }
+
+/* --- HPバー配置 (シングル・ダブル共通管理) --- */
+.hp_singleAlly { bottom: 2.2cqw; right: -1.8cqw; }
+.hp_singleFoe { top: 2.2cqw; left: -1.8cqw; }
+
+.hp_doubleAlly {
+  bottom: 2.7cqw;
+  right: -1.8cqw;
+  width: 32.2cqw !important;
+  min-height: 13.3cqw !important;
+  padding: 1.8cqw 3.6cqw 1.8cqw 1.8cqw !important;
+}
+
+.hp_doubleFoe {
+  top: 2.7cqw;
+  left: -1.8cqw;
+  width: 32.2cqw !important;
+  min-height: 13.3cqw !important;
+  padding: 1.8cqw 1.8cqw 1.8cqw 3.6cqw !important;
+}
+
+/* --- 足元の影 (ダブル専用) --- */
+.doubleEllipse {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  z-index: 5;
+}
+
+.sideContainer[data-side="ally"] .doubleEllipse {
+  width: 88.9cqw;
+  height: 19.8cqw;
+  bottom: -11.1cqw;
+  left: -34.2cqw;
+}
+
+.sideContainer[data-side="foe"] .doubleEllipse {
+  width: 71.8cqw;
+  height: 15.8cqw;
+  bottom: -9.8cqw;
+  left: -6.9cqw;
+}

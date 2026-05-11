@@ -1,46 +1,34 @@
 .characterContainer {
   position: absolute;
-  width: 22.2cqw; /* 100px相当 */
+  width: 22.2cqw;
   height: 22.2cqw;
   pointer-events: none;
   z-index: 10;
 }
 
-/* シングルバトル用：座標定義 (単語の中心 112.5px に合わせる) */
-.singleAlly {
-  top: 22.2cqw; /* 100px */
-  left: 13.9cqw; /* (112.5 - 50) / 450 * 100 */
-}
-
-.singleFoe {
-  top: 1.1cqw; /* 5px */
-  right: 17.7cqw; /* 本家準拠 */
-}
-
 /* 単語表示（ふきだし）のラッパー */
 .wordWrapper {
   position: absolute;
-  width: 100%; /* 親(BattleCharacter)と同じ幅 */
+  width: 100%;
   left: 0;
   z-index: 50;
   pointer-events: none;
 }
 
-/* シングルバトル用：相対位置 */
-.singleAlly .wordWrapper {
+/* 内部レイアウト：モードとサイドに応じた吹き出し位置の調整 */
+.characterContainer[data-double="false"][data-ally="true"] .wordWrapper {
   top: 80%; 
 }
 
-.singleFoe .wordWrapper {
+.characterContainer[data-double="false"][data-ally="false"] .wordWrapper {
   top: 77%;
 }
 
-/* ダブルバトル用：相対位置 */
-.doubleAlly .wordWrapper {
+.characterContainer[data-double="true"][data-ally="true"] .wordWrapper {
   top: 88%;
 }
 
-.doubleFoe .wordWrapper {
+.characterContainer[data-double="true"][data-ally="false"] .wordWrapper {
   top: 100%;
 }
 
