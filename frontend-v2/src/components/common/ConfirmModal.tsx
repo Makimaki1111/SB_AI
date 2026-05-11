@@ -32,7 +32,12 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
           <GameButton variant="grey" onClick={onClose} className={styles.btn}>
             {cancelText}
           </GameButton>
-          <GameButton variant="orange" onClick={onConfirm} className={styles.btn}>
+          <GameButton
+            variant="orange"
+            onClick={onConfirm}
+            className={styles.btn}
+            silent={true}
+          >
             {confirmText}
           </GameButton>
         </div>

@@ -29,6 +29,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   };
 
   const handleClose = () => {
+    play('pera');
     // 名前の保存
     const trimmed = tempName.trim().substring(0, 8);
     if (trimmed) {

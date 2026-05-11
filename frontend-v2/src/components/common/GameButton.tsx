@@ -8,6 +8,7 @@ interface GameButtonProps {
   className?: string;
   variant?: 'orange' | 'pink' | 'grey' | 'green';
   disabled?: boolean;
+  silent?: boolean;
   type?: 'button' | 'submit';
 }
 
@@ -17,6 +18,7 @@ export const GameButton: React.FC<GameButtonProps> = ({
   className = '',
   variant = 'orange',
   disabled = false,
+  silent = false,
   type = 'button'
 }) => {
   const variantClass = styles[variant] || styles.orange;
@@ -24,8 +26,10 @@ export const GameButton: React.FC<GameButtonProps> = ({
   const handleClick = (e: React.MouseEvent) => {
     if (disabled) return;
     
-    // 全てのボタン音を 'pera' に統一
-    SoundManager.play('pera');
+    // 全てのボタン音を 'pera' に統一 (silentでない場合のみ)
+    if (!silent) {
+      SoundManager.play('pera');
+    }
     
     if (onClick) onClick();
   };

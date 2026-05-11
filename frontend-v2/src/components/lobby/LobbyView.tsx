@@ -92,17 +92,17 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
       </div>
 
       <div className={styles.buttonContainer}>
-        <GameButton onClick={() => { SoundManager.play('pera'); onStartMatch('player'); }}>
+        <GameButton silent={mode !== 'stock'} onClick={() => { onStartMatch('player'); }}>
           ランダムマッチ
         </GameButton>
 
-        <GameButton onClick={() => { SoundManager.play('pera'); onStartMatch('cpu'); }}>
+        <GameButton silent={mode !== 'stock'} onClick={() => { onStartMatch('cpu'); }}>
           コンピュータ戦
         </GameButton>
 
         <hr className={styles.separator} />
 
-        <GameButton onClick={() => { SoundManager.play('pera'); onStartMatch('room'); }}>
+        <GameButton silent={mode !== 'stock'} onClick={() => { onStartMatch('room'); }}>
           ルーム作成
         </GameButton>
 
@@ -117,7 +117,8 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
           <GameButton 
             className={styles.joinButton} 
             variant="green"
-            onClick={() => { SoundManager.play('pera'); onStartMatch('room', { roomId }); }}
+            silent={mode !== 'stock'}
+            onClick={() => { onStartMatch('room', { roomId }); }}
           >
             参加
           </GameButton>

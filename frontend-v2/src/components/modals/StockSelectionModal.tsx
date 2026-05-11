@@ -19,7 +19,6 @@ export const StockSelectionModal: React.FC<StockSelectionModalProps> = ({
   const [foeStock, setFoeStock] = React.useState(2);
 
   const handleConfirm = () => {
-    SoundManager.play('pera');
     onConfirm(allyStock, foeStock);
   };
 
@@ -35,7 +34,7 @@ export const StockSelectionModal: React.FC<StockSelectionModalProps> = ({
           <div 
             key={val}
             className={`${styles.optionBtn} ${current === val ? styles.selected : ''}`}
-            onClick={() => { SoundManager.play('pera'); setter(val); }}
+            onClick={() => { SoundManager.play('concent'); setter(val); }}
           >
             {val}
           </div>
