@@ -53,8 +53,6 @@ export const BattleView: React.FC = () => {
     allyEffect,
     foeEffect,
     timer,
-    allyWord,
-    foeWord,
     knockoutStates,
     allyId,
     foeId,
@@ -293,8 +291,6 @@ export const BattleView: React.FC = () => {
                 waitMessage={waitMessage}
                 isProcessing={isProcessing}
                 timer={timer}
-                allyWord={allyWord}
-                foeWord={foeWord}
                 knockoutStates={knockoutStates}
                 activeEffects={activeEffects}
                 onSendWord={handleSubmitWord}
@@ -306,8 +302,6 @@ export const BattleView: React.FC = () => {
             ) : (
               <SingleBattleArena
                 battleState={battleState}
-                ally={ally}
-                foe={foe}
                 prediction={prediction}
                 messageLog={messageLog}
                 notification={notification}
@@ -316,8 +310,6 @@ export const BattleView: React.FC = () => {
                 allyEffect={allyEffect}
                 foeEffect={foeEffect}
                 timer={timer}
-                allyWord={allyWord}
-                foeWord={foeWord}
                 knockoutStates={knockoutStates}
                 allyId={allyId}
                 foeId={foeId}
