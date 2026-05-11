@@ -1,12 +1,8 @@
 import React from 'react';
 import styles from './DoubleBattleArena.module.css';
-import { WordInput } from '../WordInput';
 import { DoubleBattleSide } from './DoubleBattleSide';
 import { BattleHPBar } from '../BattleHPBar';
-import { BattleTimer } from '../BattleTimer';
-import { BattleOverlay } from '../BattleOverlay';
-import { BattleWaitMessage } from '../BattleWaitMessage';
-import { TYPE_TO_IMAGE } from '../../../constants/game';
+import { BattleInteractionArea } from '../BattleInteractionArea';
 import type { BattleState, CharacterState } from '../../../types/battle';
 import SoundManager from '../../../utils/SoundManager';
 
@@ -109,65 +105,18 @@ export const DoubleBattleArena: React.FC<DoubleBattleArenaProps> = ({
       </div>
 
       <div className={styles.content}>
-        <div className={styles.actionArea}>
-          {/* メッセージボックス、通知、待機メッセージを一括管理 */}
-          <BattleOverlay
-            messageLog={messageLog}
-            notification={notification}
-          />
-
-          {/* タイマーを表示 */}
-          {battleState && (
-            <BattleTimer remaining={timer.remaining} total={timer.total} />
-          )}
-
-          <div className={styles.inputWrapper}>
-            {(!messageLog.isOpen && battleState?.is_my_turn && battleState?.status !== 'finished') && (
-              <WordInput
-                onSend={handleSendWord}
-                onChange={onSendIncludeCheck}
-                disabled={isProcessing}
-                initialChar={battleState?.character || ''}
-              />
-            )}
-            {prediction && prediction.include && !messageLog.isOpen && (
-              <div className={styles.predictionContainer}>
-                <div className={styles.predictionImages}>
-                  {prediction.used ? (
-                    <img src="/img/god.gif" alt="Used" className={styles.predictionImg} />
-                  ) : (
-                    <>
-                      {prediction.type1 && !prediction.type2 && (
-                        <img
-                          src={`/img/${TYPE_TO_IMAGE[prediction.type1] || 'normal'}.gif`}
-                          alt="Type 1"
-                          className={styles.predictionImg}
-                        />
-                      )}
-                      {prediction.type1 && prediction.type2 && (
-                        <>
-                          <img
-                            src={`/img/${TYPE_TO_IMAGE[prediction.type1] || 'normal'}.gif`}
-                            alt="Type 1"
-                            className={`${styles.predictionImg} ${styles.type1}`}
-                          />
-                          <img
-                            src={`/img/${TYPE_TO_IMAGE[prediction.type2] || 'normal'}.gif`}
-                            alt="Type 2"
-                            className={`${styles.predictionImg} ${styles.type2}`}
-                          />
-                        </>
-                      )}
-                    </>
-                  )}
-                </div>
-                {prediction.prediction && <div className={styles.predictionMsg}>{prediction.prediction}</div>}
-              </div>
-            )}
-            <BattleWaitMessage message={waitMessage} />
-            <BattleWaitMessage message={targetWarning} />
-          </div>
-
+        <BattleInteractionArea
+          battleState={battleState}
+          timer={timer}
+          messageLog={messageLog}
+          notification={notification}
+          waitMessage={waitMessage}
+          extraMessage={targetWarning}
+          prediction={prediction}
+          isProcessing={isProcessing}
+          onSendWord={handleSendWord}
+          onSendIncludeCheck={onSendIncludeCheck}
+        >
           {/* ターゲット選択ボタン (既存の UI を 100% 維持) */}
           {foes.length > 0 && battleState?.status !== 'finished' && (
             <div className={styles.targetBar}>
@@ -218,7 +167,7 @@ export const DoubleBattleArena: React.FC<DoubleBattleArenaProps> = ({
               </div>
             </div>
           )}
-        </div>
+        </BattleInteractionArea>
 
         <div className={styles.footerArea}>
           <button
