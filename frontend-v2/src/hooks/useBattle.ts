@@ -323,6 +323,55 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
             await new Promise(resolve => setTimeout(resolve, 1000));
             if (checkAbort()) return;
           }
+        } else if (event.type === 'drain') {
+          if (event.attacker) display.playCharacterEffect(event.attacker, 'heal');
+          if (targetId) display.playCharacterEffect(targetId, 'damage');
+          if (targetId && tempCharacters[targetId] && event.hp !== undefined) {
+            tempCharacters[targetId].hp = event.hp;
+          }
+          if (event.attacker && tempCharacters[event.attacker] && event.attacker_hp !== undefined) {
+            tempCharacters[event.attacker].hp = event.attacker_hp;
+          }
+          setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
+          if (!isInitialBattle) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            if (checkAbort()) return;
+          }
+        } else if (event.type === 'ability_trigger') {
+          // メッセージ内容に応じて演出を使い分ける
+          let effect: 'up' | 'down' | 'damage' | 'heal' = 'up';
+          const msg = event.message || '';
+          if (msg.includes('毒') || msg.includes('種') || msg.includes('下がった')) {
+            effect = msg.includes('下がった') ? 'down' : 'damage';
+          } else if (msg.includes('上がった') || msg.includes('回復') || msg.includes('ひっくり返った')) {
+            effect = 'up';
+          }
+
+          if (targetId) display.playCharacterEffect(targetId, effect);
+          
+          // 一括能力変化 (かくめい、たいふういっか等)
+          if (event.new_ranks) {
+            for (const cid in event.new_ranks) {
+              if (tempCharacters[cid]) {
+                tempCharacters[cid] = {
+                  ...tempCharacters[cid],
+                  attack_rank: event.new_ranks[cid].attack_rank ?? tempCharacters[cid].attack_rank,
+                  defense_rank: event.new_ranks[cid].defense_rank ?? tempCharacters[cid].defense_rank
+                };
+              }
+            }
+            setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
+          }
+          if (!isInitialBattle) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            if (checkAbort()) return;
+          }
+        } else if (event.type === 'cure_poison') {
+          if (targetId) display.playCharacterEffect(targetId, 'heal');
+          if (!isInitialBattle) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            if (checkAbort()) return;
+          }
         } else if (event.type === 'stat_up' || event.type === 'stat_down') {
           const effect = event.type === 'stat_up' ? 'up' : 'down';
           if (targetId) display.playCharacterEffect(targetId, effect);
