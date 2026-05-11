@@ -218,6 +218,9 @@
   width: 85% !important; /* 本家 120行目 */
   height: 85% !important; /* 本家 121行目 */
   object-fit: contain !important; /* 本家 122行目 */
+  pointer-events: none;
+  -webkit-user-drag: none;
+  user-select: none;
 }
 
 /* フッターボタン (本家 .modal-actions) */

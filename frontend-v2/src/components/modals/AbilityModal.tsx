@@ -119,7 +119,7 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
 
 
   const handleConfirm = () => {
-    SoundManager.play('pera');
+    SoundManager.play('concent');
     if (canChange && N > 0) {
       const normalizedIndex = ((currentIndex % N) + N) % N;
       onSelect(abilitiesList[normalizedIndex].id);
@@ -248,7 +248,7 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
                   }}
                   onClick={() => handleItemClick(i)}
                 >
-                  <img src={`/img/${iconName}.gif`} alt={ab.name} />
+                  <img src={`/img/${iconName}.gif`} alt={ab.name} draggable="false" />
                 </motion.div>
               );
             })}
