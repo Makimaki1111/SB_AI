@@ -23,7 +23,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
   const display = useBattleDisplay();
   const { timer, resetTimer } = useBattleTimer(battleState?.status === 'finished', !!battleState?.is_cpu);
   const soundManager = SoundManager.getInstance();
-  const { playSequence, isAnimating: isSequenceAnimating } = useBattleSequence(setBattleState, display);
+  const { playSequence } = useBattleSequence(setBattleState, display);
 
   const messageQueue = useRef<BattleResponse[]>([]);
   const isHandlingQueue = useRef(false);
@@ -256,7 +256,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
         if (attackerState?.types?.[0]) soundManager.playType(attackerState.types[0]);
       }
 
-      const tempCharacters = { ...initialVisualState.characters };
+
 
       if (!isInterrupt && !isInitialBattle && (data.state.is_my_turn !== prevState?.is_my_turn)) {
         resetTimer(data.info?.time_limit || 20, data.info?.total_time || 20);

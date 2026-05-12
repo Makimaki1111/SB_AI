@@ -6,7 +6,6 @@ interface WordDisplayProps {
   word: string | null;
   isAlly: boolean;
   isBlinking?: boolean;
-  isKnockout?: boolean;
   centered?: boolean;
   isDouble?: boolean;
 }
@@ -19,7 +18,6 @@ export const WordDisplay: React.FC<WordDisplayProps> = ({
   word,
   isAlly,
   isBlinking,
-  isKnockout,
   centered = false,
   isDouble = false
 }) => {

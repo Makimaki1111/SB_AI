@@ -7,7 +7,6 @@ interface CharacterAvatarProps {
   types: string[];
   isAlly: boolean;
   isBlinking: boolean;
-  isKnockout: boolean;
   isDouble?: boolean;
   className?: string;
 }
@@ -19,7 +18,6 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
   types,
   isAlly,
   isBlinking,
-  isKnockout,
   isDouble = false,
   className = ''
 }) => {

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import type { BattleEvent, BattleState } from '../../types/battle';
 import { SoundManager } from '../../utils/SoundManager';
 

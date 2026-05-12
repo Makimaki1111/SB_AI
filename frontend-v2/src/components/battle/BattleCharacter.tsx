@@ -57,7 +57,6 @@ export const BattleCharacter: React.FC<BattleCharacterProps> = ({
         types={types}
         isAlly={isAlly}
         isBlinking={isBlinking}
-        isKnockout={isKnockout}
         isDouble={!!slot}
         className={styles.avatar}
       />
@@ -67,7 +66,6 @@ export const BattleCharacter: React.FC<BattleCharacterProps> = ({
           word={word}
           isAlly={isAlly}
           isDouble={!!slot}
-          isKnockout={isKnockout}
         />
       </div>
 
