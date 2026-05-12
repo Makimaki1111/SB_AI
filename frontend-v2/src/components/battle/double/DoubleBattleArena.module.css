@@ -5,67 +5,52 @@
 .targetBar {
   display: flex;
   justify-content: center;
-  gap: 3cqw;
-  width: 100%;
-  padding: 0 4.4cqw;
+  gap: 2cqw;
+  width: 92%;
+  margin: 5cqw auto 0; /* マージンを増やして重なりを解消 */
+  padding: 1.5cqw;
   box-sizing: border-box;
-  margin-top: 2.2cqw;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 4cqw;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  z-index: 30;
 }
 
 .targetBtn {
   flex: 1;
   position: relative;
-  padding: 2.5cqw 2cqw;
-  border-radius: 3cqw;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  background: linear-gradient(145deg, #ffffff, #f0f0f0);
-  font-size: 3.8cqw;
+  padding: 3.5cqw 2cqw;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  font-size: 4cqw;
   font-weight: 800;
-  color: #666;
+  color: #444;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5cqw;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
 .targetActive {
-  background: linear-gradient(135deg, #ff7675, #d63031);
-  color: white;
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 20px rgba(214, 48, 49, 0.4);
-  transform: translateY(-0.8cqw) scale(1.02);
-}
-
-.targetActive::before {
-  content: "🎯 TARGETING";
-  position: absolute;
-  top: -2.2cqw;
-  background: #d63031;
-  color: white;
-  font-size: 2cqw;
-  padding: 0.2cqw 1.5cqw;
-  border-radius: 1cqw;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  animation: targetPulse 1.5s infinite;
-}
-
-@keyframes targetPulse {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.1); opacity: 0.8; }
-  100% { transform: scale(1); opacity: 1; }
+  background: rgba(200, 230, 255, 0.95);
+  color: #1e3799;
+  box-shadow: 0 4px 15px rgba(74, 105, 189, 0.1);
 }
 
 .targetDisabled {
-  background: #e0e0e0;
-  color: #999;
-  border-color: #ccc;
+  background: rgba(255, 255, 255, 0.2);
+  color: rgba(0, 0, 0, 0.15);
+  border-color: rgba(0, 0, 0, 0.05);
   cursor: not-allowed;
-  opacity: 0.6;
+  box-shadow: none;
+  backdrop-filter: blur(4px);
 }
 
 /* End of file */
