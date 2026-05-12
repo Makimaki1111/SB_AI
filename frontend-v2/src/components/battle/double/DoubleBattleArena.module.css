@@ -39,9 +39,9 @@
 }
 
 .targetActive {
-  background: rgba(200, 230, 255, 0.95);
-  color: #1e3799;
-  box-shadow: 0 4px 15px rgba(74, 105, 189, 0.1);
+  background: rgba(230, 245, 255, 0.95);
+  color: #0984e3;
+  box-shadow: 0 4px 15px rgba(9, 132, 227, 0.1);
 }
 
 .targetDisabled {
