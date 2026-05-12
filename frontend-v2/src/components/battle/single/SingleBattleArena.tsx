@@ -83,6 +83,7 @@ export const SingleBattleArena: React.FC<SingleBattleArenaProps> = ({
             knockoutStates={knockoutStates}
             activeEffects={activeEffects}
             username={username || ally?.name || "じぶん"}
+            isWaiting={!ally}
           />
         </>
       }

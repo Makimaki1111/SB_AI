@@ -23,7 +23,7 @@ export const BattleHPBar: React.FC<BattleHPBarProps & { className?: string }> = 
     <div className={`${styles.balloon} ${className}`}>
       {isWaiting && characters.length === 0 ? (
         <StatusRow
-          name={isAlly ? 'プレイヤー' : '相手'}
+          name=""
           hp={0}
           maxHp={100}
           isPoison={false}
@@ -33,7 +33,7 @@ export const BattleHPBar: React.FC<BattleHPBarProps & { className?: string }> = 
         characters.map((char, index) => (
           <StatusRow
             key={char.id || index}
-            name={char.name || (isAlly ? 'プレイヤー' : '相手')}
+            name={char.name === 'プレイヤー' || char.name === '相手' ? '' : (char.name || '')}
             hp={char.hp}
             maxHp={char.max_hp || 100}
             isPoison={char.is_poison || false}

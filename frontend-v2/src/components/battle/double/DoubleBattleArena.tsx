@@ -86,6 +86,7 @@ export const DoubleBattleArena: React.FC<DoubleBattleArenaProps> = ({
             characters={foes}
             knockoutStates={knockoutStates}
             activeEffects={activeEffects}
+            isWaiting={foes.length === 0}
           />
           <BattleTeamDisplay
             mode="double"
@@ -93,6 +94,7 @@ export const DoubleBattleArena: React.FC<DoubleBattleArenaProps> = ({
             characters={allies}
             knockoutStates={knockoutStates}
             activeEffects={activeEffects}
+            isWaiting={allies.length === 0}
           />
         </>
       }
