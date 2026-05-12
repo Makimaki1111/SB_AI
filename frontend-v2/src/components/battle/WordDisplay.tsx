@@ -51,13 +51,7 @@ export const WordDisplay: React.FC<WordDisplayProps> = ({
             scaleY: finalScaleY,
             y: 0
           }}
-          animate={isKnockout ? {
-            opacity: 0,
-            y: 100,
-            x: xPos,
-            scaleX: finalScaleX,
-            scaleY: finalScaleY
-          } : {
+          animate={{
             opacity: 1,
             y: 0,
             x: xPos,
@@ -65,9 +59,8 @@ export const WordDisplay: React.FC<WordDisplayProps> = ({
             scaleY: finalScaleY
           }}
           transition={{
-            duration: isKnockout ? 0.8 : 0.3,
-            // 本家の jQuery のデフォルトイージング (swing) は easeInOut に近い
-            ease: isKnockout ? 'easeInOut' : 'easeOut'
+            duration: 0.3,
+            ease: 'easeOut'
           }}
           style={{ originX: 0.5, originY: 0.5 }}
         >

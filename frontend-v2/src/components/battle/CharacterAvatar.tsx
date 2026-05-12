@@ -30,28 +30,13 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
 
   const isDual = displayTypes.length >= 2;
 
-  // variants を使用してアニメーションの状態を定義
-  const containerVariants = {
-    alive: {
-      opacity: 1,
-      y: 0,
-    },
-    knockout: {
-      opacity: 0,
-      y: 100,
-    }
-  };
-
   return (
     <motion.div
       className={`${styles.avatarGroup} ${isDouble ? styles.doubleMode : styles.singleMode} ${isAlly ? styles.ally : styles.foe} ${isBlinking ? styles.blinking : ''} ${className}`}
       initial="alive"
-      animate={isKnockout ? "knockout" : "alive"}
-      variants={containerVariants}
-      transition={{
-        duration: isKnockout ? 0.8 : 0.3,
-        // 本家の jQuery のデフォルトイージング (swing) は easeInOut に近い
-        ease: isKnockout ? "easeInOut" : "easeOut"
+      animate="alive"
+      variants={{
+        alive: { opacity: 1, y: 0 }
       }}
     >
       {displayTypes.map((type, index) => {

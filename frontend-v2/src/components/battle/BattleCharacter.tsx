@@ -3,6 +3,7 @@ import { CharacterAvatar } from './CharacterAvatar';
 import { WordDisplay } from './WordDisplay';
 import { BattleEffects } from './BattleEffects';
 import styles from './BattleCharacter.module.css';
+import { motion } from 'framer-motion';
 
 interface BattleCharacterProps {
   id: string;
@@ -33,13 +34,23 @@ export const BattleCharacter: React.FC<BattleCharacterProps> = ({
   className = ''
 }) => {
   return (
-    <div 
+    <motion.div 
       className={`${styles.characterContainer} ${className}`}
       data-ally={isAlly}
       data-double={!!slot}
       style={{ 
         transform: `scale(${scale})`,
         transformOrigin: 'bottom center'
+      }}
+      initial="alive"
+      animate={isKnockout ? "knockout" : "alive"}
+      variants={{
+        alive: { opacity: 1, y: 0 },
+        knockout: { opacity: 0, y: 100 }
+      }}
+      transition={{
+        duration: isKnockout ? 0.8 : 0.3,
+        ease: isKnockout ? "easeInOut" : "easeOut"
       }}
     >
       <CharacterAvatar
@@ -56,12 +67,13 @@ export const BattleCharacter: React.FC<BattleCharacterProps> = ({
           word={word}
           isAlly={isAlly}
           isDouble={!!slot}
+          isKnockout={isKnockout}
         />
       </div>
 
       <div className={styles.effectsContainer}>
         <BattleEffects trigger={activeEffect || null} />
       </div>
-    </div>
+    </motion.div>
   );
 };
