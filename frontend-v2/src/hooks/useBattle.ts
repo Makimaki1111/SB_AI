@@ -157,41 +157,6 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
       const prevState = battleStateRef.current || data.state;
       const isInitialBattle = (data.type === 'made_room' || data.type === 'accepted') && !battleStateRef.current;
 
-      // 1. Initial State Sync
-      const initialVisualState: BattleState = {
-        ...data.state,
-        characters: { ...data.state.characters },
-        status: 'active'
-      };
-
-      if (!isInitialBattle) {
-        Object.keys(initialVisualState.characters).forEach(id => {
-          if (prevState.characters[id]) {
-            initialVisualState.characters[id] = { ...initialVisualState.characters[id] };
-            initialVisualState.characters[id].hp = prevState.characters[id].hp;
-            if (prevState.characters[id].word) {
-              initialVisualState.characters[id].word = prevState.characters[id].word;
-            }
-          }
-        });
-      }
-
-      setBattleState(initialVisualState);
-      battleStateRef.current = initialVisualState;
-
-      // 2. Matching Animation
-      if (isInitialBattle) {
-        resetTimer(data.info?.time_limit || 20, data.info?.total_time || 20);
-        display.resetDisplay();
-        display.setMessageLog({ text: 'マッチングした！', isOpen: true });
-        soundManager.stopBGM();
-        soundManager.play('start');
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        if (checkAbort()) return;
-        soundManager.playBGM('/resource/overflow.mp3');
-        data.state.word = "";
-      }
-
       const events = data.events || [];
       const isTimeout = events.some(e => e.message?.includes('時間切れ'));
       const attackerSide = prevState.is_my_turn ? 'ally' : 'foe';
@@ -218,6 +183,47 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
         }
       }
 
+      // 1. Initial State Sync
+      const initialVisualState: BattleState = {
+        ...data.state,
+        characters: { ...data.state.characters },
+        status: 'active'
+      };
+
+      if (!isInitialBattle) {
+        Object.keys(initialVisualState.characters).forEach(id => {
+          if (prevState.characters[id]) {
+            const isAttacker = id === attackerId;
+            initialVisualState.characters[id] = { 
+              ...initialVisualState.characters[id],
+              hp: prevState.characters[id].hp,
+              // アタッカーのみ、単語送信と同時に決定したタイプを表示する
+              types: isAttacker ? [...initialVisualState.characters[id].types] : [...prevState.characters[id].types],
+              attack_rank: prevState.characters[id].attack_rank,
+              defense_rank: prevState.characters[id].defense_rank,
+              lives: prevState.characters[id].lives,
+              word: prevState.characters[id].word
+            };
+          }
+        });
+      }
+
+      setBattleState(initialVisualState);
+      battleStateRef.current = initialVisualState;
+
+      // 2. Matching Animation
+      if (isInitialBattle) {
+        resetTimer(data.info?.time_limit || 20, data.info?.total_time || 20);
+        display.resetDisplay();
+        display.setMessageLog({ text: 'マッチングした！', isOpen: true });
+        soundManager.stopBGM();
+        soundManager.play('start');
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        if (checkAbort()) return;
+        soundManager.playBGM('/resource/overflow.mp3');
+        data.state.word = "";
+      }
+
       if (data.state.word && !isTimeout) {
         display.clearPrediction();
         display.setMessageLog({ text: '', isOpen: true });
@@ -229,7 +235,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
             initialVisualState.characters[attackerId].word = data.state.word;
           }
 
-          // 画面上の状態を更新 (単語のみを反映させ、HP等は現在の見た目を維持)
+          // 画面上の状態を更新 (単語とタイプを即時反映)
           setBattleState(prev => {
             if (!prev || !attackerId || !prev.characters[attackerId]) return prev;
             return {
@@ -238,7 +244,8 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
                 ...prev.characters,
                 [attackerId]: { 
                   ...prev.characters[attackerId], 
-                  word: data.state.word 
+                  word: data.state.word,
+                  types: [...data.state.characters[attackerId].types]
                 }
               }
             };
