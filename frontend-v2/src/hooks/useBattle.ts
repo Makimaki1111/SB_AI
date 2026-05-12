@@ -7,6 +7,7 @@ import { useBattleSocket } from './battle/useBattleSocket';
 import { useBattleState } from './battle/useBattleState';
 import { useBattleTimer } from './battle/useBattleTimer';
 import { useBattleDisplay } from './battle/useBattleDisplay';
+import { useBattleSequence } from './battle/useBattleSequence';
 
 export const useBattle = (url: string, onRoomError?: () => void) => {
   // --- Sub-hooks ---
@@ -22,6 +23,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
   const display = useBattleDisplay();
   const { timer, resetTimer } = useBattleTimer(battleState?.status === 'finished', !!battleState?.is_cpu);
   const soundManager = SoundManager.getInstance();
+  const { playSequence, isAnimating: isSequenceAnimating } = useBattleSequence(setBattleState, display);
 
   const messageQueue = useRef<BattleResponse[]>([]);
   const isHandlingQueue = useRef(false);
@@ -222,22 +224,25 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
 
         // 単語を特定のキャラクターに紐付ける
         if (attackerId && data.state.characters[attackerId]) {
-          data.state.characters[attackerId] = {
-            ...data.state.characters[attackerId],
-            word: data.state.word
-          };
-
+          // initialVisualState に単語をセット (後続の処理用)
           if (initialVisualState.characters[attackerId]) {
             initialVisualState.characters[attackerId].word = data.state.word;
           }
 
-          setBattleState(prev => prev ? {
-            ...prev,
-            characters: {
-              ...prev.characters,
-              [attackerId]: { ...data.state.characters[attackerId] }
-            }
-          } : null);
+          // 画面上の状態を更新 (単語のみを反映させ、HP等は現在の見た目を維持)
+          setBattleState(prev => {
+            if (!prev || !attackerId || !prev.characters[attackerId]) return prev;
+            return {
+              ...prev,
+              characters: {
+                ...prev.characters,
+                [attackerId]: { 
+                  ...prev.characters[attackerId], 
+                  word: data.state.word 
+                }
+              }
+            };
+          });
         }
 
         const attackerState = data.state.characters[attackerId || ''];
@@ -250,187 +255,20 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
         resetTimer(data.info?.time_limit || 20, data.info?.total_time || 20);
       }
 
-
-
+      // 5. Delay before starting events
       const isAbilityChangeOnly = events.length === 1 && events[0].type === 'ability_changed';
       if (data.state.word && !isAbilityChangeOnly && !isTimeout) {
         await new Promise(resolve => setTimeout(resolve, 1000));
         if (checkAbort()) return;
       }
 
-      // 6. Event Processing Loop
-      for (const event of events) {
-        const targetId = event.target;
-        
-        if (!isInitialBattle) {
-          soundManager.playEventSound(event.type, event.message || '');
-        }
+      // 6. Delegate to Animation Engine
+      await playSequence(events, data.state, initialVisualState, isInitialBattle, checkAbort);
 
-        if (event.type === 'ability_changed') {
-          display.setMessageLog({ text: null, isOpen: false });
-          display.showNotification('特性が変わった！');
-        }
-
-        if (event.type !== 'ability_changed') {
-          display.setMessageLog({ text: event.message || null, isOpen: true });
-        }
-
-        if (event.type === 'knockout') {
-          if (targetId) display.setKnockoutStates(prev => ({ ...prev, [targetId]: true }));
-        }
-
-        if (event.type === 'damage' || event.type === 'drain') {
-          const msg = event.message || '';
-          if (!msg.includes('毒のダメージ')) {
-            if (targetId) display.playCharacterEffect(targetId, 'blink');
-          }
-
-          if (targetId && tempCharacters[targetId] && event.hp !== undefined && event.hp !== null) {
-            tempCharacters[targetId].hp = event.hp;
-            setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
-          }
-          if (event.type === 'drain' && event.attacker) {
-            display.playCharacterEffect(event.attacker, 'heal');
-            if (event.attacker_hp !== undefined && event.attacker_hp !== null && tempCharacters[event.attacker]) {
-              tempCharacters[event.attacker].hp = event.attacker_hp;
-              setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
-            }
-          }
-          if (!isInitialBattle) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            if (checkAbort()) return;
-          }
-        } else if (event.type === 'cure') {
-          if (targetId) display.playCharacterEffect(targetId, 'heal');
-          if (targetId && tempCharacters[targetId] && event.hp !== undefined && event.hp !== null) {
-            tempCharacters[targetId].hp = event.hp;
-            setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
-          }
-          if (!isInitialBattle) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            if (checkAbort()) return;
-          }
-        } else if (event.type === 'revive') {
-          if (targetId) {
-            display.setKnockoutStates(prev => ({ ...prev, [targetId]: false }));
-            if (tempCharacters[targetId] && event.hp !== undefined && event.hp !== null) {
-              tempCharacters[targetId].hp = event.hp;
-              tempCharacters[targetId].types = [];
-              setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
-            }
-          }
-          if (!isInitialBattle) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            if (checkAbort()) return;
-          }
-        } else if (event.type === 'drain') {
-          if (event.attacker) display.playCharacterEffect(event.attacker, 'heal');
-          if (targetId) display.playCharacterEffect(targetId, 'damage');
-          if (targetId && tempCharacters[targetId] && event.hp !== undefined) {
-            tempCharacters[targetId].hp = event.hp;
-          }
-          if (event.attacker && tempCharacters[event.attacker] && event.attacker_hp !== undefined) {
-            tempCharacters[event.attacker].hp = event.attacker_hp;
-          }
-          setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
-          if (!isInitialBattle) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            if (checkAbort()) return;
-          }
-        } else if (event.type === 'ability_trigger') {
-          // メッセージ内容に応じて演出を使い分ける
-          let effect: 'up' | 'down' | 'damage' | 'heal' = 'up';
-          const msg = event.message || '';
-          if (msg.includes('毒') || msg.includes('種') || msg.includes('下がった')) {
-            effect = msg.includes('下がった') ? 'down' : 'damage';
-          } else if (msg.includes('上がった') || msg.includes('回復') || msg.includes('ひっくり返った')) {
-            effect = 'up';
-          }
-
-          if (targetId) display.playCharacterEffect(targetId, effect);
-          
-          // 一括能力変化 (かくめい、たいふういっか等)
-          if (event.new_ranks) {
-            for (const cid in event.new_ranks) {
-              if (tempCharacters[cid]) {
-                tempCharacters[cid] = {
-                  ...tempCharacters[cid],
-                  attack_rank: event.new_ranks[cid].attack_rank ?? tempCharacters[cid].attack_rank,
-                  defense_rank: event.new_ranks[cid].defense_rank ?? tempCharacters[cid].defense_rank
-                };
-              }
-            }
-            setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
-          }
-          if (!isInitialBattle) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            if (checkAbort()) return;
-          }
-        } else if (event.type === 'cure_poison') {
-          if (targetId) display.playCharacterEffect(targetId, 'heal');
-          if (!isInitialBattle) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            if (checkAbort()) return;
-          }
-        } else if (event.type === 'stat_up' || event.type === 'stat_down') {
-          const effect = event.type === 'stat_up' ? 'up' : 'down';
-          if (targetId) display.playCharacterEffect(targetId, effect);
-          if (targetId && tempCharacters[targetId] && event.new_rank !== undefined && event.new_rank !== null) {
-            const field: 'defense_rank' | 'attack_rank' = event.stat_type === 'defense' ? 'defense_rank' : 'attack_rank';
-            tempCharacters[targetId] = { ...tempCharacters[targetId], [field]: event.new_rank };
-            setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
-          }
-          if (!isInitialBattle) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            if (checkAbort()) return;
-          }
-        } else if (event.type === 'ability_changed') {
-          if (targetId && tempCharacters[targetId] && event.new_ability) {
-            tempCharacters[targetId].ability = event.new_ability;
-            tempCharacters[targetId].ability_change_count = event.new_ability_change_count ?? tempCharacters[targetId].ability_change_count;
-            setBattleState(prev => prev ? { ...prev, characters: { ...tempCharacters } } : null);
-          }
-          if (!isInterrupt && !isInitialBattle) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-            if (checkAbort()) return;
-          }
-        } else if (event.type === 'battle_result') {
-          display.setShowResultButton(true);
-          if (!isInitialBattle) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            if (checkAbort()) return;
-          }
-        } else {
-          if (!isInitialBattle) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            if (checkAbort()) return;
-          }
-        }
-      }
-
-      // 7. Finalize State
-      const mergedChars = { ...data.state.characters };
-      const lastVisual = battleStateRef.current;
-      if (lastVisual) {
-        for (const id in mergedChars) {
-          if (lastVisual.characters[id]) {
-            if (lastVisual.characters[id].word && !mergedChars[id].word) {
-              mergedChars[id].word = lastVisual.characters[id].word;
-            }
-            if (lastVisual.characters[id].ability_change_count < mergedChars[id].ability_change_count) {
-              mergedChars[id].ability = lastVisual.characters[id].ability;
-              mergedChars[id].ability_change_count = lastVisual.characters[id].ability_change_count;
-            }
-          }
-        }
-      }
-      const final: BattleState = { ...data.state, characters: mergedChars };
-      setBattleState(final);
-      battleStateRef.current = final;
-
+      // 7. Final Sync & Turn Transition UI
       if (checkAbort()) return;
 
-      // 8. Turn Transition UI
+      const final = battleStateRef.current || data.state;
       if (final.status !== 'finished') {
         display.setWaitMessage(final.is_my_turn ? 'あなたのターンです。' : '相手のターンです。');
         if (!final.is_my_turn) display.setMessageLog({ text: '', isOpen: true });
