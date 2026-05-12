@@ -193,7 +193,8 @@ class IshokudogenAbility(Ability):
             battle.events.append({
                 "type": "cure_poison",
                 "message": f"医食同源の効果で毒が治った！",
-                "target": battle.get_player_label(player)
+                "target": battle.get_player_label(player),
+                "new_is_poison": False
             })
 
 class HokenAbility(Ability):
@@ -250,7 +251,8 @@ class DokubariAbility(Ability):
                 "type": "ability_trigger",
                 "message": "毒を受けた！",
                 "target": battle.get_player_label(opponent),
-                "attacker": battle.get_player_label(player)
+                "attacker": battle.get_player_label(player),
+                "new_is_poison": True
             }
             battle.events.append(event)
 

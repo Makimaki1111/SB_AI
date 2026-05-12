@@ -21,6 +21,7 @@ class BattleEvent(BaseModel):
     new_ranks: Optional[Dict[str, Dict[str, int]]] = Field(None, description="複数のステータスが変化した場合のマップ")
     predictions: Optional[Dict[str, str]] = Field(None, description="ダブルバトル等の複数対象への相性予測")
     winner_team: Optional[int] = Field(None, description="バトルの勝者チーム番号")
+    new_is_poison: Optional[bool] = Field(None, description="変化後の毒状態")
 
 class CharacterState(BaseModel):
     """個別のキャラクターの状態"""

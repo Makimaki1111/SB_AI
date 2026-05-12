@@ -63,6 +63,7 @@ export interface BattleEvent {
   predictions?: Record<string, string> | null;
   attacker_hp?: number | null;
   winner_team?: number | null;
+  new_is_poison?: boolean | null;
 }
 
 export interface BattleResponse {

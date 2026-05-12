@@ -52,13 +52,19 @@ export const useBattleSequence = (
       switch (event.type) {
         case 'damage':
         case 'drain':
-          const isPoison = event.message?.includes('毒のダメージ');
-          if (!isPoison && targetId) {
+          const isPoisonDamage = event.message?.includes('毒のダメージ');
+          if (!isPoisonDamage && targetId) {
             display.playCharacterEffect(targetId, 'blink');
           }
           
-          if (targetId && currentTempCharacters[targetId] && event.hp !== undefined) {
-            currentTempCharacters[targetId].hp = event.hp;
+          if (targetId && currentTempCharacters[targetId]) {
+            if (event.hp !== undefined) {
+              currentTempCharacters[targetId].hp = event.hp;
+            }
+            // new_is_poison フラグがあれば優先して更新
+            if (event.new_is_poison !== undefined && event.new_is_poison !== null) {
+              currentTempCharacters[targetId].is_poison = event.new_is_poison;
+            }
             updateVisualState(currentTempCharacters);
           }
           // ドレインの場合、吸い取った側の回復も同時に行う
@@ -75,8 +81,17 @@ export const useBattleSequence = (
         case 'cure_poison':
           if (targetId) display.playCharacterEffect(targetId, 'heal');
           
-          if (targetId && currentTempCharacters[targetId] && event.hp !== undefined) {
-            currentTempCharacters[targetId].hp = event.hp;
+          if (targetId && currentTempCharacters[targetId]) {
+            if (event.hp !== undefined) {
+              currentTempCharacters[targetId].hp = event.hp;
+            }
+            // new_is_poison フラグがあれば優先して更新
+            if (event.new_is_poison !== undefined && event.new_is_poison !== null) {
+              currentTempCharacters[targetId].is_poison = event.new_is_poison;
+            } else if (event.type === 'cure_poison') {
+              // フォールバック
+              currentTempCharacters[targetId].is_poison = false;
+            }
             updateVisualState(currentTempCharacters);
           }
           break;
@@ -97,6 +112,11 @@ export const useBattleSequence = (
           const triggerEffect = determineAbilityEffect(event.message || '');
           if (targetId) display.playCharacterEffect(targetId, triggerEffect);
           
+          if (targetId && currentTempCharacters[targetId] && event.new_is_poison !== undefined && event.new_is_poison !== null) {
+            currentTempCharacters[targetId].is_poison = event.new_is_poison;
+            updateVisualState(currentTempCharacters);
+          }
+
           if (event.new_ranks) {
             for (const cid in event.new_ranks) {
               if (currentTempCharacters[cid]) {
