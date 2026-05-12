@@ -37,9 +37,7 @@ export const BattleTeamDisplay: React.FC<BattleTeamDisplayProps> = ({
 
         {/* キャラクターの描画 */}
         {characters.map((char, index) => {
-          const isKnockout = char.id 
-            ? knockoutStates[char.id] || char.hp <= 0 || !!char.is_defeated 
-            : char.hp <= 0;
+          const isKnockout = char.id ? !!knockoutStates[char.id] : false;
           const charEffect = char.id ? activeEffects[char.id] : null;
           
           // キャラクターの座標クラス決定
