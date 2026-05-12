@@ -35,7 +35,7 @@ export const BattleCharacter: React.FC<BattleCharacterProps> = ({
 }) => {
   return (
     <motion.div 
-      className={`${styles.characterContainer} ${className}`}
+      className={`${styles.characterContainer} ${isBlinking ? styles.blinking : ''} ${className}`}
       data-ally={isAlly}
       data-double={!!slot}
       style={{ 
@@ -56,7 +56,6 @@ export const BattleCharacter: React.FC<BattleCharacterProps> = ({
       <CharacterAvatar
         types={types}
         isAlly={isAlly}
-        isBlinking={isBlinking}
         isDouble={!!slot}
         className={styles.avatar}
       />

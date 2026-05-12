@@ -6,7 +6,6 @@ import { motion } from 'framer-motion';
 interface CharacterAvatarProps {
   types: string[];
   isAlly: boolean;
-  isBlinking: boolean;
   isDouble?: boolean;
   className?: string;
 }
@@ -17,7 +16,6 @@ interface CharacterAvatarProps {
 export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
   types,
   isAlly,
-  isBlinking,
   isDouble = false,
   className = ''
 }) => {
@@ -30,7 +28,7 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
 
   return (
     <motion.div
-      className={`${styles.avatarGroup} ${isDouble ? styles.doubleMode : styles.singleMode} ${isAlly ? styles.ally : styles.foe} ${isBlinking ? styles.blinking : ''} ${className}`}
+      className={`${styles.avatarGroup} ${isDouble ? styles.doubleMode : styles.singleMode} ${isAlly ? styles.ally : styles.foe} ${className}`}
       initial="alive"
       animate="alive"
       variants={{

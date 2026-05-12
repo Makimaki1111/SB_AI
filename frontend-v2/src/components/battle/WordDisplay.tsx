@@ -5,7 +5,6 @@ import styles from './WordDisplay.module.css';
 interface WordDisplayProps {
   word: string | null;
   isAlly: boolean;
-  isBlinking?: boolean;
   centered?: boolean;
   isDouble?: boolean;
 }
@@ -17,7 +16,6 @@ interface WordDisplayProps {
 export const WordDisplay: React.FC<WordDisplayProps> = ({
   word,
   isAlly,
-  isBlinking,
   centered = false,
   isDouble = false
 }) => {
@@ -41,7 +39,7 @@ export const WordDisplay: React.FC<WordDisplayProps> = ({
       {word && (
         <motion.div
           key={word}
-          className={`${baseClass} ${isBlinking ? styles.blinking : ''} word-display-text`}
+          className={`${baseClass} word-display-text`}
           initial={{
             opacity: 0,
             x: xPos,
