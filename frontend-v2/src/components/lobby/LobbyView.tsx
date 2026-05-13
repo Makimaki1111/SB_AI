@@ -15,9 +15,9 @@ interface LobbyViewProps {
   mode?: 'single' | 'stock' | 'double';
 }
 
-export const LobbyView: React.FC<LobbyViewProps> = ({ 
-  onStartMatch, 
-  onOpenAbilityModal, 
+export const LobbyView: React.FC<LobbyViewProps> = ({
+  onStartMatch,
+  onOpenAbilityModal,
   onBackToTitle,
   selectedAbilities,
   allAbilities,
@@ -31,10 +31,10 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
   // 本家仕様: 選択中の特性データを取得。
   const getAbilityData = (index: number) => {
     const id = selectedAbilities[index];
-    return allAbilities[id] || { 
-      name: 'ランダム', 
+    return allAbilities[id] || {
+      name: 'ランダム',
       description: 'ランダムに決定されます',
-      icon_type: 'ノーマル' 
+      icon_type: 'ノーマル'
     };
   };
 
@@ -49,8 +49,8 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
           {isStock ? '特殊ルール' : isDouble ? 'ダブルバトル' : 'シングルバトル'}
         </h1>
         {isStock && (
-          <button 
-            className={styles.helpBtn} 
+          <button
+            className={styles.helpBtn}
             onClick={(e) => { e.stopPropagation(); SoundManager.play('pera'); setShowBalloon(!showBalloon); }}
           >
             ?
@@ -61,7 +61,16 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
       {showBalloon && isStock && (
         <div className={styles.helpBalloon} onClick={() => setShowBalloon(false)}>
           <div className={styles.balloonTitle}>特殊ルールの説明</div>
-          <div>相手のHPを<span className={styles.highlight}>複数回</span>0にしたらプレイヤーの勝ちとなります。</div>
+          <div className={styles.balloonScroll}>
+            <div className={styles.balloonMain}>
+              <span className={styles.noBreak}>相手のHPを</span><span className={styles.highlight}>複数回</span><span className={styles.noBreak}>0にしたら</span><span className={styles.noBreak}>勝利となります。</span>
+            </div>
+            <div className={styles.balloonSub}>
+              <span className={styles.noBreak}>復活時はHPが全回復しますが、</span><br />
+              <span className={styles.noBreak}>能力ランク・タイプ・状態異常は</span><br />
+              <span className={styles.noBreak}>すべてリセットされます。</span>
+            </div>
+          </div>
           <div className={styles.balloonHint}>(タップして閉じる)</div>
           <div className={styles.balloonTail}></div>
         </div>
@@ -75,16 +84,16 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
       )}
 
       <div className={isDouble ? styles.abilityCardsDouble : styles.abilityCardsSingle}>
-        <AbilityCard 
-          ability={getAbilityData(0)} 
-          onClick={() => { SoundManager.play('pera'); onOpenAbilityModal(0); }} 
+        <AbilityCard
+          ability={getAbilityData(0)}
+          onClick={() => { SoundManager.play('pera'); onOpenAbilityModal(0); }}
           className={isDouble ? styles.doubleCard : ''}
           label={isDouble ? "1人目" : undefined}
         />
         {isDouble && (
-          <AbilityCard 
-            ability={getAbilityData(1)} 
-            onClick={() => { SoundManager.play('pera'); onOpenAbilityModal(1); }} 
+          <AbilityCard
+            ability={getAbilityData(1)}
+            onClick={() => { SoundManager.play('pera'); onOpenAbilityModal(1); }}
             className={styles.doubleCard}
             label="2人目"
           />
@@ -107,15 +116,15 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
         </GameButton>
 
         <div className={styles.joinBox}>
-          <input 
-            type="text" 
-            placeholder="ルームID" 
-            className={styles.roomInput} 
+          <input
+            type="text"
+            placeholder="ルームID"
+            className={styles.roomInput}
             value={roomId}
             onChange={(e) => setRoomId(e.target.value)}
           />
-          <GameButton 
-            className={styles.joinButton} 
+          <GameButton
+            className={styles.joinButton}
             variant="green"
             silent={true}
             onClick={() => { onStartMatch('room', { roomId }); }}

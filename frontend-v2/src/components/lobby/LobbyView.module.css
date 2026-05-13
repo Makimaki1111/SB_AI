@@ -84,6 +84,8 @@
   cursor: pointer;
   backdrop-filter: blur(5px);
   animation: fadeIn 0.3s ease-out;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 .balloonTitle {
@@ -99,6 +101,23 @@
   color: var(--color-danger);
   font-weight: 800;
   font-size: 4cqw;
+}
+
+.noBreak {
+  display: inline-block;
+}
+
+.balloonMain {
+  margin-bottom: 2.6cqw;
+}
+
+.balloonSub {
+  font-size: 2.8cqw;
+  color: #666;
+  background: #f9f9f9;
+  padding: 1.7cqw;
+  border-radius: 1.3cqw;
+  line-height: 1.6;
 }
 
 .balloonHint {

@@ -32,7 +32,7 @@ export const InitialSetupModal: React.FC<InitialSetupModalProps> = ({ isOpen, on
             style={{ position: 'absolute', top: '50%', left: '50%' }}
           >
             <div className={styles.content}>
-              <h2 className={styles.title}>ユーザー名を入力してください</h2>
+              <h2 className={styles.title}>ユーザー名を入力してね</h2>
               <p className={styles.description}>
                 (設定で後から変更できます)<br />
               </p>
