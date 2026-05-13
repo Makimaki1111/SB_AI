@@ -221,7 +221,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
         display.setMessageLog({ text: 'マッチングした！', isOpen: true });
         soundManager.stopBGM();
         soundManager.play('start');
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 1500));
         if (checkAbort()) return;
         soundManager.playBGM('/resource/overflow.mp3');
         data.state.word = "";
@@ -292,13 +292,6 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
   }
 
   const { isConnected, sendMessage } = useBattleSocket(url, onMessage);
-
-  useEffect(() => {
-    if (battleState?.status === 'finished') {
-      soundManager.stopBGM();
-      soundManager.play('end');
-    }
-  }, [battleState?.status, soundManager]);
 
   const sendIncludeCheck = (word: string) => {
     const current = battleStateRef.current;

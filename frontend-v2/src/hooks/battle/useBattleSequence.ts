@@ -176,6 +176,8 @@ export const useBattleSequence = (
           break;
 
         case 'battle_result':
+          soundManager.stopBGM();
+          soundManager.play('end');
           display.setShowResultButton(true);
           break;
       }

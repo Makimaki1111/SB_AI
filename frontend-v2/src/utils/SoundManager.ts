@@ -18,16 +18,16 @@ class SoundManager {
     private audioCtx: AudioContext | null = null;
     private bgmGain: GainNode | null = null;
     private seGain: GainNode | null = null;
-    
+
     private audioCache: Map<string, AudioBuffer> = new Map();
     private lastPlayTime: Map<string, number> = new Map();
-    
+
     private currentBgmSource: AudioBufferSourceNode | null = null;
     private currentBgmPath: string | null = null;
-    
+
     private bgmVolume: number = 0.1;
     private seVolume: number = 0.5;
-    
+
     private isUnlocked: boolean = false;
 
     private soundMap: Record<string, string> = {
@@ -55,7 +55,7 @@ class SoundManager {
         'seed_drain': '/resource/seed_damage.mp3',
         'seed_place': '/resource/seeded.mp3',
         'stat_up': '/resource/up.mp3',
-        'knockout': '/resource/end.mp3',
+        'knockout': '/resource/down.mp3',
         'revive': '/resource/up.mp3',
         'poison': '/resource/poison.mp3'
     };
@@ -146,8 +146,8 @@ class SoundManager {
             return;
         }
 
-        // 3. Special cases
-        if (type === 'end' || type === 'battle_end' || message.includes('はたおれた！')) {
+        // 3. Special cases (BGM stopping/ending)
+        if (type === 'end' || type === 'battle_end') {
             this.play('end');
         }
     }
@@ -162,33 +162,33 @@ class SoundManager {
 
     public unlock(): void {
         if (this.isUnlocked) return;
-        
+
         try {
             const audioWindow = window as WindowWithWebkitAudio;
             const AudioContextClass = audioWindow.AudioContext || audioWindow.webkitAudioContext;
             if (!AudioContextClass) return;
-            
+
             this.audioCtx = new AudioContextClass();
-            
+
             this.bgmGain = this.audioCtx.createGain();
             this.bgmGain.gain.value = this.bgmVolume;
             this.bgmGain.connect(this.audioCtx.destination);
-            
+
             this.seGain = this.audioCtx.createGain();
             this.seGain.gain.value = this.seVolume;
             this.seGain.connect(this.audioCtx.destination);
-            
+
             if (this.audioCtx.state === 'suspended') {
                 this.audioCtx.resume();
             }
-            
+
             // Dummy buffer to unlock (Async but non-blocking)
             const buffer = this.audioCtx.createBuffer(1, 1, 22050);
             const source = this.audioCtx.createBufferSource();
             source.buffer = buffer;
             source.connect(this.audioCtx.destination);
             source.start(0);
-            
+
             this.isUnlocked = true;
             console.log("AudioContext unlocked successfully.");
         } catch (e) {
@@ -218,7 +218,7 @@ class SoundManager {
      */
     public play(keyOrPath: string): void {
         const path = this.soundMap[keyOrPath] || this.typeSoundMap[keyOrPath] || keyOrPath;
-        
+
         // 未初期化の場合は初期化を試みる
         if (!this.isUnlocked) {
             this.unlock();
@@ -248,7 +248,7 @@ class SoundManager {
      */
     private playBuffer(buffer: AudioBuffer, path: string): void {
         if (!this.audioCtx || !this.seGain) return;
-        
+
         try {
             // 再開処理
             if (this.audioCtx.state === 'suspended') {
@@ -287,7 +287,7 @@ class SoundManager {
             const buffer = await this.loadAudio(path);
             if (!buffer) return;
             this.stopBGM();
-            
+
             if (this.audioCtx.state === 'suspended') await this.audioCtx.resume();
 
             const source = this.audioCtx.createBufferSource();
