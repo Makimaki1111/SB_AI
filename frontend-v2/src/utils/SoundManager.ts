@@ -52,9 +52,12 @@ class SoundManager {
         'end': '/resource/end.mp3',
         'stat_down': '/resource/down.mp3',
         'drain': '/resource/seed_damage.mp3',
+        'seed_drain': '/resource/seed_damage.mp3',
+        'seed_place': '/resource/seeded.mp3',
         'stat_up': '/resource/up.mp3',
         'knockout': '/resource/end.mp3',
-        'revive': '/resource/up.mp3'
+        'revive': '/resource/up.mp3',
+        'poison': '/resource/poison.mp3'
     };
 
     private typeSoundMap: Record<string, string> = {
@@ -87,7 +90,8 @@ class SoundManager {
 
     // Regex patterns from legacy audio_bridge.js
     private patterns = {
-        seed: /やどりぎ|種を植え付け/,
+        seed_drain: /奪う|やどりぎのダメージ/,
+        seed_place: /種を植え付け|やどりぎの種/,
         poison: /毒のダメージ|毒を受けた/,
         super: /ばつぐん/,
         notVery: /いまひとつ/,
@@ -114,7 +118,8 @@ class SoundManager {
      */
     private resolveMessageSound(message: string): string | null {
         if (!message) return null;
-        if (this.patterns.seed.test(message)) return 'seeded';
+        if (this.patterns.seed_drain.test(message)) return 'seed_damage';
+        if (this.patterns.seed_place.test(message)) return 'seeded';
         if (this.patterns.poison.test(message)) return 'poison';
         if (this.patterns.super.test(message)) return 'effective';
         if (this.patterns.notVery.test(message)) return 'noneffective';
@@ -123,22 +128,26 @@ class SoundManager {
     }
 
     /**
-     * Plays event sound based on type and message (Legacy parity)
+     * Plays event sound based on type and message.
+     * Prioritizes Data (type) over Message (regex).
      */
     public playEventSound(type: string, message: string = ""): void {
-        // Message-based sound has priority
+        // 1. Data-driven priority: check explicit type mapping
+        const eventSound = this.eventSoundMap[type];
+        if (eventSound) {
+            this.play(eventSound);
+            return;
+        }
+
+        // 2. Message-based fallback: parse text if type is generic (e.g., 'damage')
         const messageSound = this.resolveMessageSound(message);
         if (messageSound) {
             this.play(messageSound);
             return;
         }
 
-        // Fallback to event type mapping
-        const eventSound = this.eventSoundMap[type];
-        if (eventSound) {
-            this.play(eventSound);
-        } else if (type === 'end' || type === 'battle_end' || message.includes('はたおれた！')) {
-            // Special cases for end sounds
+        // 3. Special cases
+        if (type === 'end' || type === 'battle_end' || message.includes('はたおれた！')) {
             this.play('end');
         }
     }
