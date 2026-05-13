@@ -79,19 +79,20 @@ class RoomManager:
     async def handle_disconnection(self, room_id: str, player_id: str):
         """猶予なしで即座に切断処理（敗北確定）を行う"""
         room = self.get_room(room_id)
-        if not room or room.is_finished:
+        if not room:
             return
 
-        res = room.handle_disconnection(player_id)
-        if res:
-            is_double = room.is_double
-            await self.connection_manager.broadcast_battle_state(
-                room_id, res, is_double=is_double, room_manager=self, time_limit=room.time_limit
-            )
+        if not room.is_finished:
+            res = room.handle_disconnection(player_id)
+            if res:
+                is_double = room.is_double
+                await self.connection_manager.broadcast_battle_state(
+                    room_id, res, is_double=is_double, room_manager=self, time_limit=room.time_limit
+                )
         
-        if room.is_finished:
-            self.cancel_timer(room_id)
-            self.schedule_room_cleanup(room_id)
+        # 試合終了時だけでなく、切断時は常にクリーンアップを予約（メモリリーク対策）
+        self.cancel_timer(room_id)
+        self.schedule_room_cleanup(room_id)
 
     def get_player_name(self, player_id: str) -> str:
         """プレイヤー名を取得（プロフィールがない場合はデフォルト名）"""
@@ -101,13 +102,24 @@ class RoomManager:
         return "じぶん"
 
     def update_user_info(self, player_id: str, name: str, ability: str, ability_2: Optional[str] = None):
-        """ユーザープロフィールの更新"""
+        """ユーザープロフィールの更新 (最大100件に制限)"""
         if not name: name = "じぶん"
         if len(name) > 8: name = name[:8]
+        
+        # メモリリーク対策: 100件を超えたら古いものを削除
+        if len(self.user_profiles) > 100 and player_id not in self.user_profiles:
+            oldest_key = next(iter(self.user_profiles))
+            del self.user_profiles[oldest_key]
+            
         self.user_profiles[player_id] = {"name": name, "ability": ability, "ability_2": ability_2}
 
     def create_private_room(self, websocket, player_id: str, p1_lives: int, p2_lives: int, is_double: bool = False) -> str:
         """プライベートルームを作成してIDを返す"""
+        if len(self.private_waiting_rooms) >= 100:
+            # 古い待機室が溜まっている場合は一つ消す
+            oldest = next(iter(self.private_waiting_rooms))
+            del self.private_waiting_rooms[oldest]
+
         while True:
             new_room_id = f"{secrets.randbelow(1000000):06d}"
             if new_room_id not in self.private_waiting_rooms: break
@@ -117,6 +129,16 @@ class RoomManager:
             "player_id": player_id, 
             "p1_max_lives": p1_lives,
             "p2_max_lives": p2_lives,
-            "is_double": is_double
+            "is_double": is_double,
+            "created_at": time.time()
         }
+        
+        # 10分後に誰も入らなければ削除
+        async def _expire_private_room():
+            await asyncio.sleep(600)
+            if new_room_id in self.private_waiting_rooms:
+                del self.private_waiting_rooms[new_room_id]
+        
+        asyncio.create_task(_expire_private_room())
+        
         return new_room_id

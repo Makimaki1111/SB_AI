@@ -49,14 +49,14 @@ const getBaseUrl = () => {
   if (typeof window === 'undefined') return '127.0.0.1:8000';
   const hostname = window.location.hostname;
   
-  // localhostや空の場合は127.0.0.1を明示的に使用（IPv6/IPv4の解決問題を回避）
+  // localhostや127.0.0.1の場合は開発環境の8000番ポートを明示
   if (!hostname || hostname === 'localhost' || hostname === '127.0.0.1') {
     return '127.0.0.1:8000';
   }
   
-  // それ以外（Render.comなどの本番環境やLAN内他PCからのアクセス）は同じホストの8000ポート（または適宜調整）
-  // 注意: 本番環境では通常ポート80/443になるため、環境変数等での制御が望ましいが、一旦開発優先
-  return `${hostname}:8000`;
+  // Render.comなどの本番環境やLAN内他PCからのアクセス
+  // window.location.host はポートが含まれていればそれを含み、なければドメイン名のみを返す
+  return window.location.host;
 };
 
 const baseUrl = getBaseUrl();

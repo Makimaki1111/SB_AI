@@ -60,26 +60,41 @@ async def protect_assets_middleware(request: Request, call_next):
     # 画像や音声リソースへの直接アクセスを制限
     if path.startswith("/img/") or path.startswith("/resource/"):
         referer = request.headers.get("referer")
-        # 開発環境や特定のホストからのアクセスを許可
         if referer:
             referer_netloc = urlparse(referer).netloc
             request_host = request.headers.get("host")
-            allowed_hosts = [
-                request_host, 
-                "localhost:5173", 
-                "127.0.0.1:5173", 
-                "shiritori-battle.render.com"
-            ]
-            if referer_netloc not in allowed_hosts:
+            # 開発環境とRender環境を許可
+            is_allowed = (
+                referer_netloc == request_host or
+                "localhost" in referer_netloc or
+                "127.0.0.1" in referer_netloc or
+                referer_netloc.endswith(".render.com")
+            )
+            if not is_allowed:
                 return Response(status_code=403, content=f"Access Denied: Origin {referer_netloc} not allowed")
-        # Refererがない場合は一旦許可（開発中のデバッグ等を考慮）
-        # 本番環境ではより厳格にする必要がある
-        pass
-
+    
     response = await call_next(request)
     if (path.startswith("/img/") or path.startswith("/resource/")) and response.status_code < 400:
         response.headers["Cache-Control"] = "public, max-age=86400"
     return response
+
+# --- 静的ファイルの配信設定 ---
+# 開発・本番両方で画像や音声を参照できるようにマウント
+# Renderデプロイ時はfrontend-v2/publicをコピーして配置することを想定
+base_dir = os.path.dirname(os.path.abspath(__file__))
+# frontend-v2/public が backend と同じ階層にある場合、あるいは backend 内部にある場合の両方を考慮
+public_dir = os.path.join(os.path.dirname(base_dir), "frontend-v2", "public")
+if not os.path.exists(public_dir):
+    # フォールバック: backendディレクトリ直下のpublicを見る
+    public_dir = os.path.join(base_dir, "public")
+
+if os.path.exists(public_dir):
+    img_dir = os.path.join(public_dir, "img")
+    res_dir = os.path.join(public_dir, "resource")
+    if os.path.exists(img_dir):
+        app.mount("/img", StaticFiles(directory=img_dir), name="img")
+    if os.path.exists(res_dir):
+        app.mount("/resource", StaticFiles(directory=res_dir), name="resource")
 
 # --- 初期化 ---
 sb_info_instance = SB_info()
@@ -96,7 +111,6 @@ def get_abilities_endpoint():
 @app.websocket("/ws")
 @app.websocket("/ws/double")
 async def websocket_endpoint(websocket: WebSocket):
-    # すべてのオリジンからのWebSocket接続を許可
     await connection_manager.connect(websocket)
     try:
         while True:
@@ -118,4 +132,6 @@ async def websocket_endpoint(websocket: WebSocket):
                 await room_manager.handle_disconnection(rid, pid)
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    # Renderは環境変数PORTを指定してくるため、それに対応
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False if os.environ.get("PORT") else True)

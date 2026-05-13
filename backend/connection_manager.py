@@ -29,6 +29,8 @@ class ConnectionManager:
         for room_id in list(self.room_connections.keys()):
             if websocket in self.room_connections[room_id]:
                 self.room_connections[room_id].remove(websocket)
+                if not self.room_connections[room_id]:
+                    del self.room_connections[room_id]
                 left_rooms.append(room_id)
         if websocket in self.socket_to_player_id:
             del self.socket_to_player_id[websocket]

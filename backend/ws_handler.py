@@ -81,6 +81,10 @@ class WebSocketHandler:
             await self._safe_send(websocket, {"type": "error", "message": "プレイヤーIDが不明です。再接続してください。"})
             return
             
+        if len(self.room_manager.rooms) >= self.room_manager.MAX_ROOMS:
+            await self._safe_send(websocket, {"type": "error", "message": "サーバーが混雑しています。しばらく待ってからお試しください。"})
+            return
+
         self.connection_manager.register_player(websocket, player_id)
         
         try:
@@ -147,6 +151,10 @@ class WebSocketHandler:
         if not player_id:
             await self._safe_send(websocket, {"type": "error", "message": "プレイヤーIDが不明です。再接続してください。"})
             return
+            
+        if len(self.room_manager.rooms) >= self.room_manager.MAX_ROOMS:
+            await self._safe_send(websocket, {"type": "error", "message": "サーバーが混雑しています"})
+            return
         self.connection_manager.register_player(websocket, player_id)
         name = info.get("name", "じぶん")
         ability = info.get("ability")
@@ -188,6 +196,9 @@ class WebSocketHandler:
         self.room_manager.update_user_info(player_id, info.get("name", "じぶん"), info.get("ability"), info.get("ability_2"))
         p1_max_lives = max(1, min(10, int(info.get("p1_max_lives", STOCK_LIVES))))
         p2_max_lives = max(1, min(10, int(info.get("p2_max_lives", STOCK_LIVES))))
+        if len(self.room_manager.rooms) >= self.room_manager.MAX_ROOMS:
+            await self._safe_send(websocket, {"type": "error", "message": "サーバーが混雑しています"})
+            return
         new_id = self.room_manager.create_private_room(websocket, player_id, p1_max_lives, p2_max_lives, is_double=False)
         await self._safe_send(websocket, {"type": "private_room_created", "room_id": new_id})
 
@@ -206,6 +217,9 @@ class WebSocketHandler:
             await self._safe_send(websocket, {"type": "error", "message": "プレイヤーIDが不明です。再接続してください。"})
             return
         
+        if len(self.room_manager.rooms) >= self.room_manager.MAX_ROOMS:
+            await self._safe_send(websocket, {"type": "error", "message": "サーバーが混雑しています"})
+            return
         self.connection_manager.register_player(websocket, player_id)
         
         name = info.get("name", "じぶん")
@@ -399,6 +413,7 @@ class WebSocketHandler:
             if cpu_res:
                 await self.connection_manager.broadcast_battle_state(room_id, cpu_res, is_double=room.is_double, room_manager=self.room_manager, time_limit=room.time_limit)
                 if room.is_finished:
+                    await self._after_turn_action(room_id, room)
                     return
 
         await self._start_turn_timer(room_id, room)
