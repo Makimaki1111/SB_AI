@@ -97,7 +97,7 @@ export const AbilityModal: React.FC<AbilityModalProps> = ({
   };
 
   const handleItemClick = (index: number) => {
-    if (!canChange || N === 0) return;
+    if (N === 0) return;
 
     // 現在の scrollIndex に最も近い「表示上の index」を探してセットする
     const currentScroll = scrollIndex.get();
