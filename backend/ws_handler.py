@@ -56,7 +56,7 @@ class WebSocketHandler:
                 await handler(websocket, player_id, info)
             except Exception as e:
                 logger.error(f"Error handling message {msg_type}: {e}", exc_info=True)
-                await self._safe_send(websocket, {"type": "error", "message": f"Internal server error: {str(e)}"})
+                await self._safe_send(websocket, {"type": "error", "message": "内部エラーが発生しました。"})
         else:
             logger.warning(f"No handler for message type: {msg_type}")
             await self._safe_send(websocket, {"type": "error", "message": f"Handler not found: {msg_type}"})
@@ -133,6 +133,10 @@ class WebSocketHandler:
             
             p1_profile = self.room_manager.user_profiles.get(p1_data["player_id"])
             p2_profile = self.room_manager.user_profiles.get(p2_data["player_id"])
+
+            if not p1_profile or not p2_profile:
+                logger.error(f"Profile not found for matching players: p1={p1_data['player_id']}, p2={p2_data['player_id']}")
+                raise ValueError("対戦相手のデータが見つかりませんでした")
 
             bi = SingleBattle(p1_data["player_id"], p2_data["player_id"], sb_info=self.room_manager.sb_info, p1_profile=p1_profile, p2_profile=p2_profile, p1_max_lives=max_lives, p2_max_lives=max_lives)
             bi.init_character()
@@ -335,6 +339,10 @@ class WebSocketHandler:
                 else:
                     p1_profile = self.room_manager.user_profiles.get(p1_data["player_id"])
                     p2_profile = self.room_manager.user_profiles.get(player_id)
+                    
+                    if not p1_profile or not p2_profile:
+                        raise ValueError("ルーム参加者のデータが見つかりませんでした")
+                        
                     bi = SingleBattle(p1_data["player_id"], player_id, sb_info=self.room_manager.sb_info, room_id=room_id, p1_profile=p1_profile, p2_profile=p2_profile, p1_max_lives=p1_data["p1_max_lives"], p2_max_lives=p1_data["p2_max_lives"])
                 
                 bi.init_character()
