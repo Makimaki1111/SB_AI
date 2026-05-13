@@ -102,6 +102,11 @@ class WebSocketHandler:
 
         self.connection_manager.register_player(websocket, player_id)
 
+        # まず最新のプロフィール情報で更新
+        ability = info.get("ability")
+        ability_2 = info.get("ability_2")
+        self.room_manager.update_user_info(player_id, name, ability, ability_2)
+
         if max_lives > 1:
             target_waiter = self.room_manager.waiting_player_stock
         else:
@@ -110,10 +115,6 @@ class WebSocketHandler:
         if target_waiter is not None:
             if target_waiter["player_id"] == player_id:
                 return
-            
-            ability = info.get("ability")
-            ability_2 = info.get("ability_2")
-            self.room_manager.update_user_info(player_id, name, ability, ability_2)
 
             p1_data = target_waiter
             p2_data = {"socket": websocket, "player_id": player_id}
@@ -220,6 +221,7 @@ class WebSocketHandler:
 
     async def _handle_create_double_room(self, websocket, player_id, info):
         name = info.get("name", "じぶん")
+        self.room_manager.update_user_info(player_id, name, info.get("ability"), info.get("ability_2"))
         new_id = self.room_manager.create_private_room(websocket, player_id, 1, 1, is_double=True)
         logger.info(f"[ROOM] {name} が合言葉ルーム [{new_id}] を作成 (ダブル)")
         await self._safe_send(websocket, {"type": "private_room_created", "room_id": new_id})
