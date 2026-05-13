@@ -29,24 +29,25 @@
 }
 
 .submitBtn {
-  font-size: 5cqw; /* 1.4em / 450px */
+  font-size: 5cqw;
   border: none;
-  width: 9.3cqw; /* 42px / 450px */
-  height: 9.3cqw; /* 42px / 450px */
+  width: 9.3cqw;
+  height: 9.3cqw;
   background-color: white;
-  border-radius: 4.2cqw; /* 19px / 450px */
+  color: #333;
+  border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #333;
-  padding: 0 0 0 0.6cqw; /* Micro-adjustment for icon centering */
+  padding: 0 0 0 0.5cqw;
   box-sizing: border-box;
-  transition: transform 0.1s;
+  transition: all 0.1s;
+  box-shadow: 0 0.4cqw 0.8cqw rgba(0,0,0,0.05);
 }
 
 .submitBtn:active {
-  transform: scale(0.95);
+  transform: scale(0.9);
 }
 
 .submitBtn:disabled {

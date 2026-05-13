@@ -55,7 +55,7 @@ export const WordInput: React.FC<WordInputProps> = ({
           autoComplete="off"
         />
         <button id="submit" type="submit" className={styles.submitBtn} disabled={disabled || !word.trim()}>
-          <img src="/img/paper_plane.svg" alt="送信" />
+          ▶
         </button>
       </div>
     </form>
