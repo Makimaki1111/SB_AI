@@ -15,7 +15,7 @@ export const InitialSetupModal: React.FC<InitialSetupModalProps> = ({ isOpen, on
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!name.trim()) return;
-    
+
     SoundManager.play('pera');
     onConfirm(name.trim());
   };
@@ -24,7 +24,7 @@ export const InitialSetupModal: React.FC<InitialSetupModalProps> = ({ isOpen, on
     <AnimatePresence>
       {isOpen && (
         <div className={styles.overlay}>
-          <motion.div 
+          <motion.div
             className={styles.modal}
             initial={{ opacity: 0, scale: 0.9, x: "-50%", y: "-50%" }}
             animate={{ opacity: 1, scale: 1, x: "-50%", y: "-50%" }}
@@ -32,12 +32,11 @@ export const InitialSetupModal: React.FC<InitialSetupModalProps> = ({ isOpen, on
             style={{ position: 'absolute', top: '50%', left: '50%' }}
           >
             <div className={styles.content}>
-              <h2 className={styles.title}>しりとりバトルへようこそ！</h2>
+              <h2 className={styles.title}>ユーザー名を入力してください</h2>
               <p className={styles.description}>
-                ユーザー名を入力してください<br />
-                <span className={styles.subtext}>(設定で後から変更できます)</span>
+                (設定で後から変更できます)<br />
               </p>
-              
+
               <form onSubmit={handleSubmit} className={styles.form}>
                 <input
                   type="text"
@@ -48,9 +47,9 @@ export const InitialSetupModal: React.FC<InitialSetupModalProps> = ({ isOpen, on
                   autoFocus
                   className={styles.input}
                 />
-                
+
                 <div className={styles.buttonWrapper}>
-                  <GameButton 
+                  <GameButton
                     type="submit"
                     disabled={!name.trim()}
                     variant="orange"
