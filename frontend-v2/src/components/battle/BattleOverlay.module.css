@@ -20,86 +20,69 @@
 
 .topNotification {
   position: fixed;
-  top: 0;
+  top: 1cqw;
   left: 0;
   right: 0;
   z-index: 9999;
   pointer-events: none;
   display: flex;
   justify-content: center;
-  padding-top: 20px;
 }
 
 .notificationGlow {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80%;
-  height: 100%;
-  background: radial-gradient(circle, rgba(9, 132, 227, 0.2) 0%, rgba(0, 0, 0, 0) 70%);
-  filter: blur(10px);
-  z-index: -1;
+  display: none; /* 過剰な演出をカット */
 }
 
 .notificationContent {
-  background: rgba(20, 20, 20, 0.85);
-  backdrop-filter: blur(12px);
+  background: rgba(25, 25, 25, 0.85);
+  backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 3cqw;
-  padding: 2.5cqw 5cqw;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(255, 255, 255, 0.05);
-  min-width: 60%;
+  border-radius: 10cqw;
+  padding: 1.2cqw 4cqw;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 0.5cqw;
 }
 
 .abilityChangeLayout {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.5cqw;
   width: 100%;
 }
 
 .playerName {
-  font-size: 2.8cqw;
-  color: #0984e3;
+  font-size: 2.4cqw;
+  color: rgba(255, 255, 255, 0.5);
   text-transform: uppercase;
-  letter-spacing: 0.2cqw;
-  font-weight: 700;
-  opacity: 0.8;
-  max-width: 50cqw;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  letter-spacing: 0.1cqw;
+  font-weight: 600;
+  margin-bottom: 0.5cqw;
 }
 
 .abilityFlow {
   display: flex;
   align-items: center;
-  gap: 4cqw;
-  padding: 1cqw 0;
+  gap: 3cqw;
 }
 
 .abilityIconBox {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1cqw;
-  min-width: 15cqw;
+  gap: 0.5cqw;
 }
 
 .abilityIconBox img {
-  width: 10cqw;
-  height: 10cqw;
+  width: 15cqw; /* アイコンを大きく */
+  height: 15cqw;
   object-fit: contain;
-  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.2));
 }
 
 .abilityIconBox span {
-  font-size: 3cqw;
+  font-size: 2.8cqw;
   color: rgba(255, 255, 255, 0.6);
   font-weight: 500;
   max-width: 25cqw;
@@ -112,8 +95,7 @@
 .abilityIconBox .newName {
   color: #fff;
   font-weight: 800;
-  font-size: 3.5cqw;
-  text-shadow: 0 0 10px rgba(9, 132, 227, 0.5);
+  font-size: 3.2cqw;
   max-width: 30cqw;
   white-space: nowrap;
   overflow: hidden;
@@ -123,26 +105,25 @@
 
 .arrow {
   font-size: 5cqw;
-  color: #0984e3;
+  color: rgba(255, 255, 255, 0.3);
   font-weight: 900;
-  text-shadow: 0 0 10px rgba(9, 132, 227, 0.5);
-  animation: pulseArrow 1.5s infinite ease-in-out;
+  animation: pulseArrow 2s infinite ease-in-out;
 }
 
 @keyframes pulseArrow {
-  0%, 100% { transform: translateX(0); opacity: 0.5; }
-  50% { transform: translateX(5px); opacity: 1; }
+  0%, 100% { transform: translateX(0); opacity: 0.3; }
+  50% { transform: translateX(3px); opacity: 0.6; }
 }
 
 .notificationText {
-  font-size: 3.2cqw;
-  color: rgba(255, 255, 255, 0.9);
+  font-size: 3cqw;
+  color: rgba(255, 255, 255, 0.8);
   font-weight: 700;
-  margin-top: 1cqw;
+  margin-top: 0.5cqw;
 }
 
 .generalNotification {
-  font-size: 4cqw;
+  font-size: 3.5cqw;
   color: white;
   font-weight: 800;
   text-align: center;
