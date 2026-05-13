@@ -110,7 +110,7 @@ export const BattleInteractionArea: React.FC<BattleInteractionAreaProps> = ({
 
         {/* 待機メッセージ / 警告メッセージ */}
         <BattleWaitMessage message={waitMessage} />
-        <BattleWaitMessage message={extraMessage} />
+        <BattleWaitMessage message={extraMessage ?? null} />
       </div>
 
       {/* モード固有の要素（ターゲット選択ボタンなど） */}

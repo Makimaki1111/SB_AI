@@ -58,7 +58,7 @@ export const useBattleSequence = (
           }
           
           if (targetId && currentTempCharacters[targetId]) {
-            if (event.hp !== undefined) {
+            if (event.hp !== undefined && event.hp !== null) {
               currentTempCharacters[targetId].hp = event.hp;
             }
             // new_is_poison フラグがあれば優先して更新
@@ -70,7 +70,7 @@ export const useBattleSequence = (
           // ドレインの場合、吸い取った側の回復も同時に行う
           if (event.type === 'drain' && event.attacker) {
             display.playCharacterEffect(event.attacker, 'heal');
-            if (event.attacker_hp !== undefined && currentTempCharacters[event.attacker]) {
+            if (event.attacker_hp !== undefined && event.attacker_hp !== null && currentTempCharacters[event.attacker]) {
               currentTempCharacters[event.attacker].hp = event.attacker_hp;
               updateVisualState(currentTempCharacters);
             }
@@ -141,7 +141,7 @@ export const useBattleSequence = (
         case 'revive':
           if (targetId) {
             display.setKnockoutStates((prev: any) => ({ ...prev, [targetId]: false }));
-            if (currentTempCharacters[targetId] && event.hp !== undefined) {
+            if (currentTempCharacters[targetId] && event.hp !== undefined && event.hp !== null) {
               currentTempCharacters[targetId].hp = event.hp;
               currentTempCharacters[targetId].types = [];
               updateVisualState(currentTempCharacters);

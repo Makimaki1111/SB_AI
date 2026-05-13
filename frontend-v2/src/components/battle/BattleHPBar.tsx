@@ -14,7 +14,6 @@ interface BattleHPBarProps {
  */
 export const BattleHPBar: React.FC<BattleHPBarProps & { className?: string }> = ({
   characters,
-  isAlly,
   isWaiting = false,
   className = ''
 }) => {

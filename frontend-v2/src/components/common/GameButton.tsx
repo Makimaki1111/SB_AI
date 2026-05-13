@@ -23,7 +23,7 @@ export const GameButton: React.FC<GameButtonProps> = ({
 }) => {
   const variantClass = styles[variant] || styles.orange;
   
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = () => {
     if (disabled) return;
     
     // 全てのボタン音を 'pera' に統一 (silentでない場合のみ)

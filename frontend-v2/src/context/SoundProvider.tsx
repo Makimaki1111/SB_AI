@@ -28,7 +28,7 @@ export const SoundProvider = ({ children }: { children: ReactNode }) => {
       playTypeSound: (t) => SoundManager.playTypeSound(t),
       startBGM: (p) => SoundManager.startBGM(p),
       stopBGM: () => SoundManager.stopBGM(),
-      unlock: () => SoundManager.unlock()
+      unlock: async () => { SoundManager.unlock(); }
     }}>
       {children}
     </SoundContext.Provider>

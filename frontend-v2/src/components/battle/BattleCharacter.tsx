@@ -62,7 +62,7 @@ export const BattleCharacter: React.FC<BattleCharacterProps> = ({
 
       <div className={styles.wordWrapper}>
         <WordDisplay
-          word={word}
+          word={word ?? null}
           isAlly={isAlly}
           isDouble={!!slot}
         />
