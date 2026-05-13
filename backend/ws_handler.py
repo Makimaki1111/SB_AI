@@ -92,6 +92,13 @@ class WebSocketHandler:
         except (TypeError, ValueError):
             max_lives = STOCK_LIVES
         
+        # モード判定
+        is_double = "double" in info.get("type", "") 
+        name = info.get("name", "じぶん")
+        ability = info.get("ability", "なし")
+        mode_str = "ダブル" if is_double else "特殊ルール" if max_lives > 1 else "シングル"
+        logger.info(f"[MATCH] {name} (特性: {ability} / {max_lives}機 / {mode_str}) がマッチング開始")
+
         self.connection_manager.register_player(websocket, player_id)
 
         if max_lives > 1:
@@ -103,7 +110,6 @@ class WebSocketHandler:
             if target_waiter["player_id"] == player_id:
                 return
             
-            name = info.get("name", "じぶん")
             ability = info.get("ability")
             ability_2 = info.get("ability_2")
             self.room_manager.update_user_info(player_id, name, ability, ability_2)
@@ -136,6 +142,8 @@ class WebSocketHandler:
             self.connection_manager.join_room(p2_data["socket"], bi.room_id)
 
             bi.events.append({"type": "message", "message": "マッチングした！"})
+            p1_name = p1_profile.get('name', '???')
+            logger.info(f"[MATCH] {name} VS {p1_name} ({mode_str}) 対戦開始！")
 
             await self._safe_send(p1_data["socket"], bi.make_init_response(p1_data["player_id"]))
             await self._safe_send(p2_data["socket"], bi.make_init_response(p2_data["player_id"]))
@@ -193,17 +201,23 @@ class WebSocketHandler:
             await self._safe_send(websocket, {"type": "waiting", "message": "マッチング中..."})
 
     async def _handle_create_private_room(self, websocket, player_id, info):
-        self.room_manager.update_user_info(player_id, info.get("name", "じぶん"), info.get("ability"), info.get("ability_2"))
+        name = info.get("name", "じぶん")
+        self.room_manager.update_user_info(player_id, name, info.get("ability"), info.get("ability_2"))
         p1_max_lives = max(1, min(10, int(info.get("p1_max_lives", STOCK_LIVES))))
         p2_max_lives = max(1, min(10, int(info.get("p2_max_lives", STOCK_LIVES))))
         if len(self.room_manager.rooms) >= self.room_manager.MAX_ROOMS:
             await self._safe_send(websocket, {"type": "error", "message": "サーバーが混雑しています"})
             return
         new_id = self.room_manager.create_private_room(websocket, player_id, p1_max_lives, p2_max_lives, is_double=False)
+        
+        mode_str = "特殊ルール" if p1_max_lives > 1 else "シングル"
+        logger.info(f"[ROOM] {name} が合言葉ルーム [{new_id}] を作成 ({mode_str})")
         await self._safe_send(websocket, {"type": "private_room_created", "room_id": new_id})
 
     async def _handle_create_double_room(self, websocket, player_id, info):
+        name = info.get("name", "じぶん")
         new_id = self.room_manager.create_private_room(websocket, player_id, 1, 1, is_double=True)
+        logger.info(f"[ROOM] {name} が合言葉ルーム [{new_id}] を作成 (ダブル)")
         await self._safe_send(websocket, {"type": "private_room_created", "room_id": new_id})
 
     async def _handle_join_double_room(self, websocket, player_id, info):
@@ -340,14 +354,24 @@ class WebSocketHandler:
             await self._safe_send(websocket, {"type": "private_room_created", "room_id": new_id})
 
     async def _handle_submit_word(self, websocket, player_id, info):
-        room_id = info.get("room_id")
-        word = info.get("word")
-        if not room_id or not word: return
-
         room = self.room_manager.get_room(room_id)
         if not room:
             await self._safe_send(websocket, {"type": "error", "message": "ルームが見つかりません"})
             return
+
+        profile = self.room_manager.user_profiles.get(player_id, {})
+        name = profile.get("name", "じぶん")
+        
+        # 現在の状態（HPや残機）を抽出
+        char_info = ""
+        if hasattr(room, 'characters') and player_id in room.characters:
+            c = room.characters[player_id]
+            hp = getattr(c, 'hp', 0)
+            lives = getattr(c, 'lives', 1)
+            char_info = f" [HP:{hp} / 残機:{lives}]"
+        
+        mode_str = "ダブル" if room.is_double else "特殊" if getattr(room, 'p1_max_lives', 1) > 1 else "シングル"
+        logger.info(f"[WORD] {name}: {word}{char_info} ({mode_str})")
 
         target_id = info.get("target_id")
         res = room.try_attack(player_id, word, target_id)
@@ -370,6 +394,11 @@ class WebSocketHandler:
 
         room = self.room_manager.get_room(room_id)
         if not room: return
+
+        profile = self.room_manager.user_profiles.get(player_id, {})
+        name = profile.get("name", "じぶん")
+        mode_str = "ダブル" if room.is_double else "特殊" if getattr(room, 'p1_max_lives', 1) > 1 else "シングル"
+        logger.info(f"[ABILITY] {name}: {ability_id} ({mode_str})")
 
         res = room.change_ability(player_id, ability_id, char_id=char_id)
 
@@ -394,6 +423,10 @@ class WebSocketHandler:
         room_id = info.get("room_id")
         room = self.room_manager.get_room(room_id)
         if room:
+            profile = self.room_manager.user_profiles.get(player_id, {})
+            name = profile.get("name", "じぶん")
+            logger.info(f"[RUN_AWAY] {name} が降参しました")
+            
             res = room.handle_disconnection(player_id)
             if res:
                 await self.connection_manager.broadcast_battle_state(room_id, res, is_double=room.is_double, room_manager=self.room_manager, time_limit=room.time_limit)

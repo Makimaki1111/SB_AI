@@ -119,6 +119,9 @@ async def websocket_endpoint(websocket: WebSocket):
             await ws_handler.handle_message(websocket, data)
     except WebSocketDisconnect:
         pid = connection_manager.get_player_id(websocket)
+        name = room_manager.user_profiles.get(pid, {}).get("name", "Unknown") if pid else "Unknown"
+        logger.info(f"[DISCONNECT] {name} ({pid}) が接続を切断しました")
+        
         left_rooms = connection_manager.disconnect(websocket)
         if pid:
             for rid in left_rooms:
