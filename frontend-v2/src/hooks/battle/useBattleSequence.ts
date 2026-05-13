@@ -8,7 +8,8 @@ import { SoundManager } from '../../utils/SoundManager';
  */
 export const useBattleSequence = (
   setBattleState: React.Dispatch<React.SetStateAction<BattleState | null>>,
-  display: any // useBattleDisplay の戻り値
+  display: any, // useBattleDisplay の戻り値
+  allAbilities: Record<string, any>
 ) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const soundManager = SoundManager.getInstance();
@@ -41,7 +42,6 @@ export const useBattleSequence = (
       // 2. メッセージログの更新
       if (event.type === 'ability_changed') {
         display.setMessageLog({ text: null, isOpen: false });
-        display.showNotification('特性が変わった！');
       } else {
         display.setMessageLog({ text: event.message || null, isOpen: true });
       }
@@ -150,9 +150,24 @@ export const useBattleSequence = (
 
         case 'ability_changed':
           if (targetId && currentTempCharacters[targetId] && event.new_ability) {
+            const prevAbilityId = currentTempCharacters[targetId].ability;
+            const nextAbilityId = event.new_ability;
+            const playerName = currentTempCharacters[targetId].name;
+
+            const prevAbility = allAbilities[prevAbilityId];
+            const nextAbility = allAbilities[nextAbilityId];
+
             currentTempCharacters[targetId].ability = event.new_ability;
             currentTempCharacters[targetId].ability_change_count = event.new_ability_change_count ?? currentTempCharacters[targetId].ability_change_count;
             updateVisualState(currentTempCharacters);
+
+            display.showNotification({
+              text: '特性が変わった！',
+              type: 'ability_change',
+              prevAbility,
+              nextAbility,
+              playerName
+            });
           }
           duration = 100; // 特性変更は一瞬
           break;

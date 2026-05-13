@@ -1,4 +1,13 @@
 import { useState } from 'react';
+import type { AbilityData } from '../../types/battle';
+
+export interface NotificationData {
+  text: string;
+  type?: 'ability_change' | 'general';
+  prevAbility?: AbilityData;
+  nextAbility?: AbilityData;
+  playerName?: string;
+}
 
 export const useBattleDisplay = () => {
   const [prediction, setPrediction] = useState<{ 
@@ -15,7 +24,7 @@ export const useBattleDisplay = () => {
     isOpen: boolean 
   }>({ text: null, isOpen: false });
   
-  const [notification, setNotification] = useState<string | null>(null);
+  const [notification, setNotification] = useState<NotificationData | null>(null);
   const [waitMessage, setWaitMessage] = useState<string | null>(null);
   const [knockoutStates, setKnockoutStates] = useState<Record<string, boolean>>({});
   const [showResultButton, setShowResultButton] = useState(false);
@@ -25,8 +34,9 @@ export const useBattleDisplay = () => {
 
   const clearPrediction = () => setPrediction(null);
   
-  const showNotification = (text: string, duration: number = 1500) => {
-    setNotification(text);
+  const showNotification = (data: string | NotificationData, duration: number = 2500) => {
+    const notificationData = typeof data === 'string' ? { text: data } : data;
+    setNotification(notificationData);
     setTimeout(() => setNotification(null), duration);
   };
 

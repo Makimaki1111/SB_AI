@@ -1,17 +1,19 @@
 import React from 'react';
 import styles from './BattleInteractionArea.module.css';
 import { BattleOverlay } from './BattleOverlay';
+import { BattleNotification } from './BattleNotification';
 import { BattleTimer } from './BattleTimer';
 import { BattleWaitMessage } from './BattleWaitMessage';
 import { WordInput } from './WordInput';
 import { TYPE_TO_IMAGE } from '../../constants/game';
 import type { BattleState } from '../../types/battle';
+import type { NotificationData } from '../../hooks/battle/useBattleDisplay';
 
 interface BattleInteractionAreaProps {
   battleState: BattleState | null;
   timer: { remaining: number; total: number };
   messageLog: { text: string | null; isOpen: boolean };
-  notification: string | null;
+  notification: NotificationData | null;
   waitMessage: string | null;
   extraMessage?: string | null; // 追加: targetWarning などの表示用
   prediction: { 
@@ -49,8 +51,8 @@ export const BattleInteractionArea: React.FC<BattleInteractionAreaProps> = ({
       {/* オーバーレイ (ログ、通知) */}
       <BattleOverlay
         messageLog={messageLog}
-        notification={notification}
       />
+      <BattleNotification notification={notification} />
 
       {/* タイマー */}
       {battleState && (

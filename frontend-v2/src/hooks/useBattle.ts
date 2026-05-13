@@ -23,7 +23,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
   const display = useBattleDisplay();
   const { timer, resetTimer } = useBattleTimer(battleState?.status === 'finished', !!battleState?.is_cpu);
   const soundManager = SoundManager.getInstance();
-  const { playSequence } = useBattleSequence(setBattleState, display);
+  const { playSequence } = useBattleSequence(setBattleState, display, allAbilities);
 
   const messageQueue = useRef<BattleResponse[]>([]);
   const isHandlingQueue = useRef(false);
