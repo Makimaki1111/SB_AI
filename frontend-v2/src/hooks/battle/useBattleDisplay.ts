@@ -55,6 +55,7 @@ export const useBattleDisplay = () => {
   };
 
   const resetDisplay = () => {
+    setPrediction(null); // 予測表示をクリア
     setMessageLog({ text: null, isOpen: false });
     setWaitMessage(null);
     setKnockoutStates({});

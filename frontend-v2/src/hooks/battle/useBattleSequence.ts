@@ -201,6 +201,11 @@ export const useBattleSequence = (
       }
     }
 
+    if (checkAbort()) {
+      setIsAnimating(false);
+      return;
+    }
+
     setBattleState({
       ...finalState,
       characters: mergedCharacters

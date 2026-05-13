@@ -84,8 +84,7 @@ export const useBattleState = () => {
     battleStateRef.current = null;
     setUiMapping({});
     uiMappingRef.current = {};
-    // allAbilitiesはリロードの手間を省くため保持しても良いが、
-    // 完全に初期化したい場合はここでもクリアする
+    setAllAbilities({}); // 徹底的にクリアする
   };
 
   return {

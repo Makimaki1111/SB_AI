@@ -44,7 +44,13 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
     isHandlingQueue.current = false;
     setIsProcessing(false);
     display.resetDisplay();
+    resetTimer(20, 20); // タイマーを初期値にリセット
   };
+
+  // URL（モード）が変わった瞬間にステートをリセットする
+  useEffect(() => {
+    resetBattle();
+  }, [url]);
 
   // --- WebSocket Handler ---
   function onMessage(data: BattleResponse) {
