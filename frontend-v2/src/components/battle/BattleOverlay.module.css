@@ -19,14 +19,15 @@
 }
 
 .topNotification {
-  position: absolute;
-  top: 2cqw;
-  left: 5cqw;
-  right: 5cqw;
-  z-index: 200;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
   pointer-events: none;
   display: flex;
   justify-content: center;
+  padding-top: 20px;
 }
 
 .notificationGlow {

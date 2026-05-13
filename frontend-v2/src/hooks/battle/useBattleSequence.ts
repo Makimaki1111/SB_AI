@@ -161,13 +161,16 @@ export const useBattleSequence = (
             currentTempCharacters[targetId].ability_change_count = event.new_ability_change_count ?? currentTempCharacters[targetId].ability_change_count;
             updateVisualState(currentTempCharacters);
 
-            display.showNotification({
-              text: '特性が変わった！',
-              type: 'ability_change',
-              prevAbility,
-              nextAbility,
-              playerName
-            });
+            // 実際に特性が変わった場合のみ通知を出す
+            if (prevAbilityId !== nextAbilityId) {
+              display.showNotification({
+                text: '特性が変わった！',
+                type: 'ability_change',
+                prevAbility,
+                nextAbility,
+                playerName
+              });
+            }
           }
           duration = 100; // 特性変更は一瞬
           break;

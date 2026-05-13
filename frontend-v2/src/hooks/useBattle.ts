@@ -203,7 +203,9 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
               defense_rank: prevState.characters[id].defense_rank,
               lives: prevState.characters[id].lives,
               word: prevState.characters[id].word,
-              is_poison: prevState.characters[id].is_poison
+              is_poison: prevState.characters[id].is_poison,
+              ability: prevState.characters[id].ability,
+              ability_change_count: prevState.characters[id].ability_change_count
             };
           }
         });
