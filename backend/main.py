@@ -96,24 +96,7 @@ if os.path.exists(public_dir):
 
 # 2. ビルド済みフロントエンド (dist) の配信
 dist_dir = os.path.join(os.path.dirname(base_dir), "frontend-v2", "dist")
-if os.path.exists(dist_dir):
-    # assets などを配信
-    app.mount("/assets", StaticFiles(directory=os.path.join(dist_dir, "assets")), name="assets")
     
-    # ルートアクセスで index.html を返す
-    @app.get("/")
-    @app.get("/{path:path}")
-    async def serve_spa(request: Request, path: str = ""):
-        # API や WebSocket のパスを除外
-        if path.startswith("api") or path.startswith("ws") or path.startswith("img") or path.startswith("resource") or path.startswith("assets"):
-            return Response(status_code=404)
-        
-        index_path = os.path.join(dist_dir, "index.html")
-        if os.path.exists(index_path):
-            with open(index_path, "r", encoding="utf-8") as f:
-                return Response(content=f.read(), media_type="text/html")
-        return Response(content="Frontend not built yet.", status_code=404)
-
 # --- 初期化 ---
 sb_info_instance = SB_info()
 connection_manager = ConnectionManager()
@@ -148,6 +131,25 @@ async def websocket_endpoint(websocket: WebSocket):
         if pid:
             for rid in left_rooms:
                 await room_manager.handle_disconnection(rid, pid)
+
+# --- 静的ファイルの配信設定 (SPA対応) ---
+# 他のルートにマッチしなかった場合にフロントエンドを返す (最後に記述が必要)
+if os.path.exists(dist_dir):
+    # assets などを配信
+    app.mount("/assets", StaticFiles(directory=os.path.join(dist_dir, "assets")), name="assets")
+    
+    @app.get("/")
+    @app.get("/{path:path}")
+    async def serve_spa(request: Request, path: str = ""):
+        # API や WebSocket のパスを除外 (既知のパスが404ならそのまま404)
+        if path.startswith("api") or path.startswith("ws") or path.startswith("img") or path.startswith("resource") or path.startswith("assets") or path.startswith("abilities"):
+            return Response(status_code=404)
+        
+        index_path = os.path.join(dist_dir, "index.html")
+        if os.path.exists(index_path):
+            with open(index_path, "r", encoding="utf-8") as f:
+                return Response(content=f.read(), media_type="text/html")
+        return Response(content="Frontend not built yet.", status_code=404)
 
 if __name__ == "__main__":
     # Renderは環境変数PORTを指定してくるため、それに対応
