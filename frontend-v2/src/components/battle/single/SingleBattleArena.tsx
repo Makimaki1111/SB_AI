@@ -5,13 +5,14 @@ import { BattleInteractionArea } from '../BattleInteractionArea';
 import { BattleActionButtons } from '../BattleActionButtons';
 import { BattleRunAwayButton } from '../BattleRunAwayButton';
 import type { BattleState } from '../../../types/battle';
+import type { NotificationData } from '../../../hooks/battle/useBattleDisplay';
 
 
 interface SingleBattleArenaProps {
   battleState: BattleState | null;
   prediction: { include: boolean, type1?: string, type2?: string, used?: boolean, prediction?: string } | null;
   messageLog: { text: string | null, isOpen: boolean };
-  notification: string | null;
+  notification: NotificationData | null;
   waitMessage: string | null;
   isProcessing: boolean;
   timer: { remaining: number; total: number };

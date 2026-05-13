@@ -6,15 +6,23 @@ import { BattleInteractionArea } from '../BattleInteractionArea';
 import { BattleActionButtons } from '../BattleActionButtons';
 import { BattleRunAwayButton } from '../BattleRunAwayButton';
 import type { BattleState, CharacterState } from '../../../types/battle';
+import type { NotificationData } from '../../../hooks/battle/useBattleDisplay';
 import SoundManager from '../../../utils/SoundManager';
 
 interface DoubleBattleArenaProps {
   battleState: BattleState | null;
   allies: CharacterState[];
   foes: CharacterState[];
-  prediction: { include: boolean, type1?: string, type2?: string, used?: boolean, prediction?: string } | null;
+  prediction: { 
+    include: boolean, 
+    type1?: string, 
+    type2?: string, 
+    used?: boolean, 
+    prediction?: string,
+    predictions?: Record<string, string>
+  } | null;
   messageLog: { text: string | null, isOpen: boolean };
-  notification: string | null;
+  notification: NotificationData | null;
   waitMessage: string | null;
   isProcessing: boolean;
   timer: { remaining: number; total: number };
@@ -73,6 +81,19 @@ export const DoubleBattleArena: React.FC<DoubleBattleArenaProps> = ({
     const actorIndex = allies.findIndex(ally => ally.id === battleState?.current_actor_id);
     onOpenAbility(actorIndex >= 0 ? actorIndex : 0);
   };
+  
+  // ダブルバトルではターゲットごとに予測メッセージが異なるため、選択中のターゲットに合わせる
+  const effectivePrediction = React.useMemo(() => {
+    if (!prediction) return null;
+    if (prediction.prediction) return prediction;
+    if (prediction.predictions && effectiveTargetId) {
+      return {
+        ...prediction,
+        prediction: prediction.predictions[effectiveTargetId]
+      };
+    }
+    return prediction;
+  }, [prediction, effectiveTargetId]);
 
   return (
     <BattleLayout
@@ -106,7 +127,7 @@ export const DoubleBattleArena: React.FC<DoubleBattleArenaProps> = ({
         notification={notification}
         waitMessage={waitMessage}
         extraMessage={targetWarning}
-        prediction={prediction}
+        prediction={effectivePrediction}
         isProcessing={isProcessing}
         onSendWord={handleSendWord}
         onSendIncludeCheck={onSendIncludeCheck}
