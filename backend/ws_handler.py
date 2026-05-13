@@ -72,6 +72,7 @@ class WebSocketHandler:
         name = info.get("name", "じぶん")
         ability = info.get("ability")
         ability_2 = info.get("ability_2")
+        logger.info(f"[USER] {name} (ID: {player_id}) が情報を更新しました [特性1: {ability}, 特性2: {ability_2}]")
         self.room_manager.update_user_info(player_id, name, ability, ability_2)
         self.connection_manager.register_player(websocket, player_id)
         await self._safe_send(websocket, {"type": "user_info_updated", "message": "ユーザー情報を更新しました"})
@@ -249,6 +250,9 @@ class WebSocketHandler:
         p1_profile = self.room_manager.user_profiles.get(player_id)
         p2_profile = {"name": "CPU", "ability": "random"} if p2_id.startswith("cpu") else None
         
+        mode_str = "特殊ルール" if max_lives > 1 else "シングル"
+        logger.info(f"[CPU_BATTLE] {name} (特性: {ability} / {max_lives}機 / {mode_str}) がコンピュータ戦を開始")
+        
         try:
             bi = SingleBattle(
                 player1_id=player_id, 
@@ -286,6 +290,8 @@ class WebSocketHandler:
         ability = info.get("ability")
         ability_2 = info.get("ability_2")
         self.room_manager.update_user_info(player_id, name, ability, ability_2)
+        
+        logger.info(f"[DOUBLE_CPU] {name} がダブルCPU戦を開始")
 
         bi = DoubleBattle(
             "1v1_double", 
@@ -367,18 +373,32 @@ class WebSocketHandler:
         
         # 現在の状態（HPや残機）を抽出
         char_info = ""
-        if hasattr(room, 'characters') and player_id in room.characters:
-            c = room.characters[player_id]
-            hp = getattr(c, 'hp', 0)
-            lives = getattr(c, 'lives', 1)
+        target_player = None
+        for p in room.players:
+            if p.owner_id == player_id:
+                target_player = p
+                break
+        
+        if target_player:
+            hp = getattr(target_player, 'hp', 0)
+            lives = getattr(target_player, 'lives', 1)
             char_info = f" [HP:{hp} / 残機:{lives}]"
         
-        mode_str = "ダブル" if room.is_double else "特殊" if getattr(room, 'p1_max_lives', 1) > 1 else "シングル"
+        # モード判定
+        if room.is_double:
+            mode_str = "ダブル"
+        else:
+            # 誰かの最大機数が1より大きければ特殊ルール（ストック制）
+            is_stock = any(getattr(p, 'max_lives', 1) > 1 for p in room.players)
+            mode_str = "特殊" if is_stock else "シングル"
+            
         logger.info(f"[WORD] {name}: {word}{char_info} ({mode_str})")
 
         target_id = info.get("target_id")
         res = room.try_attack(player_id, word, target_id)
         if res.get("type") == "error":
+            reason = res.get("message", "不明な理由")
+            logger.info(f"[INVALID] {name}: {word} ({reason})")
             await self._safe_send(websocket, res)
             return
 
@@ -439,6 +459,16 @@ class WebSocketHandler:
 
     async def _after_turn_action(self, room_id, room):
         if room.is_finished:
+            winner_name = "Unknown"
+            if room.winner_team is not None:
+                # 勝利チームに属するプレイヤーを探す
+                for p in room.players:
+                    if room.get_team_index(p.id) == room.winner_team:
+                        winner_name = p.name
+                        break
+            
+            logger.info(f"[GAME_END] 勝者: {winner_name} (ルーム: {room_id})")
+            
             self.room_manager.cancel_timer(room_id)
             self.room_manager.schedule_room_cleanup(room_id, delay=10)
             return
@@ -468,6 +498,12 @@ class WebSocketHandler:
             if not room: return
 
             res = room.timeout()
+            
+            # 誰がタイムアウトしたか特定
+            actor = room.get_current_actor()
+            name = actor.name if actor else "Unknown"
+            logger.info(f"[TIMEOUT] {name} が時間切れになりました")
+
             await self.connection_manager.broadcast_battle_state(room_id, res, is_double=room.is_double, room_manager=self.room_manager, time_limit=room.time_limit)
             
             await self._after_turn_action(room_id, room)
