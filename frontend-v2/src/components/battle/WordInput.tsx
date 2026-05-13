@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styles from './WordInput.module.css';
 
 interface WordInputProps {
@@ -17,6 +17,14 @@ export const WordInput: React.FC<WordInputProps> = ({
   selectedTargetId = null,
 }) => {
   const [word, setWord] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // 活性化した時に自動でフォーカスを当てる
+  useEffect(() => {
+    if (!disabled && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [disabled]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +45,7 @@ export const WordInput: React.FC<WordInputProps> = ({
       <div className={styles.inputWrapper}>
         <input
           id="input"
+          ref={inputRef}
           type="text"
           className={styles.input}
           value={word}
