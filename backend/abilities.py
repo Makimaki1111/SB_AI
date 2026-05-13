@@ -191,9 +191,10 @@ class IshokudogenAbility(Ability):
             player.poison_turns = 0
             player.poisoner_id = None
             battle.events.append({
-                "type": "cure_poison",
+                "type": "poison_heal",
                 "message": f"医食同源の効果で毒が治った！",
                 "target": battle.get_player_label(player),
+                "hp": player.hp,
                 "new_is_poison": False
             })
 

@@ -622,7 +622,13 @@ class BaseBattle:
                 if current_player.poison_turns > 0:
                     current_player.poison_turns = 0
                     current_player.poisoner_id = None
-                    self.events.append({"type": "cure_poison", "message": "毒が治った！", "target": current_player.id, "new_is_poison": False})
+                    self.events.append({
+                        "type": "poison_heal", 
+                        "message": "毒が治った！", 
+                        "target": current_player.id, 
+                        "hp": current_player.hp,
+                        "new_is_poison": False
+                    })
                 
                 current_player.heal(MEDICAL_RECOVERY_AMOUNT)
                 self.events.append({

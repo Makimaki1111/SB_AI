@@ -43,7 +43,8 @@ class SoundManager {
         'seeded': '/resource/seeded.mp3',
         'seed_damage': '/resource/seed_damage.mp3',
         'pera': '/resource/pera.mp3',
-        'concent': '/resource/concent.mp3'
+        'concent': '/resource/concent.mp3',
+        'poison_heal': '/resource/poison_heal.mp3'
     };
 
     private eventSoundMap: Record<string, string> = {
@@ -57,7 +58,8 @@ class SoundManager {
         'stat_up': '/resource/up.mp3',
         'knockout': '/resource/down.mp3',
         'revive': '/resource/up.mp3',
-        'poison': '/resource/poison.mp3'
+        'poison': '/resource/poison.mp3',
+        'poison_heal': '/resource/poison_heal.mp3'
     };
 
     private typeSoundMap: Record<string, string> = {

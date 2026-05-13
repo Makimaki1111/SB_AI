@@ -79,16 +79,17 @@ export const useBattleSequence = (
 
         case 'cure':
         case 'cure_poison':
+        case 'poison_heal':
           if (targetId) display.playCharacterEffect(targetId, 'heal');
           
           if (targetId && currentTempCharacters[targetId]) {
-            if (event.hp !== undefined) {
+            if (event.hp != null) {
               currentTempCharacters[targetId].hp = event.hp;
             }
             // new_is_poison フラグがあれば優先して更新
             if (event.new_is_poison !== undefined && event.new_is_poison !== null) {
               currentTempCharacters[targetId].is_poison = event.new_is_poison;
-            } else if (event.type === 'cure_poison') {
+            } else if (event.type === 'cure_poison' || event.type === 'poison_heal') {
               // フォールバック
               currentTempCharacters[targetId].is_poison = false;
             }
