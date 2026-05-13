@@ -3,6 +3,7 @@ import { GameModal } from '../common/GameModal';
 import { StatCard } from '../lobby/StatCard';
 import styles from '../../views/BattleView.module.css';
 import type { CharacterState, BattleState } from '../../types/battle';
+import SoundManager from '../../utils/SoundManager';
 
 interface SituationModalProps {
   isOpen: boolean;
@@ -24,6 +25,11 @@ export const SituationModal: React.FC<SituationModalProps> = ({
   battleState
 }) => {
   const isDouble = allies.length > 1 || foes.length > 1;
+
+  const handleClose = () => {
+    SoundManager.play('pera');
+    onClose();
+  };
 
   const renderSingle = () => (
     <div className={styles.situationCardsContainer}>
@@ -78,10 +84,10 @@ export const SituationModal: React.FC<SituationModalProps> = ({
   return (
     <GameModal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       title="じょうきょう"
       footer={
-        <button className={styles.situationCloseButton} onClick={onClose}>とじる</button>
+        <button className={styles.situationCloseButton} onClick={handleClose}>とじる</button>
       }
     >
       {isDouble ? renderDouble() : renderSingle()}
