@@ -163,7 +163,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
 
       const uiMap = data.info?.id_to_ui_map || {};
       const isDouble = Object.keys(uiMap).length > 2;
-      
+
       let attackerId = events.find(e => e.attacker && data.state.characters[e.attacker])?.attacker
         || data.state.last_actor_id
         || events.find(e => (
@@ -194,7 +194,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
         Object.keys(initialVisualState.characters).forEach(id => {
           if (prevState.characters[id]) {
             const isAttacker = id === attackerId;
-            initialVisualState.characters[id] = { 
+            initialVisualState.characters[id] = {
               ...initialVisualState.characters[id],
               hp: prevState.characters[id].hp,
               // アタッカーのみ、単語送信と同時に決定したタイプを表示する
@@ -221,7 +221,7 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
         display.setMessageLog({ text: 'マッチングした！', isOpen: true });
         soundManager.stopBGM();
         soundManager.play('start');
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise(resolve => setTimeout(resolve, 500));
         if (checkAbort()) return;
         soundManager.playBGM('/resource/overflow.mp3');
         data.state.word = "";
@@ -245,8 +245,8 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
               ...prev,
               characters: {
                 ...prev.characters,
-                [attackerId]: { 
-                  ...prev.characters[attackerId], 
+                [attackerId]: {
+                  ...prev.characters[attackerId],
                   word: data.state.word,
                   types: [...data.state.characters[attackerId].types]
                 }
