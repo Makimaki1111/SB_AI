@@ -32,7 +32,7 @@ export const BattleNotification: React.FC<BattleNotificationProps> = ({
                         src={`/img/${TYPE_TO_IMAGE[notification.prevAbility.icon_type] || 'normal'}.gif`} 
                         alt="" 
                       />
-                      <span>{notification.prevAbility.name}</span>
+                      <span title={notification.prevAbility.name}>{notification.prevAbility.name}</span>
                     </div>
                   )}
                   <div className={styles.arrow}>→</div>
@@ -42,7 +42,7 @@ export const BattleNotification: React.FC<BattleNotificationProps> = ({
                         src={`/img/${TYPE_TO_IMAGE[notification.nextAbility.icon_type] || 'normal'}.gif`} 
                         alt="" 
                       />
-                      <span className={styles.newName}>{notification.nextAbility.name}</span>
+                      <span className={styles.newName} title={notification.nextAbility.name}>{notification.nextAbility.name}</span>
                     </div>
                   )}
                 </div>

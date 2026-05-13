@@ -70,6 +70,10 @@
   letter-spacing: 0.2cqw;
   font-weight: 700;
   opacity: 0.8;
+  max-width: 50cqw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .abilityFlow {
@@ -98,6 +102,11 @@
   font-size: 3cqw;
   color: rgba(255, 255, 255, 0.6);
   font-weight: 500;
+  max-width: 25cqw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
 }
 
 .abilityIconBox .newName {
@@ -105,6 +114,11 @@
   font-weight: 800;
   font-size: 3.5cqw;
   text-shadow: 0 0 10px rgba(9, 132, 227, 0.5);
+  max-width: 30cqw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
 }
 
 .arrow {
