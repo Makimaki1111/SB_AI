@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/useUser';
 import styles from './TitleView.module.css';
 import { GameButton } from '../components/common/GameButton';
 import { GameLayout } from '../components/layout/GameLayout';
 import { SettingsModal } from '../components/modals/SettingsModal';
+import { InitialSetupModal } from '../components/modals/InitialSetupModal';
 
 const CAROUSEL_IMAGES = [
   'animal.gif', 'art.gif', 'body.gif', 'bug.gif', 'cloth.gif', 
@@ -16,8 +17,16 @@ const CAROUSEL_IMAGES = [
 
 export const TitleView: React.FC = () => {
   const navigate = useNavigate();
-  const { username } = useUser();
+  const { username, setUsername } = useUser();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isInitialSetupOpen, setIsInitialSetupOpen] = useState(false);
+
+  // 初回起動チェック: 名前がなければモーダルを表示
+  useEffect(() => {
+    if (!username || username.trim() === '') {
+      setIsInitialSetupOpen(true);
+    }
+  }, [username]);
 
   // カルーセルのアイテムをシャッフルした状態で生成 (無限ループのために2倍にする)
   const shuffledRows = useMemo(() => {
@@ -29,10 +38,15 @@ export const TitleView: React.FC = () => {
 
   const handleStartBattle = (path: string) => {
     if (!username.trim()) {
-      setIsSettingsOpen(true);
+      setIsInitialSetupOpen(true);
       return;
     }
     navigate(path);
+  };
+
+  const handleInitialSetupConfirm = (name: string) => {
+    setUsername(name);
+    setIsInitialSetupOpen(false);
   };
 
   const renderRow = (rowIndex: number, reverse = false) => (
@@ -59,6 +73,7 @@ export const TitleView: React.FC = () => {
 
         <div className={styles.menuButtons}>
           <GameButton 
+            variant="orange"
             onClick={() => handleStartBattle('/battle/single?mode=stock')}
           >
             特殊ルール
@@ -83,6 +98,11 @@ export const TitleView: React.FC = () => {
       <SettingsModal 
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
+      />
+
+      <InitialSetupModal
+        isOpen={isInitialSetupOpen}
+        onConfirm={handleInitialSetupConfirm}
       />
     </GameLayout>
   );

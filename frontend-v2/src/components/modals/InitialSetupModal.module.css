@@ -1,0 +1,88 @@
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  z-index: 2000;
+  border-radius: inherit;
+  display: block; /* Flexを解除して座標制御にする */
+}
+
+.modal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* 物理的な中央寄せ */
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 24px;
+  width: 85cqw; /* phoneBoxの幅に対して85% */
+  max-width: 340px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  border: 4px solid #ff9d00;
+  z-index: 2001;
+}
+
+.content {
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.title {
+  margin: 0 0 16px 0;
+  color: #ff9d00;
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+.description {
+  margin-bottom: 24px;
+  line-height: 1.5;
+  color: #444;
+  font-size: 1rem;
+}
+
+.subtext {
+  display: block;
+  font-size: 0.8rem;
+  color: #777;
+  margin-top: 4px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.input {
+  width: 100%;
+  height: 54px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 2px solid #eee;
+  font-size: 1.2rem;
+  text-align: center;
+  background: #fdfdfd;
+  box-sizing: border-box; /* 幅の計算を正確に */
+  color: #333;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #ff9d00;
+  background: #fff;
+}
+
+.buttonWrapper {
+  width: 100%;
+}
+
+.confirmButton {
+  width: 100%;
+  height: 54px;
+  font-size: 1.1rem;
+}
