@@ -130,8 +130,6 @@ export const BattleView: React.FC = () => {
     if (mode === 'room') {
       if (isJoinAction) {
         if (!roomIdInput || roomIdInput.trim() === '') {
-          // 参加ボタンなのにIDが空なら何もしない
-          console.log("Room ID is empty, join canceled.");
           return;
         }
         // ルーム参加

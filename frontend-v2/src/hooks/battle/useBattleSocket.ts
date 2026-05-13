@@ -11,17 +11,14 @@ export const useBattleSocket = (url: string, onMessage: (data: BattleResponse) =
   }, [onMessage]);
 
   useEffect(() => {
-    console.log(`Connecting to WebSocket at: ${url}`);
     const ws = new WebSocket(url);
     socketRef.current = ws;
 
     ws.onopen = () => {
-      console.log('✅ WebSocket Connected');
       setIsConnected(true);
     };
 
-    ws.onclose = (event) => {
-      console.log(`❌ WebSocket Closed: ${event.code} ${event.reason}`);
+    ws.onclose = (_event) => {
       setIsConnected(false);
     };
 
@@ -41,7 +38,6 @@ export const useBattleSocket = (url: string, onMessage: (data: BattleResponse) =
 
     return () => {
       if (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN) {
-        console.log('Cleanup: Closing WebSocket');
         ws.onopen = null;
         ws.onmessage = null;
         ws.onerror = null;
@@ -53,7 +49,6 @@ export const useBattleSocket = (url: string, onMessage: (data: BattleResponse) =
 
   const sendMessage = (msg: SocketMessage) => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      console.log(`Sending message: ${msg.type}`);
       socketRef.current.send(JSON.stringify(msg));
     } else {
       console.warn(`Cannot send message. Socket state: ${socketRef.current?.readyState}`);

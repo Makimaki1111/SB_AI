@@ -192,7 +192,6 @@ class SoundManager {
             source.start(0);
 
             this.isUnlocked = true;
-            console.log("AudioContext unlocked successfully.");
         } catch (e) {
             console.error("Failed to unlock AudioContext", e);
         }

@@ -48,7 +48,6 @@ export const useBattle = (url: string, onRoomError?: () => void) => {
 
   // --- WebSocket Handler ---
   function onMessage(data: BattleResponse) {
-    console.log(`Received message type: ${data.type}`);
 
     if (data.type === 'pre_check') {
       display.setPrediction({
