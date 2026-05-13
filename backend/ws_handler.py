@@ -115,6 +115,7 @@ class WebSocketHandler:
             self.room_manager.update_user_info(player_id, name, ability, ability_2)
 
             p1_data = target_waiter
+            p2_data = {"socket": websocket, "player_id": player_id}
             
             # 待機者のソケットが生きているか確認
             from starlette.websockets import WebSocketState
@@ -128,8 +129,6 @@ class WebSocketHandler:
 
             if max_lives > 1: self.room_manager.waiting_player_stock = None
             else: self.room_manager.waiting_player_standard = None
-            
-            p2_data = {"socket": websocket, "player_id": player_id}
             
             p1_profile = self.room_manager.user_profiles.get(p1_data["player_id"])
             p2_profile = self.room_manager.user_profiles.get(p2_data["player_id"])
@@ -354,6 +353,10 @@ class WebSocketHandler:
             await self._safe_send(websocket, {"type": "private_room_created", "room_id": new_id})
 
     async def _handle_submit_word(self, websocket, player_id, info):
+        room_id = info.get("room_id")
+        word = info.get("word")
+        if not room_id or not word: return
+
         room = self.room_manager.get_room(room_id)
         if not room:
             await self._safe_send(websocket, {"type": "error", "message": "ルームが見つかりません"})
