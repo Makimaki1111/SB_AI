@@ -109,6 +109,7 @@ export const BattleView: React.FC = () => {
     // ※参加ボタン（optionsにroomIdキーがある場合）はIDの有無に関わらずモーダルを開かない
     const isJoinAction = options && 'roomId' in options;
     if (isStock && !isJoinAction && mode === 'room') {
+      SoundManager.play('pera'); // モーダルを開く場合は音を鳴らす
       setPendingMatchMode(mode);
       setIsStockModalOpen(true);
       return;

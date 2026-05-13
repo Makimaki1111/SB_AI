@@ -77,14 +77,14 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
       <div className={isDouble ? styles.abilityCardsDouble : styles.abilityCardsSingle}>
         <AbilityCard 
           ability={getAbilityData(0)} 
-          onClick={() => onOpenAbilityModal(0)} 
+          onClick={() => { SoundManager.play('pera'); onOpenAbilityModal(0); }} 
           className={isDouble ? styles.doubleCard : ''}
           label={isDouble ? "1人目" : undefined}
         />
         {isDouble && (
           <AbilityCard 
             ability={getAbilityData(1)} 
-            onClick={() => onOpenAbilityModal(1)} 
+            onClick={() => { SoundManager.play('pera'); onOpenAbilityModal(1); }} 
             className={styles.doubleCard}
             label="2人目"
           />
@@ -92,17 +92,17 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
       </div>
 
       <div className={styles.buttonContainer}>
-        <GameButton silent={mode !== 'stock'} onClick={() => { onStartMatch('player'); }}>
+        <GameButton silent={true} onClick={() => { onStartMatch('player'); }}>
           ランダムマッチ
         </GameButton>
 
-        <GameButton silent={mode !== 'stock'} onClick={() => { onStartMatch('cpu'); }}>
+        <GameButton silent={true} onClick={() => { onStartMatch('cpu'); }}>
           コンピュータ戦
         </GameButton>
 
         <hr className={styles.separator} />
 
-        <GameButton silent={mode !== 'stock'} onClick={() => { onStartMatch('room'); }}>
+        <GameButton silent={true} onClick={() => { onStartMatch('room'); }}>
           ルーム作成
         </GameButton>
 
@@ -117,7 +117,7 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
           <GameButton 
             className={styles.joinButton} 
             variant="green"
-            silent={mode !== 'stock'}
+            silent={true}
             onClick={() => { onStartMatch('room', { roomId }); }}
           >
             参加
