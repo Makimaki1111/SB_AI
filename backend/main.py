@@ -79,13 +79,11 @@ async def protect_assets_middleware(request: Request, call_next):
     return response
 
 # --- 静的ファイルの配信設定 ---
-# 開発・本番両方で画像や音声を参照できるようにマウント
-# Renderデプロイ時はfrontend-v2/publicをコピーして配置することを想定
 base_dir = os.path.dirname(os.path.abspath(__file__))
-# frontend-v2/public が backend と同じ階層にある場合、あるいは backend 内部にある場合の両方を考慮
+# 1. 共通リソース (img, resource) の配信
+# frontend-v2/public がある場所を特定
 public_dir = os.path.join(os.path.dirname(base_dir), "frontend-v2", "public")
 if not os.path.exists(public_dir):
-    # フォールバック: backendディレクトリ直下のpublicを見る
     public_dir = os.path.join(base_dir, "public")
 
 if os.path.exists(public_dir):
@@ -95,6 +93,26 @@ if os.path.exists(public_dir):
         app.mount("/img", StaticFiles(directory=img_dir), name="img")
     if os.path.exists(res_dir):
         app.mount("/resource", StaticFiles(directory=res_dir), name="resource")
+
+# 2. ビルド済みフロントエンド (dist) の配信
+dist_dir = os.path.join(os.path.dirname(base_dir), "frontend-v2", "dist")
+if os.path.exists(dist_dir):
+    # assets などを配信
+    app.mount("/assets", StaticFiles(directory=os.path.join(dist_dir, "assets")), name="assets")
+    
+    # ルートアクセスで index.html を返す
+    @app.get("/")
+    @app.get("/{path:path}")
+    async def serve_spa(request: Request, path: str = ""):
+        # API や WebSocket のパスを除外
+        if path.startswith("api") or path.startswith("ws") or path.startswith("img") or path.startswith("resource") or path.startswith("assets"):
+            return Response(status_code=404)
+        
+        index_path = os.path.join(dist_dir, "index.html")
+        if os.path.exists(index_path):
+            with open(index_path, "r", encoding="utf-8") as f:
+                return Response(content=f.read(), media_type="text/html")
+        return Response(content="Frontend not built yet.", status_code=404)
 
 # --- 初期化 ---
 sb_info_instance = SB_info()

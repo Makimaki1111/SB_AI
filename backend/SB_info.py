@@ -3,14 +3,13 @@ import os
 import sqlite3
 import tracemalloc
 import random
-from collections import defaultdict
+import random
 
 class SB_info:
     def __init__(self, measure_memory=False, db_path=None):
         if measure_memory:
             tracemalloc.start() # メモリ計測開始
         self.typed_heads = set()
-        self.typed_word_map = defaultdict(list) # 頭文字ごとの単語リストをメモリに保持して高速化
 
         # このファイル(SB_info.py)のあるディレクトリを取得
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -27,22 +26,26 @@ class SB_info:
         if os.path.exists(self.db_path):
             try:
                 self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
+                # 基本設定は接続のたびに行う
+                self.conn.execute("PRAGMA cache_size = -2000")
+                self.conn.execute("PRAGMA synchronous = OFF")
+                
                 cursor = self.conn.execute("SELECT count(*) FROM words")
                 if cursor.fetchone()[0] > 0:
                     should_rebuild = False
+                    # インデックスがなければ作成（既存DBへの対応）
+                    self.conn.execute("CREATE INDEX IF NOT EXISTS idx_word_head ON words(substr(word, 1, 1))")
+                    
                     # メモリ上のキャッシュ(typed_heads)だけ復元する
-                    cursor = self.conn.execute("SELECT word FROM words WHERE type1 != ''")
+                    # 最初の1文字目を効率的に取得
+                    cursor = self.conn.execute("SELECT DISTINCT substr(word, 1, 1) FROM words WHERE type1 != ''")
                     for row in cursor:
-                        word = row[0]
-                        if word:
-                            self.typed_heads.add(word[0])
-                            self.typed_word_map[word[0]].append(word)
+                        if row[0]: self.typed_heads.add(row[0])
             except sqlite3.Error:
                 if self.conn: self.conn.close()
                 should_rebuild = True
 
         if should_rebuild:
-            # 既存があれば削除して作り直す
             if os.path.exists(self.db_path):
                 try:
                     os.remove(self.db_path)
@@ -50,12 +53,10 @@ class SB_info:
                     pass
 
             self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
-            
-            # --- 高速化設定 ---
+            self.conn.execute("PRAGMA cache_size = -2000")
             self.conn.execute("PRAGMA synchronous = OFF")
-            self.conn.execute("PRAGMA journal_mode = OFF")
+            self.conn.execute("PRAGMA journal_mode = MEMORY") # ディスクI/O削減
             
-            # テーブル作成
             self.conn.execute('''
                 CREATE TABLE IF NOT EXISTS words (
                     word TEXT PRIMARY KEY,
@@ -63,31 +64,45 @@ class SB_info:
                     type2 TEXT
                 )
             ''')
+            # 検索用のインデックス作成
+            self.conn.execute("CREATE INDEX IF NOT EXISTS idx_word_head ON words(substr(word, 1, 1))")
 
-            with open(os.path.join(dic_dir, "notype.csv"), 'r', encoding='utf-8-sig') as f:
-                data = []
-                for line in f:
-                    word = line.strip().lstrip('\ufeff')
-                    if word:
-                        data.append((word, "", ""))
-                self.conn.executemany("INSERT OR IGNORE INTO words (word, type1, type2) VALUES (?, ?, ?)", data)
-        
-            with open(os.path.join(dic_dir, "typed.csv"), 'r', encoding='utf-8-sig') as f:
-                data = []
-                for line in f:
-                    line = line.strip().lstrip('\ufeff')
-                    if not line: continue
-                    parts = line.split()
-                    word = parts[0]
-                    t1 = parts[1] if len(parts) > 1 else ""
-                    t2 = parts[2] if len(parts) > 2 else ""
-                    self.typed_heads.add(word[0])
-                    self.typed_word_map[word[0]].append(word)
-                    data.append((word, t1, t2))
+            # チャンク読み込み関数
+            def insert_chunks(file_path, is_typed=False):
+                CHUNK_SIZE = 10000
+                with open(file_path, 'r', encoding='utf-8-sig') as f:
+                    batch = []
+                    for line in f:
+                        line = line.strip().lstrip('\ufeff')
+                        if not line: continue
+                        
+                        if is_typed:
+                            parts = line.split()
+                            word = parts[0]
+                            t1 = parts[1] if len(parts) > 1 else ""
+                            t2 = parts[2] if len(parts) > 2 else ""
+                            self.typed_heads.add(word[0])
+                            batch.append((word, t1, t2))
+                        else:
+                            batch.append((line, "", ""))
+                        
+                        if len(batch) >= CHUNK_SIZE:
+                            if is_typed:
+                                self.conn.executemany("INSERT OR REPLACE INTO words VALUES (?, ?, ?)", batch)
+                            else:
+                                self.conn.executemany("INSERT OR IGNORE INTO words VALUES (?, ?, ?)", batch)
+                            batch = []
+                    
+                    if batch:
+                        if is_typed:
+                            self.conn.executemany("INSERT OR REPLACE INTO words VALUES (?, ?, ?)", batch)
+                        else:
+                            self.conn.executemany("INSERT OR IGNORE INTO words VALUES (?, ?, ?)", batch)
+                self.conn.commit()
 
-                self.conn.executemany("INSERT OR REPLACE INTO words (word, type1, type2) VALUES (?, ?, ?)", data)
-            
-            self.conn.commit()
+            insert_chunks(os.path.join(dic_dir, "notype.csv"), is_typed=False)
+            insert_chunks(os.path.join(dic_dir, "typed.csv"), is_typed=True)
+
         
         self.ability_rank_from_power = {
             0.25:-6 ,   0.28:-5 ,   0.33:-4 ,   0.4:-3 ,   0.5:-2   ,   0.66:-1 ,   1.0:0 ,
@@ -130,10 +145,13 @@ class SB_info:
         return ("", "")
 
     def get_typed_word_candidates(self, head: str):
-        """指定された文字で始まるタイプ付き単語のリスト（イテレータ）を返します"""
-        # DBアクセスをやめ、メモリ上のマップから取得することで高速化
-        # Renderの0.1CPU環境でも負荷がかからないようにする
-        candidates = self.typed_word_map.get(head, [])[:]
+        """指定された文字で始まるタイプ付き単語のリストを返します"""
+        # 作成したインデックスを使用して高速に候補を取得
+        cursor = self.conn.execute(
+            "SELECT word FROM words WHERE substr(word, 1, 1) = ? AND type1 != ''", 
+            (head,)
+        )
+        candidates = [row[0] for row in cursor]
         random.shuffle(candidates)
         return candidates
     
