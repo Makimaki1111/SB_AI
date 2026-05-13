@@ -93,6 +93,10 @@ export const TitleView: React.FC = () => {
             設定
           </GameButton>
         </div>
+
+        <div className={styles.credit}>
+          Inspired by <a href="http://siritori-battle.net/" target="_blank" rel="noreferrer">しりとりバトル</a>
+        </div>
       </div>
 
       <SettingsModal 
