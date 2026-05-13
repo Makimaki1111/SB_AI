@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import type { BattleResponse, BattleState } from '../types/battle';
 import { SoundManager } from '../utils/SoundManager';
 import * as wanakana from 'wanakana';
