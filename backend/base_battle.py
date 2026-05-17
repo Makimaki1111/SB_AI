@@ -619,7 +619,6 @@ class BaseBattle:
         elif "医療" in types:
             if current_player.medical_count < MEDICAL_LIMIT:
                 current_player.medical_count += 1
-                current_player.heal(MEDICAL_RECOVERY_AMOUNT)
                 if current_player.poison_turns > 0:
                     current_player.poison_turns = 0
                     current_player.poisoner_id = None
@@ -631,6 +630,7 @@ class BaseBattle:
                         "new_is_poison": False
                     })
                 
+                current_player.heal(MEDICAL_RECOVERY_AMOUNT)
                 self.events.append({
                     "type": "cure", 
                     "message": "体力が回復した", 
