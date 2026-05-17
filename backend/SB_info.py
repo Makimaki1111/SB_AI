@@ -17,7 +17,7 @@ class SB_info:
         dic_dir = os.path.join(base_dir, "dic")
         
         # SQLiteデータベースのパス
-        self.db_path = db_path or os.path.join(dic_dir, "dictionary.db")
+        self.db_path = db_path or os.path.join(dic_dir, "dictionary_v2.db")
         
         self.conn = None
         should_rebuild = True
@@ -101,7 +101,7 @@ class SB_info:
                 self.conn.commit()
 
             insert_chunks(os.path.join(dic_dir, "notype.csv"), is_typed=False)
-            insert_chunks(os.path.join(dic_dir, "typed.csv"), is_typed=True)
+            insert_chunks(os.path.join(dic_dir, "typed2.csv"), is_typed=True)
 
         
         self.ability_rank_from_power = {
