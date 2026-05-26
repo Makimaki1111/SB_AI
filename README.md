@@ -19,7 +19,7 @@ https://shiritorinodui-zhan-batoru.onrender.com
 
 - **リアルタイム対戦** — WebSocket による常時接続で、ランダムマッチ・ルーム戦・CPU 対戦に対応
 - **ゲームモードの拡張** — ダブルバトル / ストック制（複数残機）
-- **AI による辞書構築** — Gemini 3 Flash を活用して約 16,000 語のタイプを自動分類
+- **AI による辞書構築** — Gemini 3.5 Flash High を使用して約 16,000 語のタイプを自動分類
 
 ## 使用技術
 
