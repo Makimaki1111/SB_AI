@@ -538,7 +538,7 @@ class BaseBattle:
             
             event["message"] = msg
 
-    def get_personalized_response(self, base_response: dict, player_id: str) -> dict:
+    def get_personalized_response(self, base_response: dict, player_id: str, time_limit: int = None) -> dict:
         """レスポンスを特定のプレイヤー視点に調整する (サブクラスで実装)"""
         raise NotImplementedError
 
