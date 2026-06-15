@@ -137,7 +137,7 @@ class BaseBattle:
         """
         return player.id
 
-    def _calc_damage(self, at1, at2, dt1, dt2, attacker_ability, attacker, defender):
+    def _calc_damage(self, at1, at2, dt1, dt2, attacker_ability, attacker, defender, ability_multiplier=1.0):
         """ダメージ計算ロジック"""
         effect = self.sb_info.type_effect(at1, at2, dt1, dt2)
         
@@ -160,16 +160,16 @@ class BaseBattle:
         if is_critical:
             rank_correction = max(1.0, rank_correction)
 
-        damage = 0.0
-        if at1 == "" and at2 == "":
-            damage = BASE_DAMAGE_NORMAL * rank_correction
-        elif dt1 == "" and dt2 == "":
-            damage = BASE_DAMAGE_TYPED * effect * rank_correction
-        else:
-            damage = BASE_DAMAGE_TYPED * effect * rank_correction
-            damage *= random.uniform(DAMAGE_RANDOM_MIN, DAMAGE_RANDOM_MAX)
+        crit_mult = CRITICAL_HIT_MULTIPLIER if is_critical else 1.0
 
-        return effect, int(damage), is_critical
+        if at1 == "" and at2 == "":
+            damage = int( BASE_DAMAGE_NORMAL * int( rank_correction * 10 ) / 10 * ability_multiplier )
+        elif dt1 == "" and dt2 == "":
+            damage = int( int( BASE_DAMAGE_TYPED * rank_correction ) * ability_multiplier * crit_mult )
+        else:
+            damage = int( int(BASE_DAMAGE_TYPED * random.uniform(DAMAGE_RANDOM_MIN, DAMAGE_RANDOM_MAX) * rank_correction * effect) * ability_multiplier * crit_mult )
+
+        return effect, damage, is_critical
 
     def _process_end_of_turn_effects(self, attacker, defender):
         """ターン終了時の継続効果（毒、やどりぎなど）を処理する"""
@@ -641,9 +641,8 @@ class BaseBattle:
             else:
                 self.events.append({"type": "message", "message": "もう回復できない！", "target": current_player.id})
         else:
-            effect, damage, is_critical = self._calc_damage(at1, at2, dt1, dt2, ability_obj, current_player, target_player)
-            if ability_obj: damage = int(damage * ability_obj.get_damage_multiplier(types, word))
-            if is_critical: damage = int(damage * CRITICAL_HIT_MULTIPLIER)
+            ability_multiplier = ability_obj.get_damage_multiplier(types, word) if ability_obj else 1.0
+            effect, damage, is_critical = self._calc_damage(at1, at2, dt1, dt2, ability_obj, current_player, target_player, ability_multiplier)
             
             msg = self._get_effect_message(effect)
             
